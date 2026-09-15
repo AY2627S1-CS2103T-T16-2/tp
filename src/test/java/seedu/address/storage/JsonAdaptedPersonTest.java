@@ -12,10 +12,13 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
     private static final String INVALID_NAME = "R@chel";
@@ -105,6 +108,20 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, invalidTags);
         assertThrows(IllegalValueException.class, person::toModelType);
+    }
+
+    @Test
+    public void jsonRoundTrip_nonEmptyRemark_preserved() throws Exception {
+        Person person = new PersonBuilder(BENSON).withRemark("Likes baseball — 你好").build();
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(person));
+        assertEquals(person, JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType());
+    }
+
+    @Test
+    public void jsonRead_missingRemark_defaultsToEmpty() throws Exception {
+        String json = "{\"name\":\"Benson\",\"phone\":\"91234567\","
+                + "\"email\":\"benson@example.com\",\"address\":\"Somewhere\",\"tags\":[]}";
+        assertEquals("", JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType().getRemark().value);
     }
 
 }
