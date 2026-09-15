@@ -10,8 +10,9 @@ public class RemarkCommandTest {
     private Model model = new ModelManager();
 
     @Test
-    public void execute_listIsNotFiltered_showsSameList() {
-        assertCommandFailure(new RemarkCommand(), model, RemarkCommand.MESSAGE_NOT_IMPLEMENTED_YET);
+    public void execute_remarkCommand_withNullIndexAndNullRemark_throwsIllegalArgumentException() {
+        RemarkCommand remarkCommand = new RemarkCommand(null, null);
+        assertCommandFailure(remarkCommand, model, "Index: 1, Remark: null");
     }
 
 }
