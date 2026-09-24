@@ -28,7 +28,7 @@ You cannot reach us at the email `seer[at]comp.nus.edu.sg`
 <img src="images/ooixs.png" width="200px">
 
 [[github](https://github.com/ooixs)]
-[[portfolio](team/johndoe.md)]
+[[portfolio](team/ooixs.md)]
 
 * Role: Team Lead
 * Responsibilities: Team Coordination/Overseeing Project Direction/UI
