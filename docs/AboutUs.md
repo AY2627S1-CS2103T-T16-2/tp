@@ -59,3 +59,12 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 * Role: Developer
 * Responsibilities: UI
+
+### Zee Ming Zan
+
+<img src="images/mingzanzee.png" width="200px">
+
+[[github](http://github.com/mingzanzee)]
+
+* Role: Developer
+* Responsibilities: Code Quality and Testing. In charge of ???
