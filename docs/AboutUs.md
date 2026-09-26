@@ -42,10 +42,10 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ### Tan Yu Bin
 
-<img src="images/yb.png" width="200px">
+<img src="images/origami10004.png" width="200px">
 
 [[github](http://github.com/origami10004)]
-[[portfolio](team/yb.md)]
+[[portfolio](team/origami10004.md)]
 
 * Role: Developer
 * Responsibilities: TBC
