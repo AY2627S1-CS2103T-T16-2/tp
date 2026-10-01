@@ -8,7 +8,7 @@
         "about-us": "About Us",
         "project-team": "Project team",
         "max-tan-kia-lok": "Max Tan Kia Lok",
-        "jane-doe": "Jane Doe",
+        "ooi-xuan-shan": "Ooi Xuan Shan",
         "sg-tan": "SG Tan",
         "tan-yu-bin": "Tan Yu Bin",
         "james-doe": "James Doe",
@@ -147,6 +147,14 @@
     {
       "src": "team/mingzan.md",
       "title": "Ming Zan's Project Portfolio Page",
+      "headings": {
+        "project-tuitionbook": "Project: TuitionBook"
+      },
+      "headingKeywords": {}
+    },
+    {
+      "src": "team/ooixs.md",
+      "title": "Xuan Shan's Project Portfolio Page",
       "headings": {
         "project-tuitionbook": "Project: TuitionBook"
       },
