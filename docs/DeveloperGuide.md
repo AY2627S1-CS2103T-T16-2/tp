@@ -270,29 +270,49 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
-* prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
-* is reasonably comfortable using CLI apps
+* is a private tutor who manages a significant number of students and their guardians
+* needs to maintain both student and guardian contact information in one place
+* needs to identify the guardian responsible for a student and retrieve that guardian's contact details quickly
+* prefers using a desktop application instead of maintaining separate physical records or spreadsheets
+* can type quickly and is comfortable with a keyboard-driven, command-based interface
+* prefers contact information to be stored locally and restored automatically between application sessions
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
-
+**Value proposition**: TuitionBook enables private tutors to manage student and guardian contacts, together with the relationships between them, faster than using a generic contact list or manually cross-referencing separate records.
 
 ### User stories
 
-Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
+Priorities: High (must have) - `***`, Medium (nice to have) - `**`, Low (unlikely to have) - `*`
 
-| Priority | As a …                                    | I want to …                 | So that I can…                                                        |
-|----------|--------------------------------------------|------------------------------|------------------------------------------------------------------------|
-| `* * *`  | new user                                   | see usage instructions       | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person             |                                                                        |
-| `* * *`  | user                                       | delete a person              | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name        | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name         | locate a person easily                                                 |
-
-*{More to be added}*
+| Priority | As a … | I want to … | So that I can… |
+|----------|--------|-------------|----------------|
+| `***` | private tutor | add a contact as either a student or guardian | record the person's details and distinguish their role clearly |
+| `***` | private tutor | list all the contacts I manage | obtain an overview of my students and their guardians |
+| `***` | private tutor | have my contacts, roles, and guardian links saved automatically | continue using the same information after restarting TuitionBook |
+| `***` | private tutor | link a guardian to a student | record who is responsible for that student |
+| `***` | private tutor | view a student's details together with the linked guardian's details | contact the appropriate guardian without manually searching through separate records |
+| `***` | private tutor | view a guardian together with the students linked to that guardian | identify all students under that guardian |
+| `***` | private tutor | delete a contact safely | remove an obsolete contact without leaving any student linked to a guardian who no longer exists |
+| `**` | private tutor | edit a contact's information | keep the contact's details accurate and up to date |
+| `**` | private tutor | find contacts by name | retrieve a contact without scanning the entire contact list |
+| `**` | private tutor | clear all stored contact data | start over when the existing dataset is no longer needed |
+| `**` | private tutor | access help for TuitionBook | recall how to use the application and its commands |
+| `**` | private tutor | exit TuitionBook using a command | close the application without switching to a mouse-driven action |
+| `**` | private tutor | filter contacts by student or guardian role | focus on the relevant type of contact |
+| `*` | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
+| `*` | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
+| `*` | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
+| `*` | private tutor | delete a contact by name | remove a contact without first locating its displayed index |
+| `*` | private tutor | search contacts using partial names or other contact information | find contacts when I remember only part of their information |
+| `*` | private tutor | combine role filtering with name or tag filtering | narrow a large contact list more precisely |
+| `*` | private tutor | sort contacts using a chosen criterion | locate relevant contacts more efficiently |
+| `*` | private tutor | receive confirmation before deleting contacts or clearing data | avoid losing contact data by mistake |
+| `*` | private tutor | undo a deletion or clear operation | recover contact data after an accidental action |
+| `*` | private tutor | edit a contact's role safely | correct an incorrectly assigned role without creating invalid guardian links |
+| `*` | private tutor | link a guardian to a student using the guardian's name | create the relationship without first finding the guardian's list index |
+| `*` | private tutor | access command-specific help even when offline | obtain assistance regardless of internet availability |
+| `*` | private tutor | copy a contact's phone number conveniently | use the number without manually retyping it |
+| `*` | private tutor | have TuitionBook preserve an unreadable data file | avoid losing the original data while resolving a loading problem |
+| `*` | private tutor | receive a precise explanation when contact data cannot be loaded | understand what must be corrected |
 
 ### Use cases
 
