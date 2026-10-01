@@ -11,7 +11,6 @@
         "ooi-xuan-shan": "Ooi Xuan Shan",
         "sg-tan": "SG Tan",
         "tan-yu-bin": "Tan Yu Bin",
-        "james-doe": "James Doe",
         "zee-ming-zan": "Zee Ming Zan"
       },
       "headingKeywords": {}
@@ -133,14 +132,6 @@
       "title": "",
       "headings": {
         "addressbook-level-3": "AddressBook Level-3"
-      },
-      "headingKeywords": {}
-    },
-    {
-      "src": "team/johndoe.md",
-      "title": "John Doe's Project Portfolio Page",
-      "headings": {
-        "project-addressbook-level-3": "Project: AddressBook Level 3"
       },
       "headingKeywords": {}
     },
