@@ -52,16 +52,6 @@ You cannot reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: TBC
 
-### James Doe
-
-<img src="images/johndoe.png" width="200px">
-
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
-
-* Role: Developer
-* Responsibilities: UI
-
 ### Zee Ming Zan
 
 <img src="images/mingzanzee.png" width="200px">
