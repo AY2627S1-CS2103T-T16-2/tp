@@ -276,7 +276,7 @@ _{Explain here how the data archiving feature will be implemented}_
 * prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: Manage tuition contacts efficiently through keyboard-entered commands.
 
 
 ### User stories
@@ -285,31 +285,33 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 | Priority | As a …                                    | I want to …                 | So that I can…                                                        |
 |----------|--------------------------------------------|------------------------------|------------------------------------------------------------------------|
-| `* * *`  | new user                                   | see usage instructions       | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person             |                                                                        |
-| `* * *`  | user                                       | delete a person              | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name        | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name         | locate a person easily                                                 |
+| `* * *`  | private tutor | see usage instructions | refer to instructions when I forget how to use TuitionBook |
+| `* * *`  | private tutor | add a student or guardian contact | keep contact details for tuition arrangements |
+| `* * *`  | private tutor | edit a contact | correct or update its details without recreating it |
+| `* * *`  | private tutor | link a guardian to a student | find the appropriate guardian when needed |
+| `* * *`  | private tutor | view a student's guardian details | contact the guardian while retaining the student's context |
+| `* * *`  | private tutor | delete a contact safely | remove obsolete contacts without leaving invalid guardian links |
+| `* *`    | private tutor | find a contact by name | locate it without scanning the complete list |
+| `* *`    | private tutor | filter contacts by role | focus on students or guardians |
 
 *{More to be added}*
 
 ### Use cases
 
-(For all use cases below, the **System** is `TuitionBook` and the **Actor** is the `user`, unless specified otherwise.)
+(For all use cases below, the **System** is `TuitionBook` and the **Actor** is the `Private tutor`, unless specified otherwise.)
 
-**Use case: Add a contact**
+**Use case: UC01 Add a contact**
 
 **MSS**
 
 1.  User requests to add a contact, providing the contact's role, name, and phone number, and optionally its email address, home address, and tags.
-2.  TuitionBook adds the contact and displays its details, including its role.
+2.  TuitionBook adds the contact and displays confirmation, including its role.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. One or more mandatory details are missing or invalid.
+* 1a. A provided detail is invalid, or a mandatory detail is missing.
 
     * 1a1. TuitionBook shows an error message describing the invalid input.
 
@@ -321,41 +323,50 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-**Use case: Link a guardian to a student**
+**Use case: UC02 Link a guardian to a student**
 
 **Preconditions**
 
 * A student and a guardian are visible in the current contact list.
 
+**Guarantee**
+
+* On success, the student is linked to the selected guardian and no student has more than one guardian link.
+
 **MSS**
 
 1.  User requests to link a displayed student to a displayed guardian.
-2.  TuitionBook verifies that the selected contacts have the `student` and `guardian` roles respectively.
-3.  TuitionBook records the guardian link and displays the student and guardian that were linked.
+2.  TuitionBook records the guardian link and displays confirmation of the relationship.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. Either specified index does not refer to a contact in the current list.
+* 1a. Either specified index is missing, malformed, or does not refer to a contact in the current list.
 
     * 1a1. TuitionBook shows an error message.
 
       Use case ends.
 
-* 2a. The contact selected as the student is not a student, or the contact selected as the guardian is not a guardian.
+* 1b. The contact selected as the student is not a student, or the contact selected as the guardian is not a guardian.
 
-    * 2a1. TuitionBook shows an error message describing the role mismatch.
-
-      Use case ends.
-
-* 3a. The student is already linked to another guardian.
-
-    * 3a1. TuitionBook replaces the existing link and reports the replacement.
+    * 1b1. TuitionBook shows an error message describing the role mismatch.
 
       Use case ends.
 
-**Use case: View contact details**
+* 1c. The student is already linked to a different guardian.
+
+    * 1c1. TuitionBook replaces the guardian link and displays confirmation of the replacement relationship.
+
+      Use case ends.
+
+* 1d. The student is already linked to the specified guardian.
+
+    * 1d1. TuitionBook reports that the relationship already exists without changing it.
+
+      Use case ends.
+
+**Use case: UC03 Edit a contact**
 
 **Preconditions**
 
@@ -363,9 +374,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1.  User requests to view a displayed contact.
-2.  TuitionBook displays the contact's role, contact details, and tags.
-3.  TuitionBook displays the selected contact's relevant linked-contact details.
+1.  User submits an edit request identifying a contact by its index in the current contact list and providing one or more replacement contact details.
+2.  TuitionBook updates the supplied details, retains all unspecified details, and displays confirmation.
 
     Use case ends.
 
@@ -377,29 +387,46 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 3a. The student has no linked guardian.
+* 1b. The request is invalid.
 
-    * 3a1. TuitionBook indicates that no guardian is linked.
-
-      Use case ends.
-
-* 3b. The guardian has no linked students.
-
-    * 3b1. TuitionBook indicates that no students are linked.
+    * 1b1. TuitionBook shows an error message describing the invalid request.
 
       Use case ends.
 
-**Use case: Delete a guardian with linked students**
+* 1c. The requested update would duplicate another contact.
 
-**Preconditions**
+    * 1c1. TuitionBook informs the user that the contact already exists.
 
-* A guardian with one or more linked students is visible in the current contact list.
+      Use case ends.
+
+**Use case: UC04 Find contacts by name**
 
 **MSS**
 
-1.  User requests to delete the displayed guardian.
-2.  TuitionBook removes the guardian and clears the guardian link from every affected student.
-3.  TuitionBook reports the deleted guardian and the students whose links were cleared.
+1.  User submits a find request with one or more name keywords.
+2.  TuitionBook displays the contacts matching the requested name keywords and reports the number of matches.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. No name keyword is provided.
+
+    * 1a1. TuitionBook shows an error message describing the invalid request.
+
+      Use case ends.
+
+**Use case: UC05 View contact details**
+
+**Preconditions**
+
+* At least one contact is visible in the current contact list.
+
+**MSS**
+
+1.  User submits a view request identifying a contact by its index in the current contact list.
+2.  TuitionBook displays the contact's role, contact details, and tags.
+3.  TuitionBook displays relationship details: for a student, the linked guardian's contact information or an indication that no guardian is linked; for a guardian, the names of linked students or an indication that none are linked.
 
     Use case ends.
 
@@ -411,34 +438,81 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 1b. The selected contact is a student or an unlinked guardian.
+**Use case: UC06 Delete a contact**
 
-    * 1b1. TuitionBook deletes only the selected contact and reports the deletion.
+**Preconditions**
+
+* At least one contact is visible in the current contact list.
+
+**Guarantee**
+
+* On success, no guardian link refers to a deleted contact.
+
+**MSS**
+
+1.  User requests to delete a displayed contact.
+2.  TuitionBook deletes the contact and clears any guardian links involving it, retaining all other contacts.
+3.  TuitionBook reports the deletion and, where applicable, the number and names of students whose guardian links were cleared.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The specified index does not refer to a contact in the current list.
+
+    * 1a1. TuitionBook shows an error message.
 
       Use case ends.
 
+**Use case: UC07 Filter contacts by role**
+
+**MSS**
+
+1.  Private tutor requests contacts with a specified role.
+2.  TuitionBook displays contacts with that role and reports the number of matches.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The requested role is invalid.
+
+    * 1a1. TuitionBook shows an error message describing the invalid request.
+
+      Use case ends.
+
+**Role-filter command rule**
+
+The role-filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` displays only contacts with the specified role. Other trailing text is rejected.
+
 ### Non-Functional Requirements
 
-1.  TuitionBook shall run on any mainstream desktop operating system with Java `25` or later installed.
-2.  TuitionBook shall support at least 100 contacts while listing, finding, viewing, adding, editing, deleting, and linking contacts complete within two seconds during typical single-user use.
-3.  All ordinary contact-management tasks shall be completable through keyboard-entered commands, without requiring a mouse.
+1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
+2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, or linking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
+3.  All documented add, edit, delete, list, find, filter, view, and link operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
-5.  TuitionBook shall store contact data only in a local data file and shall not transmit contact data to an external service.
-6.  After every successful operation that changes contacts or guardian links, TuitionBook shall automatically persist the updated data so that it survives a normal application restart.
-7.  If the local data file is missing, malformed, or contains an invalid guardian link, TuitionBook shall remain usable and shall not terminate unexpectedly.
+5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
+6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty data set and inform the user; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
 
 ### Glossary
 
 * **Contact**: A record in TuitionBook representing either a student or a guardian, with a name, phone number, and optional email address, home address, and tags.
 * **Current contact list**: The contacts currently displayed after applying any active filter; indexes in index-based commands refer to this list.
-* **Guardian**: A contact with the `guardian` role who is responsible for one or more students.
-* **Guardian link**: The association from a student to that student's guardian. A student has at most one guardian link, while a guardian can be linked to multiple students.
-* **Home address**: The address where the tutor travels for a student's lesson; it can include details such as a unit number, gate code, or lift instructions.
+* **Contact ID**: A unique, persistent identifier assigned by TuitionBook to a contact.
+* **Data file**: The local text file that stores TuitionBook contacts and their recorded guardian links between application sessions.
+* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a role filter; applying a new filter replaces the previous one.
+* **Guardian**: A contact with the `guardian` role. A guardian contact may have zero or more recorded student links; these links record information in TuitionBook and do not establish or determine real-world responsibility.
+* **Guardian link**: A recorded association from a student to a guardian contact. A student has at most one guardian link, while a guardian can be linked to multiple students.
+* **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
+* **Index**: A positive one-based position in the current contact list, used by index-based commands.
 * **Mainstream OS**: Windows, macOS, or a commonly used Linux distribution.
-* **Normalised name or phone number**: A name or phone number converted to its comparison form before duplicate checking; name comparisons ignore case, while phone comparisons ignore spaces and hyphens.
+* **Normalised name**: A name converted to its comparison form before duplicate checking: leading and trailing spaces are removed, each internal run of spaces is collapsed to one space, and names are compared case-insensitively while preserving display casing.
+* **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: spaces and hyphens are removed while a leading `+` is retained. Country-code equivalence is not applied in the MVP.
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
-* **Role**: A contact classification. TuitionBook supports exactly two roles: `student` and `guardian`.
+* **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -459,7 +533,7 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+      Expected: The GUI opens with an empty contact list. The window size may not be optimal.
 
 1. Saving window preferences
 

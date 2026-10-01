@@ -23,7 +23,7 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+   A GUI similar to the one below should appear in a few seconds. On first launch, the contact list is empty.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
@@ -91,11 +91,16 @@ Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
 
-### Listing all persons: `list`
+### Listing contacts: `list`
 
-Shows a list of all persons in the address book.
+Shows all contacts, or only contacts with a specified role. `list` clears any active name or role filter.
 
-Format: `list`
+Format: `list [r/ROLE]`
+
+* `ROLE` is `student` or `guardian`, case-insensitively.
+* `list r/student` shows only students; `list r/guardian` shows only guardians.
+* Other trailing text is rejected.
+* Before linking a student to a guardian after role filtering, enter `list` to restore the full list so that both contacts can be selected.
 
 ### Editing a person: `edit`
 
@@ -200,5 +205,5 @@ Action     | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**List**   | `list`
+**List**   | `list [r/ROLE]`<br> e.g., `list r/student`
 **Help**   | `help`
