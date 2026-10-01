@@ -10,7 +10,7 @@
         "max-tan-kia-lok": "Max Tan Kia Lok",
         "jane-doe": "Jane Doe",
         "sg-tan": "SG Tan",
-        "jean-doe": "Jean Doe",
+        "tan-yu-bin": "Tan Yu Bin",
         "james-doe": "James Doe",
         "zee-ming-zan": "Zee Ming Zan"
       },
@@ -147,6 +147,14 @@
     {
       "src": "team/mingzan.md",
       "title": "Ming Zan's Project Portfolio Page",
+      "headings": {
+        "project-tuitionbook": "Project: TuitionBook"
+      },
+      "headingKeywords": {}
+    },
+    {
+      "src": "team/origami10004.md",
+      "title": "Origami10004's Project Portfolio Page",
       "headings": {
         "project-tuitionbook": "Project: TuitionBook"
       },
