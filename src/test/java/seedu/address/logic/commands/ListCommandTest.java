@@ -98,4 +98,16 @@ public class ListCommandTest {
         assertFalse(listStudentsCommand.equals(new ListCommand(guardianPredicate)));
         assertFalse(listAllCommand.equals(listStudentsCommand));
     }
+
+    @Test
+    public void toStringMethod() {
+        PersonHasRolePredicate predicate = new PersonHasRolePredicate(Role.STUDENT);
+        ListCommand listCommand = new ListCommand(predicate);
+        String expected = ListCommand.class.getCanonicalName() + "{predicate=" + predicate + "}";
+        assertEquals(expected, listCommand.toString());
+
+        ListCommand listAllCommand = new ListCommand();
+        String expectedListAll = ListCommand.class.getCanonicalName() + "{predicate=null}";
+        assertEquals(expectedListAll, listAllCommand.toString());
+    }
 }
