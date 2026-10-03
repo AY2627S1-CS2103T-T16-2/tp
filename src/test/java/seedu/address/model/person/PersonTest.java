@@ -117,6 +117,23 @@ public class PersonTest {
     }
 
     @Test
+    public void getOptionalContactFields_notProvided_returnsEmpty() {
+        Person person = new PersonBuilder().withoutEmail().withoutAddress().build();
+
+        assertTrue(person.getEmail().isEmpty());
+        assertTrue(person.getAddress().isEmpty());
+    }
+
+    @Test
+    public void equals_optionalContactFieldsAbsent_comparesSafely() {
+        Person person = new PersonBuilder().withoutEmail().withoutAddress().build();
+        Person copy = new PersonBuilder(person).build();
+
+        assertEquals(person, copy);
+        assertEquals(person.hashCode(), copy.hashCode());
+    }
+
+    @Test
     public void withGuardianId_linksGuardianAndKeepsOwnId() {
         Person guardian = new PersonBuilder().withName("Bernice Yu").withRole(Role.GUARDIAN).build();
         Person student = new PersonBuilder().build();
@@ -164,8 +181,9 @@ public class PersonTest {
     @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{role=" + ALICE.getRole() + ", name=" + ALICE.getName()
-                + ", phone=" + ALICE.getPhone() + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
-                + ", tags=" + ALICE.getTags() + ", guardianId=" + ALICE.getGuardianId().orElse(null) + "}";
+                + ", phone=" + ALICE.getPhone() + ", email=" + ALICE.getEmail().orElse(null) + ", address="
+                + ALICE.getAddress().orElse(null) + ", tags=" + ALICE.getTags() + ", guardianId="
+                + ALICE.getGuardianId().orElse(null) + "}";
         assertEquals(expected, ALICE.toString());
     }
 }
