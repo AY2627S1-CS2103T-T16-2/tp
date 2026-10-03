@@ -69,11 +69,14 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
 ### Viewing help: `help`
 
-Shows a message explaining how to access the help page.
+Shows a message with a link to this User Guide, where every command is explained. Use the `Copy URL` button to copy the link, then open it in your browser.
 
 ![help message](images/helpMessage.png)
 
 Format: `help`
+
+* You can also open the help window by pressing <kbd>F1</kbd> or via the `Help` menu.
+* An internet connection is needed to open the linked page itself.
 
 
 ### Adding a person: `add`
@@ -157,7 +160,7 @@ Format: `clear`
 
 ### Exiting the program: `exit`
 
-Exits the program.
+Exits the program. All data is already saved, so it is always safe to exit.
 
 Format: `exit`
 
