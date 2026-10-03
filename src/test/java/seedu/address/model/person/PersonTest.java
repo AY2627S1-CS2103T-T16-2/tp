@@ -105,6 +105,12 @@ public class PersonTest {
     }
 
     @Test
+    public void hashCode_equalPersons_haveSameHashCode() {
+        Person aliceCopy = new PersonBuilder(ALICE).withId(UUID.randomUUID()).build();
+        assertEquals(ALICE.hashCode(), aliceCopy.hashCode());
+    }
+
+    @Test
     public void getGuardianId_noGuardianLinked_returnsEmpty() {
         Person person = new PersonBuilder().build();
         assertTrue(person.getGuardianId().isEmpty());

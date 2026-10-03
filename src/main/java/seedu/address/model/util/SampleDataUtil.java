@@ -2,6 +2,7 @@ package seedu.address.model.util;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import seedu.address.model.AddressBook;
@@ -18,9 +19,15 @@ import seedu.address.model.tag.Tag;
  * Contains utility methods for populating {@code AddressBook} with sample data.
  */
 public class SampleDataUtil {
+    /**
+     * Fixed id for the sample guardian so that repeated sample-data generations produce
+     * equal data; the guardian link participates in {@code Person#equals}.
+     */
+    private static final UUID SAMPLE_GUARDIAN_ID = UUID.fromString("7e57ab1e-0000-4000-8000-000000000001");
+
     public static Person[] getSamplePersons() {
-        Person bernice = new Person(Role.GUARDIAN, new Name("Bernice Yu"), new Phone("99272758"),
-                new Email("berniceyu@example.com"),
+        Person bernice = new Person(SAMPLE_GUARDIAN_ID, Role.GUARDIAN, null, new Name("Bernice Yu"),
+                new Phone("99272758"), new Email("berniceyu@example.com"),
                 new Address("Blk 30 Lorong 3 Serangoon Gardens, #07-18"),
                 getTagSet("colleagues", "friends"));
         Person alex = new Person(Role.STUDENT, new Name("Alex Yeoh"), new Phone("87438807"),

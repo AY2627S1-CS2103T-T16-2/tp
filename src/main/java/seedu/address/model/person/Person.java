@@ -143,10 +143,11 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same identity and data fields.
+     * Returns true if both persons have the same user-visible fields:
+     * role, name, phone, email, address, tags and guardian link.
      * This defines a stronger notion of equality between two persons.
-     * The generated {@code id} is deliberately excluded, so two persons with
-     * identical user-visible fields are considered equal.
+     * The generated {@code id} is deliberately excluded: it is an internal identifier never
+     * shown to the user, so rebuilt or edited copies of a person remain equal to the original.
      */
     @Override
     public boolean equals(Object other) {

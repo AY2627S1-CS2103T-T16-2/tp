@@ -38,6 +38,12 @@ public class SampleDataUtilTest {
     }
 
     @Test
+    public void getSampleAddressBook_calledTwice_producesEqualData() {
+        assertEquals(SampleDataUtil.getSampleAddressBook().getPersonList(),
+                SampleDataUtil.getSampleAddressBook().getPersonList());
+    }
+
+    @Test
     public void getSampleAddressBook_containsAllSamplePersons() {
         assertEquals(SampleDataUtil.getSamplePersons().length,
                 SampleDataUtil.getSampleAddressBook().getPersonList().size());
