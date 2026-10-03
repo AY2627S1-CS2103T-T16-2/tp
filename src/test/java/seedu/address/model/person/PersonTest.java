@@ -111,11 +111,11 @@ public class PersonTest {
     }
 
     @Test
-    public void withGuardian_linksGuardianAndKeepsOwnId() {
+    public void withGuardianId_linksGuardianAndKeepsOwnId() {
         Person guardian = new PersonBuilder().withName("Bernice Yu").withRole(Role.GUARDIAN).build();
         Person student = new PersonBuilder().build();
 
-        Person linkedStudent = student.withGuardian(guardian.getId());
+        Person linkedStudent = student.withGuardianId(guardian.getId());
 
         assertEquals(guardian.getId(), linkedStudent.getGuardianId().get());
         assertEquals(student.getId(), linkedStudent.getId());
@@ -124,9 +124,24 @@ public class PersonTest {
     }
 
     @Test
-    public void withGuardian_null_throwsNullPointerException() {
+    public void withGuardianId_null_throwsNullPointerException() {
         Person student = new PersonBuilder().build();
-        assertThrows(NullPointerException.class, () -> student.withGuardian(null));
+        assertThrows(NullPointerException.class, () -> student.withGuardianId(null));
+    }
+
+    @Test
+    public void withGuardianId_onGuardian_throwsIllegalArgumentException() {
+        Person guardian = new PersonBuilder().withRole(Role.GUARDIAN).build();
+        Person otherGuardian = new PersonBuilder().withName("Bernice Yu").withRole(Role.GUARDIAN).build();
+        assertThrows(IllegalArgumentException.class,
+                Person.MESSAGE_ONLY_STUDENTS_CAN_HAVE_GUARDIAN, () -> guardian.withGuardianId(otherGuardian.getId()));
+    }
+
+    @Test
+    public void withGuardianId_selfLink_throwsIllegalArgumentException() {
+        Person student = new PersonBuilder().build();
+        assertThrows(IllegalArgumentException.class,
+                Person.MESSAGE_CANNOT_BE_OWN_GUARDIAN, () -> student.withGuardianId(student.getId()));
     }
 
     @Test

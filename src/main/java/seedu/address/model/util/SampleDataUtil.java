@@ -27,7 +27,7 @@ public class SampleDataUtil {
                 new Email("alexyeoh@example.com"),
                 new Address("Blk 30 Geylang Street 29, #06-40"),
                 getTagSet("friends"))
-                .withGuardian(bernice.getId());
+                .withGuardianId(bernice.getId());
         return new Person[] {
             alex,
             bernice,

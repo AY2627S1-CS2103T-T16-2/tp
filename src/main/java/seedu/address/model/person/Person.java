@@ -1,6 +1,7 @@
 package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.AppUtil.checkArgument;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.Collections;
@@ -18,6 +19,10 @@ import seedu.address.model.tag.Tag;
  * Guarantees: details are present and not null, field values are validated, immutable.
  */
 public class Person {
+
+    public static final String MESSAGE_ONLY_STUDENTS_CAN_HAVE_GUARDIAN =
+            "Only a contact with the student role can be linked to a guardian.";
+    public static final String MESSAGE_CANNOT_BE_OWN_GUARDIAN = "A contact cannot be linked to itself.";
 
     // Identity fields
     private final UUID id;
@@ -38,6 +43,8 @@ public class Person {
     public Person(UUID id, Role role, UUID guardianId, Name name, Phone phone, Email email, Address address,
                   Set<Tag> tags) {
         requireAllNonNull(id, role, name, phone, email, address, tags);
+        checkArgument(guardianId == null || role == Role.STUDENT, MESSAGE_ONLY_STUDENTS_CAN_HAVE_GUARDIAN);
+        checkArgument(guardianId == null || !guardianId.equals(id), MESSAGE_CANNOT_BE_OWN_GUARDIAN);
         this.id = id;
         this.role = role;
         this.guardianId = guardianId;
@@ -106,8 +113,10 @@ public class Person {
     /**
      * Returns a copy of this person linked to the guardian with the given id.
      * The copy keeps this person's own id.
+     * Only a student can be linked, and never to itself; whether the id belongs to an
+     * actual guardian cannot be verified here and is checked where both contacts are available.
      */
-    public Person withGuardian(UUID guardianId) {
+    public Person withGuardianId(UUID guardianId) {
         requireNonNull(guardianId);
         return new Person(id, role, guardianId, name, phone, email, address, tags);
     }
