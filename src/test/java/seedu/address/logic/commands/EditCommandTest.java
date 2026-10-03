@@ -121,6 +121,21 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_editOtherField_preservesAbsentEmailAndAddress() throws Exception {
+        Person person = new PersonBuilder().withName("No Optional Fields").withoutEmail().withoutAddress().build();
+        model.addPerson(person);
+        Index personIndex = Index.fromOneBased(model.getFilteredPersonList().size());
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_BOB).build();
+        new EditCommand(personIndex, descriptor).execute(model);
+
+        Person editedPerson = model.getFilteredPersonList().get(personIndex.getZeroBased());
+        assertEquals(VALID_PHONE_BOB, editedPerson.getPhone().value);
+        assertTrue(editedPerson.getEmail().isEmpty());
+        assertTrue(editedPerson.getAddress().isEmpty());
+    }
+
+    @Test
     public void execute_duplicatePersonUnfilteredList_failure() {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(firstPerson).build();
