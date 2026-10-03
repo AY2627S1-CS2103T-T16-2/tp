@@ -114,6 +114,7 @@ public class AddCommandParserTest {
         String validPerson = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB
                 + ADDRESS_DESC_BOB;
 
+        // Repeated fields with valid values.
         assertParseFailure(parser, ROLE_DESC_GUARDIAN + validPerson,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ROLE));
         assertParseFailure(parser, NAME_DESC_AMY + validPerson,
@@ -124,6 +125,36 @@ public class AddCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
         assertParseFailure(parser, ADDRESS_DESC_AMY + validPerson,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ADDRESS));
+
+        // Invalid value followed by valid value.
+        assertParseFailure(parser, INVALID_ROLE_DESC + validPerson,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ROLE));
+        assertParseFailure(parser, INVALID_NAME_DESC + validPerson,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_NAME));
+        assertParseFailure(parser, INVALID_PHONE_DESC + validPerson,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE));
+        assertParseFailure(parser, INVALID_EMAIL_DESC + validPerson,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
+        assertParseFailure(parser, INVALID_ADDRESS_DESC + validPerson,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ADDRESS));
+
+        // Valid value followed by invalid value.
+        assertParseFailure(parser, validPerson + INVALID_ROLE_DESC,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ROLE));
+        assertParseFailure(parser, validPerson + INVALID_NAME_DESC,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_NAME));
+        assertParseFailure(parser, validPerson + INVALID_PHONE_DESC,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE));
+        assertParseFailure(parser, validPerson + INVALID_EMAIL_DESC,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
+        assertParseFailure(parser, validPerson + INVALID_ADDRESS_DESC,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ADDRESS));
+
+        // Every duplicated single-valued prefix is identified in the combined error.
+        assertParseFailure(parser, validPerson + ROLE_DESC_GUARDIAN + NAME_DESC_AMY + PHONE_DESC_AMY
+                        + EMAIL_DESC_AMY + ADDRESS_DESC_AMY,
+                Messages.getErrorMessageForDuplicatePrefixes(
+                        PREFIX_ROLE, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS));
     }
 
     @Test
@@ -146,6 +177,11 @@ public class AddCommandParserTest {
         assertParseFailure(parser, mandatoryFields + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, mandatoryFields + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, mandatoryFields + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS);
+
+        // When two values are invalid, the first parsed error is reported.
+        assertParseFailure(parser, ROLE_DESC_STUDENT + INVALID_NAME_DESC + PHONE_DESC_BOB + INVALID_ADDRESS_DESC,
+                Name.MESSAGE_CONSTRAINTS);
+
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + mandatoryFields,
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
     }
