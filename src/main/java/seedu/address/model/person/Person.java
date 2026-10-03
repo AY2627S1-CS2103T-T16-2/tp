@@ -1,11 +1,15 @@
 package seedu.address.model.person;
 
+import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.AppUtil.checkArgument;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
@@ -16,7 +20,13 @@ import seedu.address.model.tag.Tag;
  */
 public class Person {
 
+    public static final String MESSAGE_ONLY_STUDENTS_CAN_HAVE_GUARDIAN =
+            "Only a contact with the student role can be linked to a guardian.";
+    public static final String MESSAGE_CANNOT_BE_OWN_GUARDIAN = "A contact cannot be linked to itself.";
+
     // Identity fields
+    private final UUID id;
+    private final Role role;
     private final Name name;
     private final Phone phone;
     private final Email email;
@@ -24,17 +34,56 @@ public class Person {
     // Data fields
     private final Address address;
     private final Set<Tag> tags = new HashSet<>();
+    private final UUID guardianId;
 
     /**
-     * Every field must be present and not null.
+     * Every field must be present and not null, except {@code guardianId} which may be null
+     * to represent a person with no linked guardian.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, tags);
+    public Person(UUID id, Role role, UUID guardianId, Name name, Phone phone, Email email, Address address,
+                  Set<Tag> tags) {
+        requireAllNonNull(id, role, name, phone, email, address, tags);
+        checkArgument(guardianId == null || role == Role.STUDENT, MESSAGE_ONLY_STUDENTS_CAN_HAVE_GUARDIAN);
+        checkArgument(guardianId == null || !guardianId.equals(id), MESSAGE_CANNOT_BE_OWN_GUARDIAN);
+        this.id = id;
+        this.role = role;
+        this.guardianId = guardianId;
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
         this.tags.addAll(tags);
+    }
+
+    /**
+     * Convenience constructor for a new person with a freshly generated id and no linked guardian.
+     */
+    public Person(Role role, Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
+        this(UUID.randomUUID(), role, null, name, phone, email, address, tags);
+    }
+
+    /**
+     * Transitional constructor that defaults the role to {@code Role.STUDENT}.
+     * Kept so that callers that do not handle roles yet continue to compile;
+     * to be removed once all callers supply a role explicitly.
+     */
+    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
+        this(Role.STUDENT, name, phone, email, address, tags);
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    /**
+     * Returns the id of this person's linked guardian, or an empty optional if no guardian is linked.
+     */
+    public Optional<UUID> getGuardianId() {
+        return Optional.ofNullable(guardianId);
     }
 
     public Name getName() {
@@ -62,6 +111,25 @@ public class Person {
     }
 
     /**
+     * Returns a copy of this person linked to the guardian with the given id.
+     * The copy keeps this person's own id.
+     * Only a student can be linked, and never to itself; whether the id belongs to an
+     * actual guardian cannot be verified here and is checked where both contacts are available.
+     */
+    public Person withGuardianId(UUID guardianId) {
+        requireNonNull(guardianId);
+        return new Person(id, role, guardianId, name, phone, email, address, tags);
+    }
+
+    /**
+     * Returns a copy of this person with no linked guardian.
+     * The copy keeps this person's own id.
+     */
+    public Person clearGuardian() {
+        return new Person(id, role, null, name, phone, email, address, tags);
+    }
+
+    /**
      * Returns true if both persons have the same name.
      * This defines a weaker notion of equality between two persons.
      */
@@ -75,8 +143,11 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same identity and data fields.
+     * Returns true if both persons have the same user-visible fields:
+     * role, name, phone, email, address, tags and guardian link.
      * This defines a stronger notion of equality between two persons.
+     * The generated {@code id} is deliberately excluded: it is an internal identifier never
+     * shown to the user, so rebuilt or edited copies of a person remain equal to the original.
      */
     @Override
     public boolean equals(Object other) {
@@ -89,7 +160,9 @@ public class Person {
             return false;
         }
 
-        return name.equals(otherPerson.name)
+        return role.equals(otherPerson.role)
+                && Objects.equals(guardianId, otherPerson.guardianId)
+                && name.equals(otherPerson.name)
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
@@ -99,17 +172,19 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, tags);
+        return Objects.hash(role, guardianId, name, phone, email, address, tags);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .add("role", role)
                 .add("name", name)
                 .add("phone", phone)
                 .add("email", email)
                 .add("address", address)
                 .add("tags", tags)
+                .add("guardianId", guardianId)
                 .toString();
     }
 

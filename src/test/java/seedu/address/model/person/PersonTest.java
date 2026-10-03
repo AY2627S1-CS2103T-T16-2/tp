@@ -12,6 +12,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.testutil.PersonBuilder;
@@ -88,12 +90,82 @@ public class PersonTest {
         // different tags -> returns false
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
+
+        // different role -> returns false
+        editedAlice = new PersonBuilder(ALICE).withRole(Role.GUARDIAN).build();
+        assertFalse(ALICE.equals(editedAlice));
+
+        // different guardian link -> returns false
+        editedAlice = new PersonBuilder(ALICE).withGuardianId(UUID.randomUUID()).build();
+        assertFalse(ALICE.equals(editedAlice));
+
+        // different id only -> returns true (id is excluded from equality)
+        Person aliceWithOtherId = new PersonBuilder(ALICE).withId(UUID.randomUUID()).build();
+        assertTrue(ALICE.equals(aliceWithOtherId));
+    }
+
+    @Test
+    public void hashCode_equalPersons_haveSameHashCode() {
+        Person aliceCopy = new PersonBuilder(ALICE).withId(UUID.randomUUID()).build();
+        assertEquals(ALICE.hashCode(), aliceCopy.hashCode());
+    }
+
+    @Test
+    public void getGuardianId_noGuardianLinked_returnsEmpty() {
+        Person person = new PersonBuilder().build();
+        assertTrue(person.getGuardianId().isEmpty());
+    }
+
+    @Test
+    public void withGuardianId_linksGuardianAndKeepsOwnId() {
+        Person guardian = new PersonBuilder().withName("Bernice Yu").withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().build();
+
+        Person linkedStudent = student.withGuardianId(guardian.getId());
+
+        assertEquals(guardian.getId(), linkedStudent.getGuardianId().get());
+        assertEquals(student.getId(), linkedStudent.getId());
+        // original is unchanged (Person is immutable)
+        assertTrue(student.getGuardianId().isEmpty());
+    }
+
+    @Test
+    public void withGuardianId_null_throwsNullPointerException() {
+        Person student = new PersonBuilder().build();
+        assertThrows(NullPointerException.class, () -> student.withGuardianId(null));
+    }
+
+    @Test
+    public void withGuardianId_onGuardian_throwsIllegalArgumentException() {
+        Person guardian = new PersonBuilder().withRole(Role.GUARDIAN).build();
+        Person otherGuardian = new PersonBuilder().withName("Bernice Yu").withRole(Role.GUARDIAN).build();
+        assertThrows(IllegalArgumentException.class,
+                Person.MESSAGE_ONLY_STUDENTS_CAN_HAVE_GUARDIAN, () -> guardian.withGuardianId(otherGuardian.getId()));
+    }
+
+    @Test
+    public void withGuardianId_selfLink_throwsIllegalArgumentException() {
+        Person student = new PersonBuilder().build();
+        assertThrows(IllegalArgumentException.class,
+                Person.MESSAGE_CANNOT_BE_OWN_GUARDIAN, () -> student.withGuardianId(student.getId()));
+    }
+
+    @Test
+    public void clearGuardian_removesLinkAndKeepsOwnId() {
+        Person guardian = new PersonBuilder().withName("Bernice Yu").withRole(Role.GUARDIAN).build();
+        Person linkedStudent = new PersonBuilder().withGuardian(guardian).build();
+
+        Person unlinkedStudent = linkedStudent.clearGuardian();
+
+        assertTrue(unlinkedStudent.getGuardianId().isEmpty());
+        assertEquals(linkedStudent.getId(), unlinkedStudent.getId());
     }
 
     @Test
     public void toStringMethod() {
-        String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", tags=" + ALICE.getTags() + "}";
+        String expected = Person.class.getCanonicalName() + "{role=" + ALICE.getRole() + ", name=" + ALICE.getName()
+                + ", phone=" + ALICE.getPhone() + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
+                + ", tags=" + ALICE.getTags() + ", guardianId=" + ALICE.getGuardianId().orElse(null) + "}";
         assertEquals(expected, ALICE.toString());
     }
 }

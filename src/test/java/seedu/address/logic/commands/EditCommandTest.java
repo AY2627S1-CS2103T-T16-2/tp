@@ -25,6 +25,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 
@@ -97,6 +98,26 @@ public class EditCommandTest {
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_editLinkedStudent_preservesIdRoleAndGuardianLink() throws Exception {
+        Person guardian = new PersonBuilder().withName("Gail Guardian").withPhone("91234567")
+                .withEmail("gail@example.com").withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("98765432")
+                .withEmail("sam@example.com").withGuardian(guardian).build();
+        model.addPerson(guardian);
+        model.addPerson(student);
+        Index studentIndex = Index.fromOneBased(model.getFilteredPersonList().size());
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_BOB).build();
+        new EditCommand(studentIndex, descriptor).execute(model);
+
+        Person editedStudent = model.getFilteredPersonList().get(studentIndex.getZeroBased());
+        assertEquals(VALID_PHONE_BOB, editedStudent.getPhone().value);
+        assertEquals(student.getId(), editedStudent.getId());
+        assertEquals(Role.STUDENT, editedStudent.getRole());
+        assertEquals(guardian.getId(), editedStudent.getGuardianId().orElse(null));
     }
 
     @Test
