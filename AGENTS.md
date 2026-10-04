@@ -147,9 +147,9 @@ seek clarification before proceeding with work that depends on it. Do not guess.
 |---|---|
 | Feature/design/dependency changes | Relevant approved issue/spec, UG/DG, [constraints][constraints] and [expectations][expectations]. |
 | Tests or alpha testing | [Testing guide](docs/Testing.md), neighbouring tests and [course alpha-testing guidance][alpha]. |
-| UG/DG/diagram changes | [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading] and [requirements notation][notation]. |
+| UG/DG/diagram changes | [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading], [requirements notation][notation] and [NFR definitions][requirements]. |
 | Iteration planning or Git/PR actions | [Timeline][timeline], its active week's instructions and [GitHub workflow][github]. |
-| Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. |
+| Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. Flaws not fixable within freeze limits may qualify for the DG "Planned Enhancements" appendix — rules in [deliverables][deliverables]. |
 | PE reports/responses/evaluations | [PE rules][pe] for the active phase and [grading][grading]; verify facts, impact and allowed issue edits, not presumed severity. |
 | AI assistance or external reuse | [AI guidance][ai] and [reuse/attribution policy][reuse]; credit actual tools, authors and extent, preserving human ownership. |
 
@@ -176,4 +176,5 @@ and limited to stable instructions rather than dated feature-status claims.
 [ai]: https://nus-cs2103-ay2627-s1.github.io/website/admin/courseExpectations.html#use-of-ai
 [reuse]: https://nus-cs2103-ay2627-s1.github.io/website/admin/appendixB-policies.html#policy-reuse
 [notation]: https://nus-cs2103-ay2627-s1.github.io/website/se-book-adapted/chapters/specifyingRequirements.html
+[requirements]: https://nus-cs2103-ay2627-s1.github.io/website/se-book-adapted/chapters/requirements.html
 [java]: https://se-education.org/guides/conventions/java/intermediate.html
