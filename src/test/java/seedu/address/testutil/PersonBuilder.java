@@ -56,8 +56,8 @@ public class PersonBuilder {
         guardianId = personToCopy.getGuardianId().orElse(null);
         name = personToCopy.getName();
         phone = personToCopy.getPhone();
-        email = personToCopy.getEmail();
-        address = personToCopy.getAddress();
+        email = personToCopy.getEmail().orElse(null);
+        address = personToCopy.getAddress().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
     }
 
@@ -98,6 +98,22 @@ public class PersonBuilder {
      */
     public PersonBuilder withEmail(String email) {
         this.email = new Email(email);
+        return this;
+    }
+
+    /**
+     * Sets the email of the {@code Person} that we are building to be absent.
+     */
+    public PersonBuilder withoutEmail() {
+        this.email = null;
+        return this;
+    }
+
+    /**
+     * Sets the address of the {@code Person} that we are building to be absent.
+     */
+    public PersonBuilder withoutAddress() {
+        this.address = null;
         return this;
     }
 
