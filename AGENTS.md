@@ -36,6 +36,11 @@ rules or grades. Higher-priority agent safety/permission instructions still appl
 6. **Make a small coherent change:** include affected tests, messages, fixtures
    and documentation. Avoid unrelated renaming, formatting, upgrades or rewrites.
    Keep intermediate work buildable; review the full final diff.
+   **Consistency triad:** the released JAR, published UG and published DG must
+   always agree; the PE treats any mismatch as a bug (wrong product behaviour →
+   `FunctionalityBug`/`FeatureFlaw`; wrong document → `DocumentationBug`).
+   When behaviour changes, update the UG, affected DG sections/diagrams and
+   in-app help/error messages in the same PR, not a follow-up.
 7. **Verify and hand off:** run appropriate checks from section 8. Disclose
    failures, blocked checks, skipped checks and remaining risks. Never claim an
    untested GUI, OS, JAR, website or NFR was verified. Do not quietly drop work.
@@ -80,11 +85,21 @@ multi-user access or sync.
   phones, aliases, warnings and search do not authorise silently changing our
   grammar, duplicate key or filter semantics. Explain trade-offs and obtain
   agreement before updating code, tests and documentation together.
+* Default direction when the team is deciding: prefer **warning** over blocking
+  for unusual-but-possibly-legitimate input (odd names, past dates, extra
+  phone text), and **blocking with a specific error** for genuinely harmful
+  input. Leaving harmful input unhandled and over-restricting realistic input
+  are both reportable flaws.
+* Discoverable half-working or undocumented work must not reach a release:
+  finish and document it, or gate/disable it first. A WIP feature a tester can
+  stumble into is a reportable bug even if no document mentions it.
 
 ## 3. Course constraints and team policies
 
 Read [the current constraints][constraints] before product, dependency or
 packaging changes. Do not turn recommendations into invented hard prohibitions.
+Shipped constraint violations are PE-reportable (typically as `FeatureFlaw`),
+so treat this list as release-blocking, not advisory.
 
 * **Brownfield, incremental, primarily OO:** evolve AB3, keeping contacts central.
   The Morph direction is unavailable this semester. Keep the existing Java
@@ -123,6 +138,14 @@ packaging changes. Do not turn recommendations into invented hard prohibitions.
 
 ## 4. Implementation and data integrity
 
+* No user input may crash the application, corrupt or destroy the data file,
+  or leave the application unusable. Plausible mistakes (missing spaces,
+  pasted multi-line text, huge numbers where an index is expected) must produce
+  clear errors. Even sabotage-grade input the user can physically attempt needs
+  graceful rejection, though it is triaged less severely.
+* Normal operation must not print stack traces or alarming warnings to the
+  console; use `LogsCenter` logging, not `System.out`/`printStackTrace`.
+  Terminal output is PE-relevant when it misleads or alarms a user.
 * Preserve parser/command/model/storage/UI boundaries. Essential domain
   invariants must not exist only in a parser or JavaFX controller, where other
   callers or deserialisation could bypass them.
@@ -178,10 +201,20 @@ behaviour. Select relevant cases below; not every PR needs the entire matrix.
   Preserve documented distinctions; do not invent country-code equivalence.
 * Check exact useful messages as well as exceptions/status. Identify the actual
   field/problem and recovery action, without confusing invalid format, invalid
-  value, duplicate, wrong role and out-of-range index.
+  value, duplicate, wrong role and out-of-range index. (Format = wrong shape,
+  e.g. `2021-13-28` against `YYYY-MM-DD`; invalid value = right shape,
+  impossible value, e.g. `2021-02-30`.) Vague-but-true messages such as a bare
+  "Invalid input" are reportable flaws; misidentifying the problem is worse.
 * Cross-check extra-argument behaviour against both generic and command-specific
   UG rules, especially role-filtered `list`. Inherited AB3 behaviour is not
-  automatically correct or consistent with updated docs.
+  automatically correct or consistent with updated docs. (As of v1.2: `help`,
+  `exit` and `clear` ignore extraneous arguments per the UG's generic note,
+  while `list` rejects unexpected preamble text — verify both sides whenever
+  either changes.)
+* Very long values must not break the layout: wrapping/truncation should keep
+  the information a user needs visible. Losing the start of a value or breaking
+  the window layout escalates severity. Length limits are acceptable only when
+  user-justified, documented and enforced with a clear error.
 
 ### State, persistence and integration
 
@@ -259,7 +292,9 @@ requirements/proposed implementations may legitimately differ.
   Specify verifiable workload/environment and success criteria. Preserve fault
   boundaries (e.g., normal restart versus write failure), rather than promising
   no data loss under all circumstances. Verify current NFRs before release;
-  do not invent benchmarks or weaken requirements to conceal defects.
+  do not invent benchmarks or weaken requirements to conceal defects. An unmet
+  reasonable NFR is reportable against the product; an unreasonable or
+  unverifiable NFR is reportable against the DG — both directions matter.
 * **Glossary:** define noteworthy domain terms precisely, including recorded
   links versus real-world responsibility and exact normalisation. Scope MVP-only
   restrictions and avoid unnecessary terms.
@@ -302,6 +337,9 @@ and [PE rules][pe].
 * Review failure paths, lost updates, invalid state, persistence, compatibility
   and realistic input independently of the author's explanation. A green CI
   badge, high coverage or another agent saying "LGTM" is not sufficient review.
+* Useful review lens: "how would a PE tester attack this change?" — then verify
+  the attack is actually handled rather than assuming it is. Use the lens to
+  find defects before release, not to argue reports away afterwards.
 * Human teammates should provide genuine, specific, location-based PR reviews.
   The human owner must be able to explain generated code, tests and trade-offs.
 
@@ -391,6 +429,8 @@ Do not invent bugs to reach five or confuse this with PE's defect-report rules.
 2. Smoke-test the JAR in a clean writable directory with synthetic data: first
    launch, tutor workflow, invalid input, relationships, shutdown/restart and
    documented recovery. IDE execution or mocked tests are not substitutes.
+   Confirm no discoverable WIP/undocumented functionality leaks into the
+   release build (section 2); gate it out or document it before tagging.
 3. Verify supported platforms and required display settings where available;
    request teammate/forum smoke tests for unavailable environments and disclose
    gaps. Check size/resources, a renamed JAR and paths with spaces. Do not depend
@@ -459,6 +499,9 @@ can matter when they affect behaviour or unnecessarily alarm users.
   occasional inconvenience while still usable; `High` means major problems for
   most users, making the product almost unusable. Consider reader impact for
   docs; not every crash or missing requirement automatically merits `High`.
+  Obvious, highly visible problems also damage product credibility and may be
+  triaged a step higher than raw user impact alone suggests; prioritise fixes
+  as data loss/crashes, then wrong results, then misleading docs, then cosmetics.
 * Typos are reportable, including UI typos. Minor grammar issues that do not
   hinder readers have different triage treatment. Known issues reduce impact,
   not automatically liability. `NotInScope` needs the course's priority and
@@ -489,6 +532,8 @@ provide teaching-team approval or guarantee marks.
 * Cite external inspiration/adaptation where used. Copied non-trivial blocks
   with minor edits also need prescribed RepoSense `-reused` markers; consult the
   policy before applying them. Credit libraries in DG Acknowledgements.
+  Uncredited reuse risks university plagiarism proceedings — a categorically
+  worse outcome than any deducted bug; when unsure, over-credit.
 * Documentation, diagrams and media also need appropriate attribution/licences.
   Ordinary following of AB3 patterns, intra-team reuse and course instructional
   materials have exceptions; do not invent extra requirements. Retain the
