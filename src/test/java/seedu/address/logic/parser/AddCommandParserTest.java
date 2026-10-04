@@ -189,6 +189,8 @@ public class AddCommandParserTest {
     @Test
     public void parse_guardianPrefix_failure() {
         assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " g/1",
-                String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+                AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
+        assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " g/",
+                AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
     }
 }

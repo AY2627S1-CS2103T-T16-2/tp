@@ -37,8 +37,11 @@ public class AddCommandParser implements Parser<AddCommand> {
                 ArgumentTokenizer.tokenize(args, PREFIX_ROLE, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS,
                         PREFIX_TAG, PREFIX_GUARDIAN);
 
+        if (argMultimap.getValue(PREFIX_GUARDIAN).isPresent()) {
+            throw new ParseException(AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
+        }
+
         if (!arePrefixesPresent(argMultimap, PREFIX_ROLE, PREFIX_NAME, PREFIX_PHONE)
-                || argMultimap.getValue(PREFIX_GUARDIAN).isPresent()
                 || !argMultimap.getPreamble().isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
