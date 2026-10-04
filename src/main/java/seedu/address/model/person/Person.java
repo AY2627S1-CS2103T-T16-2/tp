@@ -16,7 +16,7 @@ import seedu.address.model.tag.Tag;
 
 /**
  * Represents a Person in the address book.
- * Guarantees: details are present and not null, field values are validated, immutable.
+ * Guarantees: mandatory details are present and not null, field values are validated, immutable.
  */
 public class Person {
 
@@ -37,12 +37,12 @@ public class Person {
     private final UUID guardianId;
 
     /**
-     * Every field must be present and not null, except {@code guardianId} which may be null
-     * to represent a person with no linked guardian.
+     * Every mandatory field must be present and not null. {@code guardianId}, {@code email}, and
+     * {@code address} may be null to represent an absent value.
      */
     public Person(UUID id, Role role, UUID guardianId, Name name, Phone phone, Email email, Address address,
                   Set<Tag> tags) {
-        requireAllNonNull(id, role, name, phone, email, address, tags);
+        requireAllNonNull(id, role, name, phone, tags);
         checkArgument(guardianId == null || role == Role.STUDENT, MESSAGE_ONLY_STUDENTS_CAN_HAVE_GUARDIAN);
         checkArgument(guardianId == null || !guardianId.equals(id), MESSAGE_CANNOT_BE_OWN_GUARDIAN);
         this.id = id;
@@ -94,12 +94,18 @@ public class Person {
         return phone;
     }
 
-    public Email getEmail() {
-        return email;
+    /**
+     * Returns this person's email, or an empty optional if no email was provided.
+     */
+    public Optional<Email> getEmail() {
+        return Optional.ofNullable(email);
     }
 
-    public Address getAddress() {
-        return address;
+    /**
+     * Returns this person's address, or an empty optional if no address was provided.
+     */
+    public Optional<Address> getAddress() {
+        return Optional.ofNullable(address);
     }
 
     /**
@@ -164,8 +170,8 @@ public class Person {
                 && Objects.equals(guardianId, otherPerson.guardianId)
                 && name.equals(otherPerson.name)
                 && phone.equals(otherPerson.phone)
-                && email.equals(otherPerson.email)
-                && address.equals(otherPerson.address)
+                && Objects.equals(email, otherPerson.email)
+                && Objects.equals(address, otherPerson.address)
                 && tags.equals(otherPerson.tags);
     }
 

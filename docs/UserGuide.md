@@ -31,7 +31,7 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
+   * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student contact named `John Doe` to TuitionBook.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -79,20 +79,27 @@ Format: `help`
 * An internet connection is needed to open the linked page itself.
 
 
-### Adding a person: `add`
+### Adding a contact: `add`
 
-Adds a person to the address book.
+Adds a student or guardian contact to TuitionBook.
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... `
+Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
+
+* `ROLE`, `NAME`, and `PHONE` are mandatory.
+* `ROLE` must be either `student` or `guardian`, case-insensitively.
+* `EMAIL` and `ADDRESS` are optional.
+* `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
 
 <box type="tip" seamless>
 
 **Tip:** A person can have any number of tags, including zero.
+
+A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the guardian's email may also be reused. This convention is compatible with the planned duplicate check, which will use the contact's name and phone number together.
 </box>
 
 Examples:
-* `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
+* `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
+* `add r/guardian n/Betsy Crowe p/1234567 t/family`
 
 ### Listing contacts: `list`
 
@@ -203,7 +210,7 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... ` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
