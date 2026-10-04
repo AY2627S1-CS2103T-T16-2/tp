@@ -1,613 +1,170 @@
-# AGENTS.md — Working on TuitionBook (CS2103T tP)
+# AGENTS.md — TuitionBook
 
 ## Non-negotiables
 
 * Preserve uncommitted work; never overwrite another contributor's changes.
 * Do not commit, push, publish issues/reviews/releases, or deploy without permission.
-* Test only with synthetic data and disposable storage, never real contacts.
-* Keep JAR/UG/DG claims about current behaviour consistent; label future work.
-* Run proportionate checks from current configuration and disclose verification gaps.
+* Use synthetic test data and disposable storage; protect real contacts and secrets.
+* Keep released JAR behaviour and published UG/DG claims consistent; label future work.
+* Run proportionate checks and disclose failures, skipped checks and uncertainty.
 
-**Project-policy precedence:** current mandatory course rules > approved team
-decisions and authoritative project documentation > this file's defaults.
-Recommendations are not mandatory rules. Surface conflicts or unclear approval
-with the user rather than guessing. Higher-priority agent safety/permission
-instructions still apply.
+Team: `CS2103T-T16-2`; organisation: `AY2627S1-CS2103T-T16-2`; repository: `tp`.
+TuitionBook is a contact-management application for private one-to-one home tutors.
 
-Team ID: `CS2103T-T16-2`; GitHub organisation: `AY2627S1-CS2103T-T16-2`;
-repository: `tp`. TuitionBook evolves AddressBook-Level3 (AB3).
+**Project-policy precedence:** mandatory course rules > approved team decisions
+and authoritative project documentation > this file's defaults. Higher-priority
+agent safety/permission instructions still apply. Surface conflicting sources
+with the user; do not invent prohibitions, approvals, evidence or grade guarantees.
+**Course sources checked: 2026-10-04.** Recheck live rules when the task depends on them.
 
-**Goal:** a useful, cohesive, maintainable product with reproducible evidence of
-correctness, not feature count or a promise of "full marks". Grades also assess
-individual contributions, code, documentation, testing, reviews and process.
-Passing tests does not prove absence of bugs; not every accepted report causes
-a deduction. Do not hide defects or optimise for rejecting reports.
+## Mandatory course requirements
 
-**Course sources checked: 2026-10-04.** Recheck live sources and announcements
-before deadline-sensitive work. Use the task-relevant sections below for details.
+These summarise explicit requirements in the [overview][overview] and
+[constraints][constraints], not optional design advice:
 
-## 1. Task execution gate
+* Evolve the supplied codebase incrementally, primarily using OOP, with contacts
+  as the product's primary focus. The Morph direction is unavailable this semester.
+* Target users who type fast and prefer typing; typed commands are the primary input.
+* Keep the product single-user: no multi-user operation or regular sharing of a
+  user's application data with other users.
+* Store data locally in a human-editable text file, with manual-editing support
+  at least at AB3's level. **Do not use a DBMS.**
+* **Do not depend on a team-owned remote server.**
+* Run on Windows, Linux and macOS with only Java 25 installed, without requiring
+  an application installer or separate installation of application dependencies.
+* Third-party libraries/frameworks/services need prior teaching-team approval
+  (existing class-wide approval counts), free use and permissive licensing.
+  Libraries/frameworks must be open-source; services are exempt from that condition.
+* The GUI must work well at 1920×1080 and higher at 100%/125% scale, and remain
+  usable at 1280×720 and higher at 150% scale.
+* Deliver one executable JAR; if additional files cannot be packaged in it, use
+  one ZIP containing the JAR and required files. The JAR/ZIP must not exceed 100 MB.
+* Preserve the grading-sensitive `src/main/java`, `src/test/java` and `docs` paths.
+  Keep main UG/DG content in their existing files, as required by [GitHub guidance][github]
+  and the [deliverables instructions][deliverables].
 
-1. **Inspect the actual state:** branch, `git status`, existing changes and nested
-   instructions. Preserve others' work. Old chats, IDE tabs and PR descriptions
-   are not evidence of the current implementation.
-2. **Confirm scope:** human owner, iteration, user need, acceptance criteria,
-   affected files and non-goals. Identify the issue/milestone for non-trivial
-   work. Ask before expanding scope, changing command contracts, adding
-   dependencies, or changing persisted data. Check section 11 for freeze limits.
-3. **Read before editing:** trace parser → command → model → storage/UI, inspect
-   neighbouring tests and affected UG/DG sections, and reuse existing utilities.
-4. **Resolve the intended contract:** compare the approved task/specification,
-   UG/DG, code and tests. Report disagreements. Do not silently rewrite docs to
-   legitimise a bug or implement every future story simply because it is listed.
-5. **Reproduce bugs first:** record starting state, minimal input, expected/actual
-   results and environment. Add a regression test that fails for the right reason,
-   then fix the root cause. Derive feature tests from acceptance criteria, not
-   by copying the implementation's assumptions.
-6. **Make a small coherent change:** include affected tests, messages, fixtures
-   and documentation. Avoid unrelated renaming, formatting, upgrades or rewrites.
-   Keep intermediate work buildable; review the full final diff.
-   **Consistency triad:** published UG/DG descriptions of current behaviour must
-   match the released JAR. Mismatches may be `FunctionalityBug`/`FeatureFlaw` or
-   `DocumentationBug`; clearly labelled future requirements are not claims of
-   implementation. As team policy, update affected UG/DG sections/diagrams and
-   in-app help/error messages in the same PR as behaviour changes, not a follow-up.
-7. **Verify and hand off:** run appropriate checks from section 8. Disclose
-   failures, blocked checks, skipped checks and remaining risks. Never claim an
-   untested GUI, OS, JAR, website or NFR was verified. Do not quietly drop work.
+## Approved team scope and contracts
 
-### Multiple agents
+* Read [DG Product scope](docs/DeveloperGuide.md#product-scope), the relevant
+  [UG](docs/UserGuide.md) sections and the approved issue/spec before feature work.
+  Product-specific exclusions are team decisions, not universal course prohibitions.
+* Scope, command, validation, dependency and storage-format changes need approval;
+  an explicit request approving that change provides the task's authority.
+* Requirements describe intended needs, not proof of implementation. Keep priority,
+  MVP scope and release status distinct. Do not implement unrequested future work.
+* Honour approved model invariants and NFRs; verify current code and tests rather
+  than relying on old conversations or treating every document as already implemented.
 
-* Delegate only when the user requests agents/subagents. Give each task a human
-  owner, base revision, precise scope, shared behaviour/interface contract,
-  expected tests and a disjoint write area. Use separate branches/worktrees for
-  authorised concurrent writers; never switch another writer's branch.
-* Serialise edits to shared parsers, model interfaces, schemas, build files and
-  UG/DG sections. Agree roles, IDs, filters and errors before parallel coding.
-* Require handoffs with changed files, contract changes, tests run and unresolved
-  risks. Re-read and retest the integrated result after conflict resolution;
-  two passing branches do not prove that their combination works.
-* Review from the user contract, not just the implementer's explanation. An
-  independent agent review can help but does not replace the expected teammate
-  review. The human owner must understand the generated code and trade-offs.
+## Design recommendations — not additional prohibitions
 
-## 2. Product direction and scope
+* Prefer efficient CLI workflows, low interaction effort, minimal networking with
+  suitable fallbacks, and easy-to-test features. These are design recommendations
+  from the course; specific approved product guarantees remain binding.
+* Avoid needless rejection of realistic input. Consider warnings only where accepting
+  the value is compatible with the agreed contract and data integrity. Clearly reject
+  inputs that cannot satisfy those requirements. Propose validation changes rather
+  than silently relaxing validators or adding new restrictions.
+* Prefer simple, cohesive improvements and existing abstractions over speculative
+  complexity. Explain trade-offs; do not treat personal preferences as grading rules.
 
-The target user is a private one-to-one tutor who travels to students' homes,
-types quickly and prefers typing. Contacts and student–guardian relationships
-remain central. Follow the current DG product scope and approved team decisions;
-do not independently add scheduling, billing, academic tracking, messaging,
-multi-user access or sync.
+## Working procedure
 
-* Prefer complete, easy-to-use tutor workflows over many shallow features.
-  Evaluate total interaction effort, including repeated lookups, filters and
-  mouse actions, rather than command execution time alone.
-* The course's 500–600 functional LoC per person is a **ballpark**, not a quota
-  or guarantee of marks. There is no extra effort credit for exceeding the bar.
-  Do not pad code, manufacture features or fabricate activity for credit.
-* Priority (`***`, `**`, `*`), MVP scope and implementation status are different.
-  Retain identified future requirements, clearly labelled, without advertising
-  them as available functionality.
-* Before coding, settle accepted values, optional/default fields, prefix order
-  and repetition, unknown input, normalisation, duplicates, outputs, failures,
-  filter effects and persistence. Record decisions in the existing issue/spec
-  or relevant docs, not an unrequested new planning file.
-* Validation changes are product decisions. Course examples about permissive
-  phones, aliases, warnings and search do not authorise silently changing our
-  grammar, duplicate key or filter semantics. Explain trade-offs and obtain
-  agreement before updating code, tests and documentation together.
-* Default direction when the team is deciding: prefer **warning** over blocking
-  for unusual-but-possibly-legitimate input (odd names, past dates, extra
-  phone text), and **blocking with a specific error** for genuinely harmful
-  input. Leaving harmful input unhandled and over-restricting realistic input
-  are both reportable flaws.
-* Discoverable half-working or undocumented work must not reach a release:
-  finish and document it, or gate/disable it first. A WIP feature a tester can
-  stumble into is a reportable bug even if no document mentions it.
+1. Inspect branch, working changes and applicable instructions. Confirm the human
+   owner, issue/milestone, acceptance criteria, non-goals and affected components.
+2. Before code changes, check the active iteration and any freeze restrictions using
+   the sources below. Stop for clarification if permission or remaining budget is unclear.
+3. Trace parser → command → model → storage/UI and read related tests. Resolve
+   contradictions between approved intent, documentation, tests and implementation
+   before choosing a fix; never edit docs merely to legitimise a defect.
+4. Reproduce bugs and add a failing regression test where feasible, then fix the root
+   cause. Derive feature tests from acceptance criteria, not implementation assumptions.
+5. Make a small, buildable change. As a team workflow default, include affected tests,
+   UG/DG sections, diagrams and help/messages in the same PR as behaviour changes.
+   Avoid unrelated upgrades, formatting or renaming.
+6. Review the final diff, run relevant checks and report results. Do not disable tests
+   to hide failures, weaken security/CI policies, fabricate evidence or hide incomplete work.
 
-## 3. Course constraints and team policies
+When multiple agents are requested, assign disjoint write areas and agreed interfaces;
+serialise shared-contract edits and retest after integration. Agent reviews do not
+replace genuine teammate review. The responsible human must understand the work.
+Do not change Git identity, rewrite history or delete PR branches automatically;
+consult the course workflow before authorised Git operations.
 
-Read [the current constraints][constraints] before product, dependency or
-packaging changes. Do not turn recommendations into invented hard prohibitions.
-Shipped constraint violations are PE-reportable (typically as `FeatureFlaw`),
-so treat this list as release-blocking, not advisory.
+## Code and test essentials
 
-* **Brownfield, incremental, primarily OO:** evolve AB3, keeping contacts central.
-  The Morph direction is unavailable this semester. Keep the existing Java
-  architecture unless an approved change has a concrete benefit.
-* **Typing-preferred:** typed commands are primary. CLI-first efficiency is a
-  recommendation/product-design criterion, not a ban on GUI interactions.
-  Honour TuitionBook's documented keyboard guarantees and provide CLI
-  alternatives where appropriate.
-* **Single user/local:** no shared-user/shared-data workflows. Normal contact
-  management must work offline under our scope/NFRs. The course prohibits
-  dependence on our own remote server, not all networking; reliable public APIs
-  are permitted subject to other rules. Networking/fallbacks need careful
-  testability decisions and team approval.
-* **Human-editable local text storage; no DBMS:** support manual edits at least
-  as well as AB3. Correctly edited files must work. Any stronger backup/recovery
-  promise in our UG/DG must be implemented and tested; AB3's warning about data
-  loss after incorrect edits does not cancel our stronger promises.
-* **Java 25/portable:** run on a computer with only Java 25, without an application
-  installer or separately installed JavaFX/libraries. Do not change the Java,
-  JavaFX, Gradle or packaging configuration as an unrelated fix.
-* **Windows/Linux/macOS:** check path separators, case-sensitive filenames,
-  encoding, locale-sensitive comparisons, resources and native libraries. Do not
-  promise all future Java versions or untested environments via "or later".
-* **Dependencies:** verify course approval and licences; prior class-wide
-  approval may be reused. Libraries/frameworks must be free, open-source and
-  permissively licensed, with no user installation. Services need not be
-  open-source; account requirements are strongly discouraged. Prefer existing
-  dependencies and vetted, bounded versions. Never weaken security/CI controls
-  or dependency policies to obtain a passing build.
-* **Display:** work well at 1920×1080 and higher at 100%/125% scale; remain usable
-  at 1280×720 and higher at 150% scale. Essential information/actions must remain
-  reachable when resizing, scrolling and displaying long content.
-* **Distribution:** prefer one executable JAR; one ZIP is permitted if additional
-  files cannot be packaged in the JAR. The JAR/ZIP limit is 100 MB. Avoid heavy
-  unnecessary assets/dependencies. `gradlew run` does not verify the release JAR.
+* Follow the [Java standard][java] and existing component boundaries. Avoid duplicated
+  logic, oversized methods and catch-and-ignore handling. Use project logging and
+  exceptions appropriately; assertions must not be the only input validation.
+* Handle plausible input mistakes without crashing or corrupting data; give useful
+  error messages and recovery guidance rather than misleading success messages.
+* Protect identity, relationships and persisted data. Validate at the appropriate
+  domain boundaries; rejected operations must not leave unintended partial changes.
+  Distinguish model atomicity, successful persistence and recovery after write failure.
+* Agree compatibility/migration before schema changes. Do not silently discard valid
+  records or promise stronger backup/recovery guarantees than are implemented.
+* Use deterministic, isolated tests following existing JUnit conventions. Cover
+  relevant valid, invalid and boundary inputs, messages, filtered/stateful workflows,
+  relationship integrity, JSON round-trips and failure recovery. Test GUI/platform
+  behaviour when affected; coverage alone is not proof of correctness.
+* Check changed documentation examples and rendered output. Keep future requirements
+  explicit; do not invent benchmark results or weaken NFRs to conceal defects.
 
-## 4. Implementation and data integrity
+## Proportionate verification
 
-* No user input may crash the application, corrupt or destroy the data file,
-  or leave the application unusable. Plausible mistakes (missing spaces,
-  pasted multi-line text, huge numbers where an index is expected) must produce
-  clear errors. Even sabotage-grade input the user can physically attempt needs
-  graceful rejection, though it is triaged less severely.
-* Normal operation must not print stack traces or alarming warnings to the
-  console; use `LogsCenter` logging, not `System.out`/`printStackTrace`.
-  Terminal output is PE-relevant when it misleads or alarms a user.
-* Preserve parser/command/model/storage/UI boundaries. Essential domain
-  invariants must not exist only in a parser or JavaFX controller, where other
-  callers or deserialisation could bypass them.
-* Follow the [Java standard][java], SLAP and existing patterns. Boolean names
-  should read as booleans. Avoid duplicated logic/tests, deep nesting, broad
-  catch-and-ignore blocks and speculative abstractions. Checkstyle is not a
-  substitute for reviewing naming, method size, cohesion and maintainability.
-* Use exceptions for expected error paths, assertions for internal invariants,
-  and `LogsCenter`/`java.util.logging` appropriately. Assertions may be disabled
-  in the JAR: never use them as the only input validation. Do not sprinkle
-  assertions/logging solely to tick a grading box.
-* Keep identity, equality, hashing, duplicate detection and normalisation
-  consistent. Field changes may affect builders, fixtures, sample data,
-  predicates, JSON adapters, UI bindings and tests; trace these dependencies.
-* Preserve stable contact IDs and referential integrity. In the one-guardian
-  MVP, one guardian may serve many students. Replacement/repeated linking and
-  deletion must preserve the agreed invariants. Deleting a guardian must not
-  cascade-delete students. Never identify relationships by mutable names or
-  transient displayed indexes.
-* Validation rejection must not partially mutate contacts, links, filters or
-  persisted data unless explicitly specified. Distinguish storage errors:
-  model atomicity is not disk atomicity, and failed writing is not saved success.
-* Agree schema compatibility/migration before changing storage. Consider old
-  files, absent optional fields, malformed required values, duplicate IDs,
-  hand-edited duplicates and invalid links. Do not silently discard valid records
-  or regenerate established IDs to make loading succeed.
-* Derive file locations from code: a relative path may resolve against the
-  working directory, not the JAR directory. Verify before documenting either.
-* Use synthetic data and temporary directories. Never test against or overwrite
-  real contacts. Keep personal data, gate codes, credentials and sensitive raw
-  commands out of commits, external tools, evidence and unnecessary logs.
+Resolve tasks/scripts from current `build.gradle`, CI workflows and `docs/package.json`;
+these commands are defaults, not mandates to run obsolete tasks. Do not silently omit
+an equivalent check after a rename.
 
-## 5. Risk-based test matrix
+* **Java/functional changes:** verify Java/Gradle versions, run affected tests, then
+  configured CI-equivalent checks, normally `./gradlew check coverage`. Use the
+  appropriate Windows wrapper where needed; a local pass is not a CI matrix pass.
+* **Packaging/resources/releases:** run the configured JAR task, normally
+  `./gradlew shadowJar`. Resolve its output from build configuration and smoke-test
+  the actual artifact with Java 25 in disposable writable storage, including restart.
+* **Published docs:** use the locked dependencies and configured scripts, normally
+  `npm --prefix docs ci` when needed, then `npm --prefix docs run build` and local
+  preview. Inspect rendering and examples; do not deploy merely to preview.
+* **Text/instructions:** normally `.github/run-checks.sh` and `git diff --check`.
+  Some checks inspect the Git index, so also review unstaged/untracked changes.
+  `AGENTS.md`-only changes do not require an unrelated Java rebuild.
 
-Trace **requirement → implementation → tests → documentation** for changed
-behaviour. Select relevant cases below; not every PR needs the entire matrix.
+Investigate failed checks, distinguishing regressions from environment/existing issues.
+Ask for help with authentication, permissions or configuration decisions. Never claim
+an OS, UI, artifact, example or NFR was verified unless actually checked.
 
-### Input and messages
+## Read on demand — before the corresponding task
 
-* Typical/minimal/maximal valid inputs; absent optional fields; empty and
-  whitespace-only values; leading/trailing/repeated spaces; supported Unicode.
-* Missing mandatory prefixes, repeated single-valued prefixes, repeatable tags,
-  unknown/out-of-order prefixes, unexpected preambles/trailing text, missing
-  separators, pasted multi-line text and prefix-like text inside field values.
-* Indexes: zero, negative, non-numeric, overflow and out of displayed range.
-  Distinguish malformed indexes from valid integers outside the current list.
-* Realistic names, addresses and phones: apostrophes, hyphens, accents, `s/o`,
-  `d/o`, leading `+`, spaces and punctuation; test length boundaries and long
-  display values. Neither impose arbitrary restrictions nor discard agreed
-  validation just to accept all strings.
-* Case/whitespace/phone normalisation; same name with different phones, same
-  phone with different names, and edits that duplicate another contact.
-  Preserve documented distinctions; do not invent country-code equivalence.
-* Check exact useful messages as well as exceptions/status. Identify the actual
-  field/problem and recovery action, without confusing invalid format, invalid
-  value, duplicate, wrong role and out-of-range index. (Format = wrong shape,
-  e.g. `2021-13-28` against `YYYY-MM-DD`; invalid value = right shape,
-  impossible value, e.g. `2021-02-30`.) Vague-but-true messages such as a bare
-  "Invalid input" are reportable flaws; misidentifying the problem is worse.
-* Cross-check extra-argument behaviour against generic and command-specific UG rules.
-  [Issue #56](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/56) plans
-  role-filtered `list [r/ROLE]` using a `ListCommandParser` and role predicate.
-  This requires argument parsing while bare `list` continues to clear filters.
-  Verify the current implementation: the PR #64 base ignores `list` arguments,
-  but the UG sections disagree about ignoring versus rejecting them. Do not
-  assume filtering/rejection is implemented; resolve the contract and update
-  parsing, tests and both UG sections together when implementing the issue.
-* Very long values must not break the layout: wrapping/truncation should keep
-  the information a user needs visible. Losing the start of a value or breaking
-  the window layout escalates severity. Length limits are acceptable only when
-  user-justified, documented and enforced with a clear error.
+Keep detailed procedures in their authoritative sources instead of duplicating them here.
 
-### State, persistence and integration
-
-* Exercise add → find/filter → edit/link/view/delete → list → restart sequences.
-  Assert records, relationships, displayed list and persisted state, not just
-  success messages or mocked calls.
-* Cover empty/no-match/many-match lists and reindexing after mutations. Respect
-  agreed filter replacement/combination semantics. Both indexes in a link
-  command, and all other index-based commands, refer to the displayed list.
-* Cover linked/unlinked students/guardians, shared guardians, renaming, link
-  replacement/repetition and deletion in both directions. Honour idempotence
-  where promised; no dangling references or unintended deletion of other contacts.
-* Round-trip through actual JSON adapters/storage and reload a fresh model.
-  Verify IDs, roles, optional fields, tags, links and new attributes. Separately
-  test valid manual edits, missing files, malformed files and invalid links,
-  including promised warnings/backups and overwrite timing.
-* Inject save/load failures using test doubles or disposable files. Verify
-  in-memory state, reported failure, existing-file preservation where promised,
-  and the outcome after restart. Never use real data to test destructive paths.
-* Use existing JUnit 5 conventions and deterministic, isolated tests. Avoid test
-  order dependencies, real networking, sleeps, machine locale and developer data
-  directories. Assess related commands/shared causes when fixing a defect.
-* Never disable/delete failing tests or change expected results without evidence
-  that the intended contract changed or the test was wrong. Coverage locates
-  gaps; it does not prove correctness. The course has no minimum percentage.
-
-### UI and user workflow
-
-* Verify cards, results, counts, filters and relationship displays update after
-  mutation. Respect JavaFX threading and avoid blocking the UI unnecessarily.
-* Check required resolutions/scales, long content, keyboard focus, scrolling,
-  resizing, saved geometry, off-screen recovery and secondary/help windows.
-  Exiting must not leave application windows/processes behind.
-* Test a tutor's complete workflow, not just isolated commands. Can they reach
-  the correct guardian/address with low typing and navigation effort? Include
-  legitimate unusual input; hostile-input tests do not replace usability tests.
-
-## 6. Documentation contracts
-
-Update **affected** UG/DG sections, examples, help/messages, diagrams and manual
-checks with behaviour changes; do not churn unrelated sections. Descriptions of
-current behaviour must match the released JAR. Clearly labelled future
-requirements/proposed implementations may legitimately differ.
-
-### User Guide
-
-* Keep main content in `docs/UserGuide.md`. Clearly state target user/value,
-  prerequisites, launch command and initial-data behaviour. Cover current
-  features, useful examples, validation, interactions and limitations; label
-  future features "Coming soon". Rare details need not be repeated when users
-  already know them or the application explains them clearly.
-* Literally execute changed examples with their prerequisites. Check summaries,
-  generic format notes, detailed sections, screenshots and help against each
-  other. Do not introduce broad claims that contradict a command-specific rule.
-* Inspect rendered **HTML**, not only Markdown: headings, anchors, tables,
-  images, links, readability and copy-paste commands. If distributing a PDF,
-  additionally check pagination/copying; do not invent a PDF submission duty.
-* Known issues are not immunity. Explain impact/workarounds honestly; do not
-  disguise broken required behaviour as a restriction on the user.
-
-### Developer Guide
-
-* Keep main content in `docs/DeveloperGuide.md`; do not split UG/DG into pages
-  contribution scripts will miss. Explain design, relevant alternatives and
-  trade-offs for a future developer. Do not present unimplemented designs as fact.
-* **Stories:** actor/capability/benefit should match, with important needs covered.
-  Separate priority, MVP scope and status; include inherited and retained future
-  needs. Do not manufacture stories for a count or promise every story will ship.
-* **Use cases:** document representative non-trivial interaction patterns, not
-  automatically one per command. Keep MSS self-contained and user-observable.
-  Check preconditions, extension conditions/numbering, end/resume points and
-  guarantees; do not put internal verification steps in the success flow or
-  claim a branch is impossible without testing that logic.
-* **NFRs:** separate functional actions from operational constraints/qualities.
-  Specify verifiable workload/environment and success criteria. Preserve fault
-  boundaries (e.g., normal restart versus write failure), rather than promising
-  no data loss under all circumstances. Verify current NFRs before release;
-  do not invent benchmarks or weaken requirements to conceal defects. An unmet
-  reasonable NFR is reportable against the product; an unreasonable or
-  unverifiable NFR is reportable against the DG — both directions matter.
-* **Glossary:** define noteworthy domain terms precisely, including recorded
-  links versus real-world responsibility and exact normalisation. Scope MVP-only
-  restrictions and avoid unnecessary terms.
-* **UML:** follow course notation; maintain `.puml` sources in `docs/diagrams/`
-  and inspect rendering. Check relationships, relevant multiplicities, arrows,
-  lifetimes and consistency with code. Optional omissions are fine if not
-  misleading; inconsistent omissions can still harm readability.
-* Use appropriate diagram types, not gratuitous complexity. Keep architecture
-  high-level, normally show one component's internals per sequence diagram,
-  explain diagrams nearby and keep text legible. Avoid excessive code listings.
-* **Manual testing appendix:** cover user-testable features (unchanged AB3
-  features are exempt), with reproducible setup, inputs and expected results.
-  Complement the UG; cover important relationship/persistence failures and
-  remove unfinished instructions before release. Do not claim unexecuted checks.
-* Credit reuse as in section 13. Retain clearly labelled proposed designs if
-  useful, but remove irrelevant placeholders and inaccurate template claims.
-
-### Planned Enhancements
-
-Only after v1.5, the optional DG `Planned Enhancements` appendix may contain at
-most `team_size × 2` numbered items, stating team size at the start. Each item
-must be **one specific tweak to an existing feature**, explaining the flaw and
-precise intended behaviour, with examples where useful.
-
-Protection applies to matching `type.FeatureFlaw` reports, not every bug in the
-feature. Testers may challenge inadequate/flawed proposals or bundled items.
-Excess entries are unprotected and exceeding the limit is reportable. Do not use
-broad entries such as "fix validation", new features, or an early placeholder
-appendix to avoid necessary fixes. Read the current [deliverables][deliverables]
-and [PE rules][pe].
-
-## 7. Quality and scope of review findings
-
-* Distinguish confirmed defects, plausible risks and optional suggestions. Cite
-  current evidence and user impact; preferred wording, missing simple use cases,
-  or style differences are not automatically bugs.
-* An implementation matching the UG can still be a poor design. Conversely,
-  finding a mismatch does not automatically tell you whether code or docs should
-  change. Resolve intended behaviour rather than choosing the easiest edit.
-* Review failure paths, lost updates, invalid state, persistence, compatibility
-  and realistic input independently of the author's explanation. A green CI
-  badge, high coverage or another agent saying "LGTM" is not sufficient review.
-* Useful review lens: "how would a PE tester attack this change?" — then verify
-  the attack is actually handled rather than assuming it is. Use the lens to
-  find defects before release, not to argue reports away afterwards.
-* Human teammates should provide genuine, specific, location-based PR reviews.
-  The human owner must be able to explain generated code, tests and trade-offs.
-
-## 8. Verification commands and evidence
-
-Choose checks from the current `build.gradle` (including plugin-provided tasks),
-`.github/workflows/gradle.yml`, `.github/run-checks.sh`, `docs/package.json` and
-`.github/workflows/docs.yml`. The commands below are current defaults, not fixed
-requirements: confirm that tasks/scripts still exist and use their configured
-equivalents if renamed. Do not silently omit a check when configuration differs.
-
-* **Java/functional changes:** verify Java/Gradle versions (`java -version`,
-  `./gradlew --version`), run affected tests, then configured CI-equivalent tasks,
-  normally `./gradlew check coverage`. In native Windows shells use `gradlew.bat`.
-  Inspect actual Linux/macOS/Windows CI results; a local pass is not a matrix
-  pass, and coverage reports alone do not establish adequate tests.
-* **Text/diff checks:** normally `.github/run-checks.sh` and `git diff --check`.
-  Some text checks use the Git index, not all unstaged/untracked content. Inspect
-  the working diff/new files and rerun on intended staged content when committing
-  is authorised. Use LF, a final newline and no trailing whitespace; do not stage
-  unrelated work.
-* **Published docs:** install locked dependencies if needed (normally
-  `npm --prefix docs ci`), run the configured build/preview scripts (normally
-  `npm --prefix docs run build` / `npm --prefix docs run serve`), and inspect
-  rendering and changed examples. Compare local/CI MarkBind versions; report
-  mismatches rather than silently upgrading dependencies or deploying to preview.
-* **Packaging/resources/dependencies or releases:** run the configured task for
-  an executable JAR, normally `./gradlew shadowJar`. Resolve its output from the build
-  configuration (currently `build/libs/addressbook.jar`). Launch that artifact
-  with Java 25 in disposable writable storage, without relying on IDE settings
-  or enabled assertions; test startup, resources, shutdown and persistence.
-* **Root `AGENTS.md` only:** source/content review and text/diff checks suffice;
-  no unrelated Java rebuild is needed. Disclose skipped/blocked checks and reasons.
-* Investigate failures using evidence; distinguish regressions from existing or
-  environment problems. Never disable checks, relax tests or weaken security
-  policies for a green result. Ask for help with authentication, permissions or
-  configuration decisions.
-
-## 9. Iteration, ownership and workflow
-
-* Deliver breadth-first, incremental improvements, not an AI-generated semester
-  in one burst. Keep early coding understandable; the course discourages moving
-  more than one week ahead. Prefer feature ownership spanning code, tests and
-  UG/DG, with component owners guiding/reviewing shared changes.
-* Use meaningful issues, human assignees, `v1.X` milestones, focused PRs and
-  buffers. Assign both issues and PRs to milestones; move unfinished work forward
-  honestly. Never fabricate completed tasks, reviews, tests or contributions.
-* Through v1.3, use separate branches of individual forks, not `master`. After
-  v1.3 the team may agree to use branches in the team repo. Preserve PR branches;
-  prefer merge commits over rebase/squash that can alter contribution timestamps.
-* No automatic commits, pushes, public issue/review posts, merges, releases,
-  history rewriting, branch deletion or Git identity changes. Obtain the user's
-  authorisation for publishing actions. Before an authorised commit, verify the
-  existing author identity belongs to the responsible human; ask if incorrect.
-* Follow [Git conventions][git]: imperative, capitalised subject, no trailing
-  period; explain why where useful. Settle honest RepoSense attribution before
-  freeze, including AI-assisted work and reused code.
-* Track genuine individual code, tests, UG/DG, reviews and team-task work. Course
-  expectations include commits in four of weeks 7–12, parallel PRs at least once
-  per member, and at least 75% of project tasks completed on time; do not game
-  these signals. A second agent is not a second student contributor.
-
-| Stage | Gate; consult the linked current instructions |
+| Task | Required references |
 |---|---|
-| [W3][w3] / [W4][w4] | Team meetings, public-view project notes, target user/value; no invented persona facts. |
-| [W5][w5] / [W6][w6] | Gather/prioritise requirements, choose a small MVP, agree detailed feature contracts. |
-| [W7 / v1.1][w7] | Practise fork/branch/PR/review workflow; update website, direction and DG requirements. |
-| [W8 / v1.2][w8] | Small functional increments without breaking code/tests; no packaged release required yet. |
-| [W9 / v1.3][w9] | Working MVP JAR, release notes/screenshots, on-time milestone closure. |
-| [W10 / v1.4][w10] | Postmortem, rough versions of intended final features, release, initial UML and parallel PRs. |
-| [W11 / v1.5][w11] | Alpha-test the JAR, resolve important defects, improve code/tests/docs, settle authorship, release. |
-| [W12 / v1.6][w12] | Risk-controlled fixes, freeze compliance, verified submission, published UG/DG and PE. |
-| [W13][w13] | PE responses/evaluations; no unauthorised fixes to submitted code. |
+| Feature/design/dependency changes | Relevant approved issue/spec, UG/DG, [constraints][constraints] and [expectations][expectations]. |
+| Tests or alpha testing | [Testing guide](docs/Testing.md), neighbouring tests and [course alpha-testing guidance][alpha]. |
+| UG/DG/diagram changes | [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading] and [requirements notation][notation]. |
+| Iteration planning or Git/PR actions | [Timeline][timeline], its active week's instructions and [GitHub workflow][github]. |
+| Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. |
+| PE reports/responses/evaluations | [PE rules][pe] for the active phase and [grading][grading]; verify facts, impact and allowed issue edits, not presumed severity. |
+| AI assistance or external reuse | [AI guidance][ai] and [reuse/attribution policy][reuse]; credit actual tools, authors and extent, preserving human ownership. |
 
-Alpha testing suggests two non-author testers per feature. Each student needs
-at least five meaningful `alpha-bug` issues for that individual task to count;
-these may include genuine improvement suggestions under the alpha instructions.
-Do not invent bugs to reach five or confuse this with PE's defect-report rules.
+## Handoff
 
-## 10. Release and submission gate
-
-1. Build the intended revision with the required Java. Record commit, checks,
-   artifact identity/checksum and tested platforms. Rebuild/retest the final JAR
-   after any source/resource change; verify the artifact actually uploaded.
-2. Smoke-test the JAR in a clean writable directory with synthetic data: first
-   launch, tutor workflow, invalid input, relationships, shutdown/restart and
-   documented recovery. IDE execution or mocked tests are not substitutes.
-   Confirm no discoverable WIP/undocumented functionality leaks into the
-   release build (section 2); gate it out or document it before tagging.
-3. Verify supported platforms and required display settings where available;
-   request teammate/forum smoke tests for unavailable environments and disclose
-   gaps. Check size/resources, a renamed JAR and paths with spaces. Do not depend
-   on source-tree files, runtime downloads, extra installations or developer tools.
-4. Inspect the final **published** UG/DG against the artifact: links, screenshots,
-   examples, messages, summaries, manual tests and current NFR claims. Keep
-   README/site badges/branding, `AboutUs` and `docs/images/Ui.png` accurate.
-   Use realistic synthetic screenshot data, clean crops and no annotations.
-   Internal AB3 package names need not be renamed for branding.
-5. Follow the active version's release/submission rules. Final Canvas naming is
-   `[CS2103T-T16-2][TuitionBook].jar`; the build artifact can retain its configured
-   name. Verify team ID, product name, release tag, source revision and website.
-6. Have another member check the submission with time to spare. Publishing,
-   uploading and closing milestones require authorisation. Repeated identical
-   late uploads are not harmless: the latest submission timestamp counts.
-   Follow both courses' applicable submission instructions.
-
-**As checked this semester:** the product demo deliverable is removed; PPP is
-optional unless requested for a contribution dispute or chosen by the student.
-Do not create unnecessary deliverables from obsolete templates.
-
-## 11. Freeze and post-submission protection
-
-Recheck [W12][w12], the calendar and announcements. As of 2026-10-04, feature
-freeze begins **29 Oct 2026, 23:59** (v1.5 deadline); final submission is
-**3 Nov 2026, 14:00**; PE Phase 1 is **6 Nov noon–7 Nov noon**.
-Use the course's Singapore time context, not an assumed local timezone.
-
-* The enforced per-member limit is **15% of functional LoC or 100 LoC, whichever
-  is higher**. The dashboard uses attributed functional code at the end of v1.6,
-  not a guessed local diff size. Confirm the remaining budget with the user.
-* Code-file changes under `src/main` include comments, blank lines and formatting.
-  Tests, documentation and non-code files such as images are exempt from the
-  budget, not from correctness or other release restrictions.
-* The course allows a 5-percentage-point margin; do not plan to consume it.
-  Do not compress/reclassify code, manipulate attribution or borrow another
-  member's quota to evade the limit.
-* **Course rule versus team policy:** the course enforces the amount of code
-  changed. New features are strongly discouraged, not categorically prohibited.
-  Our default is necessary low-risk fixes only; anything else needs explicit
-  user/team agreement, budget review and a regression plan. Keep diffs surgical.
-* Planned Enhancements protection is limited as described in section 6; it does
-  not justify an unusable product or inaccurate documentation.
-* **No code updates for 30 days after the final deadline without teaching-team
-  permission**, except approved late submissions. Completion of PE response
-  phases does not end this rule. Preserve submitted artifacts and corresponding
-  published UG/DG; do not republish a different product/site during evaluation.
-* Permitted issue/milestone/PR metadata updates can continue. PE responses do not
-  require code fixes. Do not merge, push, upload replacement artifacts or perform
-  release cleanup without checking restrictions and required permissions.
-
-## 12. PE scope and honest triage
-
-Consult [the current PE rules][pe] for the active phase. PE targets the JAR and
-published UG/DG HTML. Other website pages/README and code quality are outside PE
-report scope, but may affect other assessment. Data/config and terminal output
-can matter when they affect behaviour or unnecessarily alarm users.
-
-* We own shipped defects, including inherited AB3 bugs. Prioritise data loss,
-  crashes, wrong results, misleading contracts, usability and cosmetics using
-  impact, realistic triggering conditions and regression risk.
-* Types: `FunctionalityBug` = incorrect behaviour; `FeatureFlaw` = inadequate
-  design/feature fit/constraint compliance; `DocumentationBug` = flawed docs.
-  PE labels use the `type.` prefix. Do not pick labels to manipulate marks.
-* `severity.VeryLow` is cosmetic; `Low` is rare minor inconvenience; `Medium` is
-  occasional inconvenience while still usable; `High` means major problems for
-  most users, making the product almost unusable. Consider reader impact for
-  docs; not every crash or missing requirement automatically merits `High`.
-  Obvious, highly visible problems also damage product credibility and may be
-  triaged higher than raw user impact alone suggests.
-* Typos are reportable, including UI typos. Minor grammar issues that do not
-  hinder readers have different triage treatment. Known issues reduce impact,
-  not automatically liability. `NotInScope` needs the course's priority and
-  graceful-handling justification, not merely a label/disclaimer.
-* Reproduce against the submitted version/state/platform. Prove duplicates by
-  shared inseparable cause, not similar symptoms. Accept reasonable defects;
-  do not fabricate an original design rationale after receiving a report.
-* Make reports self-contained: starting data, exact steps, expected/actual result,
-  environment, evidence and impact. PE needs one bug per issue and exactly one
-  type/severity label. Do not copy others' discoveries as the user's own testing,
-  fabricate screenshots, or automatically file speculative findings.
-* AI/automated testing tools are allowed, but PE work is individual. The student
-  must verify agent findings and make the required evaluations themselves.
-* Read phase-specific editing permissions/templates/deadlines. Initial report
-  evidence belongs in the issue body; developer responses must not edit the
-  tester's original title/body. Do not transfer reports, change provided labels,
-  post responses or submit evaluations without authorisation.
-
-## 13. AI, reuse and shared instructions
-
-Follow [AI guidance][ai] and [the reuse policy][reuse]. AI use is expected, but
-the human remains responsible and must understand the work. An agent cannot
-provide teaching-team approval or guarantee marks.
-
-* Localised AI assistance: cite it in comments near the affected work. Widespread
-  assistance: the policy permits DG Acknowledgements stating tool, human user
-  and extent instead of per-site comments. Do not demand both universally.
-* Cite external inspiration/adaptation where used. Copied non-trivial blocks
-  with minor edits also need prescribed RepoSense `-reused` markers; consult the
-  policy before applying them. Credit libraries in DG Acknowledgements.
-  Uncredited reuse risks university plagiarism proceedings — a categorically
-  worse outcome than any deducted bug; when unsure, over-credit.
-* Documentation, diagrams and media also need appropriate attribution/licences.
-  Ordinary following of AB3 patterns, intra-team reuse and course instructional
-  materials have exceptions; do not invent extra requirements. Retain the
-  project's AB3 acknowledgement. Never invent research, benchmarks or credits.
-* `AGENTS.md` is shared guidance, not a PE deliverable. The course explicitly
-  [encourages shared agent files][github]. **It does not require untracking this
-  file before v1.6.** Do not delete/untrack it or edit `.gitignore` automatically;
-  any team-specific decision needs confirmation.
-* Keep instructions outside `docs/`. Keep this shared file concise and tool-neutral;
-  reference current sources rather than copying the website or storing stale facts.
-* Do not rename `src/main/java`, `src/test/java` or `docs`, or split main UG/DG
-  content into extra pages that grading scripts will miss.
-
-## 14. Definition of done and handoff
-
-Ready for review means acceptance criteria addressed, affected contracts/tests/
-docs consistent, relevant checks actually run, and uncertainty disclosed.
-Blocked or partial work must not be silently labelled complete. End with:
-
-* **Changed:** what and why; relevant files/issue.
-* **Verified:** exact commands/scenarios, results, environment and revision/JAR
-  where relevant; distinguish new regression coverage from existing tests.
-* **Not verified:** unavailable OS/UI tests, blocked tooling and skipped checks
-  with reasons. Do not turn these into a claim of complete release readiness.
-* **Risks/decisions:** spec conflicts, compatibility/migration concerns, known
-  defects, freeze limits and outstanding approvals/human review.
-
-Use the response or existing issue/PR for evidence; do not create extra report
-or planning files unless requested.
-
-## Course reference index
-
-Use current sources rather than this summary for policy decisions:
-[overview][overview], [expectations][expectations], [grading][grading],
-[constraints][constraints], [deliverables][deliverables], [PE][pe],
-[timeline][timeline], [team communication][teams], [supervision][supervision],
-[GitHub workflow][github], [AI][ai], [reuse][reuse], [Git conventions][git],
-[Java conventions][java], [requirements/use cases][specifying],
-[NFRs and verifiability][requirements], and the weekly links in section 9.
+Report **Changed**, **Verified** (commands/scenarios and results), **Not verified**
+(with reasons), and **Risks/decisions** (including approvals still needed).
+Use the response or existing issue/PR; do not create extra reports or instruction
+files unless requested. Keep shared guidance tool-neutral, outside published docs,
+and limited to stable instructions rather than dated feature-status claims.
 
 [overview]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-overview.html
-[expectations]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-expectations.html
-[grading]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-grading.html
 [constraints]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-constraints.html
+[expectations]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-expectations.html
 [deliverables]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-deliverables.html
-[pe]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-pe.html
-[timeline]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-timeline.html
-[teams]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-teams.html
-[supervision]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-supervision.html
+[grading]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-grading.html
 [github]: https://nus-cs2103-ay2627-s1.github.io/website/admin/appendixE-gitHub.html
+[timeline]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-timeline.html
+[alpha]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w11.html
+[release]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w12.html
+[pe]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-pe.html
 [ai]: https://nus-cs2103-ay2627-s1.github.io/website/admin/courseExpectations.html#use-of-ai
 [reuse]: https://nus-cs2103-ay2627-s1.github.io/website/admin/appendixB-policies.html#policy-reuse
-[git]: https://se-education.org/guides/conventions/git.html
+[notation]: https://nus-cs2103-ay2627-s1.github.io/website/se-book-adapted/chapters/specifyingRequirements.html
 [java]: https://se-education.org/guides/conventions/java/intermediate.html
-[specifying]: https://nus-cs2103-ay2627-s1.github.io/website/se-book-adapted/chapters/specifyingRequirements.html
-[requirements]: https://nus-cs2103-ay2627-s1.github.io/website/se-book-adapted/chapters/requirements.html
-[w3]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w3.html
-[w4]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w4.html
-[w5]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w5.html
-[w6]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w6.html
-[w7]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w7.html
-[w8]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w8.html
-[w9]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w9.html
-[w10]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w10.html
-[w11]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w11.html
-[w12]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w12.html
-[w13]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w13.html
