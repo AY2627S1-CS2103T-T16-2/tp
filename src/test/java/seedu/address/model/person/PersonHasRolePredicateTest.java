@@ -3,12 +3,18 @@ package seedu.address.model.person;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.testutil.Assert.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonHasRolePredicateTest {
+
+    @Test
+    public void constructor_nullRole_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new PersonHasRolePredicate(null));
+    }
 
     @Test
     public void test_personHasMatchingRole_returnsTrue() {

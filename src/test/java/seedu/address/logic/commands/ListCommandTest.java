@@ -49,27 +49,44 @@ public class ListCommandTest {
 
     @Test
     public void execute_filterByRole_showsOnlyMatchingPersons() {
+        Person student = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT).build();
         Person guardian = new PersonBuilder().withName("Gail Guardian").withRole(Role.GUARDIAN).build();
-        model.addPerson(guardian);
-        expectedModel.addPerson(guardian);
+        Model roleModel = modelWith(student, guardian);
+        Model expectedRoleModel = modelWith(student, guardian);
 
         PersonHasRolePredicate predicate = new PersonHasRolePredicate(Role.GUARDIAN);
-        expectedModel.updateFilteredPersonList(predicate);
+        expectedRoleModel.updateFilteredPersonList(predicate);
         String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
 
-        assertCommandSuccess(new ListCommand(predicate), model, expectedMessage, expectedModel);
-        assertEquals(List.of(guardian), model.getFilteredPersonList());
+        assertCommandSuccess(new ListCommand(predicate), roleModel, expectedMessage, expectedRoleModel);
+        assertEquals(List.of(guardian), roleModel.getFilteredPersonList());
     }
 
     @Test
     public void execute_filterByRoleWithNoMatches_showsEmptyList() {
-        // all typical persons are students, so filtering by guardian matches nothing
+        Person student = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT).build();
+        Model studentOnlyModel = modelWith(student);
+        Model expectedStudentOnlyModel = modelWith(student);
+
         PersonHasRolePredicate predicate = new PersonHasRolePredicate(Role.GUARDIAN);
-        expectedModel.updateFilteredPersonList(predicate);
+        expectedStudentOnlyModel.updateFilteredPersonList(predicate);
         String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 0);
 
-        assertCommandSuccess(new ListCommand(predicate), model, expectedMessage, expectedModel);
-        assertEquals(List.of(), model.getFilteredPersonList());
+        assertCommandSuccess(new ListCommand(predicate), studentOnlyModel, expectedMessage,
+                expectedStudentOnlyModel);
+        assertEquals(List.of(), studentOnlyModel.getFilteredPersonList());
+    }
+
+    /**
+     * Returns a model containing exactly the given persons, so role-filter tests do not
+     * depend on the roles assigned to {@code TypicalPersons}.
+     */
+    private static Model modelWith(Person... persons) {
+        Model newModel = new ModelManager();
+        for (Person person : persons) {
+            newModel.addPerson(person);
+        }
+        return newModel;
     }
 
     @Test

@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.ListCommand;
-import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.PersonHasRolePredicate;
 import seedu.address.model.person.Role;
 
@@ -47,7 +46,7 @@ public class ListCommandParserTest {
     }
 
     @Test
-    public void parse_duplicateRolePrefix_throwsParseException() throws ParseException {
+    public void parse_duplicateRolePrefix_throwsParseException() {
         assertParseFailure(parser, " r/student r/guardian",
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ROLE));
     }
