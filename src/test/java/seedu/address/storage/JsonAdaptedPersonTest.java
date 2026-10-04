@@ -51,6 +51,15 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_veryLongValidPhone_preservesValue() throws Exception {
+        String longPhone = "1".repeat(10_000);
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, longPhone,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        assertEquals(longPhone, person.toModelType().getPhone().value);
+    }
+
+    @Test
     public void toModelType_invalidName_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(INVALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);

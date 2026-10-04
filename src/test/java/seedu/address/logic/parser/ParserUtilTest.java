@@ -105,6 +105,12 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parsePhone_veryLongValue_preservesValue() throws Exception {
+        String longPhone = "1".repeat(10_000);
+        assertEquals(longPhone, ParserUtil.parsePhone(longPhone).value);
+    }
+
+    @Test
     public void parsePhone_validValueWithWhitespace_returnsTrimmedPhone() throws Exception {
         String phoneWithWhitespace = WHITESPACE + VALID_FORMATTED_PHONE + WHITESPACE;
         Phone expectedPhone = new Phone(VALID_FORMATTED_PHONE);

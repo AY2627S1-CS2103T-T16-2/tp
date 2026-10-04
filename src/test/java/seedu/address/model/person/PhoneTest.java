@@ -27,6 +27,18 @@ public class PhoneTest {
     }
 
     @Test
+    public void isValidPhone_veryLongValidPhones_returnsTrue() {
+        assertTrue(Phone.isValidPhone("1".repeat(10_000)));
+        assertTrue(Phone.isValidPhone("1-".repeat(9_999) + "1"));
+    }
+
+    @Test
+    public void isValidPhone_veryLongInvalidPhones_returnsFalse() {
+        assertFalse(Phone.isValidPhone("1-".repeat(5_000) + "-1" + "-1".repeat(4_999)));
+        assertFalse(Phone.isValidPhone("1-".repeat(9_999) + "1-"));
+    }
+
+    @Test
     public void isValidPhone() {
         // null phone number
         assertThrows(NullPointerException.class, () -> Phone.isValidPhone(null));
