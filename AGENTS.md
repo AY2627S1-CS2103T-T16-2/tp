@@ -1,19 +1,30 @@
 # AGENTS.md — Working on TuitionBook (CS2103T tP)
 
+## Non-negotiables
+
+* Preserve uncommitted work; never overwrite another contributor's changes.
+* Do not commit, push, publish issues/reviews/releases, or deploy without permission.
+* Test only with synthetic data and disposable storage, never real contacts.
+* Keep JAR/UG/DG claims about current behaviour consistent; label future work.
+* Run proportionate checks from current configuration and disclose verification gaps.
+
+**Project-policy precedence:** current mandatory course rules > approved team
+decisions and authoritative project documentation > this file's defaults.
+Recommendations are not mandatory rules. Surface conflicts or unclear approval
+with the user rather than guessing. Higher-priority agent safety/permission
+instructions still apply.
+
 Team ID: `CS2103T-T16-2`; GitHub organisation: `AY2627S1-CS2103T-T16-2`;
 repository: `tp`. TuitionBook evolves AddressBook-Level3 (AB3).
 
 **Goal:** a useful, cohesive, maintainable product with reproducible evidence of
-correctness, not maximum feature count or a promise of "full marks". Grades also
-assess individual contributions, code quality, documentation, testing, reviews,
-and process. Passing tests does not prove absence of bugs. The course expects
-some bugs; not every accepted report causes a deduction. Do not hide defects or
-optimise for rejecting reports.
+correctness, not feature count or a promise of "full marks". Grades also assess
+individual contributions, code, documentation, testing, reviews and process.
+Passing tests does not prove absence of bugs; not every accepted report causes
+a deduction. Do not hide defects or optimise for rejecting reports.
 
-**Course sources checked: 2026-10-04.** Recheck the live sources and announcements
-before deadline-sensitive work. Distinguish course rules, recommendations, and
-our stricter team policies. Resolve uncertainty with the user; do not invent
-rules or grades. Higher-priority agent safety/permission instructions still apply.
+**Course sources checked: 2026-10-04.** Recheck live sources and announcements
+before deadline-sensitive work. Use the task-relevant sections below for details.
 
 ## 1. Task execution gate
 
@@ -36,11 +47,11 @@ rules or grades. Higher-priority agent safety/permission instructions still appl
 6. **Make a small coherent change:** include affected tests, messages, fixtures
    and documentation. Avoid unrelated renaming, formatting, upgrades or rewrites.
    Keep intermediate work buildable; review the full final diff.
-   **Consistency triad:** the released JAR, published UG and published DG must
-   always agree; the PE treats any mismatch as a bug (wrong product behaviour →
-   `FunctionalityBug`/`FeatureFlaw`; wrong document → `DocumentationBug`).
-   When behaviour changes, update the UG, affected DG sections/diagrams and
-   in-app help/error messages in the same PR, not a follow-up.
+   **Consistency triad:** published UG/DG descriptions of current behaviour must
+   match the released JAR. Mismatches may be `FunctionalityBug`/`FeatureFlaw` or
+   `DocumentationBug`; clearly labelled future requirements are not claims of
+   implementation. As team policy, update affected UG/DG sections/diagrams and
+   in-app help/error messages in the same PR as behaviour changes, not a follow-up.
 7. **Verify and hand off:** run appropriate checks from section 8. Disclose
    failures, blocked checks, skipped checks and remaining risks. Never claim an
    untested GUI, OS, JAR, website or NFR was verified. Do not quietly drop work.
@@ -345,40 +356,38 @@ and [PE rules][pe].
 
 ## 8. Verification commands and evidence
 
-Use `build.gradle`, `.github/workflows/gradle.yml`, `.github/run-checks.sh`,
-`docs/package.json` and `.github/workflows/docs.yml` as the toolchain references.
-For Java/functional changes, run affected tests during iteration, then:
+Choose checks from the current `build.gradle` (including plugin-provided tasks),
+`.github/workflows/gradle.yml`, `.github/run-checks.sh`, `docs/package.json` and
+`.github/workflows/docs.yml`. The commands below are current defaults, not fixed
+requirements: confirm that tasks/scripts still exist and use their configured
+equivalents if renamed. Do not silently omit a check when configuration differs.
 
-```sh
-java -version
-./gradlew --version
-./gradlew check coverage
-.github/run-checks.sh
-git diff --check
-```
-
-* In native Windows shells, use `gradlew.bat`. Inspect actual Linux/macOS/Windows
-  CI results where available; a local pass does not establish a matrix pass.
-  `coverage` produces reports, not a guarantee of adequate tests.
-* Text scripts use the Git index for some checks: they do not establish that all
-  unstaged/untracked content was checked. Inspect the working diff/new files and
-  rerun on intended staged contents when committing is authorised. Use LF, a
-  final newline and no trailing whitespace. Do not stage unrelated work.
-* For published-doc changes: `npm --prefix docs ci` if installation is needed,
-  then `npm --prefix docs run build`; inspect rendered pages. Preview with
-  `npm --prefix docs run serve`, not deployment. Compare local/CI MarkBind
-  versions and report mismatches rather than silently upgrading dependencies.
-* For packaging/resources/dependencies and releases: `./gradlew shadowJar`.
-  The configured output is `build/libs/addressbook.jar`. Launch that JAR using
-  Java 25 in a disposable writable folder, without relying on IDE settings or
-  enabled assertions; test startup, resources, shutdown and persistence.
-* `AGENTS.md`-only changes need content/source review and text/diff checks, not
-  an unrelated Java rebuild. Choose checks proportionate to changes and state
-  omissions. UG-only changes still need relevant rendering/example checks.
-* Investigate failures and distinguish regressions from pre-existing/environment
-  problems with evidence. Report exact failed/blocked commands. Never disable
-  checks, relax tests or weaken security policies for a green result. Ask for
-  help with authentication, permissions or configuration decisions.
+* **Java/functional changes:** verify Java/Gradle versions (`java -version`,
+  `./gradlew --version`), run affected tests, then configured CI-equivalent tasks,
+  normally `./gradlew check coverage`. In native Windows shells use `gradlew.bat`.
+  Inspect actual Linux/macOS/Windows CI results; a local pass is not a matrix
+  pass, and coverage reports alone do not establish adequate tests.
+* **Text/diff checks:** normally `.github/run-checks.sh` and `git diff --check`.
+  Some text checks use the Git index, not all unstaged/untracked content. Inspect
+  the working diff/new files and rerun on intended staged content when committing
+  is authorised. Use LF, a final newline and no trailing whitespace; do not stage
+  unrelated work.
+* **Published docs:** install locked dependencies if needed (normally
+  `npm --prefix docs ci`), run the configured build/preview scripts (normally
+  `npm --prefix docs run build` / `npm --prefix docs run serve`), and inspect
+  rendering and changed examples. Compare local/CI MarkBind versions; report
+  mismatches rather than silently upgrading dependencies or deploying to preview.
+* **Packaging/resources/dependencies or releases:** run the configured task for
+  an executable JAR, normally `./gradlew shadowJar`. Resolve its output from the build
+  configuration (currently `build/libs/addressbook.jar`). Launch that artifact
+  with Java 25 in disposable writable storage, without relying on IDE settings
+  or enabled assertions; test startup, resources, shutdown and persistence.
+* **Root `AGENTS.md` only:** source/content review and text/diff checks suffice;
+  no unrelated Java rebuild is needed. Disclose skipped/blocked checks and reasons.
+* Investigate failures using evidence; distinguish regressions from existing or
+  environment problems. Never disable checks, relax tests or weaken security
+  policies for a green result. Ask for help with authentication, permissions or
+  configuration decisions.
 
 ## 9. Iteration, ownership and workflow
 
@@ -500,8 +509,7 @@ can matter when they affect behaviour or unnecessarily alarm users.
   most users, making the product almost unusable. Consider reader impact for
   docs; not every crash or missing requirement automatically merits `High`.
   Obvious, highly visible problems also damage product credibility and may be
-  triaged a step higher than raw user impact alone suggests; prioritise fixes
-  as data loss/crashes, then wrong results, then misleading docs, then cosmetics.
+  triaged higher than raw user impact alone suggests.
 * Typos are reportable, including UI typos. Minor grammar issues that do not
   hinder readers have different triage treatment. Known issues reduce impact,
   not automatically liability. `NotInScope` needs the course's priority and
@@ -542,9 +550,8 @@ provide teaching-team approval or guarantee marks.
   [encourages shared agent files][github]. **It does not require untracking this
   file before v1.6.** Do not delete/untrack it or edit `.gitignore` automatically;
   any team-specific decision needs confirmation.
-* Keep instructions outside `docs/`. Keep this file actionable, not a copy of the
-  website or a store of stale product facts. New Devin-specific configuration
-  belongs in `.devin/`; do not create other tools' configuration unless asked.
+* Keep instructions outside `docs/`. Keep this shared file concise and tool-neutral;
+  reference current sources rather than copying the website or storing stale facts.
 * Do not rename `src/main/java`, `src/test/java` or `docs`, or split main UG/DG
   content into extra pages that grading scripts will miss.
 
