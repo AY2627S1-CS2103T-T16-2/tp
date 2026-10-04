@@ -8,6 +8,9 @@
 * Keep released JAR behaviour and published UG/DG claims consistent; label future work.
 * Run proportionate checks and disclose failures, skipped checks and uncertainty.
 
+Keep critical prohibitions and approval requirements directly in this file,
+not solely in linked references.
+
 Team: `CS2103T-T16-2`; organisation: `AY2627S1-CS2103T-T16-2`; repository: `tp`.
 TuitionBook is a contact-management application for private one-to-one home tutors.
 
@@ -78,6 +81,8 @@ These summarise explicit requirements in the [overview][overview] and
    before choosing a fix; never edit docs merely to legitimise a defect.
 4. Reproduce bugs and add a failing regression test where feasible, then fix the root
    cause. Derive feature tests from acceptance criteria, not implementation assumptions.
+   Add a short instruction only when it helps prevent a recurring project-specific
+   mistake; capture individual bugs in regression tests where feasible.
 5. Make a small, buildable change. As a team workflow default, include affected tests,
    UG/DG sections, diagrams and help/messages in the same PR as behaviour changes.
    Avoid unrelated upgrades, formatting or renaming.
@@ -135,6 +140,8 @@ an OS, UI, artifact, example or NFR was verified unless actually checked.
 ## Read on demand — before the corresponding task
 
 Keep detailed procedures in their authoritative sources instead of duplicating them here.
+If a required source cannot be accessed, disclose which source is unavailable and
+seek clarification before proceeding with work that depends on it. Do not guess.
 
 | Task | Required references |
 |---|---|
@@ -148,8 +155,10 @@ Keep detailed procedures in their authoritative sources instead of duplicating t
 
 ## Handoff
 
-Report **Changed**, **Verified** (commands/scenarios and results), **Not verified**
-(with reasons), and **Risks/decisions** (including approvals still needed).
+Report **Changed**, **Verified** (exact commands/scenarios, observed results and
+supporting output or artifact references), **Not verified** (with reasons), and
+**Risks/decisions** (including approvals still needed). Merely stating that the
+rules were followed is not verification evidence.
 Use the response or existing issue/PR; do not create extra reports or instruction
 files unless requested. Keep shared guidance tool-neutral, outside published docs,
 and limited to stable instructions rather than dated feature-status claims.
