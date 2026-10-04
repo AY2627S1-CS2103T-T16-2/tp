@@ -166,7 +166,7 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every command. You do not need to save manually.
+TuitionBook automatically saves data after every command. You do not need to save manually.
 
 ### Editing the data file
 
