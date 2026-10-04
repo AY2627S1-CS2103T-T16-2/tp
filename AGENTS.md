@@ -216,12 +216,14 @@ behaviour. Select relevant cases below; not every PR needs the entire matrix.
   e.g. `2021-13-28` against `YYYY-MM-DD`; invalid value = right shape,
   impossible value, e.g. `2021-02-30`.) Vague-but-true messages such as a bare
   "Invalid input" are reportable flaws; misidentifying the problem is worse.
-* Cross-check extra-argument behaviour against both generic and command-specific
-  UG rules, especially role-filtered `list`. Inherited AB3 behaviour is not
-  automatically correct or consistent with updated docs. (As of v1.2: `help`,
-  `exit` and `clear` ignore extraneous arguments per the UG's generic note,
-  while `list` rejects unexpected preamble text — verify both sides whenever
-  either changes.)
+* Cross-check extra-argument behaviour against generic and command-specific UG rules.
+  [Issue #56](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/56) plans
+  role-filtered `list [r/ROLE]` using a `ListCommandParser` and role predicate.
+  This requires argument parsing while bare `list` continues to clear filters.
+  Verify the current implementation: the PR #64 base ignores `list` arguments,
+  but the UG sections disagree about ignoring versus rejecting them. Do not
+  assume filtering/rejection is implemented; resolve the contract and update
+  parsing, tests and both UG sections together when implementing the issue.
 * Very long values must not break the layout: wrapping/truncation should keep
   the information a user needs visible. Losing the start of a value or breaking
   the window layout escalates severity. Length limits are acceptable only when
