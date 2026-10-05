@@ -22,7 +22,18 @@ public class PersonTest {
 
     @Test
     public void normalizeNameForIdentity_surroundingAndRepeatedSpaces_collapsesSpaces() {
-        assertEquals("amy bee", Person.normalizeNameForIdentity("  Amy   Bee  "));
+        assertEquals("AMY BEE", Person.normalizeNameForIdentity("  Amy   Bee  "));
+    }
+
+    @Test
+    public void isSamePerson_caseEquivalentUnicodeNames_returnsTrue() {
+        Person uppercaseSigma = new PersonBuilder().withName("ΟΣ").withPhone("91234567").build();
+        Person lowercaseSigma = new PersonBuilder().withName("οσ").withPhone("91234567").build();
+        assertTrue(uppercaseSigma.isSamePerson(lowercaseSigma));
+
+        Person sharpS = new PersonBuilder().withName("Straße").withPhone("91234567").build();
+        Person uppercaseDoubleS = new PersonBuilder().withName("STRASSE").withPhone("91234567").build();
+        assertTrue(sharpS.isSamePerson(uppercaseDoubleS));
     }
 
     @Test

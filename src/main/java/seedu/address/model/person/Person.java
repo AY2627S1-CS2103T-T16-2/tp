@@ -172,7 +172,9 @@ public class Person {
             previousCharacterWasSpace = currentCharacter == ' ';
         }
 
-        return Normalizer.normalize(collapsedName, Normalizer.Form.NFC).toLowerCase(Locale.ROOT);
+        String normalizedName = Normalizer.normalize(collapsedName, Normalizer.Form.NFC);
+        String uppercaseName = normalizedName.toUpperCase(Locale.ROOT);
+        return Normalizer.normalize(uppercaseName, Normalizer.Form.NFC);
     }
 
     /**
