@@ -21,14 +21,15 @@ import seedu.address.model.tag.Tag;
 
 public class ParserUtilTest {
     private static final String INVALID_NAME = "R@chel";
-    private static final String INVALID_PHONE = "+651234";
+    private static final String INVALID_PHONE = "++651234";
     private static final String INVALID_ADDRESS = " ";
     private static final String INVALID_EMAIL = "example.com";
     private static final String INVALID_TAG = "#friend";
     private static final String INVALID_ROLE = "teacher";
 
-    private static final String VALID_NAME = "Rachel Walker";
-    private static final String VALID_PHONE = "123456";
+    private static final String VALID_NAME = "José O'Connor-Lee";
+    private static final String VALID_PHONE = "+651234";
+    private static final String VALID_FORMATTED_PHONE = "+65 9123-4567";
     private static final String VALID_ADDRESS = "123 Main Street #0505";
     private static final String VALID_EMAIL = "rachel@example.com";
     private static final String VALID_TAG_1 = "friend";
@@ -98,9 +99,21 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parsePhone_validFormattedValue_preservesFormatting() throws Exception {
+        Phone expectedPhone = new Phone(VALID_FORMATTED_PHONE);
+        assertEquals(expectedPhone, ParserUtil.parsePhone(VALID_FORMATTED_PHONE));
+    }
+
+    @Test
+    public void parsePhone_veryLongValue_preservesValue() throws Exception {
+        String longPhone = "1".repeat(10_000);
+        assertEquals(longPhone, ParserUtil.parsePhone(longPhone).value);
+    }
+
+    @Test
     public void parsePhone_validValueWithWhitespace_returnsTrimmedPhone() throws Exception {
-        String phoneWithWhitespace = WHITESPACE + VALID_PHONE + WHITESPACE;
-        Phone expectedPhone = new Phone(VALID_PHONE);
+        String phoneWithWhitespace = WHITESPACE + VALID_FORMATTED_PHONE + WHITESPACE;
+        Phone expectedPhone = new Phone(VALID_FORMATTED_PHONE);
         assertEquals(expectedPhone, ParserUtil.parsePhone(phoneWithWhitespace));
     }
 

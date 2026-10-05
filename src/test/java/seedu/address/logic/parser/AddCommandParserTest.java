@@ -88,6 +88,17 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_widenedNameAndFormattedPhone_success() {
+        String widenedName = "Mary-Jane O'Connor";
+        String formattedPhone = "+65 9123-4567";
+        Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withName(widenedName)
+                .withPhone(formattedPhone).withoutEmail().withoutAddress().withTags().build();
+
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + widenedName
+                + " " + PREFIX_PHONE + formattedPhone, new AddCommand(expectedPerson));
+    }
+
+    @Test
     public void parse_emailOmitted_success() {
         Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withTags().build();
         assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + ADDRESS_DESC_BOB,

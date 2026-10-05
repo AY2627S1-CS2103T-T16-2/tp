@@ -87,6 +87,11 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 * `ROLE`, `NAME`, and `PHONE` are mandatory.
 * `ROLE` must be either `student` or `guardian`, case-insensitively.
+* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
+  marks, spaces, periods (`.`), straight apostrophes (`'`), and hyphens (`-`). Surrounding whitespace is ignored,
+  while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
+* `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
+  digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
 
@@ -121,6 +126,11 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
+* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
+  marks, spaces, periods (`.`), straight apostrophes (`'`), and hyphens (`-`). Surrounding whitespace is ignored,
+  while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
+* `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
+  digits. These formatting characters are preserved.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 

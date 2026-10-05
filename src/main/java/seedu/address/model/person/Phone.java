@@ -9,10 +9,10 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
  */
 public class Phone {
 
-
     public static final String MESSAGE_CONSTRAINTS =
-            "Phone numbers should only contain digits, and should be at least 3 digits long";
-    public static final String VALIDATION_REGEX = "\\d{3,}";
+            "Phone numbers must contain at least 3 digits, may start with '+', and may use a single space or hyphen "
+                    + "between digits.";
+    private static final int MINIMUM_DIGIT_COUNT = 3;
     public final String value;
 
     /**
@@ -30,7 +30,26 @@ public class Phone {
      * Returns true if a given string is a valid phone number.
      */
     public static boolean isValidPhone(String test) {
-        return test.matches(VALIDATION_REGEX);
+        requireNonNull(test);
+
+        int currentIndex = test.startsWith("+") ? 1 : 0;
+        int digitCount = 0;
+        boolean isDigitExpected = true;
+
+        while (currentIndex < test.length()) {
+            char currentCharacter = test.charAt(currentIndex);
+            if (currentCharacter >= '0' && currentCharacter <= '9') {
+                digitCount++;
+                isDigitExpected = false;
+            } else if ((currentCharacter == ' ' || currentCharacter == '-') && !isDigitExpected) {
+                isDigitExpected = true;
+            } else {
+                return false;
+            }
+            currentIndex++;
+        }
+
+        return digitCount >= MINIMUM_DIGIT_COUNT && !isDigitExpected;
     }
 
     @Override

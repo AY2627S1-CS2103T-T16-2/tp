@@ -20,7 +20,7 @@ import seedu.address.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
     private static final String INVALID_NAME = "R@chel";
-    private static final String INVALID_PHONE = "+651234";
+    private static final String INVALID_PHONE = "++651234";
     private static final String INVALID_ADDRESS = " ";
     private static final String INVALID_EMAIL = "example.com";
     private static final String INVALID_TAG = "#friend";
@@ -29,6 +29,8 @@ public class JsonAdaptedPersonTest {
     private static final String VALID_PHONE = BENSON.getPhone().toString();
     private static final String VALID_EMAIL = BENSON.getEmail().orElseThrow().toString();
     private static final String VALID_ADDRESS = BENSON.getAddress().orElseThrow().toString();
+    private static final String VALID_WIDENED_NAME = "José O'Connor-Lee";
+    private static final String VALID_FORMATTED_PHONE = "+65 9123-4567";
     private static final List<JsonAdaptedTag> VALID_TAGS = BENSON.getTags().stream()
             .map(JsonAdaptedTag::new)
             .collect(Collectors.toList());
@@ -37,6 +39,24 @@ public class JsonAdaptedPersonTest {
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
         assertEquals(BENSON, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_widenedNameAndFormattedPhone_preservesFormatting() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_WIDENED_NAME, VALID_FORMATTED_PHONE,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        assertEquals(new PersonBuilder(BENSON).withName(VALID_WIDENED_NAME).withPhone(VALID_FORMATTED_PHONE).build(),
+                person.toModelType());
+    }
+
+    @Test
+    public void toModelType_veryLongValidPhone_preservesValue() throws Exception {
+        String longPhone = "1".repeat(10_000);
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, longPhone,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        assertEquals(longPhone, person.toModelType().getPhone().value);
     }
 
     @Test
