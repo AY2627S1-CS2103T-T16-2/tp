@@ -21,6 +21,11 @@ import seedu.address.testutil.PersonBuilder;
 public class PersonTest {
 
     @Test
+    public void normalizeNameForIdentity_surroundingAndRepeatedSpaces_collapsesSpaces() {
+        assertEquals("amy bee", Person.normalizeNameForIdentity("  Amy   Bee  "));
+    }
+
+    @Test
     public void asObservableList_modifyList_throwsUnsupportedOperationException() {
         Person person = new PersonBuilder().build();
         assertThrows(UnsupportedOperationException.class, () -> person.getTags().remove(0));
@@ -34,23 +39,45 @@ public class PersonTest {
         // null -> returns false
         assertFalse(ALICE.isSamePerson(null));
 
-        // same name, all other attributes different -> returns true
-        Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB)
-                .withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND).build();
+        // exact matching identity fields, all non-identity attributes different -> returns true
+        Person editedAlice = new PersonBuilder(ALICE).withId(UUID.randomUUID()).withRole(Role.GUARDIAN)
+                .withEmail(VALID_EMAIL_BOB).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
-        // different name, all other attributes same -> returns false
-        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
+        // guardian link differs, identity fields are the same -> returns true
+        editedAlice = new PersonBuilder(ALICE).withGuardianId(UUID.randomUUID()).build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // name differs only in case -> returns true
+        editedAlice = new PersonBuilder(ALICE).withName("aLiCe PaUlInE").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // name differs only in repeated and trailing spaces -> returns true
+        editedAlice = new PersonBuilder(ALICE).withName("Alice  Pauline  ").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // name differs only in Unicode composition -> returns true
+        Person jose = new PersonBuilder().withName("Jos\u00e9 Tan").withPhone("+65 9123-4567").build();
+        Person decomposedJose = new PersonBuilder(jose).withName("Jose\u0301 Tan").withPhone("65 91234567").build();
+        assertTrue(jose.isSamePerson(decomposedJose));
+
+        // phone differs only in spaces or hyphens -> returns true
+        editedAlice = new PersonBuilder(ALICE).withPhone("9435 1253").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+        editedAlice = new PersonBuilder(ALICE).withPhone("9435-1253").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // phone differs only by an optional leading plus -> returns true
+        editedAlice = new PersonBuilder(ALICE).withPhone("+94351253").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // same name but different phone -> returns false
+        editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).build();
         assertFalse(ALICE.isSamePerson(editedAlice));
 
-        // name differs in case, all other attributes same -> returns false
-        Person editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.toLowerCase()).build();
-        assertFalse(BOB.isSamePerson(editedBob));
-
-        // name has trailing spaces, all other attributes same -> returns false
-        String nameWithTrailingSpaces = VALID_NAME_BOB + " ";
-        editedBob = new PersonBuilder(BOB).withName(nameWithTrailingSpaces).build();
-        assertFalse(BOB.isSamePerson(editedBob));
+        // same phone but different name -> returns false
+        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
+        assertFalse(ALICE.isSamePerson(editedAlice));
     }
 
     @Test

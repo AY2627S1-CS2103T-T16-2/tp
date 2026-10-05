@@ -14,7 +14,9 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.PersonBuilder;
 
 public class ModelManagerTest {
 
@@ -66,6 +68,15 @@ public class ModelManagerTest {
     public void hasPerson_personInAddressBook_returnsTrue() {
         modelManager.addPerson(ALICE);
         assertTrue(modelManager.hasPerson(ALICE));
+    }
+
+    @Test
+    public void hasPerson_personWithNormalizedIdentityInAddressBook_returnsTrue() {
+        modelManager.addPerson(ALICE);
+        Person duplicateAlice = new PersonBuilder(ALICE).withName("ALICE  PAULINE ")
+                .withPhone("9435-1253").build();
+
+        assertTrue(modelManager.hasPerson(duplicateAlice));
     }
 
     @Test

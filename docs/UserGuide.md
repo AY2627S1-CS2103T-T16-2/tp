@@ -99,7 +99,12 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 **Tip:** A person can have any number of tags, including zero.
 
-A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the guardian's email may also be reused. This convention is compatible with the planned duplicate check, which will use the contact's name and phone number together.
+TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match.
+Name comparison is case-insensitive, ignores surrounding and repeated spaces, and treats precomposed and decomposed
+Unicode forms as equivalent. Phone comparison uses digits only, ignoring an optional leading `+`, spaces, and hyphens.
+
+A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the
+guardian's email may also be reused. The student and guardian remain distinct contacts because their names differ.
 </box>
 
 Examples:

@@ -53,6 +53,15 @@ public class AddressBookTest {
     }
 
     @Test
+    public void resetData_withNormalizedDuplicatePersons_throwsDuplicatePersonException() {
+        Person duplicateAlice = new PersonBuilder(ALICE).withName("alice  pauline ")
+                .withPhone("9435 1253").build();
+        AddressBookStub newData = new AddressBookStub(List.of(ALICE, duplicateAlice));
+
+        assertThrows(DuplicatePersonException.class, () -> addressBook.resetData(newData));
+    }
+
+    @Test
     public void hasPerson_nullPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> addressBook.hasPerson(null));
     }

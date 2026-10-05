@@ -145,6 +145,15 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_normalizedDuplicatePersonUnfilteredList_failure() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName("ALICE  PAULINE ")
+                .withPhone("9435-1253").build();
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
     public void execute_duplicatePersonFilteredList_failure() {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
