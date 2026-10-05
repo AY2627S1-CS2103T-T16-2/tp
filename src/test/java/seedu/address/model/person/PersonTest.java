@@ -69,7 +69,7 @@ public class PersonTest {
 
         // name differs only in Unicode composition -> returns true
         Person jose = new PersonBuilder().withName("Jos\u00e9 Tan").withPhone("+65 9123-4567").build();
-        Person decomposedJose = new PersonBuilder(jose).withName("Jose\u0301 Tan").withPhone("65 91234567").build();
+        Person decomposedJose = new PersonBuilder(jose).withName("Jose\u0301 Tan").withPhone("+65 91234567").build();
         assertTrue(jose.isSamePerson(decomposedJose));
 
         // phone differs only in spaces or hyphens -> returns true
@@ -78,9 +78,14 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withPhone("9435-1253").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
-        // phone differs only by an optional leading plus -> returns true
+        // phone differs only in formatting while retaining a leading plus -> returns true
+        editedAlice = new PersonBuilder(ALICE).withPhone("+9435 1253").build();
+        Person unformattedPlusPhoneAlice = new PersonBuilder(ALICE).withPhone("+94351253").build();
+        assertTrue(editedAlice.isSamePerson(unformattedPlusPhoneAlice));
+
+        // phone differs by a leading plus -> returns false
         editedAlice = new PersonBuilder(ALICE).withPhone("+94351253").build();
-        assertTrue(ALICE.isSamePerson(editedAlice));
+        assertFalse(ALICE.isSamePerson(editedAlice));
 
         // same name but different phone -> returns false
         editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).build();
