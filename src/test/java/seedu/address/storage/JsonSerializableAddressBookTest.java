@@ -75,4 +75,19 @@ public class JsonSerializableAddressBookTest {
         assertTrue(restoredStudent.getGuardianId().isEmpty());
     }
 
+    @Test
+    public void toModelType_studentGuardianIdTargetingStudent_dropsLinkAndRetainsBothContacts() throws Exception {
+        UUID firstStudentId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+        UUID secondStudentId = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
+        JsonAdaptedPerson firstStudent = new JsonAdaptedPerson(firstStudentId.toString(), "student",
+                secondStudentId.toString(), "Alice", "91234567", null, null, List.of());
+        JsonAdaptedPerson secondStudent = new JsonAdaptedPerson(secondStudentId.toString(), "student", null,
+                "Bob", "92345678", null, null, List.of());
+        JsonSerializableAddressBook addressBook = new JsonSerializableAddressBook(List.of(firstStudent, secondStudent));
+
+        AddressBook restoredAddressBook = addressBook.toModelType();
+        assertEquals(2, restoredAddressBook.getPersonList().size());
+        assertTrue(restoredAddressBook.getPersonList().get(0).getGuardianId().isEmpty());
+    }
+
 }

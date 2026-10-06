@@ -158,6 +158,50 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_missingRoleInNewSchema_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_ID, null, null, VALID_NAME, VALID_PHONE,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        String expectedMessage = String.format(MISSING_FIELD_MESSAGE_FORMAT, "role");
+        assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_missingIdInNewSchema_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(null, "student", null, VALID_NAME, VALID_PHONE,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        String expectedMessage = String.format(MISSING_FIELD_MESSAGE_FORMAT, "id");
+        assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_selfReferentialGuardianId_dropsLink() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_ID, "student", VALID_ID, VALID_NAME, VALID_PHONE,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        assertTrue(person.toModelType().getGuardianId().isEmpty());
+    }
+
+    @Test
+    public void toModelType_guardianWithGuardianId_dropsLink() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_ID, "guardian",
+                "123e4567-e89b-12d3-a456-426614174001", VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                VALID_TAGS);
+
+        assertEquals(Role.GUARDIAN, person.toModelType().getRole());
+        assertTrue(person.toModelType().getGuardianId().isEmpty());
+    }
+
+    @Test
+    public void toModelType_malformedGuardianId_dropsLink() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_ID, "student", "not-a-uuid", VALID_NAME,
+                VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        assertTrue(person.toModelType().getGuardianId().isEmpty());
+    }
+
+    @Test
     public void toModelType_legacyPerson_migratesToUnlinkedStudent() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
                 VALID_TAGS);
