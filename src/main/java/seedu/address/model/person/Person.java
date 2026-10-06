@@ -64,15 +64,6 @@ public class Person {
         this(UUID.randomUUID(), role, null, name, phone, email, address, tags);
     }
 
-    /**
-     * Transitional constructor that defaults the role to {@code Role.STUDENT}.
-     * Kept so that callers that do not handle roles yet continue to compile;
-     * to be removed once all callers supply a role explicitly.
-     */
-    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        this(Role.STUDENT, name, phone, email, address, tags);
-    }
-
     public UUID getId() {
         return id;
     }

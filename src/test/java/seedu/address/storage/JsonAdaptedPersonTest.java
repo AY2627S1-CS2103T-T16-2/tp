@@ -1,12 +1,14 @@
 package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORMAT;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -15,7 +17,9 @@ import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Role;
 import seedu.address.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
@@ -31,6 +35,7 @@ public class JsonAdaptedPersonTest {
     private static final String VALID_ADDRESS = BENSON.getAddress().orElseThrow().toString();
     private static final String VALID_WIDENED_NAME = "José O'Connor-Lee";
     private static final String VALID_FORMATTED_PHONE = "+65 9123-4567";
+    private static final String VALID_ID = "123e4567-e89b-12d3-a456-426614174000";
     private static final List<JsonAdaptedTag> VALID_TAGS = BENSON.getTags().stream()
             .map(JsonAdaptedTag::new)
             .collect(Collectors.toList());
@@ -122,6 +127,43 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, null, null, VALID_TAGS);
         assertEquals(new PersonBuilder(BENSON).withoutEmail().withoutAddress().build(),
                 person.toModelType());
+    }
+
+    @Test
+    public void toModelType_roleIdAndGuardianId_preservesAllRelationshipFields() throws Exception {
+        UUID guardianId = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_ID, "student", guardianId.toString(), VALID_NAME,
+                VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        Person expected = new PersonBuilder(BENSON).withId(UUID.fromString(VALID_ID)).withRole(Role.STUDENT)
+                .withGuardianId(guardianId).build();
+        assertEquals(expected, person.toModelType());
+        assertEquals(UUID.fromString(VALID_ID), person.toModelType().getId());
+    }
+
+    @Test
+    public void toModelType_invalidId_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson("not-a-uuid", "student", null, VALID_NAME, VALID_PHONE,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        assertThrows(IllegalValueException.class, JsonAdaptedPerson.INVALID_ID_MESSAGE, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_invalidRole_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_ID, "tutor", null, VALID_NAME, VALID_PHONE,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        assertThrows(IllegalValueException.class, Role.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_legacyPerson_migratesToUnlinkedStudent() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                VALID_TAGS);
+
+        assertEquals(Role.STUDENT, person.toModelType().getRole());
+        assertTrue(person.toModelType().getGuardianId().isEmpty());
     }
 
     @Test
