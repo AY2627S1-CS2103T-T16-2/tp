@@ -57,6 +57,15 @@ public class UniquePersonListTest {
     }
 
     @Test
+    public void add_personWithNormalizedIdentity_throwsDuplicatePersonException() {
+        uniquePersonList.add(ALICE);
+        Person duplicateAlice = new PersonBuilder(ALICE).withName("ALICE  PAULINE ")
+                .withPhone("9435-1253").build();
+
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(duplicateAlice));
+    }
+
+    @Test
     public void setPerson_nullTargetPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> uniquePersonList.setPerson(null, ALICE));
     }

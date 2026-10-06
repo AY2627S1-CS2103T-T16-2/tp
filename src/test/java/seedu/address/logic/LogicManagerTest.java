@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -13,17 +14,20 @@ import static seedu.address.testutil.TypicalPersons.AMY;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
@@ -37,6 +41,29 @@ import seedu.address.testutil.PersonBuilder;
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
     private static final IOException DUMMY_AD_EXCEPTION = new AccessDeniedException("dummy access denied exception");
+    private static final String CONFLICTING_ADDRESS_BOOK_JSON = """
+            {
+              "persons" : [ {
+                "name" : "Alice",
+                "phone" : "91234567",
+                "email" : "alice@example.com",
+                "address" : "Alice Street",
+                "tags" : [ ]
+              }, {
+                "name" : "alice",
+                "phone" : "91234567",
+                "email" : "other-alice@example.com",
+                "address" : "Other Street",
+                "tags" : [ ]
+              }, {
+                "name" : "Bob",
+                "phone" : "98765432",
+                "email" : "bob@example.com",
+                "address" : "Bob Street",
+                "tags" : [ ]
+              } ]
+            }
+            """;
 
     @TempDir
     public Path temporaryFolder;
@@ -81,6 +108,27 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void execute_listAfterConfiguredLoadFailure_doesNotOverwriteOriginalFile() throws Exception {
+        Path addressBookFilePath = temporaryFolder.resolve("ConflictingAddressBook.json");
+        Files.writeString(addressBookFilePath, CONFLICTING_ADDRESS_BOOK_JSON);
+        String originalContents = Files.readString(addressBookFilePath);
+        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(addressBookFilePath);
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("ConflictingUserPrefs.json"));
+        StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBook);
+        Model fallbackModel = new ModelManager(new AddressBook(), new UserPrefs());
+        Logic blockedLogic = new LogicManager(fallbackModel, storage);
+        String expectedMessage = String.format(LogicManager.FILE_OPS_ERROR_FORMAT,
+                String.format(JsonAddressBookStorage.MESSAGE_WRITE_BLOCKED, addressBookFilePath));
+
+        assertThrows(CommandException.class, expectedMessage, () -> blockedLogic.execute(ListCommand.COMMAND_WORD));
+        assertTrue(Files.exists(addressBookFilePath));
+        assertEquals(originalContents, Files.readString(addressBookFilePath));
     }
 
     @Test

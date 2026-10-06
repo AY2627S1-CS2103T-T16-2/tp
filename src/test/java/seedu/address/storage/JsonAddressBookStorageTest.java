@@ -10,6 +10,7 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -23,6 +24,29 @@ import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
 public class JsonAddressBookStorageTest {
+    private static final String CONFLICTING_ADDRESS_BOOK_JSON = """
+            {
+              "persons" : [ {
+                "name" : "Alice",
+                "phone" : "9123 4567",
+                "email" : "alice@example.com",
+                "address" : "Alice Street",
+                "tags" : [ ]
+              }, {
+                "name" : "alice",
+                "phone" : "9123-4567",
+                "email" : "other-alice@example.com",
+                "address" : "Other Street",
+                "tags" : [ ]
+              }, {
+                "name" : "Bob",
+                "phone" : "98765432",
+                "email" : "bob@example.com",
+                "address" : "Bob Street",
+                "tags" : [ ]
+              } ]
+            }
+            """;
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonAddressBookStorageTest");
 
     @TempDir
@@ -104,6 +128,53 @@ public class JsonAddressBookStorageTest {
         Person restoredPerson = readBack.getPersonList().get(0);
         assertTrue(restoredPerson.getEmail().isEmpty());
         assertTrue(restoredPerson.getAddress().isEmpty());
+    }
+
+    @Test
+    public void readAddressBook_conflictingConfiguredFile_blocksSaveUntilSuccessfulRead() throws Exception {
+        Path filePath = testFolder.resolve("ConflictingAddressBook.json");
+        Files.writeString(filePath, CONFLICTING_ADDRESS_BOOK_JSON);
+        String originalContents = Files.readString(filePath);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBook);
+        String expectedMessage = String.format(JsonAddressBookStorage.MESSAGE_WRITE_BLOCKED, filePath);
+        assertThrows(IOException.class, expectedMessage, () -> storage.saveAddressBook(new AddressBook()));
+        assertTrue(Files.exists(filePath));
+        assertEquals(originalContents, Files.readString(filePath));
+
+        String correctedContents = originalContents.replace("9123-4567", "9123-4568");
+        Files.writeString(filePath, correctedContents);
+        assertEquals(3, storage.readAddressBook().orElseThrow().getPersonList().size());
+
+        storage.saveAddressBook(new AddressBook());
+        assertEquals(new AddressBook(), new AddressBook(storage.readAddressBook().orElseThrow()));
+    }
+
+    @Test
+    public void readAddressBook_missingConfiguredFile_doesNotBlockSave() throws Exception {
+        Path filePath = testFolder.resolve("MissingAddressBook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertTrue(storage.readAddressBook().isEmpty());
+        storage.saveAddressBook(new AddressBook());
+
+        assertTrue(Files.exists(filePath));
+        assertEquals(new AddressBook(), new AddressBook(storage.readAddressBook().orElseThrow()));
+    }
+
+    @Test
+    public void readAddressBook_invalidUnrelatedFile_doesNotBlockConfiguredFile() throws Exception {
+        Path configuredFilePath = testFolder.resolve("ConfiguredAddressBook.json");
+        Path unrelatedFilePath = testFolder.resolve("UnrelatedAddressBook.json");
+        Files.writeString(unrelatedFilePath, "not valid JSON");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(configuredFilePath);
+
+        assertThrows(DataLoadingException.class, () -> storage.readAddressBook(unrelatedFilePath));
+        storage.saveAddressBook(new AddressBook());
+
+        assertTrue(Files.exists(configuredFilePath));
+        assertEquals(new AddressBook(), new AddressBook(storage.readAddressBook().orElseThrow()));
     }
 
     @Test

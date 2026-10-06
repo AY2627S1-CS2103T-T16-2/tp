@@ -53,6 +53,17 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_personWithNormalizedIdentity_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withName("Jos\u00e9 Tan").withPhone("+65 9123-4567").build();
+        Person duplicatePerson = new PersonBuilder(existingPerson).withName("JOSE\u0301  TAN ")
+                .withPhone("+65 91234567").build();
+        AddCommand addCommand = new AddCommand(duplicatePerson);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
     public void equals() {
         Person alice = new PersonBuilder().withName("Alice").build();
         Person bob = new PersonBuilder().withName("Bob").build();

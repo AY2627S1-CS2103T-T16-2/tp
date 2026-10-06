@@ -19,9 +19,13 @@ import seedu.address.model.ReadOnlyAddressBook;
  */
 public class JsonAddressBookStorage {
 
+    public static final String MESSAGE_WRITE_BLOCKED = "Saving is disabled because the existing data file at %s "
+            + "could not be loaded. Correct the data file and restart or reload TuitionBook before saving.";
+
     private static final Logger logger = LogsCenter.getLogger(JsonAddressBookStorage.class);
 
     private Path filePath;
+    private boolean isWriteBlocked;
 
     public JsonAddressBookStorage(Path filePath) {
         this.filePath = filePath;
@@ -49,18 +53,33 @@ public class JsonAddressBookStorage {
      */
     public Optional<ReadOnlyAddressBook> readAddressBook(Path filePath) throws DataLoadingException {
         requireNonNull(filePath);
-
-        Optional<JsonSerializableAddressBook> jsonAddressBook = JsonUtil.readJsonFile(
-                filePath, JsonSerializableAddressBook.class);
-        if (!jsonAddressBook.isPresent()) {
-            return Optional.empty();
-        }
+        boolean isConfiguredFile = isConfiguredFilePath(filePath);
 
         try {
-            return Optional.of(jsonAddressBook.get().toModelType());
-        } catch (IllegalValueException ive) {
-            logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
-            throw new DataLoadingException(ive);
+            Optional<JsonSerializableAddressBook> jsonAddressBook = JsonUtil.readJsonFile(
+                    filePath, JsonSerializableAddressBook.class);
+            if (jsonAddressBook.isEmpty()) {
+                if (isConfiguredFile) {
+                    isWriteBlocked = false;
+                }
+                return Optional.empty();
+            }
+
+            try {
+                ReadOnlyAddressBook addressBook = jsonAddressBook.get().toModelType();
+                if (isConfiguredFile) {
+                    isWriteBlocked = false;
+                }
+                return Optional.of(addressBook);
+            } catch (IllegalValueException ive) {
+                logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
+                throw new DataLoadingException(ive);
+            }
+        } catch (DataLoadingException dle) {
+            if (isConfiguredFile) {
+                isWriteBlocked = true;
+            }
+            throw dle;
         }
     }
 
@@ -82,8 +101,19 @@ public class JsonAddressBookStorage {
         requireNonNull(addressBook);
         requireNonNull(filePath);
 
+        if (isWriteBlocked && isConfiguredFilePath(filePath)) {
+            throw new IOException(String.format(MESSAGE_WRITE_BLOCKED, this.filePath));
+        }
+
         FileUtil.createIfMissing(filePath);
         JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), filePath);
+    }
+
+    /**
+     * Returns true if {@code filePath} identifies this storage instance's configured address-book file.
+     */
+    private boolean isConfiguredFilePath(Path filePath) {
+        return this.filePath.toAbsolutePath().normalize().equals(filePath.toAbsolutePath().normalize());
     }
 
 }

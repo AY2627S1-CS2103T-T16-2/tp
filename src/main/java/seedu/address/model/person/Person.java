@@ -4,8 +4,10 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.text.Normalizer;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -136,7 +138,10 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name.
+     * Returns true if both persons have the same normalized name and phone number.
+     * Names are compared case-insensitively after trimming surrounding spaces, collapsing consecutive spaces, and
+     * applying Unicode NFC normalization. Phone numbers are compared after removing spaces and hyphens while retaining
+     * a leading {@code +}; country-code equivalence is not applied. All other fields are ignored.
      * This defines a weaker notion of equality between two persons.
      */
     public boolean isSamePerson(Person otherPerson) {
@@ -145,7 +150,46 @@ public class Person {
         }
 
         return otherPerson != null
-                && otherPerson.getName().equals(getName());
+                && normalizeNameForIdentity(otherPerson.getName().fullName)
+                        .equals(normalizeNameForIdentity(getName().fullName))
+                && normalizePhoneForIdentity(otherPerson.getPhone().value)
+                        .equals(normalizePhoneForIdentity(getPhone().value));
+    }
+
+    /**
+     * Returns a locale-independent identity representation of {@code name}.
+     */
+    static String normalizeNameForIdentity(String name) {
+        String trimmedName = name.trim();
+        StringBuilder collapsedName = new StringBuilder(trimmedName.length());
+        boolean previousCharacterWasSpace = false;
+
+        for (int i = 0; i < trimmedName.length(); i++) {
+            char currentCharacter = trimmedName.charAt(i);
+            if (currentCharacter != ' ' || !previousCharacterWasSpace) {
+                collapsedName.append(currentCharacter);
+            }
+            previousCharacterWasSpace = currentCharacter == ' ';
+        }
+
+        String normalizedName = Normalizer.normalize(collapsedName, Normalizer.Form.NFC);
+        String uppercaseName = normalizedName.toUpperCase(Locale.ROOT);
+        return Normalizer.normalize(uppercaseName, Normalizer.Form.NFC);
+    }
+
+    /**
+     * Returns the identity representation of {@code phone}, retaining a leading {@code +} while removing spaces and
+     * hyphens.
+     */
+    private static String normalizePhoneForIdentity(String phone) {
+        StringBuilder normalizedPhone = new StringBuilder(phone.length());
+        for (int i = 0; i < phone.length(); i++) {
+            char currentCharacter = phone.charAt(i);
+            if (currentCharacter != ' ' && currentCharacter != '-') {
+                normalizedPhone.append(currentCharacter);
+            }
+        }
+        return normalizedPhone.toString();
     }
 
     /**
