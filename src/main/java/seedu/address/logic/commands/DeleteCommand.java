@@ -3,27 +3,33 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
 
 /**
- * Deletes a person identified using its displayed index from the address book.
+ * Deletes a contact identified using its displayed index from the address book.
+ * When deleting a guardian, clears the guardian links of all linked students.
  */
 public class DeleteCommand extends Command {
 
     public static final String COMMAND_WORD = "delete";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Deletes the person identified by the index number used in the displayed person list.\n"
+            + ": Deletes the contact identified by the index number used in the displayed contact list.\n"
             + "Parameters: INDEX (must be a positive integer)\n"
             + "Example: " + COMMAND_WORD + " 1";
 
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted person: %1$s";
+    public static final String MESSAGE_GUARDIAN_LINKS_CLEARED =
+            "\n%1$d student(s) are no longer linked to a guardian:\n%2$s";
 
     private final Index targetIndex;
 
@@ -41,8 +47,27 @@ public class DeleteCommand extends Command {
         }
 
         Person personToDelete = lastShownList.get(targetIndex.getZeroBased());
-        model.deletePerson(personToDelete);
-        return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(personToDelete)));
+        List<Person> affectedStudents = model.getAddressBook().getPersonList().stream()
+                .filter(person -> person.getRole() == Role.STUDENT)
+                .filter(person -> person.getGuardianId().filter(personToDelete.getId()::equals).isPresent())
+                .toList();
+
+        AddressBook updatedAddressBook = new AddressBook(model.getAddressBook());
+        for (Person student : affectedStudents) {
+            updatedAddressBook.setPerson(student, student.clearGuardian());
+        }
+        updatedAddressBook.removePerson(personToDelete);
+        model.setAddressBook(updatedAddressBook);
+
+        String successMessage = String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(personToDelete));
+        if (!affectedStudents.isEmpty()) {
+            String affectedStudentNames = affectedStudents.stream()
+                    .map(student -> student.getName().toString())
+                    .collect(Collectors.joining(", "));
+            successMessage += String.format(MESSAGE_GUARDIAN_LINKS_CLEARED,
+                    affectedStudents.size(), affectedStudentNames);
+        }
+        return new CommandResult(successMessage);
     }
 
     @Override
