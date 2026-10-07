@@ -9,7 +9,6 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
-import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Role;
@@ -52,12 +51,7 @@ public class DeleteCommand extends Command {
                 .filter(person -> person.getGuardianId().filter(personToDelete.getId()::equals).isPresent())
                 .toList();
 
-        AddressBook updatedAddressBook = new AddressBook(model.getAddressBook());
-        for (Person student : affectedStudents) {
-            updatedAddressBook.setPerson(student, student.clearGuardian());
-        }
-        updatedAddressBook.removePerson(personToDelete);
-        model.setAddressBook(updatedAddressBook);
+        model.deletePerson(personToDelete);
 
         String successMessage = String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(personToDelete));
         if (!affectedStudents.isEmpty()) {

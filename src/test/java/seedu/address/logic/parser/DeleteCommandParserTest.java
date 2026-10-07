@@ -4,7 +4,6 @@ import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
-import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 
 import org.junit.jupiter.api.Test;
 
@@ -23,19 +22,6 @@ public class DeleteCommandParserTest {
 
     @Test
     public void parse_validArgs_returnsDeleteCommand() {
-        assertParseSuccess(parser, "1", new DeleteCommand(INDEX_FIRST_PERSON));
-    }
-
-    @Test
-    public void parse_validIndexForStudentOrGuardian_returnsDeleteCommand() {
-        // Role is resolved by DeleteCommand from the contact selected at execution time.
-        assertParseSuccess(parser, "1", new DeleteCommand(INDEX_FIRST_PERSON));
-        assertParseSuccess(parser, "2", new DeleteCommand(INDEX_SECOND_PERSON));
-    }
-
-    @Test
-    public void parse_linkAwareDeleteSyntax_returnsDeleteCommand() {
-        // Link-aware deletion deliberately retains the ordinary single-index delete syntax.
         assertParseSuccess(parser, "1", new DeleteCommand(INDEX_FIRST_PERSON));
     }
 

@@ -91,6 +91,57 @@ public class DeleteCommandTest {
     }
 
     @Test
+    public void execute_guardianWithNoLinkedStudents_deletesGuardian() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).build();
+        model = modelWith(guardian, student);
+
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        Model expectedModel = modelWith(student);
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(guardian));
+
+        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianWithOneLinkedStudent_clearsStudentGuardianLink() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        model = modelWith(guardian, student);
+
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        Model expectedModel = modelWith(student.clearGuardian());
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(guardian))
+                + String.format(DeleteCommand.MESSAGE_GUARDIAN_LINKS_CLEARED, 1, "Sam Student");
+
+        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianAtFilteredIndex_clearsStudentGuardianLinks() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        Person otherStudent = new PersonBuilder().withName("Sally Student").withPhone("90000003")
+                .withRole(Role.STUDENT).build();
+        model = modelWith(student, guardian, otherStudent);
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        Model expectedModel = modelWith(student.clearGuardian(), otherStudent);
+        showNoPerson(expectedModel);
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(guardian))
+                + String.format(DeleteCommand.MESSAGE_GUARDIAN_LINKS_CLEARED, 1, "Sam Student");
+
+        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_studentWithGuardian_deletesStudentAndRetainsGuardian() {
         Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
                 .withRole(Role.GUARDIAN).build();

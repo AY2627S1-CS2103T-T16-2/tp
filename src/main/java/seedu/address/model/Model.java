@@ -42,7 +42,8 @@ public interface Model {
     boolean hasPerson(Person person);
 
     /**
-     * Deletes the given person.
+     * Deletes the given person. If the person is a guardian, clears the guardian links of
+     * all students linked to that guardian.
      * The person must exist in the address book.
      */
     void deletePerson(Person target);
