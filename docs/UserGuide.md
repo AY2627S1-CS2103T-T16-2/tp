@@ -193,13 +193,31 @@ TuitionBook automatically saves data after every command. You do not need to sav
 
 ### Editing the data file
 
-AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+
+Each contact in the file has these relationship fields:
+
+* `id`: the contact's unique identifier. It must be a valid UUID and must not be repeated in the file.
+* `role`: either `STUDENT` or `GUARDIAN`.
+* `guardianId`: optional. For a student, it is the `id` of a guardian contact; guardians must have no guardian link
+  (the field is absent or `null`).
+
+Do not change an existing `id` when editing the file. A current-format contact must include valid `id` and `role` fields.
+Contacts with the same normalized name and phone number are duplicates and make the file invalid, even when their `id`
+values differ.
+
+Data files created before these relationship fields were introduced remain supported. A contact that has none of `id`,
+`role`, or `guardianId` is loaded as an unlinked student and receives a generated `id`. The updated fields are written
+when TuitionBook next saves the data file.
+
+If a `guardianId` is malformed, refers to a missing contact, refers to a student, or links a student to itself,
+TuitionBook keeps the contact but removes that guardian link when loading the file.
 
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until you run a command (AddressBook saves after every command). Still, we recommend backing up the file before editing it.<br>
-Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+If your changes make the data file invalid, TuitionBook starts with an empty address book at the next run. It leaves the invalid file unchanged and blocks saves to avoid overwriting it. Back up and correct or remove the file before restarting TuitionBook. Still, we recommend backing up the file before editing it.<br>
+Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
 ### Archiving data files `[coming in v2.0]`
