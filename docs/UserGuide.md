@@ -123,6 +123,28 @@ Format: `list [r/ROLE]`
 * Other trailing text is rejected.
 * Before linking a student to a guardian after role filtering, enter `list` to restore the full list so that both contacts can be selected.
 
+### Viewing a contact: `view`
+
+Replaces the contact list with a contact's details and their recorded relationship. The next command other than
+`view` restores the contact list.
+
+Format: `view INDEX`
+
+* `INDEX` is the positive index shown in the current contact list. After `find` or `list r/ROLE`, it refers to the
+  filtered list.
+* For a student, the result includes the linked guardian's name, role, phone, email, address, and tags. If the student
+  has no guardian link, it shows `No guardian linked.`
+* For a guardian, the result lists the names of linked students in contact-list order. If there are none, it shows
+  `No students linked.` Related contacts are shown even when the current filter hides them.
+* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
+  contact data or the active filter.
+
+Examples using the initial sample contacts:
+
+* `view 1` replaces the contact list with Alex Yeoh's details and the details of his linked guardian, Bernice Yu.
+* `view 2` replaces the contact list with Bernice Yu's details and lists Alex Yeoh as a linked student.
+* `list r/student` followed by `view 1` still shows Bernice Yu's details, although guardians are hidden from the list.
+
 ### Editing a person: `edit`
 
 Edits an existing person in the address book.
@@ -250,4 +272,5 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list [r/ROLE]`<br> e.g., `list r/student`
+**View**   | `view INDEX`<br> e.g., `view 1`
 **Help**   | `help`
