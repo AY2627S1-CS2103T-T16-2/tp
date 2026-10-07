@@ -121,7 +121,13 @@ Format: `list [r/ROLE]`
 * `ROLE` is `student` or `guardian`, case-insensitively.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
 * Other trailing text is rejected.
-* Before linking a student to a guardian after role filtering, enter `list` to restore the full list so that both contacts can be selected.
+* Before linking a student to a guardian after role filtering, enter `list` to restore the full list so that both
+  contacts can be selected.
+* Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
+* Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
+* Student cards display a `Guardian:` line with the linked guardian's name, or `-` when no guardian is linked.
+  Guardian cards do not display this line.
+* Missing email addresses and home addresses display as `Email: -` and `Address: -`.
 
 ### Editing a person: `edit`
 
