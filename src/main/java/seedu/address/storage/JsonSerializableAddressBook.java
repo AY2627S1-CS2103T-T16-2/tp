@@ -53,6 +53,9 @@ class JsonSerializableAddressBook {
 
     /**
      * Converts this address book into the model's {@code AddressBook} object.
+     * First converts and validates every serialized contact so that all contact ids are available.
+     * It then resolves guardian links against that complete set of contacts before adding contacts
+     * to the address book, which enforces the normalized name-and-phone uniqueness invariant.
      *
      * @throws IllegalValueException if there were any data constraints violated.
      */
@@ -61,12 +64,14 @@ class JsonSerializableAddressBook {
         Set<UUID> loadedIds = new HashSet<>();
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
             Person person = jsonAdaptedPerson.toModelType();
+            // IDs must be unique before they can safely be used to resolve guardian links.
             if (!loadedIds.add(person.getId())) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_ID);
             }
             loadedPersons.add(person);
         }
 
+        // Build the complete lookup first because a student can precede its guardian in the file.
         Map<UUID, Person> personsById = new HashMap<>();
         for (Person person : loadedPersons) {
             personsById.put(person.getId(), person);
@@ -75,6 +80,7 @@ class JsonSerializableAddressBook {
         AddressBook addressBook = new AddressBook();
         for (Person person : loadedPersons) {
             Person resolvedPerson = resolveGuardianLink(person, personsById);
+            // AddressBook rejects manually introduced duplicate contact identities.
             if (addressBook.hasPerson(resolvedPerson)) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
             }
@@ -83,6 +89,15 @@ class JsonSerializableAddressBook {
         return addressBook;
     }
 
+    /**
+     * Returns {@code person} with a valid guardian link, or with its link removed when the
+     * serialized link cannot refer to a guardian in this address book. Invalid links do not
+     * prevent the otherwise valid contact from loading.
+     *
+     * @param person contact whose guardian link is being resolved
+     * @param personsById all successfully converted contacts indexed by their unique ids
+     * @return {@code person}, or an equivalent contact without an invalid guardian link
+     */
     private Person resolveGuardianLink(Person person, Map<UUID, Person> personsById) {
         if (person.getRole() != Role.STUDENT || person.getGuardianId().isEmpty()) {
             return person;
@@ -90,6 +105,7 @@ class JsonSerializableAddressBook {
 
         Person guardian = personsById.get(person.getGuardianId().get());
         if (guardian == null || guardian.getRole() != Role.GUARDIAN) {
+            // Retain the student: only the relationship data is invalid.
             logger.warning("Discarding unresolved guardian link for student " + person.getName());
             return person.clearGuardian();
         }
