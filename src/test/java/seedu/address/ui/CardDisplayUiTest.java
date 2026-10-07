@@ -1,0 +1,198 @@
+package seedu.address.ui;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.FlowPane;
+import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
+import seedu.address.testutil.PersonBuilder;
+
+/**
+ * JavaFX integration tests for the contact-card display.
+ */
+@EnabledIfEnvironmentVariable(named = "RUN_JAVAFX_TESTS", matches = "true")
+public class CardDisplayUiTest {
+
+    private static final long JAVAFX_TIMEOUT_SECONDS = 10;
+
+    @BeforeAll
+    public static void startJavaFxToolkit() throws InterruptedException {
+        CountDownLatch startupLatch = new CountDownLatch(1);
+        Platform.startup(startupLatch::countDown);
+        assertTrue(startupLatch.await(JAVAFX_TIMEOUT_SECONDS, TimeUnit.SECONDS));
+    }
+
+    @AfterAll
+    public static void stopJavaFxToolkit() {
+        Platform.exit();
+    }
+
+    @Test
+    public void personCard_studentWithDetails_displaysLabeledValues() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person student = new PersonBuilder()
+                    .withName("Sam Student")
+                    .withPhone("98765432")
+                    .withEmail("sam@example.com")
+                    .withAddress("25 Clementi Road")
+                    .withGuardian(guardian)
+                    .withTags("secondary", "math")
+                    .build();
+
+            PersonCard card = new PersonCard(student, 1, guardian.getName().fullName);
+
+            assertEquals("STUDENT", getLabel(card, "role").getText());
+            assertTrue(getLabel(card, "role").getStyleClass().contains("student"));
+            assertEquals("Phone: 98765432", getLabel(card, "phone").getText());
+            assertEquals("Guardian: Grace Guardian", getLabel(card, "guardian").getText());
+            assertTrue(getLabel(card, "guardian").isManaged());
+            assertTrue(getLabel(card, "guardian").isVisible());
+            assertEquals("Address: 25 Clementi Road", getLabel(card, "address").getText());
+            assertEquals("Email: sam@example.com", getLabel(card, "email").getText());
+            assertEquals(List.of("math", "secondary"), getTagNames(card));
+            return null;
+        });
+    }
+
+    @Test
+    public void personCard_studentWithoutOptionalDetails_displaysPlaceholders() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person student = new PersonBuilder().withoutEmail().withoutAddress().build();
+
+            PersonCard card = new PersonCard(student, 1, "-");
+
+            assertEquals("Guardian: -", getLabel(card, "guardian").getText());
+            assertEquals("Address: -", getLabel(card, "address").getText());
+            assertEquals("Email: -", getLabel(card, "email").getText());
+            return null;
+        });
+    }
+
+    @Test
+    public void personCard_guardian_hidesGuardianRow() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person guardian = new PersonBuilder().withRole(Role.GUARDIAN).build();
+
+            PersonCard card = new PersonCard(guardian, 1, "-");
+
+            assertEquals("GUARDIAN", getLabel(card, "role").getText());
+            assertTrue(getLabel(card, "role").getStyleClass().contains("guardian"));
+            assertFalse(getLabel(card, "guardian").isManaged());
+            assertFalse(getLabel(card, "guardian").isVisible());
+            return null;
+        });
+    }
+
+    @Test
+    public void personListPanel_guardianFilteredOut_displaysGuardianName() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
+            ObservableList<Person> filteredPersons = FXCollections.observableArrayList(student);
+            ObservableList<Person> allPersons = FXCollections.observableArrayList(student, guardian);
+
+            PersonListPanel panel = new PersonListPanel(filteredPersons, allPersons);
+            ListView<Person> personListView = getPersonListView(panel);
+            ListCell<Person> studentCell = createCell(personListView, 0);
+
+            assertSame(filteredPersons, personListView.getItems());
+            assertEquals("Guardian: Grace Guardian", getLabel(studentCell, "guardian").getText());
+            return null;
+        });
+    }
+
+    @Test
+    public void personListPanel_allPersonsChanges_refreshGuardianName() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
+            ObservableList<Person> filteredPersons = FXCollections.observableArrayList(student);
+            ObservableList<Person> allPersons = FXCollections.observableArrayList(student);
+            PersonListPanel panel = new PersonListPanel(filteredPersons, allPersons);
+            ListView<Person> personListView = getPersonListView(panel);
+
+            assertEquals("Guardian: -", getLabel(createCell(personListView, 0), "guardian").getText());
+
+            allPersons.add(guardian);
+
+            assertEquals("Guardian: Grace Guardian",
+                    getLabel(createCell(personListView, 0), "guardian").getText());
+
+            Person renamedGuardian = new PersonBuilder(guardian).withName("Grace Lim").build();
+            allPersons.set(1, renamedGuardian);
+
+            assertEquals("Guardian: Grace Lim", getLabel(createCell(personListView, 0), "guardian").getText());
+
+            allPersons.remove(renamedGuardian);
+
+            assertEquals("Guardian: -", getLabel(createCell(personListView, 0), "guardian").getText());
+            return null;
+        });
+    }
+
+    private static List<String> getTagNames(PersonCard card) {
+        FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
+        assertNotNull(tags);
+        return tags.getChildren().stream()
+                .map(node -> ((Label) node).getText())
+                .toList();
+    }
+
+    private static Label getLabel(PersonCard card, String id) {
+        Label label = (Label) card.getRoot().lookup("#" + id);
+        assertNotNull(label);
+        return label;
+    }
+
+    private static Label getLabel(ListCell<Person> cell, String id) {
+        Label label = (Label) cell.getGraphic().lookup("#" + id);
+        assertNotNull(label);
+        return label;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ListView<Person> getPersonListView(PersonListPanel panel) {
+        ListView<Person> personListView = (ListView<Person>) panel.getRoot().lookup("#personListView");
+        assertNotNull(personListView);
+        return personListView;
+    }
+
+    private static ListCell<Person> createCell(ListView<Person> personListView, int index) {
+        ListCell<Person> cell = personListView.getCellFactory().call(personListView);
+        cell.updateListView(personListView);
+        cell.updateIndex(index);
+        assertNotNull(cell.getGraphic());
+        return cell;
+    }
+
+    private static <T> T runOnJavaFxThread(Callable<T> action)
+            throws InterruptedException, ExecutionException, TimeoutException {
+        FutureTask<T> task = new FutureTask<>(action);
+        Platform.runLater(task);
+        return task.get(JAVAFX_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    }
+}
