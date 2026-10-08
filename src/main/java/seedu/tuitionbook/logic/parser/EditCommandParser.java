@@ -14,8 +14,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import seedu.tuitionbook.commons.core.index.Index;
-import seedu.tuitionbook.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.tuitionbook.logic.commands.EditCommand;
+import seedu.tuitionbook.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.tag.Tag;
 

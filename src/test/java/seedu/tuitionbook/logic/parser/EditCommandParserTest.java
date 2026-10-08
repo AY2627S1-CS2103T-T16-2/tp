@@ -36,8 +36,8 @@ import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.logic.Messages;
-import seedu.tuitionbook.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.tuitionbook.logic.commands.EditCommand;
+import seedu.tuitionbook.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Email;
 import seedu.tuitionbook.model.person.Name;

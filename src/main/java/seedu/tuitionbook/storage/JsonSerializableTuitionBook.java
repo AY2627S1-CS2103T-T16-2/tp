@@ -24,7 +24,7 @@ import seedu.tuitionbook.model.person.Role;
 /**
  * An Immutable TuitionBook that is serializable to JSON format.
  */
-@JsonRootName(value = "addressbook")
+@JsonRootName(value = "tuitionbook")
 class JsonSerializableTuitionBook {
 
     public static final String MESSAGE_DUPLICATE_PERSON = "Persons list contains duplicate person(s).";
