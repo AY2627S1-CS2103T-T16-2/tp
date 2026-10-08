@@ -5,7 +5,6 @@ import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.EMAIL_DESC_BOB;
-import static seedu.tuitionbook.logic.commands.CommandTestUtil.INVALID_ADDRESS_DESC;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.INVALID_EMAIL_DESC;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.INVALID_NAME_DESC;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.INVALID_PHONE_DESC;
@@ -38,7 +37,6 @@ import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.EditCommand;
 import seedu.tuitionbook.logic.commands.EditCommand.EditPersonDescriptor;
-import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Email;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Phone;
@@ -86,7 +84,6 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS); // invalid name
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS); // invalid phone
         assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS); // invalid email
-        assertParseFailure(parser, "1" + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS); // invalid address
         assertParseFailure(parser, "1" + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS); // invalid tag
 
         // invalid phone followed by valid email
@@ -101,6 +98,10 @@ public class EditCommandParserTest {
         // multiple invalid values, but only the first invalid value is captured
         assertParseFailure(parser, "1" + INVALID_NAME_DESC + INVALID_EMAIL_DESC + VALID_ADDRESS_AMY + VALID_PHONE_AMY,
                 Name.MESSAGE_CONSTRAINTS);
+
+        // Do not allow r/ and g/ prefixes in edit command
+        assertParseFailure(parser, "1 r/anyRole", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1 g/Ben Dover", MESSAGE_INVALID_FORMAT);
     }
 
     @Test
@@ -188,8 +189,8 @@ public class EditCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS));
 
         // multiple invalid values
-        userInput = targetIndex.getOneBased() + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC
-                + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC;
+        userInput = targetIndex.getOneBased() + INVALID_PHONE_DESC + INVALID_EMAIL_DESC + ADDRESS_DESC_AMY
+                + INVALID_PHONE_DESC + INVALID_EMAIL_DESC + ADDRESS_DESC_AMY;
 
         assertParseFailure(parser, userInput,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS));
@@ -204,5 +205,14 @@ public class EditCommandParserTest {
         EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_clearOptionalFields_success() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().build();
+        descriptor.clearEmail();
+        descriptor.clearAddress();
+
+        assertParseSuccess(parser, "1 e/ a/", new EditCommand(INDEX_FIRST_PERSON, descriptor));
     }
 }
