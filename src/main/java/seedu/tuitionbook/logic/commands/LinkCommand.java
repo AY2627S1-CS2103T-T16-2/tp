@@ -61,7 +61,8 @@ public class LinkCommand extends Command {
         }
 
         String previousGuardianName = student.getGuardianId()
-                .flatMap(id -> persons.stream().filter(person -> person.getId().equals(id)).findFirst())
+                .flatMap(id -> model.getTuitionBook().getPersonList().stream()
+                        .filter(person -> person.getId().equals(id)).findFirst())
                 .map(person -> person.getName().toString())
                 .orElse(null);
         model.setPerson(student, student.withGuardianId(guardian.getId()));
