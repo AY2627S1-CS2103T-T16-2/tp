@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.awt.GraphicsEnvironment;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,11 +44,13 @@ final class JavaFxTestUtil {
                 Platform.startup(started::countDown);
             } catch (IllegalStateException alreadyStarted) {
                 // Another test class owns startup; runLater below will synchronize with it.
+                Platform.setImplicitExit(false);
                 initialized = true;
                 return;
             }
 
             await(started, "JavaFX toolkit startup");
+            Platform.setImplicitExit(false);
             initialized = true;
         }
     }
@@ -82,6 +85,15 @@ final class JavaFxTestUtil {
         if (failure.get() != null) {
             throw new AssertionError(failure.get());
         }
+    }
+
+    /**
+     * Runs an action that returns a value on the JavaFX application thread.
+     */
+    static <T> T callOnFxThread(Callable<T> action) throws Exception {
+        AtomicReference<T> result = new AtomicReference<>();
+        runOnFxThread(() -> result.set(action.call()));
+        return result.get();
     }
 
     private static void await(CountDownLatch latch, String operation) {

@@ -86,6 +86,16 @@ public class MainWindowTest {
             return people;
         }
 
+        /**
+         * Returns the complete person list for Logic versions that expose it.
+         *
+         * <p>This method intentionally omits {@code @Override} so the fake also compiles
+         * against Logic versions from before {@code getPersonList()} was added.</p>
+         */
+        public ObservableList<Person> getPersonList() {
+            return people;
+        }
+
         @Override
         public GuiSettings getGuiSettings() {
             return guiSettings;
