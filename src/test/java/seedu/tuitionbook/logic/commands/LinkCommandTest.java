@@ -8,11 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.commons.core.index.Index;
+import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
-import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
 public class LinkCommandTest {
@@ -49,19 +49,19 @@ public class LinkCommandTest {
     @Test
     public void execute_invalidIndex_failure() {
         ModelManager model = modelWithStudentAndGuardian();
-        assertThrows(CommandException.class,
-                () -> new LinkCommand(Index.fromOneBased(3), Index.fromOneBased(2)).execute(model));
-        assertThrows(CommandException.class,
-                () -> new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(3)).execute(model));
+        assertThrows(CommandException.class, () ->
+                new LinkCommand(Index.fromOneBased(3), Index.fromOneBased(2)).execute(model));
+        assertThrows(CommandException.class, () ->
+                new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(3)).execute(model));
     }
 
     @Test
     public void execute_invalidRoles_failure() {
         ModelManager model = modelWithStudentAndGuardian();
-        assertThrows(CommandException.class,
-                () -> new LinkCommand(Index.fromOneBased(2), Index.fromOneBased(2)).execute(model));
-        assertThrows(CommandException.class,
-                () -> new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(1)).execute(model));
+        assertThrows(CommandException.class, () ->
+                new LinkCommand(Index.fromOneBased(2), Index.fromOneBased(2)).execute(model));
+        assertThrows(CommandException.class, () ->
+                new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(1)).execute(model));
     }
 
     @Test
