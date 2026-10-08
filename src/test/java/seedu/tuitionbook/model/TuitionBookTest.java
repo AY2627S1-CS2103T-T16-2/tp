@@ -96,6 +96,30 @@ public class TuitionBookTest {
         assertEquals(expected, tuitionBook.toString());
     }
 
+    @Test
+    public void equals() {
+        // same object -> returns true
+        assertTrue(tuitionBook.equals(tuitionBook));
+
+        // null -> returns false
+        assertFalse(tuitionBook.equals(null));
+
+        // different type -> returns false
+        assertFalse(tuitionBook.equals(5));
+
+        // same persons -> returns true
+        TuitionBook typicalTuitionBook = getTypicalTuitionBook();
+        assertTrue(typicalTuitionBook.equals(getTypicalTuitionBook()));
+
+        // different persons -> returns false
+        assertFalse(tuitionBook.equals(getTypicalTuitionBook()));
+    }
+
+    @Test
+    public void hashCode_samePersons_sameHashCode() {
+        assertEquals(getTypicalTuitionBook().hashCode(), getTypicalTuitionBook().hashCode());
+    }
+
     /**
      * A stub ReadOnlyTuitionBook whose persons list can violate interface constraints.
      */
