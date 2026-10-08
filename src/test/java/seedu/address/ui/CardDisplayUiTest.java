@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -22,10 +23,12 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.FlowPane;
+import javafx.stage.Stage;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Role;
 import seedu.address.testutil.PersonBuilder;
@@ -43,6 +46,7 @@ public class CardDisplayUiTest {
         CountDownLatch startupLatch = new CountDownLatch(1);
         Platform.startup(startupLatch::countDown);
         assertTrue(startupLatch.await(JAVAFX_TIMEOUT_SECONDS, TimeUnit.SECONDS));
+        Platform.setImplicitExit(false);
     }
 
     @AfterAll
@@ -108,6 +112,24 @@ public class CardDisplayUiTest {
     }
 
     @Test
+    public void personCard_guardianInTurkishLocale_usesLocaleIndependentCssClass() throws Exception {
+        runOnJavaFxThread(() -> {
+            Locale originalLocale = Locale.getDefault();
+            try {
+                Locale.setDefault(Locale.forLanguageTag("tr"));
+                Person guardian = new PersonBuilder().withRole(Role.GUARDIAN).build();
+
+                PersonCard card = new PersonCard(guardian, 1, "-");
+
+                assertTrue(getLabel(card, "role").getStyleClass().contains("guardian"));
+            } finally {
+                Locale.setDefault(originalLocale);
+            }
+            return null;
+        });
+    }
+
+    @Test
     public void personListPanel_guardianFilteredOut_displaysGuardianName() throws Exception {
         runOnJavaFxThread(() -> {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
@@ -134,22 +156,34 @@ public class CardDisplayUiTest {
             ObservableList<Person> allPersons = FXCollections.observableArrayList(student);
             PersonListPanel panel = new PersonListPanel(filteredPersons, allPersons);
             ListView<Person> personListView = getPersonListView(panel);
+            Stage stage = new Stage();
 
-            assertEquals("Guardian: -", getLabel(createCell(personListView, 0), "guardian").getText());
+            try {
+                stage.setScene(new Scene(panel.getRoot(), 400, 300));
+                stage.show();
+                ListCell<Person> displayedStudentCell = getDisplayedCell(personListView, student);
 
-            allPersons.add(guardian);
+                assertEquals("Guardian: -", getLabel(displayedStudentCell, "guardian").getText());
 
-            assertEquals("Guardian: Grace Guardian",
-                    getLabel(createCell(personListView, 0), "guardian").getText());
+                allPersons.add(guardian);
+                displayedStudentCell = getDisplayedCell(personListView, student);
 
-            Person renamedGuardian = new PersonBuilder(guardian).withName("Grace Lim").build();
-            allPersons.set(1, renamedGuardian);
+                assertEquals("Guardian: Grace Guardian",
+                        getLabel(displayedStudentCell, "guardian").getText());
 
-            assertEquals("Guardian: Grace Lim", getLabel(createCell(personListView, 0), "guardian").getText());
+                Person renamedGuardian = new PersonBuilder(guardian).withName("Grace Lim").build();
+                allPersons.set(1, renamedGuardian);
+                displayedStudentCell = getDisplayedCell(personListView, student);
 
-            allPersons.remove(renamedGuardian);
+                assertEquals("Guardian: Grace Lim", getLabel(displayedStudentCell, "guardian").getText());
 
-            assertEquals("Guardian: -", getLabel(createCell(personListView, 0), "guardian").getText());
+                allPersons.remove(renamedGuardian);
+                displayedStudentCell = getDisplayedCell(personListView, student);
+
+                assertEquals("Guardian: -", getLabel(displayedStudentCell, "guardian").getText());
+            } finally {
+                stage.close();
+            }
             return null;
         });
     }
@@ -187,6 +221,18 @@ public class CardDisplayUiTest {
         cell.updateIndex(index);
         assertNotNull(cell.getGraphic());
         return cell;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ListCell<Person> getDisplayedCell(ListView<Person> personListView, Person person) {
+        personListView.applyCss();
+        personListView.layout();
+        return personListView.lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(node -> (ListCell<Person>) node)
+                .filter(cell -> person.equals(cell.getItem()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Person does not have a displayed list cell"));
     }
 
     private static <T> T runOnJavaFxThread(Callable<T> action)
