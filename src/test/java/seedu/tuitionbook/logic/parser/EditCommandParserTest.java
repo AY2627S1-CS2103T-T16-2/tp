@@ -101,6 +101,10 @@ public class EditCommandParserTest {
         // multiple invalid values, but only the first invalid value is captured
         assertParseFailure(parser, "1" + INVALID_NAME_DESC + INVALID_EMAIL_DESC + VALID_ADDRESS_AMY + VALID_PHONE_AMY,
                 Name.MESSAGE_CONSTRAINTS);
+        
+        // Do not allow r/ and g/ prefixes in edit command
+        assertParseFailure(parser, "1 r/anyRole", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1 g/Ben Dover", MESSAGE_INVALID_FORMAT);
     }
 
     @Test
@@ -204,19 +208,5 @@ public class EditCommandParserTest {
         EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
-    }
-
-    @Test 
-    public void parse_rPrefix_throwsParseException() {
-        String userInput = "1 r/anyRole";
-
-        assertParseFailure(parser, userInput, MESSAGE_INVALID_FORMAT);
-    }
-
-    @Test
-    public void parse_gPrefix_throwsParseException() {
-        String userInput = "1 g/Ben Dover";
-
-        assertParseFailure(parser, userInput, MESSAGE_INVALID_FORMAT);
     }
 }

@@ -9,6 +9,9 @@ bin
 /out/
 /*.iml
 
+# VS Code files
+/.vscode/
+
 # Storage/log files
 /data/
 /preferences.json
