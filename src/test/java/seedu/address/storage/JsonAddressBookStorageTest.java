@@ -21,6 +21,7 @@ import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
 import seedu.address.testutil.PersonBuilder;
 
 public class JsonAddressBookStorageTest {
@@ -128,6 +129,32 @@ public class JsonAddressBookStorageTest {
         Person restoredPerson = readBack.getPersonList().get(0);
         assertTrue(restoredPerson.getEmail().isEmpty());
         assertTrue(restoredPerson.getAddress().isEmpty());
+    }
+
+    @Test
+    public void readAndSaveAddressBook_linkedStudentAndGuardian_preservesIdsRolesAndLink() throws Exception {
+        Path filePath = testFolder.resolve("LinkedContactsAddressBook.json");
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).withoutEmail().withoutAddress().build();
+        AddressBook original = new AddressBook();
+        original.addPerson(student);
+        original.addPerson(guardian);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        storage.saveAddressBook(original);
+        ReadOnlyAddressBook readBack = storage.readAddressBook().orElseThrow();
+        Person restoredStudent = readBack.getPersonList().get(0);
+        Person restoredGuardian = readBack.getPersonList().get(1);
+
+        assertEquals(student.getId(), restoredStudent.getId());
+        assertEquals(Role.STUDENT, restoredStudent.getRole());
+        assertEquals(guardian.getId(), restoredGuardian.getId());
+        assertEquals(Role.GUARDIAN, restoredGuardian.getRole());
+        assertEquals(restoredGuardian.getId(), restoredStudent.getGuardianId().orElseThrow());
+        assertTrue(restoredStudent.getEmail().isEmpty());
+        assertTrue(restoredStudent.getAddress().isEmpty());
     }
 
     @Test

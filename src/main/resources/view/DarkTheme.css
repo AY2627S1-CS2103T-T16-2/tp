@@ -132,6 +132,23 @@
     -fx-text-fill: #010504;
 }
 
+.role_badge {
+    -fx-padding: 1 5 1 5;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 11px;
+    -fx-text-fill: white;
+}
+
+.role_badge.student {
+    -fx-background-color: #3e7b91;
+}
+
+.role_badge.guardian {
+    -fx-background-color: #7a4f8f;
+}
+
 .stack-pane {
      -fx-background-color: derive(#1d1d1d, 20%);
 }
