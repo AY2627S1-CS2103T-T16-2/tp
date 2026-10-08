@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.util.Comparator;
+import java.util.Locale;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -8,6 +9,7 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
 
 /**
  * A UI component that displays information of a {@code Person}.
@@ -33,7 +35,11 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label id;
     @FXML
+    private Label role;
+    @FXML
     private Label phone;
+    @FXML
+    private Label guardian;
     @FXML
     private Label address;
     @FXML
@@ -42,16 +48,28 @@ public class PersonCard extends UiPart<Region> {
     private FlowPane tags;
 
     /**
-     * Creates a {@code PersonCard} with the given {@code Person} and index to display.
+     * Creates a {@code PersonCard} with the given {@code Person}, index, and resolved guardian name to display.
+     *
+     * @param person person whose details are displayed
+     * @param displayedIndex one-based index shown on the card
+     * @param guardianName resolved guardian name or {@code "-"}
      */
-    public PersonCard(Person person, int displayedIndex) {
+    public PersonCard(Person person, int displayedIndex, String guardianName) {
         super(FXML);
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
-        phone.setText(person.getPhone().value);
-        address.setText(person.getAddress().map(value -> value.value).orElse("-"));
-        email.setText(person.getEmail().map(value -> value.value).orElse("-"));
+        role.setText(person.getRole().name());
+        role.getStyleClass().add(person.getRole().name().toLowerCase(Locale.ROOT));
+        phone.setText("Phone: " + person.getPhone().value);
+        boolean isStudent = person.getRole() == Role.STUDENT;
+        guardian.setManaged(isStudent);
+        guardian.setVisible(isStudent);
+        if (isStudent) {
+            guardian.setText("Guardian: " + guardianName);
+        }
+        address.setText("Address: " + person.getAddress().map(value -> value.value).orElse("-"));
+        email.setText("Email: " + person.getEmail().map(value -> value.value).orElse("-"));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
