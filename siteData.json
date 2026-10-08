@@ -51,6 +51,7 @@
         "storage-component": "Storage component",
         "common-classes": "Common classes",
         "implementation": "Implementation",
+        "viewing-contact-relationships": "Viewing contact relationships",
         "proposed-undo-redo-feature": "[Proposed] Undo/redo feature",
         "proposed-data-archiving": "[Proposed] Data archiving",
         "documentation-logging-testing-dev-ops": "Documentation, logging, testing, dev-ops",
@@ -63,6 +64,7 @@
         "appendix-instructions-for-manual-testing": "Appendix: Instructions for manual testing",
         "launch-and-shutdown": "Launch and shutdown",
         "deleting-a-person": "Deleting a person",
+        "viewing-a-contact": "Viewing a contact",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
@@ -113,6 +115,7 @@
         "viewing-help-help": "Viewing help: help",
         "adding-a-contact-add": "Adding a contact: add",
         "listing-contacts-list": "Listing contacts: list",
+        "viewing-a-contact-view": "Viewing a contact: view",
         "editing-a-person-edit": "Editing a person: edit",
         "locating-persons-by-name-find": "Locating persons by name: find",
         "deleting-a-person-delete": "Deleting a person: delete",
