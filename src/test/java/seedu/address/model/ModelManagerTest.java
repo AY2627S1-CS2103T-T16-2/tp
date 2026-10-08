@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
 import seedu.address.testutil.AddressBookBuilder;
 import seedu.address.testutil.PersonBuilder;
 
@@ -77,6 +78,25 @@ public class ModelManagerTest {
                 .withPhone("9435-1253").build();
 
         assertTrue(modelManager.hasPerson(duplicateAlice));
+    }
+
+    @Test
+    public void deletePerson_guardianWithLinkedStudents_clearsGuardianLinks() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person firstStudent = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        Person secondStudent = new PersonBuilder().withName("Sally Student").withPhone("90000003")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        modelManager.addPerson(guardian);
+        modelManager.addPerson(firstStudent);
+        modelManager.addPerson(secondStudent);
+
+        modelManager.deletePerson(guardian);
+
+        assertFalse(modelManager.hasPerson(guardian));
+        assertEquals(List.of(firstStudent.clearGuardian(), secondStudent.clearGuardian()),
+                modelManager.getAddressBook().getPersonList());
     }
 
     @Test

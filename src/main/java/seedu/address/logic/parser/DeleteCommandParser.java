@@ -7,7 +7,8 @@ import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
- * Parses input arguments and creates a new DeleteCommand object
+ * Parses the index for a link-aware {@link DeleteCommand}.
+ * The command syntax remains a single displayed-list index.
  */
 public class DeleteCommandParser implements Parser<DeleteCommand> {
 
