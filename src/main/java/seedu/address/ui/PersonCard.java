@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.util.Comparator;
+import java.util.Locale;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -59,7 +60,7 @@ public class PersonCard extends UiPart<Region> {
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
         role.setText(person.getRole().name());
-        role.getStyleClass().add(person.getRole().toString());
+        role.getStyleClass().add(person.getRole().name().toLowerCase(Locale.ROOT));
         phone.setText("Phone: " + person.getPhone().value);
         boolean isStudent = person.getRole() == Role.STUDENT;
         guardian.setManaged(isStudent);
