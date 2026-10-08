@@ -82,6 +82,11 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
+`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the
+filtered list while using the complete list to resolve a student's guardian name, including when a role filter hides
+the guardian's own card. The panel refreshes its cards when the complete list changes so that relationship details
+remain current.
+
 ### Logic component
 
 **API** : [`Logic.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/logic/Logic.java)

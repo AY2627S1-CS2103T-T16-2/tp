@@ -10,6 +10,8 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
@@ -18,6 +20,8 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Contains integration tests (interaction with the Model) and unit tests for
@@ -62,6 +66,92 @@ public class DeleteCommandTest {
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.deletePerson(personToDelete);
         showNoPerson(expectedModel);
+
+        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianWithLinkedStudents_clearsStudentGuardianLinks() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person firstStudent = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        Person secondStudent = new PersonBuilder().withName("Sally Student").withPhone("90000003")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        Person unlinkedStudent = new PersonBuilder().withName("Una Student").withPhone("90000004")
+                .withRole(Role.STUDENT).build();
+        model = modelWith(guardian, firstStudent, secondStudent, unlinkedStudent);
+
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        Model expectedModel = modelWith(firstStudent.clearGuardian(), secondStudent.clearGuardian(), unlinkedStudent);
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(guardian))
+                + String.format(DeleteCommand.MESSAGE_GUARDIAN_LINKS_CLEARED, 2, "Sam Student, Sally Student");
+
+        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianWithNoLinkedStudents_deletesGuardian() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).build();
+        model = modelWith(guardian, student);
+
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        Model expectedModel = modelWith(student);
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(guardian));
+
+        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianWithOneLinkedStudent_clearsStudentGuardianLink() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        model = modelWith(guardian, student);
+
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        Model expectedModel = modelWith(student.clearGuardian());
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(guardian))
+                + String.format(DeleteCommand.MESSAGE_GUARDIAN_LINKS_CLEARED, 1, "Sam Student");
+
+        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianAtFilteredIndex_clearsStudentGuardianLinks() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        Person otherStudent = new PersonBuilder().withName("Sally Student").withPhone("90000003")
+                .withRole(Role.STUDENT).build();
+        model = modelWith(student, guardian, otherStudent);
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        Model expectedModel = modelWith(student.clearGuardian(), otherStudent);
+        showNoPerson(expectedModel);
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(guardian))
+                + String.format(DeleteCommand.MESSAGE_GUARDIAN_LINKS_CLEARED, 1, "Sam Student");
+
+        assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_studentWithGuardian_deletesStudentAndRetainsGuardian() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        model = modelWith(student, guardian);
+
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        Model expectedModel = modelWith(guardian);
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(student));
 
         assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
     }
@@ -116,5 +206,13 @@ public class DeleteCommandTest {
         model.updateFilteredPersonList(p -> false);
 
         assertTrue(model.getFilteredPersonList().isEmpty());
+    }
+
+    private Model modelWith(Person... persons) {
+        Model model = new ModelManager();
+        for (Person person : List.of(persons)) {
+            model.addPerson(person);
+        }
+        return model;
     }
 }

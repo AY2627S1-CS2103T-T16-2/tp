@@ -3,6 +3,7 @@ package seedu.address.model;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -11,6 +12,7 @@ import javafx.collections.transformation.FilteredList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
 
 /**
  * Represents the in-memory model of the address book data.
@@ -77,7 +79,20 @@ public class ModelManager implements Model {
 
     @Override
     public void deletePerson(Person target) {
-        addressBook.removePerson(target);
+        requireNonNull(target);
+
+        // Apply every relationship update to a copy so the model changes only after the
+        // complete deletion transaction has succeeded.
+        AddressBook updatedAddressBook = new AddressBook(addressBook);
+        List<Person> linkedStudents = addressBook.getPersonList().stream()
+                .filter(person -> person.getRole() == Role.STUDENT)
+                .filter(person -> person.getGuardianId().filter(target.getId()::equals).isPresent())
+                .toList();
+        for (Person student : linkedStudents) {
+            updatedAddressBook.setPerson(student, student.clearGuardian());
+        }
+        updatedAddressBook.removePerson(target);
+        addressBook.resetData(updatedAddressBook);
     }
 
     @Override

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Role;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -134,6 +136,25 @@ public class LogicManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void getPersonList_filteredPersonList_returnsAllPersons() {
+        Person student = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT).build();
+        Person guardian = new PersonBuilder().withName("Gail Guardian").withRole(Role.GUARDIAN).build();
+        model.addPerson(student);
+        model.addPerson(guardian);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+
+        assertEquals(List.of(student), logic.getFilteredPersonList());
+        assertEquals(List.of(student, guardian), logic.getPersonList());
+    }
+
+    @Test
+    public void getPersonList_modifyList_throwsUnsupportedOperationException() {
+        model.addPerson(new PersonBuilder().build());
+
+        assertThrows(UnsupportedOperationException.class, () -> logic.getPersonList().remove(0));
     }
 
     /**

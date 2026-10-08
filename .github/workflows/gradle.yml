@@ -30,6 +30,8 @@ jobs:
 
       - name: Build and check with Gradle on Linux
         if: runner.os == 'Linux'
+        env:
+          RUN_JAVAFX_TESTS: 'true'
         run: xvfb-run -a ./gradlew check coverage
 
       - name: Build and check with Gradle on other platforms
