@@ -172,6 +172,21 @@ Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 
+### Linking a student to a guardian: `link`
+
+Links a student contact to a guardian contact.
+
+Format: `link STUDENT_INDEX GUARDIAN_INDEX`
+
+* The first index must refer to a student and the second index must refer to a guardian. Both indexes refer to the
+  currently displayed contact list.
+* If the student already has a different guardian, the previous guardian is unlinked and the result identifies that
+  previous guardian.
+* Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already
+  exists and makes no change.
+
+Example: `link 1 2` links the student at index 1 to the guardian at index 2.
+
 ### Locating persons by name: `find`
 
 Finds persons whose names contain any of the given keywords.
@@ -277,6 +292,7 @@ Action     | Format, Examples
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
+**Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list [r/ROLE]`<br> e.g., `list r/student`
 **View**   | `view INDEX`<br> e.g., `view 1`
