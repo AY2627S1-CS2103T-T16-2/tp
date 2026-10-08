@@ -97,9 +97,10 @@ public class EditCommand extends Command {
 
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
         Phone updatedPhone = editPersonDescriptor.getPhone().orElse(personToEdit.getPhone());
-        Email updatedEmail = editPersonDescriptor.getEmail().orElseGet(() -> personToEdit.getEmail().orElse(null));
-        Address updatedAddress = editPersonDescriptor.getAddress()
-                .orElseGet(() -> personToEdit.getAddress().orElse(null));
+        Email updatedEmail = editPersonDescriptor.isEmailCleared() ? null
+                : editPersonDescriptor.getEmail().orElseGet(() -> personToEdit.getEmail().orElse(null));
+        Address updatedAddress = editPersonDescriptor.isAddressCleared() ? null
+                : editPersonDescriptor.getAddress().orElseGet(() -> personToEdit.getAddress().orElse(null));
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
         return new Person(personToEdit.getId(), personToEdit.getRole(), personToEdit.getGuardianId().orElse(null),
@@ -139,6 +140,8 @@ public class EditCommand extends Command {
         private Email email;
         private Address address;
         private Set<Tag> tags;
+        private boolean emailCleared;
+        private boolean addressCleared;
 
         public EditPersonDescriptor() {}
 
@@ -152,13 +155,16 @@ public class EditCommand extends Command {
             setEmail(toCopy.email);
             setAddress(toCopy.address);
             setTags(toCopy.tags);
+            emailCleared = toCopy.emailCleared;
+            addressCleared = toCopy.addressCleared;
         }
 
         /**
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags);
+            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags)
+                    || emailCleared || addressCleared;
         }
 
         public void setName(Name name) {
@@ -179,6 +185,16 @@ public class EditCommand extends Command {
 
         public void setEmail(Email email) {
             this.email = email;
+            this.emailCleared = false;
+        }
+
+        public void clearEmail() {
+            this.email = null;
+            this.emailCleared = true;
+        }
+
+        public boolean isEmailCleared() {
+            return emailCleared;
         }
 
         public Optional<Email> getEmail() {
@@ -187,6 +203,16 @@ public class EditCommand extends Command {
 
         public void setAddress(Address address) {
             this.address = address;
+            this.addressCleared = false;
+        }
+
+        public void clearAddress() {
+            this.address = null;
+            this.addressCleared = true;
+        }
+
+        public boolean isAddressCleared() {
+            return addressCleared;
         }
 
         public Optional<Address> getAddress() {
@@ -225,7 +251,9 @@ public class EditCommand extends Command {
                     && Objects.equals(phone, otherEditPersonDescriptor.phone)
                     && Objects.equals(email, otherEditPersonDescriptor.email)
                     && Objects.equals(address, otherEditPersonDescriptor.address)
-                    && Objects.equals(tags, otherEditPersonDescriptor.tags);
+                    && Objects.equals(tags, otherEditPersonDescriptor.tags)
+                    && emailCleared == otherEditPersonDescriptor.emailCleared
+                    && addressCleared == otherEditPersonDescriptor.addressCleared;
         }
 
         @Override

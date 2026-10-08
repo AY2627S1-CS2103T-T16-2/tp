@@ -209,4 +209,13 @@ public class EditCommandParserTest {
 
         assertParseSuccess(parser, userInput, expectedCommand);
     }
+
+    @Test
+    public void parse_clearOptionalFields_success() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().build();
+        descriptor.clearEmail();
+        descriptor.clearAddress();
+
+        assertParseSuccess(parser, "1 e/ a/", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
 }

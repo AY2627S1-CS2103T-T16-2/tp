@@ -136,6 +136,22 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_clearEmailAndAddress_success() throws Exception {
+        Person person = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().build();
+        descriptor.clearEmail();
+        descriptor.clearAddress();
+
+        new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model);
+
+        Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        assertTrue(editedPerson.getEmail().isEmpty());
+        assertTrue(editedPerson.getAddress().isEmpty());
+        assertEquals(person.getName(), editedPerson.getName());
+        assertEquals(person.getPhone(), editedPerson.getPhone());
+    }
+
+    @Test
     public void execute_duplicatePersonUnfilteredList_failure() {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(firstPerson).build();
