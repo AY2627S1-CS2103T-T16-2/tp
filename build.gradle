@@ -7,7 +7,7 @@ plugins {
 }
 
 application {
-    mainClass = 'seedu.address.Main'
+    mainClass = 'seedu.tuitionbook.Main'
 }
 
 java {
@@ -72,7 +72,7 @@ dependencies {
 }
 
 shadowJar {
-    archiveFileName = 'addressbook.jar'
+    archiveFileName = 'tuitionbook.jar'
 }
 
 defaultTasks 'clean', 'test'
