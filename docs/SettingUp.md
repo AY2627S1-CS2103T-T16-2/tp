@@ -28,7 +28,7 @@ If you plan to use IntelliJ IDEA (highly recommended):
    Note: Importing a Gradle project is slightly different from importing a normal Java project.
    </box>
 1. **Verify the setup**:
-   1. Run `seedu.address.Main` and try a few commands.
+   1. Run `seedu.tuitionbook.Main` and try a few commands.
    1. [Run the tests](Testing.md) to ensure they all pass.
 
 --------------------------------------------------------------------------------------------------------------------
