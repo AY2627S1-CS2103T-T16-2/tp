@@ -20,9 +20,9 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
 1. Download the latest `.jar` file from the project's [GitHub Releases](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) page.
 
-1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
+1. Copy the file to the folder you want to use as the _home folder_ for your TuitionBook.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar tuitionbook.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. On first launch, the contact list is empty.<br>
    ![Ui](images/Ui.png)
 
@@ -153,7 +153,7 @@ Examples using the initial sample contacts:
 
 ### Editing a person: `edit`
 
-Edits an existing person in the address book.
+Edits an existing person in TuitionBook.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 
@@ -191,7 +191,7 @@ Examples:
 
 ### Deleting a person: `delete`
 
-Deletes the specified person from the address book.
+Deletes the specified person from TuitionBook.
 
 Format: `delete INDEX`
 
@@ -201,12 +201,12 @@ Format: `delete INDEX`
 * Deleting a guardian keeps their linked students, but clears those students' guardian links.
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the address book.
+* `list` followed by `delete 2` deletes the 2nd person in TuitionBook.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
 
 ### Clearing all entries: `clear`
 
-Clears all entries from the address book.
+Clears all entries from TuitionBook.
 
 Format: `clear`
 
@@ -245,7 +245,7 @@ TuitionBook keeps the contact but removes that guardian link when loading the fi
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, TuitionBook starts with an empty address book at the next run. It leaves the invalid file unchanged and blocks saves to avoid overwriting it. Back up and correct or remove the file before restarting TuitionBook. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, TuitionBook starts with an empty contact list at the next run. It leaves the invalid file unchanged and blocks saves to avoid overwriting it. Back up and correct or remove the file before restarting TuitionBook. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -258,7 +258,7 @@ _Details coming soon ..._
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
+**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous TuitionBook home folder.
 
 --------------------------------------------------------------------------------------------------------------------
 
