@@ -21,6 +21,7 @@ import seedu.tuitionbook.logic.commands.ExitCommand;
 import seedu.tuitionbook.logic.commands.FindCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
+import seedu.tuitionbook.logic.commands.LinkCommand;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.person.NameContainsKeywordsPredicate;
@@ -90,6 +91,12 @@ public class TuitionBookParserTest {
         assertEquals(new ListCommand(new PersonHasRolePredicate(Role.STUDENT)),
                 parser.parseCommand(ListCommand.COMMAND_WORD + " r/student"));
         assertThrows(ParseException.class, () -> parser.parseCommand(ListCommand.COMMAND_WORD + " 3"));
+    }
+
+    @Test
+    public void parseCommand_link() throws Exception {
+        assertEquals(new LinkCommand(INDEX_FIRST_PERSON, seedu.tuitionbook.testutil.TypicalIndexes.INDEX_SECOND_PERSON),
+                parser.parseCommand(LinkCommand.COMMAND_WORD + " 1 2"));
     }
 
     @Test
