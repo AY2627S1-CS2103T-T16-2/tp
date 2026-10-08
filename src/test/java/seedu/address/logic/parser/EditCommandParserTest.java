@@ -205,4 +205,18 @@ public class EditCommandParserTest {
 
         assertParseSuccess(parser, userInput, expectedCommand);
     }
+
+    @Test 
+    public void parse_rPrefix_throwsParseException() {
+        String userInput = "1 r/anyRole";
+
+        assertParseFailure(parser, userInput, MESSAGE_INVALID_FORMAT);
+    }
+
+    @Test
+    public void parse_gPrefix_throwsParseException() {
+        String userInput = "1 g/Ben Dover";
+
+        assertParseFailure(parser, userInput, MESSAGE_INVALID_FORMAT);
+    }
 }
