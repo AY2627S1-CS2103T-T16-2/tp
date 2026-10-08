@@ -188,6 +188,9 @@ public class EditCommand extends Command {
             this.emailCleared = false;
         }
 
+        /**
+         * Clears the email field.
+         */
         public void clearEmail() {
             this.email = null;
             this.emailCleared = true;
@@ -206,6 +209,9 @@ public class EditCommand extends Command {
             this.addressCleared = false;
         }
 
+        /**
+         * Clears the address field.
+         */
         public void clearAddress() {
             this.address = null;
             this.addressCleared = true;
