@@ -34,6 +34,7 @@ public class MainWindow extends UiPart<Stage> {
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
+    private DetailDisplay detailDisplay;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
 
@@ -117,6 +118,10 @@ public class MainWindow extends UiPart<Stage> {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
+        detailDisplay = new DetailDisplay();
+        personListPanelPlaceholder.getChildren().add(detailDisplay.getRoot());
+        showPersonList();
+
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
@@ -171,6 +176,21 @@ public class MainWindow extends UiPart<Stage> {
         return personListPanel;
     }
 
+    private void showPersonList() {
+        personListPanel.getRoot().setManaged(true);
+        personListPanel.getRoot().setVisible(true);
+        detailDisplay.getRoot().setManaged(false);
+        detailDisplay.getRoot().setVisible(false);
+    }
+
+    private void showDetails(String details) {
+        detailDisplay.setDetails(details);
+        personListPanel.getRoot().setManaged(false);
+        personListPanel.getRoot().setVisible(false);
+        detailDisplay.getRoot().setManaged(true);
+        detailDisplay.getRoot().setVisible(true);
+    }
+
     /**
      * Executes the command and returns the result.
      *
@@ -181,6 +201,7 @@ public class MainWindow extends UiPart<Stage> {
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
+            commandResult.getDetailsToShow().ifPresentOrElse(this::showDetails, this::showPersonList);
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -194,6 +215,7 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException e) {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
+            showPersonList();
             throw e;
         }
     }

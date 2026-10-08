@@ -164,6 +164,22 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Viewing contact relationships
+
+`ViewCommandParser` parses `view INDEX` with the same positive-index rule as other index-based commands.
+`ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full address book to resolve
+relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked
+guardian or student from the result. The command does not change the model or its active filter.
+
+For a student, the command displays the linked guardian's contact details or `No guardian linked.` For a guardian, it
+lists linked student names in address-book order or displays `No students linked.` Missing optional fields use `-`, and
+tags are sorted alphabetically.
+
+`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text.
+`MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a
+command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active
+filter remain in the model while the detail view is visible.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -601,6 +617,24 @@ testers are expected to do more *exploratory* testing.
       Expected: Similar to previous.
 
 1. _{ more test cases … }_
+
+### Viewing a contact
+
+Use a fresh, disposable folder so the application loads its sample contacts. Do not use real contact data.
+
+1. Enter `view 1`.<br>
+   Expected: The contact list is replaced by Alex Yeoh's details and Bernice Yu's guardian details. The result area
+   displays `Viewing contact: Alex Yeoh`.
+1. Enter `view 2`.<br>
+   Expected: The detail view shows Bernice Yu's details, followed by Alex Yeoh under linked students.
+1. Enter `view 3`, then `view 4`.<br>
+   Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports
+   `No students linked.`
+1. Enter `list r/student`, then `view 1`.<br>
+   Expected: Bernice Yu's details still appear. Enter another valid command and confirm that the restored list remains
+   filtered to students.
+1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
+   Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
 ### Saving data
 

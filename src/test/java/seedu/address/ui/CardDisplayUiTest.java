@@ -8,19 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
@@ -39,24 +31,14 @@ import seedu.address.testutil.PersonBuilder;
 @EnabledIfEnvironmentVariable(named = "RUN_JAVAFX_TESTS", matches = "true")
 public class CardDisplayUiTest {
 
-    private static final long JAVAFX_TIMEOUT_SECONDS = 10;
-
     @BeforeAll
-    public static void startJavaFxToolkit() throws InterruptedException {
-        CountDownLatch startupLatch = new CountDownLatch(1);
-        Platform.startup(startupLatch::countDown);
-        assertTrue(startupLatch.await(JAVAFX_TIMEOUT_SECONDS, TimeUnit.SECONDS));
-        Platform.setImplicitExit(false);
-    }
-
-    @AfterAll
-    public static void stopJavaFxToolkit() {
-        Platform.exit();
+    public static void startJavaFxToolkit() {
+        JavaFxTestUtil.initialize();
     }
 
     @Test
     public void personCard_studentWithDetails_displaysLabeledValues() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestUtil.callOnFxThread(() -> {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
             Person student = new PersonBuilder()
                     .withName("Sam Student")
@@ -84,7 +66,7 @@ public class CardDisplayUiTest {
 
     @Test
     public void personCard_studentWithoutOptionalDetails_displaysPlaceholders() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestUtil.callOnFxThread(() -> {
             Person student = new PersonBuilder().withoutEmail().withoutAddress().build();
 
             PersonCard card = new PersonCard(student, 1, "-");
@@ -98,7 +80,7 @@ public class CardDisplayUiTest {
 
     @Test
     public void personCard_guardian_hidesGuardianRow() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestUtil.callOnFxThread(() -> {
             Person guardian = new PersonBuilder().withRole(Role.GUARDIAN).build();
 
             PersonCard card = new PersonCard(guardian, 1, "-");
@@ -113,7 +95,7 @@ public class CardDisplayUiTest {
 
     @Test
     public void personCard_guardianInTurkishLocale_usesLocaleIndependentCssClass() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestUtil.callOnFxThread(() -> {
             Locale originalLocale = Locale.getDefault();
             try {
                 Locale.setDefault(Locale.forLanguageTag("tr"));
@@ -131,7 +113,7 @@ public class CardDisplayUiTest {
 
     @Test
     public void personListPanel_guardianFilteredOut_displaysGuardianName() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestUtil.callOnFxThread(() -> {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
             Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
             ObservableList<Person> filteredPersons = FXCollections.observableArrayList(student);
@@ -149,7 +131,7 @@ public class CardDisplayUiTest {
 
     @Test
     public void personListPanel_allPersonsChanges_refreshGuardianName() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestUtil.callOnFxThread(() -> {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
             Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
             ObservableList<Person> filteredPersons = FXCollections.observableArrayList(student);
@@ -233,12 +215,5 @@ public class CardDisplayUiTest {
                 .filter(cell -> person.equals(cell.getItem()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Person does not have a displayed list cell"));
-    }
-
-    private static <T> T runOnJavaFxThread(Callable<T> action)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        FutureTask<T> task = new FutureTask<>(action);
-        Platform.runLater(task);
-        return task.get(JAVAFX_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 }
