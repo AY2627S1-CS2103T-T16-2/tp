@@ -30,6 +30,10 @@ public class LinkCommand extends Command {
     private final Index studentIndex;
     private final Index guardianIndex;
 
+    /**
+     * @param studentIndex The index of the student to link
+     * @param guardianIndex The index of the guardian to link
+     */
     public LinkCommand(Index studentIndex, Index guardianIndex) {
         this.studentIndex = requireNonNull(studentIndex);
         this.guardianIndex = requireNonNull(guardianIndex);

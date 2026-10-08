@@ -16,8 +16,8 @@ import seedu.tuitionbook.logic.commands.EditCommand;
 import seedu.tuitionbook.logic.commands.ExitCommand;
 import seedu.tuitionbook.logic.commands.FindCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
-import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.logic.commands.LinkCommand;
+import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 
