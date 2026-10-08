@@ -161,6 +161,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * At least one of the optional fields must be provided.
 * To remove an existing email or address, use `e/` or `a/` with no value respectively.
 * Existing values will be updated to the input values.
+* `edit` cannot change a person's role or guardian link. Use the appropriate add or link command instead.
 * `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
   marks, spaces, periods (`.`), straight apostrophes (`'`), and hyphens (`-`). Surrounding whitespace is ignored,
   while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
