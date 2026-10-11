@@ -20,6 +20,8 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.person.Address;
+import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.testutil.PersonBuilder;
@@ -86,6 +88,14 @@ public class JsonTuitionBookStorageTest {
     @Test
     public void readTuitionBook_invalidAndValidPersonTuitionBook_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readTuitionBook("invalidAndValidPersonTuitionBook.json"));
+    }
+
+    @Test
+    public void readTuitionBook_overLengthFields_blocksSaveAndPreservesOriginalFile() throws Exception {
+        assertOverLengthConfiguredFileIsPreserved("OverLengthNameTuitionBook.json",
+                "A".repeat(Name.MAX_LENGTH + 1), "Valid Address");
+        assertOverLengthConfiguredFileIsPreserved("OverLengthAddressTuitionBook.json",
+                "Valid Name", "A".repeat(Address.MAX_LENGTH + 1));
     }
 
     @Test
@@ -224,5 +234,29 @@ public class JsonTuitionBookStorageTest {
     @Test
     public void saveTuitionBook_nullFilePath_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> saveTuitionBook(new TuitionBook(), null));
+    }
+
+    private void assertOverLengthConfiguredFileIsPreserved(String fileName, String name, String address)
+            throws Exception {
+        Path filePath = testFolder.resolve(fileName);
+        String originalContents = """
+                {
+                  "persons" : [ {
+                    "name" : "%s",
+                    "phone" : "91234567",
+                    "email" : null,
+                    "address" : "%s",
+                    "tags" : [ ]
+                  } ]
+                }
+                """.formatted(name, address);
+        Files.writeString(filePath, originalContents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+        String expectedMessage = String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, filePath);
+        assertThrows(IOException.class, expectedMessage, () -> storage.saveTuitionBook(new TuitionBook()));
+        assertTrue(Files.exists(filePath));
+        assertEquals(originalContents, Files.readString(filePath));
     }
 }

@@ -180,6 +180,23 @@ tags are sorted alphabetically.
 command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active
 filter remain in the model while the detail view is visible.
 
+### Contact field validation
+
+`Name` and `Address` are model value objects that enforce their constraints at construction. Command parsers trim
+surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values.
+Names contain at most 100 characters and addresses contain at most 200 characters. Both limits count Unicode code
+points rather than UTF-16 `char` values, so a supplementary Unicode character counts as one character.
+
+`JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation
+consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data
+file containing an over-limit name or address is rejected through the existing invalid-data path: the configured file
+is left unchanged and subsequent saves are blocked until a successful read.
+
+`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long
+names, resolved guardian names, and addresses therefore retain their beginning and use an ellipsis instead of pushing
+the badge out of the card. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also
+provides the full details through the keyboard-driven workflow.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation

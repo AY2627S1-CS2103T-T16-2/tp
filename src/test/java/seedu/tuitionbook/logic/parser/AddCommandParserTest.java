@@ -107,6 +107,30 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_maximumLengthNameAndAddress_success() {
+        String maximumLengthName = "\uD801\uDC00".repeat(Name.MAX_LENGTH);
+        String maximumLengthAddress = "\uD83D\uDE00".repeat(Address.MAX_LENGTH);
+        Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withName(maximumLengthName)
+                .withPhone(VALID_PHONE_BOB).withoutEmail().withAddress(maximumLengthAddress).withTags().build();
+
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + "  " + maximumLengthName
+                + "  " + PREFIX_PHONE + VALID_PHONE_BOB + " " + PREFIX_ADDRESS + "  " + maximumLengthAddress + "  ",
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_overLengthNameAndAddress_failure() {
+        String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
+        String overLengthName = "A".repeat(Name.MAX_LENGTH + 1);
+        String overLengthAddress = "A".repeat(Address.MAX_LENGTH + 1);
+
+        assertParseFailure(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + overLengthName + PHONE_DESC_BOB,
+                Name.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, mandatoryFields + " " + PREFIX_ADDRESS + overLengthAddress,
+                Address.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_emailOmitted_success() {
         Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withTags().build();
         assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + ADDRESS_DESC_BOB,
