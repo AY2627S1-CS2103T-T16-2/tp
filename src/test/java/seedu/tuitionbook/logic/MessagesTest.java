@@ -13,6 +13,6 @@ public class MessagesTest {
     public void format_absentEmailAndAddress_displaysHyphens() {
         Person person = new PersonBuilder().withoutEmail().withoutAddress().withTags().build();
 
-        assertEquals("Amy Bee; Phone: 85355255; Email: -; Address: -; Tags: ", Messages.format(person));
+        assertEquals("Amy Bee; Role: STUDENT; Phone: 85355255; Email: -; Address: -; Tags: ", Messages.format(person));
     }
 }
