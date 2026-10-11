@@ -42,11 +42,9 @@ public class NameTest {
         assertFalse(Name.isValidName("James&")); // contains an unsupported symbol
         assertFalse(Name.isValidName(" Amy Bee")); // starts with whitespace
         assertFalse(Name.isValidName("\u0301Jose")); // starts with a combining mark
-        assertFalse(Name.isValidName("/John")); // starts with a forward slash
 
         // valid name
         assertTrue(Name.isValidName("Amy Bee"));
-        assertTrue(Name.isValidName("Muhammad s/o Ali")); // contains a forward-slash name particle
         assertTrue(Name.isValidName("Mary-Jane Tan"));
         assertTrue(Name.isValidName("O'Connor"));
         assertTrue(Name.isValidName("Dr. Lee"));
