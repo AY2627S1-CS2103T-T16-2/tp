@@ -99,6 +99,10 @@ These summarise explicit requirements in the [overview][overview] and
 When multiple agents are requested, assign disjoint write areas and agreed interfaces;
 serialise shared-contract edits and retest after integration. Agent reviews do not
 replace genuine teammate review. The responsible human must understand the work.
+When drafting or suggesting PR review feedback, provide inline review comments
+anchored to the relevant diff lines, plus a top-level summary comment on submitting
+the review, as any reviewer would; only the inline comments count towards course
+review grading.
 Do not change Git identity, rewrite history or delete PR branches automatically;
 consult the course workflow before authorised Git operations.
 
