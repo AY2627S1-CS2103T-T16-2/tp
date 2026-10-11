@@ -631,9 +631,8 @@ Use a fresh, disposable folder so the application loads its sample contacts. Do 
    Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports
    `No students linked.`
 1. Enter `list r/student`, then `view 1`.<br>
-   Expected: Bernice Yu's details still appear. Enter another valid command that does not modify contacts (e.g.
-   `help`) and confirm that the restored list remains filtered to students. Note that `add`, `edit`, and `link`
-   clear the active filter.
+   Expected: Bernice Yu's details still appear. Enter another valid command and confirm that the restored list remains
+   filtered to students.
 1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
