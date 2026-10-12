@@ -63,6 +63,7 @@ public class MainApp extends Application {
      * Returns a {@code ModelManager} with the data from {@code storage}'s TuitionBook and {@code userPrefs}. <br>
      * An empty TuitionBook will be used instead if {@code storage}'s TuitionBook is not found or cannot be read.
      */
+    // Package-private for testing.
     Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getTuitionBookFilePath());
 

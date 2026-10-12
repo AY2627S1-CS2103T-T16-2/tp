@@ -57,6 +57,7 @@ public class MainAppTest {
         storage.saveTuitionBook(tuitionBook);
         MainApp mainApp = new MainApp();
         Model model = mainApp.initModelManager(storage, new UserPrefs());
+        assertTrue(model.getTuitionBook().getPersonList().contains(tuitionBook.getPersonList().get(0)));
         Logic logic = new LogicManager(model, storage);
 
         logic.execute("clear");
@@ -88,7 +89,8 @@ public class MainAppTest {
     private void assertViewContains(CommandResult result, String... expectedFragments) {
         String details = result.getDetailsToShow().orElseThrow();
         for (String expectedFragment : expectedFragments) {
-            assertTrue(details.contains(expectedFragment));
+            assertTrue(details.contains(expectedFragment),
+                    () -> "Missing <" + expectedFragment + "> in:\n" + details);
         }
     }
 
