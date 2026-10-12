@@ -14,7 +14,7 @@ public class Messages {
 
     public static final String MESSAGE_UNKNOWN_COMMAND = "Unknown command.";
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format!\n%1$s";
-    public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX = "The person index provided is invalid.";
+    public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX = "The contact index provided is invalid.";
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d person(s) listed!";
     public static final String MESSAGE_DUPLICATE_FIELDS =
                 "Multiple values specified for the following single-valued field(s): ";
@@ -36,7 +36,8 @@ public class Messages {
      */
     public static String getInvalidPersonDisplayedIndexMessage(int displayedPersonCount) {
         if (displayedPersonCount == 0) {
-            return MESSAGE_INVALID_PERSON_DISPLAYED_INDEX + " No contacts are shown in the current list.";
+            return MESSAGE_INVALID_PERSON_DISPLAYED_INDEX
+                    + " No contacts are shown in the current list. Use list to show all contacts.";
         }
 
         String verb = displayedPersonCount == 1 ? "is" : "are";
