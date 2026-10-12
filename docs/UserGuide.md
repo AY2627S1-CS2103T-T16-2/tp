@@ -249,7 +249,7 @@ TuitionBook automatically saves data after every command. You do not need to sav
 
 ### Editing the data file
 
-TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 Each contact in the file has these relationship fields:
 
