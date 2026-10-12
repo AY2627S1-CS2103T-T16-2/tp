@@ -89,8 +89,8 @@ public class MainAppTest {
     private void assertViewContains(CommandResult result, String... expectedFragments) {
         String details = result.getDetailsToShow().orElseThrow();
         for (String expectedFragment : expectedFragments) {
-            assertTrue(details.contains(expectedFragment),
-                    () -> "Missing <" + expectedFragment + "> in:\n" + details);
+            assertTrue(details.contains(expectedFragment), () ->
+                    "Missing <" + expectedFragment + "> in:\n" + details);
         }
     }
 
