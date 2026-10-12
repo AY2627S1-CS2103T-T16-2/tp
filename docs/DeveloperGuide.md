@@ -640,8 +640,21 @@ Use a fresh, disposable folder so the application loads its sample contacts. Do 
 
 ### Saving data
 
-1. Dealing with missing/corrupted data files
+1. Keeping read-only commands available when contact saving is blocked
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+   1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/addressbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
-1. _{ more test cases … }_
+   1. Launch TuitionBook.<br>
+      Expected: TuitionBook opens with an empty contact list. The malformed data file remains unchanged.
+
+   1. Enter `help`.<br>
+      Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
+
+   1. Close the help window, then enter `add r/student n/Alex Lim p/91234567`.<br>
+      Expected: TuitionBook reports that it could not save because saving is disabled for the malformed data file. The malformed data file remains unchanged.
+
+   1. Enter `exit`.<br>
+      Expected: TuitionBook exits normally without displaying a storage error.
+
+   1. Compare `data/addressbook.json` with the saved copy.<br>
+      Expected: The two files are identical; TuitionBook did not overwrite or modify the malformed data file.
