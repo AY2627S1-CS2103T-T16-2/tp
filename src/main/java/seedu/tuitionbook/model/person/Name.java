@@ -11,14 +11,14 @@ public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
             "Names must not be blank. They must start with a Unicode letter or number, and may only contain Unicode "
-                    + "letters and numbers, Unicode combining marks, spaces, periods, straight apostrophes, and "
-                    + "hyphens.";
+                    + "letters and numbers, Unicode combining marks, spaces, periods, straight apostrophes, forward "
+                    + "slashes, and hyphens.";
 
     /*
      * The first character must be a Unicode letter or number. Subsequent characters may also be
-     * Unicode combining marks, spaces, periods, straight apostrophes, or hyphens.
+     * Unicode combining marks, spaces, periods, straight apostrophes, forward slashes, or hyphens.
      */
-    public static final String VALIDATION_REGEX = "[\\p{L}\\p{N}][\\p{L}\\p{N}\\p{M} .'-]*";
+    public static final String VALIDATION_REGEX = "[\\p{L}\\p{N}][\\p{L}\\p{N}\\p{M} .'/-]*";
 
     public final String fullName;
 
