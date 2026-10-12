@@ -88,15 +88,12 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `ROLE`, `NAME`, and `PHONE` are mandatory.
 * `ROLE` must be either `student` or `guardian`, case-insensitively.
 * `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
-  marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding
-  whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are
-  preserved.
+  marks, spaces, periods (`.`), straight apostrophes (`'`), and hyphens (`-`). Surrounding whitespace is ignored,
+  while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
-* After a contact is added, TuitionBook shows the full contact list: any active name or role filter is cleared so
-  that the new contact is visible.
 
 <box type="tip" seamless>
 
@@ -167,14 +164,12 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * `edit` cannot change a person's role or guardian link. Use `link` to change a student's guardian.
   The role specified with `add` applies only to the new contact.
 * `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
-  marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding
-  whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are
-  preserved.
+  marks, spaces, periods (`.`), straight apostrophes (`'`), and hyphens (`-`). Surrounding whitespace is ignored,
+  while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
-* After a successful edit, TuitionBook shows the full contact list: any active name or role filter is cleared.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -192,7 +187,6 @@ Format: `link STUDENT_INDEX GUARDIAN_INDEX`
   previous guardian.
 * Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already
   exists and makes no change.
-* After a successful link, TuitionBook shows the full contact list: any active name or role filter is cleared.
 
 Example: `link 1 2` links the student at index 1 to the guardian at index 2.
 
@@ -223,8 +217,6 @@ Format: `delete INDEX`
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, ...
 * Deleting a guardian keeps their linked students, but clears those students' guardian links.
-* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name or role filter: the remaining contacts of
-  the filtered view stay listed.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in TuitionBook.
@@ -292,7 +284,7 @@ _Details coming soon ..._
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
-3. **Name text resembling a parameter prefix** (e.g. the ` a/p ` in `Rina a/p Kaur`) is read as the start of the address parameter instead of part of the name, even though `/` itself is allowed in names (e.g. `Muhammad s/o Ali` is accepted). Write such name particles in full (e.g. `anak perempuan`) or omit them.
+3. **Names cannot contain `/`**, and name text resembling a parameter prefix (e.g. the ` a/p ` in `Rina a/p Kaur`) is read as the start of the address parameter instead of part of the name. Write such name particles in full (e.g. `anak perempuan`) or omit them.
 4. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 5. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming (Sec 2)`.
 6. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.

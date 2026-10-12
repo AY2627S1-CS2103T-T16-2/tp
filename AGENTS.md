@@ -4,6 +4,13 @@
 
 * Preserve uncommitted work; never overwrite another contributor's changes.
 * Do not commit, push, publish issues/reviews/releases, or deploy without permission.
+* **Never push directly to the team repository's `master` (`upstream/master`).** Land
+  every change through a reviewed pull request from a fork or feature branch, and do
+  not leave local branches tracking or defaulting their pushes to `upstream/master`.
+* **Do not credit AI in commit messages.** The course permits and encourages AI use
+  but allows only the five team members as commit authors/co-authors: never add AI
+  tools as `Co-Authored-By` or include lines such as "Generated with [AI]". Credit
+  AI assistance only through the course's designated channels.
 * Use synthetic test data and disposable storage; protect real contacts and secrets.
 * Keep released JAR behaviour and published UG/DG claims consistent; label future work.
 * Run proportionate checks and disclose failures, skipped checks and uncertainty.
@@ -92,6 +99,10 @@ These summarise explicit requirements in the [overview][overview] and
 When multiple agents are requested, assign disjoint write areas and agreed interfaces;
 serialise shared-contract edits and retest after integration. Agent reviews do not
 replace genuine teammate review. The responsible human must understand the work.
+When drafting or suggesting PR review feedback, provide inline review comments
+anchored to the relevant diff lines, plus a top-level summary comment on submitting
+the review, as any reviewer would; only the inline comments count towards course
+review grading.
 Do not change Git identity, rewrite history or delete PR branches automatically;
 consult the course workflow before authorised Git operations.
 
