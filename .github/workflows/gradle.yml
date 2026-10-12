@@ -81,4 +81,5 @@ jobs:
           gh release create "$TAG_NAME" build/libs/tuitionbook.jar
           --title "$TAG_NAME"
           --notes-file CHANGELOG.md
+          --draft
           --verify-tag
