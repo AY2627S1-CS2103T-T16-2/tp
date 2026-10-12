@@ -51,6 +51,21 @@ public class LinkCommandTest {
         assertEquals(expectedStudent, updatedStudent);
         assertEquals(List.of(expectedStudent, oldGuardian, newGuardian), model.getTuitionBook().getPersonList());
         assertEquals(List.of(STUDENT_ID, OLD_GUARDIAN_ID, NEW_GUARDIAN_ID), contactIds(model));
+        assertEquals(List.of(expectedStudent, oldGuardian, newGuardian), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_firstTimeLink_success() throws Exception {
+        Person student = student();
+        Person guardian = guardian();
+        ModelManager model = modelWith(student, guardian);
+
+        CommandResult result = new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(2)).execute(model);
+
+        assertEquals(String.format(LinkCommand.MESSAGE_LINK_SUCCESS, student.getName(), guardian.getName()),
+                result.getFeedbackToUser());
+        assertEquals(guardian.getId(), model.getTuitionBook().getPersonList().get(0)
+                .getGuardianId().orElseThrow());
     }
 
     @Test
