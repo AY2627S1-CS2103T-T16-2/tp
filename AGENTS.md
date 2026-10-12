@@ -93,6 +93,10 @@ These summarise explicit requirements in the [overview][overview] and
 5. Make a small, buildable change. As a team workflow default, include affected tests,
    UG/DG sections, diagrams and help/messages in the same PR as behaviour changes.
    Avoid unrelated upgrades, formatting or renaming.
+   After the first GitHub release has been published, also record each change in
+   `CHANGELOG.md` in the same PR. Before that initial release, do not update the
+   changelog solely to satisfy this rule; the file's presence is not evidence that
+   the initial release has happened.
 6. Review the final diff, run relevant checks and report results. Do not disable tests
    to hide failures, weaken security/CI policies, fabricate evidence or hide incomplete work.
 
