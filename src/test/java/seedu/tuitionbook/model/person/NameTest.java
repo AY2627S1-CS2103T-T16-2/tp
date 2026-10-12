@@ -76,6 +76,19 @@ public class NameTest {
     }
 
     @Test
+    public void constructor_slashContainingNameAtLengthBoundary_enforcesMaximum() {
+        String nameWith100CodePoints = "A/" + "B".repeat(Name.MAX_LENGTH - 2);
+        String nameWith101CodePoints = nameWith100CodePoints + "B";
+
+        assertEquals(Name.MAX_LENGTH,
+                nameWith100CodePoints.codePointCount(0, nameWith100CodePoints.length()));
+        assertEquals(nameWith100CodePoints, new Name(nameWith100CodePoints).fullName);
+        assertEquals(Name.MAX_LENGTH + 1,
+                nameWith101CodePoints.codePointCount(0, nameWith101CodePoints.length()));
+        assertThrows(IllegalArgumentException.class, () -> new Name(nameWith101CodePoints));
+    }
+
+    @Test
     public void equals() {
         Name name = new Name("Valid Name");
 

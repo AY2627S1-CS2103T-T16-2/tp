@@ -95,8 +95,8 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters.
-  A single emoji such as `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise
-  preserved as entered.
+  For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved
+  as entered.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
 * After a contact is added, TuitionBook shows the full contact list: any active name or role filter is cleared so
   that the new contact is visible.
@@ -134,9 +134,9 @@ Format: `list [r/ROLE]`
 * Student cards display a `Guardian:` line with the linked guardian's name, or `-` when no guardian is linked.
   Guardian cards do not display this line.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
-* If a name, guardian name, or address is wider than its card, the card keeps the start visible and uses an ellipsis.
-  Hover over the shortened value to see it in full, or use `view INDEX` for a keyboard-accessible full-detail view.
-  The role badge remains visible beside a long name.
+* If a name, phone number, email address, guardian name, or home address is wider than its card, the card keeps the
+  start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX` for a
+  keyboard-accessible full-detail view. The role badge remains visible beside a long name.
 
 ### Viewing a contact: `view`
 
@@ -179,8 +179,8 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * `NAME` can contain at most 100 characters. A supplementary Unicode letter such as `𐐀` counts as one character.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
-* A supplied `ADDRESS` must not be blank and can contain at most 200 characters. A single emoji such as `😀` counts
-  as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
+* A supplied `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one
+  character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * After a successful edit, TuitionBook shows the full contact list: any active name or role filter is cleared.

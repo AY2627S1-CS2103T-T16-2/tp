@@ -193,9 +193,9 @@ file containing an over-limit name or address is rejected through the existing i
 is left unchanged and subsequent saves are blocked until a successful read.
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long
-names, resolved guardian names, and addresses therefore retain their beginning and use an ellipsis instead of pushing
-the badge out of the card. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also
-provides the full details through the keyboard-driven workflow.
+names, phone numbers, email addresses, resolved guardian names, and addresses retain their beginning and use an
+ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip
+containing each full value; the `view` command also provides the full details through the keyboard-driven workflow.
 
 ### \[Proposed\] Undo/redo feature
 

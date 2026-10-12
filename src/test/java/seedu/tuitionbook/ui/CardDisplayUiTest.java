@@ -77,6 +77,8 @@ public class CardDisplayUiTest {
             assertEquals("Guardian: -", getLabel(card, "guardian").getText());
             assertEquals("Address: -", getLabel(card, "address").getText());
             assertEquals("Email: -", getLabel(card, "email").getText());
+            assertEquals("Address: -", getLabel(card, "address").getTooltip().getText());
+            assertEquals("Email: -", getLabel(card, "email").getTooltip().getText());
             return null;
         });
     }
@@ -119,9 +121,12 @@ public class CardDisplayUiTest {
         JavaFxTestUtil.callOnFxThread(() -> {
             String maximumLengthName = "A".repeat(Name.MAX_LENGTH);
             String maximumLengthAddress = "X".repeat(Address.MAX_LENGTH);
-            Person guardian = new PersonBuilder().withName(maximumLengthName).withRole(Role.GUARDIAN).build();
-            Person student = new PersonBuilder().withName(maximumLengthName).withAddress(maximumLengthAddress)
-                    .withGuardian(guardian).build();
+            String longPhone = "9".repeat(200);
+            String longEmail = "a".repeat(200) + "@example.com";
+            Person guardian = new PersonBuilder().withName(maximumLengthName).withRole(Role.GUARDIAN)
+                    .withPhone(longPhone).withEmail(longEmail).build();
+            Person student = new PersonBuilder().withName(maximumLengthName).withPhone(longPhone)
+                    .withEmail(longEmail).withAddress(maximumLengthAddress).withGuardian(guardian).build();
             PersonCard card = new PersonCard(student, 1, guardian.getName().fullName);
             PersonCard guardianCard = new PersonCard(guardian, 2, "-");
             Stage stage = new Stage();
@@ -134,19 +139,36 @@ public class CardDisplayUiTest {
 
                 Label name = getLabel(card, "name");
                 Label role = getLabel(card, "role");
+                Label phone = getLabel(card, "phone");
                 Label guardianName = getLabel(card, "guardian");
                 Label address = getLabel(card, "address");
+                Label email = getLabel(card, "email");
                 assertEquals(maximumLengthName, name.getText());
+                assertEquals("Phone: " + longPhone, phone.getText());
                 assertEquals("Guardian: " + maximumLengthName, guardianName.getText());
                 assertEquals("Address: " + maximumLengthAddress, address.getText());
+                assertEquals("Email: " + longEmail, email.getText());
                 assertEquals(maximumLengthName, name.getTooltip().getText());
+                assertEquals("Phone: " + longPhone, phone.getTooltip().getText());
                 assertEquals("Guardian: " + maximumLengthName, guardianName.getTooltip().getText());
                 assertEquals("Address: " + maximumLengthAddress, address.getTooltip().getText());
+                assertEquals("Email: " + longEmail, email.getTooltip().getText());
                 assertTrue(name.getTooltip().isWrapText());
+                assertTrue(phone.getTooltip().isWrapText());
                 assertTrue(guardianName.getTooltip().isWrapText());
                 assertTrue(address.getTooltip().isWrapText());
+                assertTrue(email.getTooltip().isWrapText());
+                assertTrue(name.getWidth() <= card.getRoot().getWidth());
+                assertTrue(phone.getWidth() <= card.getRoot().getWidth());
+                assertTrue(guardianName.getWidth() <= card.getRoot().getWidth());
+                assertTrue(address.getWidth() <= card.getRoot().getWidth());
+                assertTrue(email.getWidth() <= card.getRoot().getWidth());
                 assertTrue(role.getWidth() >= role.prefWidth(-1));
+                Label guardianPhone = getLabel(guardianCard, "phone");
+                Label guardianEmail = getLabel(guardianCard, "email");
                 Label guardianRole = getLabel(guardianCard, "role");
+                assertTrue(guardianPhone.getWidth() <= guardianCard.getRoot().getWidth());
+                assertTrue(guardianEmail.getWidth() <= guardianCard.getRoot().getWidth());
                 assertTrue(guardianRole.getWidth() >= guardianRole.prefWidth(-1));
             } finally {
                 stage.close();

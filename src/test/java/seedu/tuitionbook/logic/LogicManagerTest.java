@@ -104,10 +104,19 @@ public class LogicManagerTest {
 
     @Test
     public void execute_overLengthEdit_throwsParseExceptionAndLeavesContactUnchanged() {
-        model.addPerson(new PersonBuilder().withName("Original Name").withAddress("Original Address").build());
+        Person originalPerson = new PersonBuilder().withName("Original Name").withAddress("Original Address").build();
+        model.addPerson(originalPerson);
 
         assertParseException("edit 1 n/" + "A".repeat(Name.MAX_LENGTH + 1), Name.MESSAGE_CONSTRAINTS);
+        assertContactIsUnchanged(originalPerson);
+
         assertParseException("edit 1 a/" + "A".repeat(Address.MAX_LENGTH + 1), Address.MESSAGE_CONSTRAINTS);
+        assertContactIsUnchanged(originalPerson);
+    }
+
+    private void assertContactIsUnchanged(Person originalPerson) {
+        assertEquals(List.of(originalPerson), logic.getPersonList());
+        assertEquals(originalPerson.getId(), logic.getPersonList().getFirst().getId());
     }
 
     @Test

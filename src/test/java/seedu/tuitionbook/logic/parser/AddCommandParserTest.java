@@ -119,6 +119,31 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_maximumLengthAsciiNameAndAddress_success() {
+        String maximumLengthName = "A".repeat(Name.MAX_LENGTH);
+        String maximumLengthAddress = "X".repeat(Address.MAX_LENGTH);
+        Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withName(maximumLengthName)
+                .withPhone(VALID_PHONE_BOB).withoutEmail().withAddress(maximumLengthAddress).withTags().build();
+
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + maximumLengthName
+                + " " + PREFIX_PHONE + VALID_PHONE_BOB + " " + PREFIX_ADDRESS + maximumLengthAddress,
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_slashContainingNameAtLengthBoundary_enforcesMaximum() {
+        String maximumLengthName = "A/" + "B".repeat(Name.MAX_LENGTH - 2);
+        String overLengthName = maximumLengthName + "B";
+        Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withName(maximumLengthName)
+                .withPhone(VALID_PHONE_BOB).withoutEmail().withoutAddress().withTags().build();
+
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + maximumLengthName + PHONE_DESC_BOB,
+                new AddCommand(expectedPerson));
+        assertParseFailure(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + overLengthName + PHONE_DESC_BOB,
+                Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_overLengthNameAndAddress_failure() {
         String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
         String overLengthName = "A".repeat(Name.MAX_LENGTH + 1);

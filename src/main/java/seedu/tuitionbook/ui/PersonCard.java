@@ -65,6 +65,7 @@ public class PersonCard extends UiPart<Region> {
         role.setText(person.getRole().name());
         role.getStyleClass().add(person.getRole().name().toLowerCase(Locale.ROOT));
         phone.setText("Phone: " + person.getPhone().value);
+        phone.setTooltip(createFullValueTooltip(phone.getText()));
         boolean isStudent = person.getRole() == Role.STUDENT;
         guardian.setManaged(isStudent);
         guardian.setVisible(isStudent);
@@ -75,6 +76,7 @@ public class PersonCard extends UiPart<Region> {
         address.setText("Address: " + person.getAddress().map(value -> value.value).orElse("-"));
         address.setTooltip(createFullValueTooltip(address.getText()));
         email.setText("Email: " + person.getEmail().map(value -> value.value).orElse("-"));
+        email.setTooltip(createFullValueTooltip(email.getText()));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));

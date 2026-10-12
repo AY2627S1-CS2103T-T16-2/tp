@@ -145,6 +145,18 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_maximumLengthAsciiNameAndAddress_success() {
+        String maximumLengthName = "A".repeat(Name.MAX_LENGTH);
+        String maximumLengthAddress = "X".repeat(Address.MAX_LENGTH);
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(maximumLengthName)
+                .withAddress(maximumLengthAddress).build();
+
+        assertParseSuccess(parser, "1 " + PREFIX_NAME + maximumLengthName
+                + " " + PREFIX_ADDRESS + maximumLengthAddress,
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
     public void parse_overLengthNameAndAddress_failure() {
         String overLengthName = "A".repeat(Name.MAX_LENGTH + 1);
         String overLengthAddress = "A".repeat(Address.MAX_LENGTH + 1);

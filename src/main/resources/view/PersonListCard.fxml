@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.Double?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -25,8 +26,11 @@
             <Region fx:constant="USE_PREF_SIZE" />
           </minWidth>
         </Label>
-        <Label fx:id="name" text="\$first" styleClass="cell_big_label" minWidth="0.0"
-               maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+        <Label fx:id="name" text="\$first" styleClass="cell_big_label" minWidth="0.0" HBox.hgrow="ALWAYS">
+          <maxWidth>
+            <Double fx:constant="MAX_VALUE" />
+          </maxWidth>
+        </Label>
         <Label fx:id="role" styleClass="role_badge">
           <minWidth>
             <Region fx:constant="USE_PREF_SIZE" />
@@ -34,11 +38,26 @@
         </Label>
       </HBox>
       <FlowPane fx:id="tags" />
-      <Label fx:id="phone" styleClass="cell_small_label" text="\$phone" />
-      <Label fx:id="guardian" styleClass="cell_small_label" maxWidth="1.7976931348623157E308" />
-      <Label fx:id="address" styleClass="cell_small_label" text="\$address"
-             maxWidth="1.7976931348623157E308" />
-      <Label fx:id="email" styleClass="cell_small_label" text="\$email" />
+      <Label fx:id="phone" styleClass="cell_small_label" text="\$phone">
+        <maxWidth>
+          <Double fx:constant="MAX_VALUE" />
+        </maxWidth>
+      </Label>
+      <Label fx:id="guardian" styleClass="cell_small_label">
+        <maxWidth>
+          <Double fx:constant="MAX_VALUE" />
+        </maxWidth>
+      </Label>
+      <Label fx:id="address" styleClass="cell_small_label" text="\$address">
+        <maxWidth>
+          <Double fx:constant="MAX_VALUE" />
+        </maxWidth>
+      </Label>
+      <Label fx:id="email" styleClass="cell_small_label" text="\$email">
+        <maxWidth>
+          <Double fx:constant="MAX_VALUE" />
+        </maxWidth>
+      </Label>
     </VBox>
   </GridPane>
 </HBox>
