@@ -268,7 +268,7 @@ Data files created before these relationship fields were introduced remain suppo
 when TuitionBook next saves the data file.
 
 If a `guardianId` is malformed, refers to a missing contact, refers to a student, or links a student to itself,
-TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired so you can review the affected relationships. A guardian contact's own `guardianId` is also removed if present.
+TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired. Review the `guardianId` values in the data file before entering another command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present.
 
 <box type="warning" seamless>
 

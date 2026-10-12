@@ -60,7 +60,7 @@ class JsonSerializableTuitionBook {
      * @throws IllegalValueException if there were any data constraints violated.
      */
     public TuitionBook toModelType() throws IllegalValueException {
-        return toModelTypeWithResult().tuitionBook();
+        return new TuitionBook(toModelTypeWithResult().tuitionBook());
     }
 
     /**

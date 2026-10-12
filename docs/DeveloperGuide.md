@@ -550,7 +550,9 @@ The role-filtered form supersedes the plain-list rule: `list` displays all conta
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall load sample contacts and show an information dialog; if it is malformed, it shall preserve the existing file in place, block saving, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning. The separate backup policy remains to be settled in issue #87.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall load sample contacts and show an information dialog; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+
+The malformed-file backup requirement is not yet implemented. TuitionBook currently preserves the existing file in place and blocks saving after a load failure. Issue #87 tracks the decision and implementation of a separate backup policy.
 
 ### Glossary
 

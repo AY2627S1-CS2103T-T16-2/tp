@@ -30,8 +30,11 @@ public class UiManager implements Ui {
     private MainWindow mainWindow;
 
     /**
-     * Creates a {@code UiManager} with the given {@code Logic} and the data file path
-     * to show in the status bar.
+     * Creates a {@code UiManager} with the given logic, data file path, and optional startup notice.
+     *
+     * @param logic executes user commands
+     * @param dataFilePath path shown in the status bar and startup notices
+     * @param startupNotice contact-data recovery notice to show at startup, or empty for a clean load
      */
     public UiManager(Logic logic, Path dataFilePath, Optional<StartupNotice> startupNotice) {
         this.logic = logic;
@@ -75,7 +78,8 @@ public class UiManager implements Ui {
                 int count = notice.repairedGuardianLinkCount();
                 String header = count + (count == 1 ? " guardian link was repaired" : " guardian links were repaired");
                 showAlertDialogAndWait(AlertType.WARNING, "Guardian links repaired", header,
-                        "All valid contacts were retained. Review students that now show no linked guardian.");
+                        "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath
+                                + " before entering a command; the next save removes invalid links.");
             }
             default -> throw new AssertionError("Unexpected startup notice: " + notice.type());
         }
