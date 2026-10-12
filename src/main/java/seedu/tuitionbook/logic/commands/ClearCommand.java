@@ -15,6 +15,11 @@ public class ClearCommand extends Command {
 
 
     @Override
+    public boolean requiresSave() {
+        return true;
+    }
+
+    @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
         model.setTuitionBook(new TuitionBook());

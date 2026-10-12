@@ -37,6 +37,11 @@ public class DeleteCommand extends Command {
     }
 
     @Override
+    public boolean requiresSave() {
+        return true;
+    }
+
+    @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         List<Person> lastShownList = model.getFilteredPersonList();
