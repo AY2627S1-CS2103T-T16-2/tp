@@ -44,7 +44,7 @@ public class LinkCommand extends Command {
         requireNonNull(model);
         List<Person> persons = model.getFilteredPersonList();
         if (studentIndex.getZeroBased() >= persons.size() || guardianIndex.getZeroBased() >= persons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+            throw new CommandException(Messages.getInvalidPersonDisplayedIndexMessage(persons.size()));
         }
 
         Person student = persons.get(studentIndex.getZeroBased());

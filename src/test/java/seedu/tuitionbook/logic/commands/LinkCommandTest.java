@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.tuitionbook.logic.commands.CommandTestUtil.assertCommandFailure;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.commons.core.index.Index;
+import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.UserPrefs;
@@ -47,12 +49,13 @@ public class LinkCommandTest {
     }
 
     @Test
-    public void execute_invalidIndex_failure() {
+    public void execute_invalidIndex_failure() throws CommandException {
         ModelManager model = modelWithStudentAndGuardian();
-        assertThrows(CommandException.class, () ->
-                new LinkCommand(Index.fromOneBased(3), Index.fromOneBased(2)).execute(model));
-        assertThrows(CommandException.class, () ->
-                new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(3)).execute(model));
+        new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(2)).execute(model);
+        String expectedMessage = Messages.getInvalidPersonDisplayedIndexMessage(2);
+
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(3), Index.fromOneBased(2)), model, expectedMessage);
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(3)), model, expectedMessage);
     }
 
     @Test

@@ -10,6 +10,26 @@ import seedu.tuitionbook.testutil.PersonBuilder;
 public class MessagesTest {
 
     @Test
+    public void getInvalidPersonDisplayedIndexMessage_emptyList_returnsEmptyListMessage() {
+        assertEquals("The person index provided is invalid. No contacts are shown in the current list.",
+                Messages.getInvalidPersonDisplayedIndexMessage(0));
+    }
+
+    @Test
+    public void getInvalidPersonDisplayedIndexMessage_oneContact_usesSingularWording() {
+        assertEquals("The person index provided is invalid. There is 1 contact in the current list. "
+                        + "Use an index from 1 to 1.",
+                Messages.getInvalidPersonDisplayedIndexMessage(1));
+    }
+
+    @Test
+    public void getInvalidPersonDisplayedIndexMessage_multipleContacts_usesPluralWording() {
+        assertEquals("The person index provided is invalid. There are 2 contacts in the current list. "
+                        + "Use an index from 1 to 2.",
+                Messages.getInvalidPersonDisplayedIndexMessage(2));
+    }
+
+    @Test
     public void format_absentEmailAndAddress_displaysHyphens() {
         Person person = new PersonBuilder().withoutEmail().withoutAddress().withTags().build();
 
