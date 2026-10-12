@@ -187,6 +187,7 @@ public class AddCommandParserTest {
         assertParseFailure(parser, ROLE_DESC_STUDENT + INVALID_NAME_DESC + PHONE_DESC_BOB, Name.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, mandatoryFields + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
+        // An empty e/ is rejected; omit e/ entirely to add a contact without an email.
         assertParseFailure(parser, mandatoryFields + EMPTY_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, mandatoryFields + EMPTY_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, mandatoryFields + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS);
