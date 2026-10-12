@@ -19,7 +19,6 @@ import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
-import seedu.tuitionbook.model.util.SampleDataUtil;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.Storage;
@@ -62,10 +61,9 @@ public class MainApp extends Application {
 
     /**
      * Returns a {@code ModelManager} with the data from {@code storage}'s TuitionBook and {@code userPrefs}. <br>
-     * The data from the sample TuitionBook will be used instead if {@code storage}'s TuitionBook is not found,
-     * or an empty TuitionBook will be used instead if errors occur when reading {@code storage}'s TuitionBook.
+     * An empty TuitionBook will be used instead if {@code storage}'s TuitionBook is not found or cannot be read.
      */
-    private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
+    Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getTuitionBookFilePath());
 
         Optional<ReadOnlyTuitionBook> tuitionBookOptional;
@@ -73,10 +71,10 @@ public class MainApp extends Application {
         try {
             tuitionBookOptional = storage.readTuitionBook();
             if (tuitionBookOptional.isEmpty()) {
-                logger.info("Creating a new data file " + storage.getTuitionBookFilePath()
-                        + " populated with a sample TuitionBook.");
+                logger.info("Starting with an empty TuitionBook because no data file was found at "
+                        + storage.getTuitionBookFilePath() + ".");
             }
-            initialData = tuitionBookOptional.orElseGet(SampleDataUtil::getSampleTuitionBook);
+            initialData = tuitionBookOptional.orElseGet(TuitionBook::new);
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getTuitionBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty TuitionBook.");

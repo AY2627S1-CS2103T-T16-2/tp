@@ -145,7 +145,13 @@ Format: `view INDEX`
 * Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
   contact data or the active filter.
 
-Examples using the initial sample contacts:
+To try the examples below from an empty contact list, enter these commands first:
+
+1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/guardian n/Bernice Yu p/99272758`
+1. `link 1 2`
+
+Examples using the contacts created above:
 
 * `view 1` replaces the contact list with Alex Yeoh's details and the details of his linked guardian, Bernice Yu.
 * `view 2` replaces the contact list with Bernice Yu's details and lists Alex Yeoh as a linked student.
