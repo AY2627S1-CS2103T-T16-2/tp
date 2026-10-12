@@ -33,7 +33,7 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
    * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student contact named `John Doe` to TuitionBook.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 1` : Deletes the 1st contact shown in the current list.
 
    * `clear` : Deletes all contacts.
 
