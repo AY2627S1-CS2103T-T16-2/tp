@@ -550,7 +550,7 @@ The role-filtered form supersedes the plain-list rule: `list` displays all conta
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty data set and inform the user; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall load sample contacts and show an information dialog; if it is malformed, it shall preserve the existing file in place, block saving, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning. The separate backup policy remains to be settled in issue #87.
 
 ### Glossary
 
@@ -590,7 +590,7 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens with an empty contact list. The window size may not be optimal.
+      Expected: The GUI opens with six sample contacts and an information dialog explaining that no data file was found. The window size may not be optimal.
 
 1. Saving window preferences
 
@@ -640,6 +640,13 @@ Use a fresh, disposable folder so the application loads its sample contacts. Do 
 
 1. Dealing with missing/corrupted data files
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+   1. In a disposable folder, launch the JAR without a `data/addressbook.json` file.<br>
+      Expected: Six sample contacts appear and an information dialog explains that no data file was found.
+
+   1. Close the app. Create `data/addressbook.json` containing `{broken`, then launch the JAR again.<br>
+      Expected: The contact list is empty and a warning explains that the file could not be loaded and saving is blocked. After dismissing the warning, a command that attempts to save reports an error; the original file remains unchanged.
+
+   1. Close the app. Replace the malformed file with valid contacts, including a student whose `guardianId` refers to a missing contact, then launch the JAR again.<br>
+      Expected: Valid contacts remain visible, the invalid link is removed, and a warning reports one repaired guardian link.
 
 1. _{ more test cases … }_

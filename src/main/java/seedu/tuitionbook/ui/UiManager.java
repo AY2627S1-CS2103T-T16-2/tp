@@ -1,6 +1,7 @@
 package seedu.tuitionbook.ui;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import javafx.application.Platform;
@@ -25,15 +26,17 @@ public class UiManager implements Ui {
 
     private Logic logic;
     private Path dataFilePath;
+    private Optional<StartupNotice> startupNotice;
     private MainWindow mainWindow;
 
     /**
      * Creates a {@code UiManager} with the given {@code Logic} and the data file path
      * to show in the status bar.
      */
-    public UiManager(Logic logic, Path dataFilePath) {
+    public UiManager(Logic logic, Path dataFilePath, Optional<StartupNotice> startupNotice) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.startupNotice = startupNotice;
     }
 
     @Override
@@ -47,6 +50,7 @@ public class UiManager implements Ui {
             mainWindow = new MainWindow(primaryStage, logic, dataFilePath);
             mainWindow.show(); //This should be called before creating other UI parts
             mainWindow.fillInnerParts();
+            startupNotice.ifPresent(this::showStartupNotice);
 
         } catch (Throwable e) {
             logger.severe(StringUtil.getDetails(e));
@@ -56,6 +60,25 @@ public class UiManager implements Ui {
 
     private Image getImage(String imagePath) {
         return new Image(MainApp.class.getResourceAsStream(imagePath));
+    }
+
+    private void showStartupNotice(StartupNotice notice) {
+        switch (notice.type()) {
+            case MISSING_DATA_FILE -> showAlertDialogAndWait(AlertType.INFORMATION, "No data file found",
+                    "Sample contacts were loaded", "No contact data was found at " + dataFilePath
+                            + ", so TuitionBook loaded sample contacts.");
+            case LOAD_FAILED -> showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded",
+                    "TuitionBook started with an empty contact list",
+                    "Saving is disabled to protect the existing data file at " + dataFilePath
+                            + ". Correct or move the file, then restart TuitionBook.");
+            case GUARDIAN_LINKS_REPAIRED -> {
+                int count = notice.repairedGuardianLinkCount();
+                String header = count + (count == 1 ? " guardian link was repaired" : " guardian links were repaired");
+                showAlertDialogAndWait(AlertType.WARNING, "Guardian links repaired", header,
+                        "All valid contacts were retained. Review students that now show no linked guardian.");
+            }
+            default -> throw new AssertionError("Unexpected startup notice: " + notice.type());
+        }
     }
 
     void showAlertDialogAndWait(Alert.AlertType type, String title, String headerText, String contentText) {

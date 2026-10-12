@@ -90,4 +90,48 @@ public class JsonSerializableTuitionBookTest {
         assertTrue(restoredTuitionBook.getPersonList().get(0).getGuardianId().isEmpty());
     }
 
+    @Test
+    public void toModelTypeWithResult_cleanContacts_reportsNoRepairs() throws Exception {
+        String guardianId = "123e4567-e89b-12d3-a456-426614174001";
+        JsonAdaptedPerson student = person("123e4567-e89b-12d3-a456-426614174000", "student", guardianId,
+                "Alice", "91234567");
+        JsonAdaptedPerson guardian = person(guardianId, "guardian", null, "Bob", "92345678");
+
+        TuitionBookLoadResult result = new JsonSerializableTuitionBook(List.of(student, guardian))
+                .toModelTypeWithResult();
+
+        assertEquals(0, result.repairedGuardianLinkCount());
+        assertEquals(2, result.tuitionBook().getPersonList().size());
+        assertEquals(UUID.fromString(guardianId), result.tuitionBook().getPersonList().get(0)
+                .getGuardianId().orElseThrow());
+    }
+
+    @Test
+    public void toModelTypeWithResult_invalidLinks_reportsEachRepairAndRetainsContacts() throws Exception {
+        String missingId = "123e4567-e89b-12d3-a456-426614174099";
+        String studentId = "123e4567-e89b-12d3-a456-426614174000";
+        List<JsonAdaptedPerson> contacts = List.of(
+                person(studentId, "student", studentId, "Self Link", "91234560"),
+                person("123e4567-e89b-12d3-a456-426614174001", "student", "not-a-uuid",
+                        "Malformed Link", "91234561"),
+                person("123e4567-e89b-12d3-a456-426614174002", "guardian", missingId,
+                        "Guardian Link", "91234562"),
+                person("123e4567-e89b-12d3-a456-426614174003", "student", missingId,
+                        "Missing Link", "91234563"),
+                person("123e4567-e89b-12d3-a456-426614174004", "student", studentId,
+                        "Student Target", "91234564"));
+
+        TuitionBookLoadResult result = new JsonSerializableTuitionBook(contacts).toModelTypeWithResult();
+
+        assertEquals(5, result.repairedGuardianLinkCount());
+        assertEquals(5, result.tuitionBook().getPersonList().size());
+        for (Person person : result.tuitionBook().getPersonList()) {
+            assertTrue(person.getGuardianId().isEmpty());
+        }
+    }
+
+    private static JsonAdaptedPerson person(String id, String role, String guardianId, String name, String phone) {
+        return new JsonAdaptedPerson(id, role, guardianId, name, phone, null, null, List.of());
+    }
+
 }
