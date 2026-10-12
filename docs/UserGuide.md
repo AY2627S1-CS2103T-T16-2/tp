@@ -192,7 +192,8 @@ Format: `link STUDENT_INDEX GUARDIAN_INDEX`
   previous guardian.
 * Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already
   exists and makes no change.
-* After a successful link, TuitionBook shows the full contact list: any active name or role filter is cleared.
+* After a link is created or replaced, TuitionBook shows the full contact list: any active name or role filter is
+  cleared. Reporting an already-existing link makes no change, so the displayed list and its filter are preserved.
 
 Example: `link 1 2` links the student at index 1 to the guardian at index 2.
 
