@@ -88,6 +88,14 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_nameWithForwardSlashParticle_success() {
+        Person expectedPerson = new PersonBuilder().withName("Muhammad s/o Ali").withPhone("81234567")
+                .withRole(Role.STUDENT).withoutEmail().withoutAddress().withTags().build();
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + " n/Muhammad s/o Ali p/81234567",
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
     public void parse_widenedNameAndFormattedPhone_success() {
         String widenedName = "Mary-Jane O'Connor";
         String formattedPhone = "+65 9123-4567";
