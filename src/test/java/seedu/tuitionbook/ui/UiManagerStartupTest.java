@@ -60,7 +60,8 @@ public class UiManagerStartupTest {
         assertStartupDialog(StartupNotice.guardianLinksRepaired(1), "Guardian links repaired",
                 "1 guardian link was repaired",
                 "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath()
-                        + " before entering a contact-changing command; the next save removes invalid links.", "warning");
+                        + " before entering a contact-changing command; the next save removes invalid links.",
+                "warning");
     }
 
     @Test
@@ -68,7 +69,8 @@ public class UiManagerStartupTest {
         assertStartupDialog(StartupNotice.guardianLinksRepaired(2), "Guardian links repaired",
                 "2 guardian links were repaired",
                 "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath()
-                        + " before entering a contact-changing command; the next save removes invalid links.", "warning");
+                        + " before entering a contact-changing command; the next save removes invalid links.",
+                "warning");
     }
 
     @Test
