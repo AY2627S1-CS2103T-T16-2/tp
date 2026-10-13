@@ -66,6 +66,10 @@ public class JsonUtil {
             throw new DataLoadingException(e);
         }
 
+        if (jsonFile == null) {
+            throw new DataLoadingException(new IOException("JSON root value must not be null."));
+        }
+
         return Optional.of(jsonFile);
     }
 

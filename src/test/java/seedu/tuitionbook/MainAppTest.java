@@ -1,5 +1,6 @@
 package seedu.tuitionbook;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -46,6 +47,23 @@ public class MainAppTest {
 
         assertTrue(Files.exists(dataFile));
         assertTrue(model.getTuitionBook().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void initModelManager_nullRoot_startsEmptyWithoutOverwritingFile() throws Exception {
+        assertMalformedDataStartsEmptyWithoutOverwriting("null");
+    }
+
+    @Test
+    public void initModelManager_nullPerson_startsEmptyWithoutOverwritingFile() throws Exception {
+        assertMalformedDataStartsEmptyWithoutOverwriting("{\"persons\":[null]}");
+    }
+
+    @Test
+    public void initModelManager_nullTag_startsEmptyWithoutOverwritingFile() throws Exception {
+        assertMalformedDataStartsEmptyWithoutOverwriting("""
+                {"persons":[{"name":"Test Student","phone":"81234567","tags":[null]}]}
+                """);
     }
 
     @Test
@@ -99,5 +117,17 @@ public class MainAppTest {
         JsonUserPrefsStorage userPrefsStorage =
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"));
         return new StorageManager(tuitionBookStorage, userPrefsStorage);
+    }
+
+    private void assertMalformedDataStartsEmptyWithoutOverwriting(String contents) throws Exception {
+        Path dataFile = temporaryFolder.resolve("malformed.json");
+        Files.writeString(dataFile, contents);
+        Storage storage = createStorage(dataFile);
+
+        Model model = new MainApp().initModelManager(storage, new UserPrefs());
+
+        assertTrue(model.getTuitionBook().getPersonList().isEmpty());
+        assertTrue(Files.exists(dataFile));
+        assertEquals(contents, Files.readString(dataFile));
     }
 }
