@@ -15,6 +15,7 @@ import seedu.tuitionbook.model.person.Role;
 
 /** Links a student to a guardian using their displayed indexes. */
 public class LinkCommand extends Command {
+
     public static final String COMMAND_WORD = "link";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Links a student to a guardian using their displayed indexes.\n"
@@ -39,6 +40,11 @@ public class LinkCommand extends Command {
     public LinkCommand(Index studentIndex, Index guardianIndex) {
         this.studentIndex = requireNonNull(studentIndex);
         this.guardianIndex = requireNonNull(guardianIndex);
+    }
+
+    @Override
+    public boolean requiresSave() {
+        return true;
     }
 
     @Override
