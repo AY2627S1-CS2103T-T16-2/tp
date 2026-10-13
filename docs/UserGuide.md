@@ -256,7 +256,9 @@ If TuitionBook cannot load an existing data file, a startup warning explains tha
 
 ### Editing the data file
 
-TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file.
+On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path.
+If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged.
 
 Each contact in the file has these relationship fields:
 
