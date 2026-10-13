@@ -52,6 +52,24 @@ public class JsonTuitionBookStorage {
      * @throws DataLoadingException if loading the data from storage failed.
      */
     public Optional<ReadOnlyTuitionBook> readTuitionBook(Path filePath) throws DataLoadingException {
+        return readTuitionBookWithResult(filePath).map(TuitionBookLoadResult::tuitionBook);
+    }
+
+    /**
+     * Returns the loaded data and guardian-link repair count, or an empty optional if the file is missing.
+     *
+     * @throws DataLoadingException if loading the data from storage failed.
+     */
+    public Optional<TuitionBookLoadResult> readTuitionBookWithResult() throws DataLoadingException {
+        return readTuitionBookWithResult(filePath);
+    }
+
+    /**
+     * Returns the load result for {@code filePath}, or an empty optional if that file is missing.
+     *
+     * @throws DataLoadingException if loading the data from storage failed.
+     */
+    public Optional<TuitionBookLoadResult> readTuitionBookWithResult(Path filePath) throws DataLoadingException {
         requireNonNull(filePath);
         boolean isConfiguredFile = isConfiguredFilePath(filePath);
 
@@ -66,11 +84,11 @@ public class JsonTuitionBookStorage {
             }
 
             try {
-                ReadOnlyTuitionBook tuitionBook = jsonTuitionBook.get().toModelType();
+                TuitionBookLoadResult result = jsonTuitionBook.get().toModelTypeWithResult();
                 if (isConfiguredFile) {
                     isWriteBlocked = false;
                 }
-                return Optional.of(tuitionBook);
+                return Optional.of(result);
             } catch (IllegalValueException ive) {
                 logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
                 throw new DataLoadingException(ive);
