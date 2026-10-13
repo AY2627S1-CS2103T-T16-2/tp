@@ -199,6 +199,10 @@ public class LinkCommandTest {
         return model;
     }
 
+    private static ModelManager modelWithStudentAndGuardian() {
+        return modelWith(student(), guardian());
+    }
+
     private static ModelManager filteredModel(Person firstPerson, Person secondPerson, Person hiddenPerson) {
         ModelManager model = modelWith(firstPerson, secondPerson, hiddenPerson);
         model.updateFilteredPersonList(person -> !person.getId().equals(hiddenPerson.getId()));
@@ -233,6 +237,8 @@ public class LinkCommandTest {
 
     private static List<UUID> filteredContactIds(ModelManager model) {
         return model.getFilteredPersonList().stream().map(Person::getId).toList();
+    }
+
     private static String invalidStudentIndexMessage(int displayedPersonCount) {
         return "Student index: " + Messages.getInvalidPersonDisplayedIndexMessage(displayedPersonCount);
     }
