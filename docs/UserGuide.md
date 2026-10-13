@@ -33,7 +33,7 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
    * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student contact named `John Doe` to TuitionBook.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 1` : Deletes the 1st contact shown in the current list.
 
    * `clear` : Deletes all contacts.
 
@@ -148,7 +148,13 @@ Format: `view INDEX`
 * Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
   contact data or the active filter.
 
-Examples using the initial sample contacts:
+To try the examples below from an empty contact list, enter these commands first:
+
+1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/guardian n/Bernice Yu p/99272758`
+1. `link 1 2`
+
+Examples using the contacts created above:
 
 * `view 1` replaces the contact list with Alex Yeoh's details and the details of his linked guardian, Bernice Yu.
 * `view 2` replaces the contact list with Bernice Yu's details and lists Alex Yeoh as a linked student.
@@ -297,7 +303,7 @@ _Details coming soon ..._
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 3. **Name text resembling a parameter prefix** (e.g. the ` a/p ` in `Rina a/p Kaur`) is read as the start of the address parameter instead of part of the name, even though `/` itself is allowed in names (e.g. `Muhammad s/o Ali` is accepted). Write such name particles in full (e.g. `anak perempuan`) or omit them.
 4. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
-5. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming (Sec 2)`.
+5. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 6. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
 7. **There is no `unlink` command.** Linking a student to a different guardian replaces the existing link, and deleting either linked contact removes the link.
 8. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
