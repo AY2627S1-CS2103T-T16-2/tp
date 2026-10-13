@@ -18,6 +18,7 @@ import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.person.PersonHasRolePredicate;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
@@ -69,18 +70,68 @@ public class LinkCommandTest {
     }
 
     @Test
-    public void execute_invalidIndex_failure() {
-        Person student = student();
-        Person guardian = guardian();
-        Person hiddenStudent = hiddenStudent();
-        ModelManager model = filteredModel(student, guardian, hiddenStudent);
+    public void execute_invalidStudentIndex_failure() {
+        ModelManager model = modelWithStudentAndGuardian();
 
-        assertCommandFailureAndStateUnchanged(
-                new LinkCommand(Index.fromOneBased(3), Index.fromOneBased(2)), model,
-                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        assertCommandFailureAndStateUnchanged(
-                new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(3)), model,
-                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(3), Index.fromOneBased(2)), model,
+                invalidStudentIndexMessage(2));
+    }
+
+    @Test
+    public void execute_invalidGuardianIndex_failure() {
+        ModelManager model = modelWithStudentAndGuardian();
+
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(3)), model,
+                invalidGuardianIndexMessage(2));
+    }
+
+    @Test
+    public void execute_bothIndexesInvalid_reportsStudentIndexFailure() {
+        ModelManager model = modelWithStudentAndGuardian();
+
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(3), Index.fromOneBased(4)), model,
+                invalidStudentIndexMessage(2));
+    }
+
+    @Test
+    public void execute_emptyContactBook_reportsStudentIndexFailure() {
+        ModelManager model = new ModelManager();
+
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(1)), model,
+                invalidStudentIndexMessage(0));
+    }
+
+    @Test
+    public void execute_noMatchesFilter_reportsStudentIndexFailureAndPreservesFilter() {
+        ModelManager model = modelWithStudentAndGuardian();
+        model.updateFilteredPersonList(person -> false);
+
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(1)), model,
+                invalidStudentIndexMessage(0));
+    }
+
+    @Test
+    public void execute_roleFilteredList_reportsGuardianIndexUsingDisplayedCount() {
+        ModelManager model = modelWithStudentAndGuardian();
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN));
+
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(2)), model,
+                invalidGuardianIndexMessage(1));
+    }
+
+    @Test
+    public void execute_invalidGuardianIndex_preLinkedStudentPreservesGuardianRelationship() {
+        Person guardian = new PersonBuilder().withName("Guardian").withPhone("90000002")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Student").withPhone("90000001")
+                .withGuardian(guardian).build();
+        ModelManager model = new ModelManager(new seedu.tuitionbook.model.TuitionBook(), new UserPrefs());
+        model.addPerson(student);
+        model.addPerson(guardian);
+
+        assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(3)), model,
+                invalidGuardianIndexMessage(2));
+        assertEquals(guardian.getId(), model.getFilteredPersonList().get(0).getGuardianId().orElseThrow());
     }
 
     @Test
@@ -182,5 +233,11 @@ public class LinkCommandTest {
 
     private static List<UUID> filteredContactIds(ModelManager model) {
         return model.getFilteredPersonList().stream().map(Person::getId).toList();
+    private static String invalidStudentIndexMessage(int displayedPersonCount) {
+        return "Student index: " + Messages.getInvalidPersonDisplayedIndexMessage(displayedPersonCount);
+    }
+
+    private static String invalidGuardianIndexMessage(int displayedPersonCount) {
+        return "Guardian index: " + Messages.getInvalidPersonDisplayedIndexMessage(displayedPersonCount);
     }
 }

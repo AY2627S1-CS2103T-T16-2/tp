@@ -542,6 +542,12 @@ Priority represents importance to the target user and does not indicate whether 
 
 The role-filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` displays only contacts with the specified role. Other trailing text is rejected.
 
+**Startup data rule**
+
+If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample
+contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not
+change the separate recovery behaviour for a malformed data file.
+
 ### Non-Functional Requirements
 
 1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
@@ -620,7 +626,14 @@ testers are expected to do more *exploratory* testing.
 
 ### Viewing a contact
 
-Use a fresh, disposable folder so the application loads its sample contacts. Do not use real contact data.
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+Enter these commands to create the contacts used below:
+
+1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/guardian n/Bernice Yu p/99272758`
+1. `link 1 2`
+1. `add r/student n/Charlotte Oliveiro p/93210283`
+1. `add r/guardian n/David Li p/91031282`
 
 1. Enter `view 1`.<br>
    Expected: The contact list is replaced by Alex Yeoh's details and Bernice Yu's guardian details. The result area
@@ -631,8 +644,9 @@ Use a fresh, disposable folder so the application loads its sample contacts. Do 
    Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports
    `No students linked.`
 1. Enter `list r/student`, then `view 1`.<br>
-   Expected: Bernice Yu's details still appear. Enter another valid command and confirm that the restored list remains
-   filtered to students.
+   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored
+   list remains filtered to students. Note that `add`, `edit`, and `link` clear the active filter, while `list`
+   and `find` replace it, so they are unsuitable for this check.
 1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 

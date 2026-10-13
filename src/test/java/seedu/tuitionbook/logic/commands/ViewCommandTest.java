@@ -147,9 +147,10 @@ public class ViewCommandTest {
         Model model = modelWith(student, guardian);
         model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN));
 
-        assertCommandFailure(new ViewCommand(SECOND_INDEX), model, Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertCommandFailure(new ViewCommand(SECOND_INDEX), model,
+                Messages.getInvalidPersonDisplayedIndexMessage(model.getFilteredPersonList().size()));
         assertCommandFailure(new ViewCommand(FIRST_INDEX), modelWith(),
-                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+                Messages.getInvalidPersonDisplayedIndexMessage(0));
     }
 
     @Test
