@@ -33,7 +33,7 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
    * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student contact named `John Doe` to TuitionBook.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 1` : Deletes the 1st contact shown in the current list.
 
    * `clear` : Deletes all contacts.
 
@@ -148,7 +148,13 @@ Format: `view INDEX`
 * Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
   contact data or the active filter.
 
-Examples using the initial sample contacts:
+To try the examples below from an empty contact list, enter these commands first:
+
+1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/guardian n/Bernice Yu p/99272758`
+1. `link 1 2`
+
+Examples using the contacts created above:
 
 * `view 1` replaces the contact list with Alex Yeoh's details and the details of his linked guardian, Bernice Yu.
 * `view 2` replaces the contact list with Bernice Yu's details and lists Alex Yeoh as a linked student.
