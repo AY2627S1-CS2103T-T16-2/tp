@@ -61,13 +61,25 @@ class JsonSerializableTuitionBook {
      * @throws IllegalValueException if there were any data constraints violated.
      */
     public TuitionBook toModelType() throws IllegalValueException {
+        return new TuitionBook(toModelTypeWithResult().tuitionBook());
+    }
+
+    /**
+     * Returns the loaded contacts and the number of guardian links repaired during conversion.
+     */
+    TuitionBookLoadResult toModelTypeWithResult() throws IllegalValueException {
         List<Person> loadedPersons = new ArrayList<>();
         Set<UUID> loadedIds = new HashSet<>();
+        int repairedGuardianLinkCount = 0;
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
             if (jsonAdaptedPerson == null) {
                 throw new IllegalValueException(MESSAGE_NULL_PERSON);
             }
-            Person person = jsonAdaptedPerson.toModelType();
+            JsonAdaptedPerson.PersonLoadResult personResult = jsonAdaptedPerson.toModelTypeWithResult();
+            Person person = personResult.person();
+            if (personResult.hasRepairedGuardianLink()) {
+                repairedGuardianLinkCount++;
+            }
             // IDs must be unique before they can safely be used to resolve guardian links.
             if (!loadedIds.add(person.getId())) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_ID);
@@ -84,13 +96,16 @@ class JsonSerializableTuitionBook {
         TuitionBook tuitionBook = new TuitionBook();
         for (Person person : loadedPersons) {
             Person resolvedPerson = resolveGuardianLink(person, personsById);
+            if (resolvedPerson != person) {
+                repairedGuardianLinkCount++;
+            }
             // TuitionBook rejects manually introduced duplicate contact identities.
             if (tuitionBook.hasPerson(resolvedPerson)) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
             }
             tuitionBook.addPerson(resolvedPerson);
         }
-        return tuitionBook;
+        return new TuitionBookLoadResult(tuitionBook, repairedGuardianLinkCount);
     }
 
     /**

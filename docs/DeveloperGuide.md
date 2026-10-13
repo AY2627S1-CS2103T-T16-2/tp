@@ -557,7 +557,9 @@ change the separate recovery behaviour for a malformed data file.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty data set and inform the user; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+
+The malformed-file backup requirement is not yet implemented. TuitionBook currently preserves the existing file in place and blocks saving after a load failure. Issue #87 tracks the decision and implementation of a separate backup policy.
 
 ### Glossary
 
@@ -597,7 +599,7 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens with an empty contact list. The window size may not be optimal.
+      Expected: The GUI opens with an empty contact list and an information dialog explaining that no data file was found. The window size may not be optimal.
 
 1. Saving window preferences
 
@@ -655,10 +657,10 @@ Enter these commands to create the contacts used below:
 
 1. Keeping read-only commands available when contact saving is blocked
 
-   1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
+   1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/addressbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
    1. Launch TuitionBook.<br>
-      Expected: TuitionBook opens with an empty contact list. The malformed data file remains unchanged.
+      Expected: TuitionBook opens with an empty contact list and warns that saving is blocked. The malformed data file remains unchanged.
 
    1. Enter `help`.<br>
       Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
@@ -669,5 +671,12 @@ Enter these commands to create the contacts used below:
    1. Enter `exit`.<br>
       Expected: TuitionBook exits normally without displaying a storage error.
 
-   1. Compare `data/tuitionbook.json` with the saved copy.<br>
+   1. Compare `data/addressbook.json` with the saved copy.<br>
       Expected: The two files are identical; TuitionBook did not overwrite or modify the malformed data file.
+
+1. Warning about a repaired guardian link
+
+   1. In a fresh, disposable folder, create a valid `data/addressbook.json` containing a student whose `guardianId` refers to a missing contact.
+
+   1. Launch TuitionBook.<br>
+      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link.
