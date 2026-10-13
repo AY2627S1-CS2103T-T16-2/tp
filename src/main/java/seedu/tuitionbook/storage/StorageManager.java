@@ -60,6 +60,12 @@ public class StorageManager implements Storage {
     }
 
     @Override
+    public Optional<TuitionBookLoadResult> readTuitionBookWithResult() throws DataLoadingException {
+        logger.fine("Attempting to read data from file: " + tuitionBookStorage.getTuitionBookFilePath());
+        return tuitionBookStorage.readTuitionBookWithResult();
+    }
+
+    @Override
     public void saveTuitionBook(ReadOnlyTuitionBook tuitionBook) throws IOException {
         logger.fine("Attempting to write to data file: " + tuitionBookStorage.getTuitionBookFilePath());
         tuitionBookStorage.saveTuitionBook(tuitionBook);

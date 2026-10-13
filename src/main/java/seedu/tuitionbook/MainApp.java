@@ -1,6 +1,7 @@
 package seedu.tuitionbook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -23,6 +24,8 @@ import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.Storage;
 import seedu.tuitionbook.storage.StorageManager;
+import seedu.tuitionbook.storage.TuitionBookLoadResult;
+import seedu.tuitionbook.ui.StartupNotice;
 import seedu.tuitionbook.ui.Ui;
 import seedu.tuitionbook.ui.UiManager;
 
@@ -35,7 +38,8 @@ public class MainApp extends Application {
 
     private static final Logger logger = LogsCenter.getLogger(MainApp.class);
     private static final Path USER_PREFS_FILE_PATH = Paths.get("preferences.json");
-    private static final Path TUITION_BOOK_FILE_PATH = Paths.get("data", "addressbook.json");
+    private static final Path TUITION_BOOK_FILE_PATH = Paths.get("data", "tuitionbook.json");
+    private static final Path LEGACY_TUITION_BOOK_FILE_PATH = Paths.get("data", "addressbook.json");
 
     protected Ui ui;
     protected Logic logic;
@@ -49,40 +53,70 @@ public class MainApp extends Application {
 
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(USER_PREFS_FILE_PATH);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
+        migrateLegacyTuitionBookFile();
         JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(TUITION_BOOK_FILE_PATH);
         storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
 
-        model = initModelManager(storage, userPrefs);
+        StartupState startupState = loadStartupState(storage, userPrefs);
+        model = startupState.model();
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getTuitionBookFilePath());
+        ui = new UiManager(logic, storage.getTuitionBookFilePath(), startupState.notice());
+    }
+
+    /**
+     * Moves the data file used before TuitionBook was renamed, unless a data file already exists at the current path.
+     *
+     * @throws IOException if the legacy data file cannot be moved to the current path.
+     */
+    private void migrateLegacyTuitionBookFile() throws IOException {
+        if (Files.notExists(TUITION_BOOK_FILE_PATH) && Files.exists(LEGACY_TUITION_BOOK_FILE_PATH)) {
+            logger.info("Moving legacy data file from " + LEGACY_TUITION_BOOK_FILE_PATH
+                    + " to " + TUITION_BOOK_FILE_PATH + ".");
+            Files.move(LEGACY_TUITION_BOOK_FILE_PATH, TUITION_BOOK_FILE_PATH);
+        }
     }
 
     /**
      * Returns a {@code ModelManager} with the data from {@code storage}'s TuitionBook and {@code userPrefs}. <br>
      * An empty TuitionBook will be used instead if {@code storage}'s TuitionBook is not found or cannot be read.
+     * Returns the model and any startup notice for {@code storage}'s TuitionBook and {@code userPrefs}. <br>
+     * An empty TuitionBook is used if the data file is missing or cannot be read.
      */
     // Package-private for testing.
-    Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
+    static StartupState loadStartupState(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getTuitionBookFilePath());
 
-        Optional<ReadOnlyTuitionBook> tuitionBookOptional;
+        Optional<TuitionBookLoadResult> tuitionBookOptional;
         ReadOnlyTuitionBook initialData;
+        Optional<StartupNotice> notice = Optional.empty();
         try {
-            tuitionBookOptional = storage.readTuitionBook();
+            tuitionBookOptional = storage.readTuitionBookWithResult();
             if (tuitionBookOptional.isEmpty()) {
                 logger.info("Starting with an empty TuitionBook because no data file was found at "
                         + storage.getTuitionBookFilePath() + ".");
+                initialData = new TuitionBook();
+                notice = Optional.of(StartupNotice.missingDataFile());
+            } else {
+                TuitionBookLoadResult result = tuitionBookOptional.get();
+                initialData = result.tuitionBook();
+                if (result.repairedGuardianLinkCount() > 0) {
+                    notice = Optional.of(StartupNotice.guardianLinksRepaired(result.repairedGuardianLinkCount()));
+                }
             }
-            initialData = tuitionBookOptional.orElseGet(TuitionBook::new);
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getTuitionBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty TuitionBook.");
             initialData = new TuitionBook();
+            notice = Optional.of(StartupNotice.loadFailed());
         }
 
-        return new ModelManager(initialData, userPrefs);
+        return new StartupState(new ModelManager(initialData, userPrefs), notice);
+    }
+
+    /** The initialized model and any contact-data notice to show at startup. */
+    record StartupState(Model model, Optional<StartupNotice> notice) {
     }
 
     /**

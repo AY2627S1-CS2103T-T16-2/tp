@@ -201,6 +201,29 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readTuitionBookWithResult_repairedLink_keepsContactsAndAllowsSave() throws Exception {
+        Path filePath = testFolder.resolve("RepairedTuitionBook.json");
+        Files.writeString(filePath, """
+                {"persons":[
+                  {"id":"123e4567-e89b-12d3-a456-426614174000","role":"STUDENT",
+                   "guardianId":"123e4567-e89b-12d3-a456-426614174099","name":"Sam Student",
+                   "phone":"91234567","tags":[]},
+                  {"id":"123e4567-e89b-12d3-a456-426614174001","role":"GUARDIAN",
+                   "name":"Grace Guardian","phone":"92345678","tags":[]}
+                ]}
+                """);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        TuitionBookLoadResult result = storage.readTuitionBookWithResult().orElseThrow();
+
+        assertEquals(1, result.repairedGuardianLinkCount());
+        assertEquals(2, result.tuitionBook().getPersonList().size());
+        assertTrue(result.tuitionBook().getPersonList().get(0).getGuardianId().isEmpty());
+        storage.saveTuitionBook(result.tuitionBook());
+        assertEquals(0, storage.readTuitionBookWithResult().orElseThrow().repairedGuardianLinkCount());
+    }
+
+    @Test
     public void readTuitionBook_invalidUnrelatedFile_doesNotBlockConfiguredFile() throws Exception {
         Path configuredFilePath = testFolder.resolve("ConfiguredTuitionBook.json");
         Path unrelatedFilePath = testFolder.resolve("UnrelatedTuitionBook.json");
