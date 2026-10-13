@@ -29,6 +29,7 @@ class JsonSerializableTuitionBook {
 
     public static final String MESSAGE_DUPLICATE_PERSON = "Persons list contains duplicate person(s).";
     public static final String MESSAGE_DUPLICATE_ID = "Persons list contains duplicate id(s).";
+    public static final String MESSAGE_NULL_PERSON = "Persons list contains a null contact.";
 
     private static final Logger logger = LogsCenter.getLogger(JsonSerializableTuitionBook.class);
 
@@ -71,6 +72,9 @@ class JsonSerializableTuitionBook {
         Set<UUID> loadedIds = new HashSet<>();
         int repairedGuardianLinkCount = 0;
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
+            if (jsonAdaptedPerson == null) {
+                throw new IllegalValueException(MESSAGE_NULL_PERSON);
+            }
             JsonAdaptedPerson.PersonLoadResult personResult = jsonAdaptedPerson.toModelTypeWithResult();
             Person person = personResult.person();
             if (personResult.hasRepairedGuardianLink()) {
