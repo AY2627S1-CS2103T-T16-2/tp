@@ -42,7 +42,7 @@ public class ViewCommand extends Command {
         requireNonNull(model);
         List<Person> displayedPersons = model.getFilteredPersonList();
         if (targetIndex.getZeroBased() >= displayedPersons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+            throw new CommandException(Messages.getInvalidPersonDisplayedIndexMessage(displayedPersons.size()));
         }
 
         Person selectedPerson = displayedPersons.get(targetIndex.getZeroBased());
