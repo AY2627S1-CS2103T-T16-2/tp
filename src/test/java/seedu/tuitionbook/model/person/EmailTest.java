@@ -14,7 +14,8 @@ public class EmailTest {
     }
 
     @Test
-    public void constructor_invalidEmail_throwsIllegalArgumentException() {
+    public void constructor_blankEmail_throwsIllegalArgumentException() {
+        // A missing email is represented by the absence of an Email object, not a blank Email value.
         String invalidEmail = "";
         assertThrows(IllegalArgumentException.class, () -> new Email(invalidEmail));
     }

@@ -25,6 +25,8 @@ public class LinkCommand extends Command {
     public static final String MESSAGE_RELINK_SUCCESS = "Linked student %1$s to guardian %2$s."
             + " Previous guardian unlinked: %3$s.";
     public static final String MESSAGE_ALREADY_LINKED = "Student %1$s is already linked to guardian %2$s.";
+    public static final String MESSAGE_INVALID_STUDENT_INDEX = "Student index: %1$s";
+    public static final String MESSAGE_INVALID_GUARDIAN_INDEX = "Guardian index: %1$s";
     public static final String MESSAGE_STUDENT_REQUIRED = "The first index must refer to a student.";
     public static final String MESSAGE_GUARDIAN_REQUIRED = "The second index must refer to a guardian.";
 
@@ -49,8 +51,14 @@ public class LinkCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         List<Person> persons = model.getFilteredPersonList();
-        if (studentIndex.getZeroBased() >= persons.size() || guardianIndex.getZeroBased() >= persons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        int displayedPersonCount = persons.size();
+        if (studentIndex.getZeroBased() >= displayedPersonCount) {
+            throw new CommandException(String.format(MESSAGE_INVALID_STUDENT_INDEX,
+                    Messages.getInvalidPersonDisplayedIndexMessage(displayedPersonCount)));
+        }
+        if (guardianIndex.getZeroBased() >= displayedPersonCount) {
+            throw new CommandException(String.format(MESSAGE_INVALID_GUARDIAN_INDEX,
+                    Messages.getInvalidPersonDisplayedIndexMessage(displayedPersonCount)));
         }
 
         Person student = persons.get(studentIndex.getZeroBased());
