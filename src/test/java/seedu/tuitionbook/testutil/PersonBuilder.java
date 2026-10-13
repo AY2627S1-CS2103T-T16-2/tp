@@ -11,7 +11,6 @@ import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Phone;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.model.tag.Tag;
-import seedu.tuitionbook.model.util.SampleDataUtil;
 
 /**
  * A utility class to help with building Person objects.
@@ -73,7 +72,7 @@ public class PersonBuilder {
      * Parses the {@code tags} into a {@code Set<Tag>} and sets it to the {@code Person} that we are building.
      */
     public PersonBuilder withTags(String ... tags) {
-        this.tags = SampleDataUtil.getTagSet(tags);
+        this.tags = TestUtil.getTagSet(tags);
         return this;
     }
 

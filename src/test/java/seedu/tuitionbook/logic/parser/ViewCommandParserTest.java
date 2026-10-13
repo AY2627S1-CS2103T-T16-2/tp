@@ -27,7 +27,9 @@ public class ViewCommandParserTest {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ViewCommand.MESSAGE_USAGE);
         assertParseFailure(parser, "", expectedMessage);
         assertParseFailure(parser, "0", expectedMessage);
+        assertParseFailure(parser, "-1", expectedMessage);
         assertParseFailure(parser, "abc", expectedMessage);
+        assertParseFailure(parser, Long.toString(Integer.MAX_VALUE + 1L), expectedMessage);
         assertParseFailure(parser, "1 extra", expectedMessage);
     }
 }
