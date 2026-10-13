@@ -1,6 +1,7 @@
 package seedu.tuitionbook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -37,6 +38,7 @@ public class MainApp extends Application {
     private static final Logger logger = LogsCenter.getLogger(MainApp.class);
     private static final Path USER_PREFS_FILE_PATH = Paths.get("preferences.json");
     private static final Path TUITION_BOOK_FILE_PATH = Paths.get("data", "tuitionbook.json");
+    private static final Path LEGACY_TUITION_BOOK_FILE_PATH = Paths.get("data", "addressbook.json");
 
     protected Ui ui;
     protected Logic logic;
@@ -50,6 +52,7 @@ public class MainApp extends Application {
 
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(USER_PREFS_FILE_PATH);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
+        migrateLegacyTuitionBookFile();
         JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(TUITION_BOOK_FILE_PATH);
         storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
 
@@ -58,6 +61,19 @@ public class MainApp extends Application {
         logic = new LogicManager(model, storage);
 
         ui = new UiManager(logic, storage.getTuitionBookFilePath());
+    }
+
+    /**
+     * Moves the data file used before TuitionBook was renamed, unless a data file already exists at the current path.
+     *
+     * @throws IOException if the legacy data file cannot be moved to the current path.
+     */
+    private void migrateLegacyTuitionBookFile() throws IOException {
+        if (Files.notExists(TUITION_BOOK_FILE_PATH) && Files.exists(LEGACY_TUITION_BOOK_FILE_PATH)) {
+            logger.info("Moving legacy data file from " + LEGACY_TUITION_BOOK_FILE_PATH
+                    + " to " + TUITION_BOOK_FILE_PATH + ".");
+            Files.move(LEGACY_TUITION_BOOK_FILE_PATH, TUITION_BOOK_FILE_PATH);
+        }
     }
 
     /**
