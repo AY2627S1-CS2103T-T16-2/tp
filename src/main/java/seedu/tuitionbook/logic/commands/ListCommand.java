@@ -43,6 +43,11 @@ public class ListCommand extends Command {
     }
 
     @Override
+    public boolean requiresSave() {
+        return false;
+    }
+
+    @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
         if (predicate == null) {

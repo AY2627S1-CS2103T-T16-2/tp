@@ -111,6 +111,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. A save failure becomes a command error, so the UI does not report the command as successful.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -652,8 +653,21 @@ Enter these commands to create the contacts used below:
 
 ### Saving data
 
-1. Dealing with missing/corrupted data files
+1. Keeping read-only commands available when contact saving is blocked
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+   1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
-1. _{ more test cases … }_
+   1. Launch TuitionBook.<br>
+      Expected: TuitionBook opens with an empty contact list. The malformed data file remains unchanged.
+
+   1. Enter `help`.<br>
+      Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
+
+   1. Close the help window, then enter `add r/student n/Alex Lim p/91234567`.<br>
+      Expected: TuitionBook reports that it could not save because saving is disabled for the malformed data file. The malformed data file remains unchanged.
+
+   1. Enter `exit`.<br>
+      Expected: TuitionBook exits normally without displaying a storage error.
+
+   1. Compare `data/tuitionbook.json` with the saved copy.<br>
+      Expected: The two files are identical; TuitionBook did not overwrite or modify the malformed data file.

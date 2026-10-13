@@ -245,17 +245,17 @@ Format: `clear`
 
 ### Exiting the program: `exit`
 
-Exits the program. All data is already saved, so it is always safe to exit.
+Exits the program without attempting to save contact data. If an earlier contact-changing command reported a save error, its changes may not be available after restarting TuitionBook.
 
 Format: `exit`
 
 ### Saving the data
 
-TuitionBook automatically saves data after every command. You do not need to save manually.
+TuitionBook attempts to save contact data after commands that can change contacts or guardian links. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error, and changes from that command may not be available after restarting. You do not need to save manually.
 
 ### Editing the data file
 
-TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 Each contact in the file has these relationship fields:
 
