@@ -278,7 +278,7 @@ TuitionBook keeps the contact but removes that guardian link when loading the fi
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, TuitionBook starts with an empty contact list at the next run. It leaves the invalid file unchanged and blocks saves to avoid overwriting it. Back up and correct or remove the file before restarting TuitionBook. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, TuitionBook starts with an empty contact list at the next run and moves the unreadable file to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`. The backup is kept unchanged; after it is created, TuitionBook can save new contact data to `tuitionbook.json`. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -306,7 +306,7 @@ _Details coming soon ..._
 7. **There is no `unlink` command.** Linking a student to a different guardian replaces the existing link, and deleting either linked contact removes the link.
 8. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
 9. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
-10. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list.** The invalid file is left unchanged and saving is blocked so it is not overwritten; back it up, then fix or remove it before restarting. We recommend backing up the data file before hand-editing it.
+10. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list.** It moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), then allows new data to be saved. If the backup fails, the original remains in place and saving is blocked. We recommend backing up the data file before hand-editing it.
 11. **`find` matches whole words in names only**: `find Ale` does not match `Alex`. Search using at least one complete word of the name.
 
 --------------------------------------------------------------------------------------------------------------------

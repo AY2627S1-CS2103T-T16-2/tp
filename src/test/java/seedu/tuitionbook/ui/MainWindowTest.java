@@ -121,7 +121,8 @@ public class MainWindowTest {
                 primaryStage.hide();
             }
         });
-        assertArrayEquals(originalContents, Files.readAllBytes(dataFilePath));
+        assertArrayEquals(originalContents, Files.readAllBytes(dataFilePath.resolveSibling(
+                dataFilePath.getFileName() + ".backup")));
     }
 
     private static void execute(TextField commandBox, String command) {

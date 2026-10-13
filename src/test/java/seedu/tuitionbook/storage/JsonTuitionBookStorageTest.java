@@ -158,24 +158,34 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
-    public void readTuitionBook_conflictingConfiguredFile_blocksSaveUntilSuccessfulRead() throws Exception {
+    public void readTuitionBook_conflictingConfiguredFile_movesFileToBackupAndAllowsSave() throws Exception {
         Path filePath = testFolder.resolve("ConflictingTuitionBook.json");
         Files.writeString(filePath, CONFLICTING_TUITION_BOOK_JSON);
         String originalContents = Files.readString(filePath);
         JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
 
         assertThrows(DataLoadingException.class, storage::readTuitionBook);
-        String expectedMessage = String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, filePath);
-        assertThrows(IOException.class, expectedMessage, () -> storage.saveTuitionBook(new TuitionBook()));
-        assertTrue(Files.exists(filePath));
-        assertEquals(originalContents, Files.readString(filePath));
-
-        String correctedContents = originalContents.replace("9123-4567", "9123-4568");
-        Files.writeString(filePath, correctedContents);
-        assertEquals(3, storage.readTuitionBook().orElseThrow().getPersonList().size());
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
+        assertFalse(Files.exists(filePath));
+        assertEquals(originalContents, Files.readString(backupPath));
 
         storage.saveTuitionBook(new TuitionBook());
         assertEquals(new TuitionBook(), new TuitionBook(storage.readTuitionBook().orElseThrow()));
+    }
+
+    @Test
+    public void readTuitionBook_existingBackup_usesNextBackup() throws Exception {
+        Path filePath = testFolder.resolve("ConflictingTuitionBook.json");
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
+        Files.writeString(filePath, CONFLICTING_TUITION_BOOK_JSON);
+        Files.writeString(backupPath, "existing backup");
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+
+        assertEquals("existing backup", Files.readString(backupPath));
+        assertEquals(CONFLICTING_TUITION_BOOK_JSON,
+                Files.readString(filePath.resolveSibling(filePath.getFileName() + ".backup.1")));
     }
 
     @Test

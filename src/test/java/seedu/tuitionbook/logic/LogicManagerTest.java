@@ -110,13 +110,14 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_nonMutatingCommandsAfterConfiguredLoadFailure_succeedWithoutWriting() throws Exception {
+    public void execute_nonMutatingCommandsAfterConfiguredLoadFailure_leaveBackupUnchanged() throws Exception {
         Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook.json");
         Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
         Person person = new PersonBuilder().withName("Alex Lim").build();
         fallbackModel.addPerson(person);
-        Logic blockedLogic = createLogicWithBlockedStorage(tuitionBookFilePath, fallbackModel);
-        byte[] originalContents = Files.readAllBytes(tuitionBookFilePath);
+        Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);
+        byte[] originalContents = Files.readAllBytes(tuitionBookFilePath.resolveSibling(
+                tuitionBookFilePath.getFileName() + ".backup"));
 
         CommandResult helpResult = blockedLogic.execute(HelpCommand.COMMAND_WORD);
         assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, helpResult.getFeedbackToUser());
@@ -139,26 +140,27 @@ public class LogicManagerTest {
         assertEquals(ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, exitResult.getFeedbackToUser());
         assertTrue(exitResult.isExit());
         assertFalse(exitResult.isShowHelp());
-        assertArrayEquals(originalContents, Files.readAllBytes(tuitionBookFilePath));
+        assertArrayEquals(originalContents, Files.readAllBytes(tuitionBookFilePath.resolveSibling(
+                tuitionBookFilePath.getFileName() + ".backup")));
     }
 
     @Test
-    public void execute_addAfterConfiguredLoadFailure_reportsStorageErrorWithoutWriting() throws Exception {
+    public void execute_addAfterConfiguredLoadFailure_savesNewDataAndPreservesBackup() throws Exception {
         Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook.json");
         Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
-        Logic blockedLogic = createLogicWithBlockedStorage(tuitionBookFilePath, fallbackModel);
-        byte[] originalContents = Files.readAllBytes(tuitionBookFilePath);
-        String expectedMessage = String.format(LogicManager.FILE_OPS_ERROR_FORMAT,
-                String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, tuitionBookFilePath));
+        Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);
+        Path backupPath = tuitionBookFilePath.resolveSibling(tuitionBookFilePath.getFileName() + ".backup");
+        byte[] originalContents = Files.readAllBytes(backupPath);
         String addCommand = AddCommand.COMMAND_WORD + ROLE_DESC_STUDENT + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
 
-        assertThrows(CommandException.class, expectedMessage, () -> blockedLogic.execute(addCommand));
-        assertArrayEquals(originalContents, Files.readAllBytes(tuitionBookFilePath));
+        blockedLogic.execute(addCommand);
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+        assertTrue(Files.exists(tuitionBookFilePath));
     }
 
     @Test
-    public void execute_otherMutatingCommandsAfterConfiguredLoadFailure_reportStorageErrorWithoutWriting()
+    public void execute_mutatingCommandsAfterConfiguredLoadFailure_preserveBackup()
             throws Exception {
         String[] commands = {"edit 1 n/New Student", "delete 1", "clear", "link 1 2"};
         for (int i = 0; i < commands.length; i++) {
@@ -167,17 +169,17 @@ public class LogicManagerTest {
             Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
             fallbackModel.addPerson(new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT).build());
             fallbackModel.addPerson(new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build());
-            Logic blockedLogic = createLogicWithBlockedStorage(tuitionBookFilePath, fallbackModel);
-            byte[] originalContents = Files.readAllBytes(tuitionBookFilePath);
-            String expectedMessage = String.format(LogicManager.FILE_OPS_ERROR_FORMAT,
-                    String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, tuitionBookFilePath));
+            Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);
+            Path backupPath = tuitionBookFilePath.resolveSibling(tuitionBookFilePath.getFileName() + ".backup");
+            byte[] originalContents = Files.readAllBytes(backupPath);
 
-            assertThrows(CommandException.class, expectedMessage, () -> blockedLogic.execute(command));
-            assertArrayEquals(originalContents, Files.readAllBytes(tuitionBookFilePath));
+            blockedLogic.execute(command);
+            assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+            assertTrue(Files.exists(tuitionBookFilePath));
         }
     }
 
-    private Logic createLogicWithBlockedStorage(Path tuitionBookFilePath, Model fallbackModel) throws Exception {
+    private Logic createLogicWithRecoveredStorage(Path tuitionBookFilePath, Model fallbackModel) throws Exception {
         Files.writeString(tuitionBookFilePath, MALFORMED_TUITION_BOOK_JSON);
         JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(tuitionBookFilePath);
         JsonUserPrefsStorage userPrefsStorage =
