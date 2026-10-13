@@ -42,8 +42,8 @@ public class UiManagerStartupTest {
     @Test
     public void missingFile_showsInformationDialog() throws Exception {
         assertStartupDialog(StartupNotice.missingDataFile(), "No data file found",
-                "Sample contacts were loaded",
-                "No contact data was found at " + dataFilePath() + ", so TuitionBook loaded sample contacts.",
+                "TuitionBook started with an empty contact list",
+                "No contact data was found at " + dataFilePath() + ". Add contacts to get started.",
                 "information");
     }
 
@@ -60,7 +60,7 @@ public class UiManagerStartupTest {
         assertStartupDialog(StartupNotice.guardianLinksRepaired(1), "Guardian links repaired",
                 "1 guardian link was repaired",
                 "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath()
-                        + " before entering a command; the next save removes invalid links.", "warning");
+                        + " before entering a contact-changing command; the next save removes invalid links.", "warning");
     }
 
     @Test
@@ -68,7 +68,7 @@ public class UiManagerStartupTest {
         assertStartupDialog(StartupNotice.guardianLinksRepaired(2), "Guardian links repaired",
                 "2 guardian links were repaired",
                 "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath()
-                        + " before entering a command; the next save removes invalid links.", "warning");
+                        + " before entering a contact-changing command; the next save removes invalid links.", "warning");
     }
 
     @Test

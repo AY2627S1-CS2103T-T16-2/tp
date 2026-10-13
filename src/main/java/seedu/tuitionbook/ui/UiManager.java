@@ -68,8 +68,8 @@ public class UiManager implements Ui {
     private void showStartupNotice(StartupNotice notice) {
         switch (notice.type()) {
             case MISSING_DATA_FILE -> showAlertDialogAndWait(AlertType.INFORMATION, "No data file found",
-                    "Sample contacts were loaded", "No contact data was found at " + dataFilePath
-                            + ", so TuitionBook loaded sample contacts.");
+                    "TuitionBook started with an empty contact list",
+                    "No contact data was found at " + dataFilePath + ". Add contacts to get started.");
             case LOAD_FAILED -> showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded",
                     "TuitionBook started with an empty contact list",
                     "Saving is disabled to protect the existing data file at " + dataFilePath
@@ -79,7 +79,7 @@ public class UiManager implements Ui {
                 String header = count + (count == 1 ? " guardian link was repaired" : " guardian links were repaired");
                 showAlertDialogAndWait(AlertType.WARNING, "Guardian links repaired", header,
                         "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath
-                                + " before entering a command; the next save removes invalid links.");
+                                + " before entering a contact-changing command; the next save removes invalid links.");
             }
             default -> throw new AssertionError("Unexpected startup notice: " + notice.type());
         }

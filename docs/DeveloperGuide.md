@@ -111,6 +111,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. A save failure becomes a command error, so the UI does not report the command as successful.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -542,6 +543,12 @@ Priority represents importance to the target user and does not indicate whether 
 
 The role-filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` displays only contacts with the specified role. Other trailing text is rejected.
 
+**Startup data rule**
+
+If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample
+contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not
+change the separate recovery behaviour for a malformed data file.
+
 ### Non-Functional Requirements
 
 1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
@@ -550,7 +557,7 @@ The role-filtered form supersedes the plain-list rule: `list` displays all conta
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall load sample contacts and show an information dialog; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
 
 The malformed-file backup requirement is not yet implemented. TuitionBook currently preserves the existing file in place and blocks saving after a load failure. Issue #87 tracks the decision and implementation of a separate backup policy.
 
@@ -592,7 +599,7 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens with six sample contacts and an information dialog explaining that no data file was found. The window size may not be optimal.
+      Expected: The GUI opens with an empty contact list and an information dialog explaining that no data file was found. The window size may not be optimal.
 
 1. Saving window preferences
 
@@ -622,7 +629,14 @@ testers are expected to do more *exploratory* testing.
 
 ### Viewing a contact
 
-Use a fresh, disposable folder so the application loads its sample contacts. Do not use real contact data.
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+Enter these commands to create the contacts used below:
+
+1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/guardian n/Bernice Yu p/99272758`
+1. `link 1 2`
+1. `add r/student n/Charlotte Oliveiro p/93210283`
+1. `add r/guardian n/David Li p/91031282`
 
 1. Enter `view 1`.<br>
    Expected: The contact list is replaced by Alex Yeoh's details and Bernice Yu's guardian details. The result area
@@ -641,15 +655,28 @@ Use a fresh, disposable folder so the application loads its sample contacts. Do 
 
 ### Saving data
 
-1. Dealing with missing/corrupted data files
+1. Keeping read-only commands available when contact saving is blocked
 
-   1. In a disposable folder, launch the JAR without a `data/addressbook.json` file.<br>
-      Expected: Six sample contacts appear and an information dialog explains that no data file was found.
+   1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/addressbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
-   1. Close the app. Create `data/addressbook.json` containing `{broken`, then launch the JAR again.<br>
-      Expected: The contact list is empty and a warning explains that the file could not be loaded and saving is blocked. After dismissing the warning, a command that attempts to save reports an error; the original file remains unchanged.
+   1. Launch TuitionBook.<br>
+      Expected: TuitionBook opens with an empty contact list and warns that saving is blocked. The malformed data file remains unchanged.
 
-   1. Close the app. Replace the malformed file with valid contacts, including a student whose `guardianId` refers to a missing contact, then launch the JAR again.<br>
-      Expected: Valid contacts remain visible, the invalid link is removed, and a warning reports one repaired guardian link.
+   1. Enter `help`.<br>
+      Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
 
-1. _{ more test cases … }_
+   1. Close the help window, then enter `add r/student n/Alex Lim p/91234567`.<br>
+      Expected: TuitionBook reports that it could not save because saving is disabled for the malformed data file. The malformed data file remains unchanged.
+
+   1. Enter `exit`.<br>
+      Expected: TuitionBook exits normally without displaying a storage error.
+
+   1. Compare `data/addressbook.json` with the saved copy.<br>
+      Expected: The two files are identical; TuitionBook did not overwrite or modify the malformed data file.
+
+1. Warning about a repaired guardian link
+
+   1. In a fresh, disposable folder, create a valid `data/addressbook.json` containing a student whose `guardianId` refers to a missing contact.
+
+   1. Launch TuitionBook.<br>
+      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link.

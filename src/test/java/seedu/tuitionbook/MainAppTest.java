@@ -14,6 +14,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.tuitionbook.commons.core.GuiSettings;
+import seedu.tuitionbook.logic.Logic;
+import seedu.tuitionbook.logic.LogicManager;
+import seedu.tuitionbook.logic.commands.CommandResult;
+import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.TuitionBook;
@@ -21,6 +25,7 @@ import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
+import seedu.tuitionbook.testutil.PersonBuilder;
 import seedu.tuitionbook.ui.StartupNotice;
 
 /**
@@ -32,10 +37,11 @@ public class MainAppTest {
     public Path testFolder;
 
     @Test
-    public void loadStartupState_missingFile_loadsSamplesAndShowsNotice() {
+    public void loadStartupState_missingFile_startsEmptyAndShowsNotice() {
         MainApp.StartupState state = MainApp.loadStartupState(storage(), new UserPrefs());
 
-        assertEquals(6, state.model().getTuitionBook().getPersonList().size());
+        assertFalse(Files.exists(testFolder.resolve("contacts.json")));
+        assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
         assertEquals(StartupNotice.missingDataFile(), state.notice().orElseThrow());
     }
 
@@ -48,6 +54,45 @@ public class MainAppTest {
 
         assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
         assertTrue(state.notice().isEmpty());
+    }
+
+    @Test
+    public void clearThenRestart_existingEmptyDataFileDoesNotRestoreContacts() throws Exception {
+        StorageManager storage = storage();
+        TuitionBook tuitionBook = new TuitionBook();
+        tuitionBook.addPerson(new PersonBuilder().build());
+        storage.saveTuitionBook(tuitionBook);
+
+        MainApp.StartupState startupState = MainApp.loadStartupState(storage, new UserPrefs());
+        Model model = startupState.model();
+        assertTrue(model.getTuitionBook().getPersonList().contains(tuitionBook.getPersonList().get(0)));
+        Logic logic = new LogicManager(model, storage);
+        logic.execute("clear");
+
+        MainApp.StartupState restartedState = MainApp.loadStartupState(storage, new UserPrefs());
+
+        assertTrue(Files.exists(testFolder.resolve("contacts.json")));
+        assertTrue(restartedState.model().getTuitionBook().getPersonList().isEmpty());
+        assertTrue(restartedState.notice().isEmpty());
+    }
+
+    @Test
+    public void documentedViewExamples_fromEmptyStartup_succeed() throws Exception {
+        StorageManager storage = storage();
+        Model model = MainApp.loadStartupState(storage, new UserPrefs()).model();
+        Logic logic = new LogicManager(model, storage);
+        logic.execute("add r/student n/Alex Yeoh p/87438807");
+        logic.execute("add r/guardian n/Bernice Yu p/99272758");
+        logic.execute("link 1 2");
+        logic.execute("add r/student n/Charlotte Oliveiro p/93210283");
+        logic.execute("add r/guardian n/David Li p/91031282");
+
+        assertViewContains(logic.execute("view 1"), "Alex Yeoh", "Guardian details:", "Bernice Yu");
+        assertViewContains(logic.execute("view 2"), "Bernice Yu", "Linked students:", "Alex Yeoh");
+        assertViewContains(logic.execute("view 3"), "Charlotte Oliveiro", "No guardian linked.");
+        assertViewContains(logic.execute("view 4"), "David Li", "No students linked.");
+        logic.execute("list r/student");
+        assertViewContains(logic.execute("view 1"), "Alex Yeoh", "Guardian details:", "Bernice Yu");
     }
 
     @Test
@@ -177,5 +222,13 @@ public class MainAppTest {
     private StorageManager storage() {
         return new StorageManager(new JsonTuitionBookStorage(testFolder.resolve("contacts.json")),
                 new JsonUserPrefsStorage(testFolder.resolve("preferences.json")));
+    }
+
+    private void assertViewContains(CommandResult result, String... expectedFragments) {
+        String details = result.getDetailsToShow().orElseThrow();
+        for (String expectedFragment : expectedFragments) {
+            assertTrue(details.contains(expectedFragment), () ->
+                    "Missing <" + expectedFragment + "> in:\n" + details);
+        }
     }
 }

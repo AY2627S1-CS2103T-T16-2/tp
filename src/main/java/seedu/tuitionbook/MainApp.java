@@ -19,7 +19,6 @@ import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
-import seedu.tuitionbook.model.util.SampleDataUtil;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.Storage;
@@ -65,9 +64,9 @@ public class MainApp extends Application {
 
     /**
      * Returns the model and any startup notice for {@code storage}'s TuitionBook and {@code userPrefs}. <br>
-     * The data from the sample TuitionBook will be used instead if {@code storage}'s TuitionBook is not found,
-     * or an empty TuitionBook will be used instead if errors occur when reading {@code storage}'s TuitionBook.
+     * An empty TuitionBook is used if the data file is missing or cannot be read.
      */
+    // Package-private for testing.
     static StartupState loadStartupState(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getTuitionBookFilePath());
 
@@ -77,9 +76,9 @@ public class MainApp extends Application {
         try {
             tuitionBookOptional = storage.readTuitionBookWithResult();
             if (tuitionBookOptional.isEmpty()) {
-                logger.info("Creating a new data file " + storage.getTuitionBookFilePath()
-                        + " populated with a sample TuitionBook.");
-                initialData = SampleDataUtil.getSampleTuitionBook();
+                logger.info("Starting with an empty TuitionBook because no data file was found at "
+                        + storage.getTuitionBookFilePath() + ".");
+                initialData = new TuitionBook();
                 notice = Optional.of(StartupNotice.missingDataFile());
             } else {
                 TuitionBookLoadResult result = tuitionBookOptional.get();

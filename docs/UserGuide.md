@@ -23,7 +23,7 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 1. Copy the file to the folder you want to use as the _home folder_ for your TuitionBook.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar tuitionbook.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. If no data file exists, TuitionBook loads six sample contacts and shows an information dialog. Dismiss the dialog to use the app.<br>
+   A GUI similar to the one below should appear in a few seconds. If no data file exists, TuitionBook starts with an empty contact list and shows an information dialog. Dismiss the dialog to use the app.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
@@ -33,7 +33,7 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
    * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student contact named `John Doe` to TuitionBook.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 1` : Deletes the 1st contact shown in the current list.
 
    * `clear` : Deletes all contacts.
 
@@ -148,7 +148,13 @@ Format: `view INDEX`
 * Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
   contact data or the active filter.
 
-Examples using the initial sample contacts:
+To try the examples below from an empty contact list, enter these commands first:
+
+1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/guardian n/Bernice Yu p/99272758`
+1. `link 1 2`
+
+Examples using the contacts created above:
 
 * `view 1` replaces the contact list with Alex Yeoh's details and the details of his linked guardian, Bernice Yu.
 * `view 2` replaces the contact list with Bernice Yu's details and lists Alex Yeoh as a linked student.
@@ -239,13 +245,13 @@ Format: `clear`
 
 ### Exiting the program: `exit`
 
-Exits the program. All data is already saved, so it is always safe to exit.
+Exits the program without attempting to save contact data. If an earlier contact-changing command reported a save error, its changes may not be available after restarting TuitionBook.
 
 Format: `exit`
 
 ### Saving the data
 
-TuitionBook automatically saves data after every command. You do not need to save manually.
+TuitionBook attempts to save contact data after commands that can change contacts or guardian links. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error, and changes from that command may not be available after restarting. You do not need to save manually.
 If TuitionBook cannot load an existing data file, a startup warning explains that saving is blocked until you correct or move the file and restart the app.
 
 ### Editing the data file
@@ -268,7 +274,7 @@ Data files created before these relationship fields were introduced remain suppo
 when TuitionBook next saves the data file.
 
 If a `guardianId` is malformed, refers to a missing contact, refers to a student, or links a student to itself,
-TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired. Review the `guardianId` values in the data file before entering another command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present.
+TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present.
 
 <box type="warning" seamless>
 
