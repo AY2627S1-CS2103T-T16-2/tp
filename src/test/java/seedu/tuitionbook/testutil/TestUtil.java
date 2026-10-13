@@ -17,16 +17,15 @@ import seedu.tuitionbook.model.tag.Tag;
  * A utility class for test cases.
  */
 public class TestUtil {
+    /**
+     * Folder used for temp files created during testing. Ignored by Git.
+     */
+    private static final Path SANDBOX_FOLDER = Paths.get("src", "test", "data", "sandbox");
 
     /** Returns a tag set containing the supplied tag names for test fixtures. */
     public static Set<Tag> getTagSet(String... strings) {
         return Arrays.stream(strings).map(Tag::new).collect(Collectors.toSet());
     }
-
-    /**
-     * Folder used for temp files created during testing. Ignored by Git.
-     */
-    private static final Path SANDBOX_FOLDER = Paths.get("src", "test", "data", "sandbox");
 
     /**
      * Appends {@code fileName} to the sandbox folder path and returns the resulting path.
