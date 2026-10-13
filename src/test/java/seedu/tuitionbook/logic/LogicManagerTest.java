@@ -2,8 +2,8 @@ package seedu.tuitionbook.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
+import static seedu.tuitionbook.logic.Messages.getInvalidPersonDisplayedIndexMessage;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.NAME_DESC_AMY;
@@ -91,7 +91,7 @@ public class LogicManagerTest {
     @Test
     public void execute_commandExecutionError_throwsCommandException() {
         String deleteCommand = "delete 9";
-        assertCommandException(deleteCommand, MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertCommandException(deleteCommand, getInvalidPersonDisplayedIndexMessage(0));
     }
 
     @Test

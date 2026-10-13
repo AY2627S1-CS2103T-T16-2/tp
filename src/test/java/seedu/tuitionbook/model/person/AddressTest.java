@@ -14,7 +14,8 @@ public class AddressTest {
     }
 
     @Test
-    public void constructor_invalidAddress_throwsIllegalArgumentException() {
+    public void constructor_blankAddress_throwsIllegalArgumentException() {
+        // A missing address is represented by the absence of an Address object, not a blank Address value.
         String invalidAddress = "";
         assertThrows(IllegalArgumentException.class, () -> new Address(invalidAddress));
     }
@@ -24,7 +25,7 @@ public class AddressTest {
         // null address
         assertThrows(NullPointerException.class, () -> Address.isValidAddress(null));
 
-        // invalid addresses
+        // Blank values do not represent Address objects; absence is represented without an Address object.
         assertFalse(Address.isValidAddress("")); // empty string
         assertFalse(Address.isValidAddress(" ")); // spaces only
 
