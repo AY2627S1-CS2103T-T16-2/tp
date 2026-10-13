@@ -4,15 +4,24 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.tag.Tag;
 
 /**
  * A utility class for test cases.
  */
 public class TestUtil {
+
+    /** Returns a tag set containing the supplied tag names for test fixtures. */
+    public static Set<Tag> getTagSet(String... strings) {
+        return Arrays.stream(strings).map(Tag::new).collect(Collectors.toSet());
+    }
 
     /**
      * Folder used for temp files created during testing. Ignored by Git.
