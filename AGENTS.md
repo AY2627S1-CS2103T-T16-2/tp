@@ -100,7 +100,14 @@ These summarise explicit requirements in the [overview][overview] and
    date, place the newest release first, and organise concise entries under
    `Added`, `Changed`, and, where applicable, `Fixed`. Do not manually wrap
    prose or list items in the file.
-6. Review the final diff, run relevant checks and report results. Do not disable tests
+6. Release screenshots belong in a tracked repository directory such as
+   `docs/images/`. Reference them in the relevant changelog section with an
+   absolute tag-based URL such as
+   `https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/v1.3/docs/images/release-add-contact.png`.
+   Commit the image before creating the release tag so GitHub can serve it from
+   `raw.githubusercontent.com`; do not rely on local file paths or untracked
+   screenshots.
+7. Review the final diff, run relevant checks and report results. Do not disable tests
    to hide failures, weaken security/CI policies, fabricate evidence or hide incomplete work.
 
 When multiple agents are requested, assign disjoint write areas and agreed interfaces;
