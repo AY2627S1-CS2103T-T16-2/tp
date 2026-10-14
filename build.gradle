@@ -76,3 +76,31 @@ shadowJar {
 }
 
 defaultTasks 'clean', 'test'
+
+version = providers.gradleProperty('appVersion')
+        .orElse('0.0.0')
+        .get()
+tasks.register('printReleaseNotes') {
+    group = 'documentation'
+    description = 'Prints release notes for the current version.'
+
+    doLast {
+        String currentVersion = project.version.toString()
+        //println "Release notes for version ${currentVersion}:"
+        String changelog = file('CHANGELOG.md').text
+
+        String escapedVersion =
+                java.util.regex.Pattern.quote(currentVersion)
+
+        def pattern = ~/(?ms)^## \[?${escapedVersion}\]?.*?(?=^## |\z)/
+        def match = pattern.matcher(changelog)
+
+        if (!match.find()) {
+            throw new GradleException(
+                    "No changelog entry found for version ${currentVersion}"
+            )
+        }
+
+        println match.group().trim()
+    }
+}
