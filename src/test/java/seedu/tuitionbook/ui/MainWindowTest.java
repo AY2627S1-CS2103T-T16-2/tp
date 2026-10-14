@@ -79,7 +79,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void helpAndExit_withBlockedContactStorage_openHelpAndCloseMainWindow() throws Exception {
+    public void helpAndExit_afterMalformedContactStorageIsBackedUp_openHelpAndCloseMainWindow() throws Exception {
         Path dataFilePath = temporaryFolder.resolve("tuitionBook.json");
         Files.writeString(dataFilePath, "{broken");
         byte[] originalContents = Files.readAllBytes(dataFilePath);
