@@ -77,9 +77,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
-        run: >-
-          gh release create "$TAG_NAME" build/libs/tuitionbook.jar
-          --title "$TAG_NAME"
-          --notes-file CHANGELOG.md
-          --draft
-          --verify-tag
+        run: |
+          RELEASE_NOTES="$(./gradlew -q printReleaseNotes)"
+
+          gh release create "$TAG_NAME" \
+            build/libs/tuitionbook.jar \
+            --title "$TAG_NAME" \
+            --notes "$RELEASE_NOTES" \
+            --draft \
+            --verify-tag
