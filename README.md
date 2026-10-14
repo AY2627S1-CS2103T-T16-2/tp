@@ -9,6 +9,8 @@
 
 It is optimised for tutors who prefer typing: while it has a GUI, most interactions happen through a Command Line Interface (CLI), so frequent tasks can be done faster than with a mouse.
 
+TuitionBook supports English-language users with any `en-*` locale, such as `en-SG`, `en-GB`, or `en-US`. Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
+
 ## Features
 
 * Add, edit, find, list and delete contacts

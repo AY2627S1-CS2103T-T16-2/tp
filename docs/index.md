@@ -12,6 +12,8 @@
 
 **TuitionBook is a desktop address book for private tutors.** It keeps student and guardian contacts linked and grouped by level and subject, while making it quick to find the right person and address through the command line.
 
+TuitionBook supports English-language users with any `en-*` locale, such as `en-SG`, `en-GB`, or `en-US`. Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
+
 * If you are interested in using TuitionBook, head over to the [_Quick Start_ section of the **User Guide**](UserGuide.html#quick-start).
 * If you are interested in developing TuitionBook, the [**Developer Guide**](DeveloperGuide.html) is a good place to start.
 
