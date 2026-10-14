@@ -22,7 +22,11 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
 1. Copy the file to the folder you want to use as the _home folder_ for your TuitionBook.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar tuitionbook.jar`.<br>
+1. Open a terminal. Replace the example JAR path below with the actual location of your downloaded JAR. You may run the command from any folder.
+
+   * **macOS/Linux:** `java -jar "/path/to/tuitionbook.jar"`
+   * **Windows:** `java -jar "C:\path\to\tuitionbook.jar"`
+
    A GUI similar to the one below should appear in a few seconds. If no data file exists, TuitionBook starts with an empty contact list and shows an information dialog. Dismiss the dialog to use the app.<br>
    ![Ui](images/Ui.png)
 
@@ -260,7 +264,9 @@ If TuitionBook cannot load an existing data file, it shows a startup warning wit
 
 ### Editing the data file
 
-TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file.
+TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder
+from which it is launched. Contact data is saved automatically as a JSON file
+`[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file.
 On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path.
 If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged.
 

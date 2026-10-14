@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -77,9 +78,21 @@ public class PersonCard extends UiPart<Region> {
         address.setTooltip(createFullValueTooltip(address.getText()));
         email.setText("Email: " + person.getEmail().map(value -> value.value).orElse("-"));
         email.setTooltip(createFullValueTooltip(email.getText()));
+        tags.setMinWidth(0);
+        tags.setMaxWidth(Double.MAX_VALUE);
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
-                .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+                .map(tag -> createTagLabel(tag.tagName))
+                .forEach(tags.getChildren()::add);
+    }
+
+    private Label createTagLabel(String tagName) {
+        Label tagLabel = new Label(tagName);
+        tagLabel.setMinWidth(0);
+        tagLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+        tagLabel.setTooltip(createFullValueTooltip(tagName));
+        tagLabel.maxWidthProperty().bind(tags.widthProperty());
+        return tagLabel;
     }
 
     private static Tooltip createFullValueTooltip(String text) {
