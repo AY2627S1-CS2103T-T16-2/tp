@@ -95,7 +95,7 @@ These summarise explicit requirements in the [overview][overview] and
    Avoid unrelated upgrades, formatting or renaming.
    Record release changes in `CHANGELOG.md` in the same PR, including the
    AB3-to-TuitionBook changes documented for the first release.
-   `CHANGELOG.md` follows Keep a Changelog and Semantic Versioning: keep the
+   `CHANGELOG.md` follows Keep a Changelog: keep the
    format guidance at the top, add each release as a versioned heading with its
    date, place the newest release first, and organise concise entries under
    `Added`, `Changed`, and, where applicable, `Fixed`. Do not manually wrap

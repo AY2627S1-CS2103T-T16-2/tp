@@ -1,6 +1,11 @@
 name: Java CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+    tags:
+      - 'v*'
+  pull_request:
 
 jobs:
   build:
@@ -78,6 +83,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release already exists: $TAG_NAME"
+            exit 0
+          fi
+
           RELEASE_NOTES="$(./gradlew -q printReleaseNotes)"
 
           gh release create "$TAG_NAME" \
