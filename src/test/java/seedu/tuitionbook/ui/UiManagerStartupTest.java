@@ -90,6 +90,17 @@ public class UiManagerStartupTest {
     }
 
     @Test
+    public void repairedLinks_relativeDataFilePath_showsAbsolutePathInWarning() throws Exception {
+        Path relativeDataFilePath = Path.of("data", "contacts.json");
+        assertStartupDialog(relativeDataFilePath, StartupNotice.guardianLinksRepaired(1), "Guardian links repaired",
+                "1 guardian link was repaired",
+                "All valid contacts were retained. Review invalid guardianId values in "
+                        + relativeDataFilePath.toAbsolutePath().normalize()
+                        + " before entering a contact-changing command; the next save removes invalid links.",
+                "warning");
+    }
+
+    @Test
     public void cleanData_showsNoStartupDialog() throws Exception {
         JavaFxTestUtil.runOnFxThread(() -> {
             Stage owner = new Stage();
@@ -105,6 +116,11 @@ public class UiManagerStartupTest {
 
     private void assertStartupDialog(StartupNotice notice, String title, String header, String content,
                                      String styleClass) throws Exception {
+        assertStartupDialog(dataFilePath(), notice, title, header, content, styleClass);
+    }
+
+    private void assertStartupDialog(Path dataFilePath, StartupNotice notice, String title, String header,
+                                     String content, String styleClass) throws Exception {
         AtomicReference<Stage> owner = new AtomicReference<>();
         AtomicReference<Throwable> failure = new AtomicReference<>();
         CountDownLatch inspected = new CountDownLatch(1);
@@ -113,7 +129,7 @@ public class UiManagerStartupTest {
             try {
                 Stage stage = new Stage();
                 owner.set(stage);
-                new UiManager(logic(), dataFilePath(), Optional.of(notice)).start(stage);
+                new UiManager(logic(), dataFilePath, Optional.of(notice)).start(stage);
             } catch (Throwable throwable) {
                 failure.set(throwable);
             }
