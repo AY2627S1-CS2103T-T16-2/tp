@@ -104,3 +104,45 @@ tasks.register('printReleaseNotes') {
         println match.group().trim()
     }
 }
+
+version = providers.gradleProperty('appVersion')
+        .orElse('0.0.0')
+        .get()
+
+def generatedVersionDir = layout.buildDirectory.dir('generated/sources/version/main')
+
+tasks.register('generateVersionSource') {
+    outputs.dir(generatedVersionDir)
+
+    doLast {
+        File outputDir = generatedVersionDir.get().asFile
+                .toPath()
+                .resolve('seedu/tuitionbook')
+                .toFile()
+
+        outputDir.mkdirs()
+
+        new File(outputDir, 'BuildInfo.java').text = """
+package seedu.tuitionbook;
+
+public final class BuildInfo {
+    public static final String VERSION = "${project.version}";
+
+    private BuildInfo() {
+    }
+}
+"""
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir generatedVersionDir
+        }
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn tasks.named('generateVersionSource')
+}
