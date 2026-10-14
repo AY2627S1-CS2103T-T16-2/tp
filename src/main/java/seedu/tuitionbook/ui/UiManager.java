@@ -97,7 +97,8 @@ public class UiManager implements Ui {
                 int count = notice.repairedGuardianLinkCount();
                 String header = count + (count == 1 ? " guardian link was repaired" : " guardian links were repaired");
                 showAlertDialogAndWait(AlertType.WARNING, "Guardian links repaired", header,
-                        "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath
+                        "All valid contacts were retained. Review invalid guardianId values in "
+                                + displayedDataFilePath
                                 + " before entering a contact-changing command; the next save removes invalid links.");
             }
             default -> throw new AssertionError("Unexpected startup notice: " + notice.type());

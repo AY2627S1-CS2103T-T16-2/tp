@@ -52,6 +52,15 @@ public class MainWindowTest {
     }
 
     @Test
+    public void mainWindow_usesProductNameAsTitle() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Stage stage = new Stage();
+            new MainWindow(stage, new FakeLogic(), Path.of("synthetic.json"));
+            assertEquals("TuitionBook", stage.getTitle());
+        });
+    }
+
+    @Test
     public void viewAndOtherCommands_swapMainContentView() throws Exception {
         JavaFxTestUtil.runOnFxThread(() -> {
             MainWindow mainWindow = new MainWindow(new Stage(), new FakeLogic(), Path.of("synthetic.json"));
