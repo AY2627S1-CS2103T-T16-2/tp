@@ -74,9 +74,14 @@ Any warnings or errors will be printed out to the console.
 
 ## Making a release
 
-Here are the steps to create a new release.
+GitHub Actions creates the draft GitHub release automatically when a version tag
+is pushed. The release includes the executable JAR built by CI and the matching
+version section from `CHANGELOG.md`.
 
-1. Update the version number in [`MainApp.java`](../src/main/java/seedu/tuitionbook/MainApp.java).
-1. Generate a fat JAR file using Gradle (i.e., `./gradlew shadowJar`).
-1. Tag the repo with the version number. e.g. `v0.1`
-1. [Create a new release using GitHub](https://help.github.com/articles/creating-releases/). Upload the JAR file you created.
+1. Update `appVersion` in `gradle.properties`, for example `appVersion=v1.3`.
+1. Add the release notes under a matching heading in `CHANGELOG.md`, for example `## [v1.3] - 2026-10-14`.
+1. Push a tag with the same version, for example `v1.3`.
+1. GitHub Actions runs the checks, builds `build/libs/tuitionbook.jar`, and creates a draft release with the matching changelog section.
+1. Review the draft release and publish it on GitHub when it is ready.
+
+To preview the release notes locally, run `./gradlew printReleaseNotes`.
