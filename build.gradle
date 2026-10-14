@@ -117,6 +117,7 @@ tasks.register('printReleaseNotes') {
 def generatedVersionDir = layout.buildDirectory.dir('generated/sources/version/main')
 
 tasks.register('generateVersionSource') {
+    inputs.property('appVersion', providers.gradleProperty('appVersion').orElse('0.0.0'))
     outputs.dir(generatedVersionDir)
 
     doLast {
