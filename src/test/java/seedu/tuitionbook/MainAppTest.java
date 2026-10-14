@@ -57,18 +57,18 @@ public class MainAppTest {
     }
 
     @Test
-    public void loadStartupState_nullRoot_startsEmptyWithoutOverwritingFile() throws Exception {
-        assertMalformedDataStartsEmptyWithoutOverwriting("null");
+    public void loadStartupState_nullRoot_startsEmptyAndPreservesBackup() throws Exception {
+        assertMalformedDataStartsEmptyAndPreservesBackup("null");
     }
 
     @Test
-    public void loadStartupState_nullPerson_startsEmptyWithoutOverwritingFile() throws Exception {
-        assertMalformedDataStartsEmptyWithoutOverwriting("{\"persons\":[null]}");
+    public void loadStartupState_nullPerson_startsEmptyAndPreservesBackup() throws Exception {
+        assertMalformedDataStartsEmptyAndPreservesBackup("{\"persons\":[null]}");
     }
 
     @Test
-    public void loadStartupState_nullTag_startsEmptyWithoutOverwritingFile() throws Exception {
-        assertMalformedDataStartsEmptyWithoutOverwriting("""
+    public void loadStartupState_nullTag_startsEmptyAndPreservesBackup() throws Exception {
+        assertMalformedDataStartsEmptyAndPreservesBackup("""
                 {"persons":[{"name":"Test Student","phone":"81234567","tags":[null]}]}
                 """);
     }
@@ -271,17 +271,19 @@ public class MainAppTest {
                     "Missing <" + expectedFragment + "> in:\n" + details);
         }
     }
-    private void assertMalformedDataStartsEmptyWithoutOverwriting(String contents) throws Exception {
+    private void assertMalformedDataStartsEmptyAndPreservesBackup(String contents) throws Exception {
         Path dataFile = testFolder.resolve("contacts.json");
+        Path backupFile = dataFile.resolveSibling(dataFile.getFileName() + ".backup");
         Files.writeString(dataFile, contents);
         StorageManager storage = storage();
 
         MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
 
         assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
-        assertEquals(StartupNotice.loadFailed(), state.notice().orElseThrow());
+        assertEquals(StartupNotice.loadFailedBackedUp(backupFile), state.notice().orElseThrow());
+        assertFalse(Files.exists(dataFile));
+        assertEquals(contents, Files.readString(backupFile));
+        storage.saveTuitionBook(state.model().getTuitionBook());
         assertTrue(Files.exists(dataFile));
-        assertEquals(contents, Files.readString(dataFile));
-        assertThrows(IOException.class, () -> storage.saveTuitionBook(state.model().getTuitionBook()));
     }
 }

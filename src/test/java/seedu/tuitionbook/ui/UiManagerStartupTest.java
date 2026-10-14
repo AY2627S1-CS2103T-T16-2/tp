@@ -131,7 +131,8 @@ public class UiManagerStartupTest {
                 if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP
                         || notice.type() == StartupNotice.Type.LOAD_FAILED_BACKUP_FAILED) {
                     TextArea resultDisplay = (TextArea) owner.get().getScene().lookup("#resultDisplay");
-                    assertEquals(content, resultDisplay.getText());
+                    assertEquals(getExpectedResultMessage(notice), resultDisplay.getText());
+                    assertTrue(resultDisplay.isWrapText());
                 }
                 pane.getScene().getWindow().hide();
             } catch (Throwable throwable) {
@@ -158,6 +159,19 @@ public class UiManagerStartupTest {
                 .map(scene -> (DialogPane) scene.getRoot())
                 .findFirst()
                 .orElse(null);
+    }
+
+    private String getExpectedResultMessage(StartupNotice notice) {
+        Path displayedDataFilePath = dataFilePath().toAbsolutePath().normalize();
+        if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
+            return "Data file was moved unchanged to "
+                    + notice.malformedFileBackupPath().toAbsolutePath().normalize() + ".\n"
+                    + "New contacts save to " + displayedDataFilePath
+                    + ". Fix the backup JSON and replace this file to restore it.\n"
+                    + "Restart TuitionBook; contacts added after recovery must be re-entered.";
+        }
+        return "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
+                + "Saving is disabled. Correct or move the file, then restart TuitionBook.";
     }
 
     private Logic logic() {

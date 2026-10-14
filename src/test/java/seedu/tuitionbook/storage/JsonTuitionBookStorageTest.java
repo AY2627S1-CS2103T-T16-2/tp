@@ -80,18 +80,18 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
-    public void readTuitionBook_nullRoot_throwsDataLoadingException() throws Exception {
-        assertMalformedDataIsPreservedAndSavingIsBlocked("null");
+    public void readTuitionBook_nullRoot_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("null");
     }
 
     @Test
-    public void readTuitionBook_nullPerson_throwsDataLoadingException() throws Exception {
-        assertMalformedDataIsPreservedAndSavingIsBlocked("{\"persons\":[null]}");
+    public void readTuitionBook_nullPerson_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("{\"persons\":[null]}");
     }
 
     @Test
-    public void readTuitionBook_nullTag_throwsDataLoadingException() throws Exception {
-        assertMalformedDataIsPreservedAndSavingIsBlocked("""
+    public void readTuitionBook_nullTag_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("""
                 {"persons":[{"name":"Test Student","phone":"81234567","tags":[null]}]}
                 """);
     }
@@ -296,14 +296,16 @@ public class JsonTuitionBookStorageTest {
         assertThrows(NullPointerException.class, () -> saveTuitionBook(new TuitionBook(), null));
     }
 
-    private void assertMalformedDataIsPreservedAndSavingIsBlocked(String contents) throws Exception {
+    private void assertMalformedDataIsBackedUpAndSavingIsAllowed(String contents) throws Exception {
         Path filePath = testFolder.resolve("MalformedTuitionBook.json");
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
         Files.writeString(filePath, contents);
         JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
 
         assertThrows(DataLoadingException.class, storage::readTuitionBook);
-        assertEquals(contents, Files.readString(filePath));
-        assertThrows(IOException.class, () -> storage.saveTuitionBook(new TuitionBook()));
-        assertEquals(contents, Files.readString(filePath));
+        assertFalse(Files.exists(filePath));
+        assertEquals(contents, Files.readString(backupPath));
+        storage.saveTuitionBook(new TuitionBook());
+        assertTrue(Files.exists(filePath));
     }
 }

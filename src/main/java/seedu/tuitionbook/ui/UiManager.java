@@ -79,14 +79,20 @@ public class UiManager implements Ui {
                             + "rename it to " + displayedDataFilePath + " (replacing the new file), "
                             + "then restart TuitionBook. "
                             + "Contacts added after recovery are in the new file and must be re-entered; "
-                            + "the files cannot be merged automatically.");
+                            + "the files cannot be merged automatically.",
+                    "Data file was moved unchanged to " + displayedPath(notice.malformedFileBackupPath()) + ".\n"
+                            + "New contacts save to " + displayedDataFilePath
+                            + ". Fix the backup JSON and replace this file to restore it.\n"
+                            + "Restart TuitionBook; contacts added after recovery must be re-entered.");
             case LOAD_FAILED_BACKUP_FAILED -> showLoadFailureNotice(
                     "TuitionBook started with an empty contact list, but saving is disabled",
                     "Your data file could not be read and could not be moved to a backup. It remains at "
                             + displayedDataFilePath
                             + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, "
                             + "then restart "
-                            + "TuitionBook.");
+                            + "TuitionBook.",
+                    "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
+                            + "Saving is disabled. Correct or move the file, then restart TuitionBook.");
             case GUARDIAN_LINKS_REPAIRED -> {
                 int count = notice.repairedGuardianLinkCount();
                 String header = count + (count == 1 ? " guardian link was repaired" : " guardian links were repaired");
@@ -102,9 +108,9 @@ public class UiManager implements Ui {
         return path.toAbsolutePath().normalize();
     }
 
-    private void showLoadFailureNotice(String header, String message) {
-        mainWindow.showStartupMessage(message);
-        showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded", header, message);
+    private void showLoadFailureNotice(String header, String dialogMessage, String resultMessage) {
+        mainWindow.showStartupMessage(resultMessage);
+        showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded", header, dialogMessage);
     }
 
     void showAlertDialogAndWait(Alert.AlertType type, String title, String headerText, String contentText) {
