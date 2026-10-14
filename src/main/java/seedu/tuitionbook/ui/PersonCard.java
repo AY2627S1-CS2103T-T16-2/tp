@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -17,6 +18,7 @@ import seedu.tuitionbook.model.person.Role;
 public class PersonCard extends UiPart<Region> {
 
     private static final String FXML = "PersonListCard.fxml";
+    private static final double TOOLTIP_MAX_WIDTH = 600;
 
     /**
      * Note: Certain keywords such as "location" and "resources" are reserved keywords in JavaFX.
@@ -59,19 +61,31 @@ public class PersonCard extends UiPart<Region> {
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
+        name.setTooltip(createFullValueTooltip(person.getName().fullName));
         role.setText(person.getRole().name());
         role.getStyleClass().add(person.getRole().name().toLowerCase(Locale.ROOT));
         phone.setText("Phone: " + person.getPhone().value);
+        phone.setTooltip(createFullValueTooltip(phone.getText()));
         boolean isStudent = person.getRole() == Role.STUDENT;
         guardian.setManaged(isStudent);
         guardian.setVisible(isStudent);
         if (isStudent) {
             guardian.setText("Guardian: " + guardianName);
+            guardian.setTooltip(createFullValueTooltip(guardian.getText()));
         }
         address.setText("Address: " + person.getAddress().map(value -> value.value).orElse("-"));
+        address.setTooltip(createFullValueTooltip(address.getText()));
         email.setText("Email: " + person.getEmail().map(value -> value.value).orElse("-"));
+        email.setTooltip(createFullValueTooltip(email.getText()));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+    }
+
+    private static Tooltip createFullValueTooltip(String text) {
+        Tooltip tooltip = new Tooltip(text);
+        tooltip.setWrapText(true);
+        tooltip.setMaxWidth(TOOLTIP_MAX_WIDTH);
+        return tooltip;
     }
 }

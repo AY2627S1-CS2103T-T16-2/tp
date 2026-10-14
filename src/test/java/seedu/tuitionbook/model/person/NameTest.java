@@ -62,6 +62,33 @@ public class NameTest {
     }
 
     @Test
+    public void isValidName_lengthBoundariesCountUnicodeCodePoints() {
+        String supplementaryLetter = "\uD801\uDC00";
+        String nameWith99CodePoints = supplementaryLetter.repeat(99);
+        String nameWith100CodePoints = supplementaryLetter.repeat(100);
+        String nameWith101CodePoints = supplementaryLetter.repeat(101);
+
+        assertEquals(198, nameWith99CodePoints.length());
+        assertEquals(99, nameWith99CodePoints.codePointCount(0, nameWith99CodePoints.length()));
+        assertTrue(Name.isValidName(nameWith99CodePoints));
+        assertTrue(Name.isValidName(nameWith100CodePoints));
+        assertFalse(Name.isValidName(nameWith101CodePoints));
+    }
+
+    @Test
+    public void constructor_slashContainingNameAtLengthBoundary_enforcesMaximum() {
+        String nameWith100CodePoints = "A/" + "B".repeat(Name.MAX_LENGTH - 2);
+        String nameWith101CodePoints = nameWith100CodePoints + "B";
+
+        assertEquals(Name.MAX_LENGTH,
+                nameWith100CodePoints.codePointCount(0, nameWith100CodePoints.length()));
+        assertEquals(nameWith100CodePoints, new Name(nameWith100CodePoints).fullName);
+        assertEquals(Name.MAX_LENGTH + 1,
+                nameWith101CodePoints.codePointCount(0, nameWith101CodePoints.length()));
+        assertThrows(IllegalArgumentException.class, () -> new Name(nameWith101CodePoints));
+    }
+
+    @Test
     public void equals() {
         Name name = new Name("Valid Name");
 

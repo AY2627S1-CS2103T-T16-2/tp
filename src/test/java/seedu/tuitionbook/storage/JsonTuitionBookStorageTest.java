@@ -11,6 +11,7 @@ import static seedu.tuitionbook.testutil.TypicalPersons.IDA;
 import static seedu.tuitionbook.testutil.TypicalPersons.getTypicalTuitionBook;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,6 +22,8 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.person.Address;
+import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.testutil.PersonBuilder;
@@ -104,6 +107,22 @@ public class JsonTuitionBookStorageTest {
     @Test
     public void readTuitionBook_invalidAndValidPersonTuitionBook_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readTuitionBook("invalidAndValidPersonTuitionBook.json"));
+    }
+
+    @Test
+    public void readTuitionBook_overLengthFields_movesFileToBackupAndAllowsSaving() throws Exception {
+        assertOverLengthConfiguredFileIsBackedUp("OverLengthNameTuitionBook.json",
+                "A".repeat(Name.MAX_LENGTH + 1), "Valid Address");
+        assertOverLengthConfiguredFileIsBackedUp("OverLengthAddressTuitionBook.json",
+                "Valid Name", "A".repeat(Address.MAX_LENGTH + 1));
+    }
+
+    @Test
+    public void readTuitionBook_overLengthBackupFailure_preservesOriginalAndBlocksSave() throws Exception {
+        assertOverLengthConfiguredFileIsPreservedAfterBackupFailure("BlockedOverLengthNameTuitionBook.json",
+                "A".repeat(Name.MAX_LENGTH + 1), "Valid Address");
+        assertOverLengthConfiguredFileIsPreservedAfterBackupFailure("BlockedOverLengthAddressTuitionBook.json",
+                "Valid Name", "A".repeat(Address.MAX_LENGTH + 1));
     }
 
     @Test
@@ -296,6 +315,60 @@ public class JsonTuitionBookStorageTest {
         assertThrows(NullPointerException.class, () -> saveTuitionBook(new TuitionBook(), null));
     }
 
+    private void assertOverLengthConfiguredFileIsBackedUp(String fileName, String name, String address)
+            throws Exception {
+        Path filePath = testFolder.resolve(fileName);
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
+        byte[] originalContents = createOverLengthFileContents(name, address);
+        Files.write(filePath, originalContents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        DataLoadingException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DataLoadingException.class, storage::readTuitionBook);
+        assertEquals(backupPath, exception.getMalformedFileBackupPath().orElseThrow());
+        assertFalse(Files.exists(filePath));
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+
+        storage.saveTuitionBook(new TuitionBook());
+        assertTrue(Files.exists(filePath));
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+    }
+
+    private void assertOverLengthConfiguredFileIsPreservedAfterBackupFailure(
+            String fileName, String name, String address) throws Exception {
+        Path filePath = testFolder.resolve(fileName);
+        byte[] originalContents = createOverLengthFileContents(name, address);
+        Files.write(filePath, originalContents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void moveFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated backup failure");
+            }
+        };
+
+        DataLoadingException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DataLoadingException.class, storage::readTuitionBook);
+        assertTrue(exception.getMalformedFileBackupPath().isEmpty());
+        assertArrayEquals(originalContents, Files.readAllBytes(filePath));
+        String expectedMessage = String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, filePath);
+        assertThrows(IOException.class, expectedMessage, () -> storage.saveTuitionBook(new TuitionBook()));
+        assertArrayEquals(originalContents, Files.readAllBytes(filePath));
+    }
+
+    private byte[] createOverLengthFileContents(String name, String address) {
+        return """
+                {
+                  "persons" : [ {
+                    "name" : "%s",
+                    "phone" : "91234567",
+                    "email" : null,
+                    "address" : "%s",
+                    "tags" : [ ]
+                  } ]
+                }
+                """.formatted(name, address).getBytes(StandardCharsets.UTF_8);
+    }
+
     private void assertMalformedDataIsBackedUpAndSavingIsAllowed(String contents) throws Exception {
         Path filePath = testFolder.resolve("MalformedTuitionBook.json");
         Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
@@ -307,5 +380,6 @@ public class JsonTuitionBookStorageTest {
         assertEquals(contents, Files.readString(backupPath));
         storage.saveTuitionBook(new TuitionBook());
         assertTrue(Files.exists(filePath));
+        assertEquals(contents, Files.readString(backupPath));
     }
 }

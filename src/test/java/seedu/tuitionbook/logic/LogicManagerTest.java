@@ -38,6 +38,8 @@ import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
+import seedu.tuitionbook.model.person.Address;
+import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
@@ -81,6 +83,23 @@ public class LogicManagerTest {
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
+    }
+
+    @Test
+    public void execute_overLengthEdit_throwsParseExceptionAndLeavesContactUnchanged() {
+        Person originalPerson = new PersonBuilder().withName("Original Name").withAddress("Original Address").build();
+        model.addPerson(originalPerson);
+
+        assertParseException("edit 1 n/" + "A".repeat(Name.MAX_LENGTH + 1), Name.MESSAGE_CONSTRAINTS);
+        assertContactIsUnchanged(originalPerson);
+
+        assertParseException("edit 1 a/" + "A".repeat(Address.MAX_LENGTH + 1), Address.MESSAGE_CONSTRAINTS);
+        assertContactIsUnchanged(originalPerson);
+    }
+
+    private void assertContactIsUnchanged(Person originalPerson) {
+        assertEquals(List.of(originalPerson), logic.getPersonList());
+        assertEquals(originalPerson.getId(), logic.getPersonList().getFirst().getId());
     }
 
     @Test

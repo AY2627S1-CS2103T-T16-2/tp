@@ -1,5 +1,6 @@
 package seedu.tuitionbook.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
@@ -33,6 +34,20 @@ public class AddressTest {
         assertTrue(Address.isValidAddress("Blk 456, Den Road, #01-355"));
         assertTrue(Address.isValidAddress("-")); // one character
         assertTrue(Address.isValidAddress("Leng Inc; 1234 Market St; San Francisco CA 2349879; USA")); // long address
+    }
+
+    @Test
+    public void isValidAddress_lengthBoundariesCountUnicodeCodePoints() {
+        String supplementaryCharacter = "\uD83D\uDE00";
+        String addressWith199CodePoints = supplementaryCharacter.repeat(199);
+        String addressWith200CodePoints = supplementaryCharacter.repeat(200);
+        String addressWith201CodePoints = supplementaryCharacter.repeat(201);
+
+        assertEquals(398, addressWith199CodePoints.length());
+        assertEquals(199, addressWith199CodePoints.codePointCount(0, addressWith199CodePoints.length()));
+        assertTrue(Address.isValidAddress(addressWith199CodePoints));
+        assertTrue(Address.isValidAddress(addressWith200CodePoints));
+        assertFalse(Address.isValidAddress(addressWith201CodePoints));
     }
 
     @Test
