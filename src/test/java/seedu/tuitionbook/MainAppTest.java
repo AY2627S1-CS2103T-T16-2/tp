@@ -57,6 +57,23 @@ public class MainAppTest {
     }
 
     @Test
+    public void loadStartupState_nullRoot_startsEmptyWithoutOverwritingFile() throws Exception {
+        assertMalformedDataStartsEmptyWithoutOverwriting("null");
+    }
+
+    @Test
+    public void loadStartupState_nullPerson_startsEmptyWithoutOverwritingFile() throws Exception {
+        assertMalformedDataStartsEmptyWithoutOverwriting("{\"persons\":[null]}");
+    }
+
+    @Test
+    public void loadStartupState_nullTag_startsEmptyWithoutOverwritingFile() throws Exception {
+        assertMalformedDataStartsEmptyWithoutOverwriting("""
+                {"persons":[{"name":"Test Student","phone":"81234567","tags":[null]}]}
+                """);
+    }
+
+    @Test
     public void clearThenRestart_existingEmptyDataFileDoesNotRestoreContacts() throws Exception {
         StorageManager storage = storage();
         TuitionBook tuitionBook = new TuitionBook();
@@ -253,5 +270,18 @@ public class MainAppTest {
             assertTrue(details.contains(expectedFragment), () ->
                     "Missing <" + expectedFragment + "> in:\n" + details);
         }
+    }
+    private void assertMalformedDataStartsEmptyWithoutOverwriting(String contents) throws Exception {
+        Path dataFile = testFolder.resolve("contacts.json");
+        Files.writeString(dataFile, contents);
+        StorageManager storage = storage();
+
+        MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
+
+        assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
+        assertEquals(StartupNotice.loadFailed(), state.notice().orElseThrow());
+        assertTrue(Files.exists(dataFile));
+        assertEquals(contents, Files.readString(dataFile));
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(state.model().getTuitionBook()));
     }
 }

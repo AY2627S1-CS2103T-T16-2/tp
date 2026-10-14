@@ -28,6 +28,7 @@ class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
     public static final String INVALID_ID_MESSAGE = "Person's id field is invalid!";
+    public static final String NULL_TAG_MESSAGE = "Person's tags list contains a null tag.";
 
     private static final Logger logger = LogsCenter.getLogger(JsonAdaptedPerson.class);
 
@@ -99,6 +100,9 @@ class JsonAdaptedPerson {
     PersonLoadResult toModelTypeWithResult() throws IllegalValueException {
         final List<Tag> personTags = new ArrayList<>();
         for (JsonAdaptedTag tag : tags) {
+            if (tag == null) {
+                throw new IllegalValueException(NULL_TAG_MESSAGE);
+            }
             personTags.add(tag.toModelType());
         }
 
