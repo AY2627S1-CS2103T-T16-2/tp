@@ -1,5 +1,7 @@
 package seedu.tuitionbook.model.person;
 
+import java.util.Locale;
+
 /**
  * Represents a Person's role in TuitionBook.
  * A contact is either a student or a guardian.
@@ -16,7 +18,7 @@ public enum Role {
         if (test == null) {
             return false;
         }
-        String normalised = test.trim().toUpperCase();
+        String normalised = test.trim().toUpperCase(Locale.ROOT);
         return normalised.equals(STUDENT.name()) || normalised.equals(GUARDIAN.name());
     }
 
@@ -29,11 +31,11 @@ public enum Role {
         if (!isValidRole(role)) {
             throw new IllegalArgumentException(MESSAGE_CONSTRAINTS);
         }
-        return Role.valueOf(role.trim().toUpperCase());
+        return Role.valueOf(role.trim().toUpperCase(Locale.ROOT));
     }
 
     @Override
     public String toString() {
-        return name().toLowerCase();
+        return name().toLowerCase(Locale.ROOT);
     }
 }

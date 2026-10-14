@@ -15,6 +15,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Bounds;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -178,6 +179,46 @@ public class CardDisplayUiTest {
     }
 
     @Test
+    public void personCard_tags_stayWithinCardAndRemainAccessibleAfterResize() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            String longTag = "longtag".repeat(143);
+            Person longTagPerson = new PersonBuilder().withTags(longTag).build();
+            Person multipleTagsPerson = new PersonBuilder().withTags("zulu", "alpha", "middle").build();
+            Person noTagsPerson = new PersonBuilder().withTags().build();
+            PersonCard longTagCard = new PersonCard(longTagPerson, 1, "-");
+            PersonCard multipleTagsCard = new PersonCard(multipleTagsPerson, 2, "-");
+            PersonCard noTagsCard = new PersonCard(noTagsPerson, 3, "-");
+            VBox cards = new VBox(longTagCard.getRoot(), multipleTagsCard.getRoot(), noTagsCard.getRoot());
+            Stage stage = new Stage();
+
+            try {
+                stage.setScene(new Scene(cards, 340, 500));
+                stage.show();
+                layout(cards);
+
+                Label longTagLabel = getTagLabels(longTagCard).get(0);
+                assertEquals(longTag, longTagLabel.getText());
+                assertEquals(longTag, longTagLabel.getTooltip().getText());
+                assertTrue(longTagLabel.getTooltip().isWrapText());
+                assertEquals(List.of("alpha", "middle", "zulu"), getTagNames(multipleTagsCard));
+                assertTrue(getTagLabels(noTagsCard).isEmpty());
+                assertTagsStayInsideCard(longTagCard);
+                assertTagsStayInsideCard(multipleTagsCard);
+
+                stage.setWidth(700);
+                layout(cards);
+                assertTagsStayInsideCard(longTagCard);
+                assertTagsStayInsideCard(multipleTagsCard);
+                assertTrue(getLabel(longTagCard, "role").getWidth()
+                        >= getLabel(longTagCard, "role").prefWidth(-1));
+            } finally {
+                stage.close();
+            }
+            return null;
+        });
+    }
+
+    @Test
     public void personListPanel_guardianFilteredOut_displaysGuardianName() throws Exception {
         JavaFxTestUtil.callOnFxThread(() -> {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
@@ -237,11 +278,36 @@ public class CardDisplayUiTest {
     }
 
     private static List<String> getTagNames(PersonCard card) {
+        return getTagLabels(card).stream()
+                .map(Label::getText)
+                .toList();
+    }
+
+    private static List<Label> getTagLabels(PersonCard card) {
         FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
         assertNotNull(tags);
         return tags.getChildren().stream()
-                .map(node -> ((Label) node).getText())
+                .map(Label.class::cast)
                 .toList();
+    }
+
+    private static void layout(VBox cards) {
+        cards.applyCss();
+        cards.layout();
+    }
+
+    private static void assertTagsStayInsideCard(PersonCard card) {
+        FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
+        Bounds cardBounds = card.getRoot().localToScene(card.getRoot().getBoundsInLocal());
+        Bounds tagPaneBounds = tags.localToScene(tags.getBoundsInLocal());
+        assertTrue(tagPaneBounds.getMinX() >= cardBounds.getMinX() - 0.5);
+        assertTrue(tagPaneBounds.getMaxX() <= cardBounds.getMaxX() + 0.5,
+                "Tag pane extends past card: " + tagPaneBounds + " vs " + cardBounds);
+        for (Label tagLabel : getTagLabels(card)) {
+            Bounds labelBounds = tagLabel.localToScene(tagLabel.getBoundsInLocal());
+            assertTrue(labelBounds.getMaxX() <= cardBounds.getMaxX() + 0.5,
+                    "Tag extends past card: " + labelBounds + " vs " + cardBounds);
+        }
     }
 
     private static Label getLabel(PersonCard card, String id) {

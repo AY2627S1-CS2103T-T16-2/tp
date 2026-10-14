@@ -155,6 +155,11 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory
+containing the executable JAR as the application home, independent of the process working directory. Development runs
+from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data
+migration, preferences, logs, and log rotation/lock files therefore share the same application home.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.tuitionbook.commons` package.
@@ -187,7 +192,7 @@ filter remain in the model while the detail view is visible.
 
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
-`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long names, phone numbers, email addresses, resolved guardian names, and addresses retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also provides the full details through the keyboard-driven workflow.
+`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long names, phone numbers, email addresses, resolved guardian names, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also provides the full details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
 ### \[Proposed\] Undo/redo feature
 

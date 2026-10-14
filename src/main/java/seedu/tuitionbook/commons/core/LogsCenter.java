@@ -3,6 +3,7 @@ package seedu.tuitionbook.commons.core;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
@@ -23,7 +24,7 @@ public class LogsCenter {
 
     private static final int MAX_FILE_COUNT = 5;
     private static final int MAX_FILE_SIZE_IN_BYTES = (int) (Math.pow(2, 20) * 5); // 5MB
-    private static final String LOG_FILE = "tuitionbook.log";
+    private static final Path LOG_FILE = ApplicationPaths.resolve("tuitionbook.log");
     private static final Logger logger; // logger for this class
     private static Logger baseLogger; // to be used as the parent of all other loggers created by this class.
 
@@ -85,13 +86,26 @@ public class LogsCenter {
         baseLogger.addHandler(consoleHandler);
 
         // add a FileHandler to log to a file
+        addFileHandler(baseLogger, LOG_FILE);
+    }
+
+    /**
+     * Adds the rotating file handler, leaving existing handlers usable if the file cannot be opened.
+     *
+     * @return true if the file handler was added
+     */
+    static boolean addFileHandler(Logger targetLogger, Path logFile) {
         try {
-            FileHandler fileHandler = new FileHandler(LOG_FILE, MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
+            FileHandler fileHandler = new FileHandler(logFile.toString(),
+                    MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
             fileHandler.setFormatter(new SimpleFormatter());
             fileHandler.setLevel(Level.ALL);
-            baseLogger.addHandler(fileHandler);
-        } catch (IOException e) {
-            logger.warning("Error adding file handler for logger.");
+            targetLogger.addHandler(fileHandler);
+            return true;
+        } catch (IOException | SecurityException e) {
+            targetLogger.log(Level.WARNING, "Unable to create log file at " + logFile
+                    + "; console logging will continue.", e);
+            return false;
         }
     }
 
