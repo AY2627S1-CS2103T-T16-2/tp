@@ -34,7 +34,7 @@ import seedu.tuitionbook.ui.UiManager;
  */
 public class MainApp extends Application {
 
-    public static final String VERSION = "V0.5.1";
+    public static final String VERSION = BuildInfo.VERSION;
 
     private static final Logger logger = LogsCenter.getLogger(MainApp.class);
     private static final Path USER_PREFS_FILE_PATH = ApplicationPaths.resolve("preferences.json");

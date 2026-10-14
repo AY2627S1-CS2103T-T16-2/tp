@@ -28,6 +28,12 @@ jobs:
           java-version: '25'
           java-package: jdk+fx
 
+      - name: Validate release metadata
+        if: runner.os == 'Linux'
+        run: |
+          ./gradlew -q printVersion
+          ./gradlew -q printReleaseNotes
+
       - name: Build and check with Gradle on Linux
         if: runner.os == 'Linux'
         env:
@@ -43,3 +49,74 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Build executable JAR
+        if: runner.os == 'Linux'
+        run: ./gradlew shadowJar
+
+      - name: Upload executable JAR
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v7
+        with:
+          name: tuitionbook
+          path: build/libs/tuitionbook.jar
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Set up repository
+        uses: actions/checkout@v7
+
+      - name: Setup JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: '25'
+          java-package: jdk+fx
+
+      - name: Download executable JAR
+        uses: actions/download-artifact@v8
+        with:
+          name: tuitionbook
+          path: build/libs
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          EXPECTED_VERSION="$(./gradlew -q printVersion)"
+          if [[ "$TAG_NAME" != "$EXPECTED_VERSION" ]]; then
+            echo "Tag $TAG_NAME does not match Gradle version $EXPECTED_VERSION"
+            exit 1
+          fi
+
+          RELEASE_NOTES="$(./gradlew -q printReleaseNotes)"
+
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            IS_DRAFT="$(gh release view "$TAG_NAME" --json isDraft --jq '.isDraft')"
+            if [[ "$IS_DRAFT" != "true" ]]; then
+              echo "Release already exists and is not a draft: $TAG_NAME"
+              exit 1
+            fi
+
+            gh release edit "$TAG_NAME" \
+              --title "$TAG_NAME" \
+              --notes "$RELEASE_NOTES" \
+              --draft
+            gh release upload "$TAG_NAME" build/libs/tuitionbook.jar --clobber
+            exit 0
+          fi
+
+          gh release create "$TAG_NAME" \
+            build/libs/tuitionbook.jar \
+            --title "$TAG_NAME" \
+            --notes "$RELEASE_NOTES" \
+            --draft \
+            --verify-tag
