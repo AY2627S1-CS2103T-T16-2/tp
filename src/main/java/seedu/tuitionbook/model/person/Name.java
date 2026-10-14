@@ -9,16 +9,19 @@ import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
  */
 public class Name {
 
+    public static final int MAX_LENGTH = 100;
+
     public static final String MESSAGE_CONSTRAINTS =
-            "Names must not be blank. They must start with a Unicode letter or number, and may only contain Unicode "
-                    + "letters and numbers, Unicode combining marks, spaces, periods, straight apostrophes, and "
-                    + "hyphens.";
+            "Names must not be blank and must be at most " + MAX_LENGTH
+                    + " characters, counted as Unicode code points. They must start with a Unicode letter or number, "
+                    + "and may only contain Unicode letters and numbers, Unicode combining marks, spaces, periods, "
+                    + "straight apostrophes, forward slashes, and hyphens.";
 
     /*
      * The first character must be a Unicode letter or number. Subsequent characters may also be
-     * Unicode combining marks, spaces, periods, straight apostrophes, or hyphens.
+     * Unicode combining marks, spaces, periods, straight apostrophes, forward slashes, or hyphens.
      */
-    public static final String VALIDATION_REGEX = "[\\p{L}\\p{N}][\\p{L}\\p{N}\\p{M} .'-]*";
+    public static final String VALIDATION_REGEX = "[\\p{L}\\p{N}][\\p{L}\\p{N}\\p{M} .'/-]*";
 
     public final String fullName;
 
@@ -37,7 +40,7 @@ public class Name {
      * Returns true if a given string is a valid name.
      */
     public static boolean isValidName(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return test.matches(VALIDATION_REGEX) && test.codePointCount(0, test.length()) <= MAX_LENGTH;
     }
 
 

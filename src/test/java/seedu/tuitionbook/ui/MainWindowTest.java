@@ -1,11 +1,18 @@
 package seedu.tuitionbook.ui;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -13,17 +20,31 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import seedu.tuitionbook.commons.core.GuiSettings;
+import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.logic.Logic;
+import seedu.tuitionbook.logic.LogicManager;
 import seedu.tuitionbook.logic.commands.CommandResult;
+import seedu.tuitionbook.logic.commands.ExitCommand;
+import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
+import seedu.tuitionbook.model.ModelManager;
+import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.storage.JsonTuitionBookStorage;
+import seedu.tuitionbook.storage.JsonUserPrefsStorage;
+import seedu.tuitionbook.storage.StorageManager;
 
 /**
- * Tests the main window's list and relationship-detail view transitions.
+ * Tests main window command interactions and view transitions.
  */
 public class MainWindowTest {
+
+    @TempDir
+    public Path temporaryFolder;
 
     @BeforeAll
     public static void initializeJavaFx() {
@@ -55,6 +76,53 @@ public class MainWindowTest {
             assertListVisible(mainWindow, detailText, true, false);
             assertEquals("Invalid command", resultText.getText());
         });
+    }
+
+    @Test
+    public void helpAndExit_afterMalformedContactStorageIsBackedUp_openHelpAndCloseMainWindow() throws Exception {
+        Path dataFilePath = temporaryFolder.resolve("tuitionBook.json");
+        Files.writeString(dataFilePath, "{broken");
+        byte[] originalContents = Files.readAllBytes(dataFilePath);
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(dataFilePath);
+        StorageManager storage = new StorageManager(tuitionBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json")));
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+        Logic logic = new LogicManager(new ModelManager(new TuitionBook(), new UserPrefs()), storage);
+
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Stage primaryStage = new Stage();
+            Stage helpStage = null;
+            try {
+                MainWindow mainWindow = new MainWindow(primaryStage, logic, dataFilePath);
+                mainWindow.show();
+                mainWindow.fillInnerParts();
+                TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+                TextArea resultText = (TextArea) mainWindow.getRoot().getScene().lookup("#resultDisplay");
+                List<Window> windowsBeforeHelp = List.copyOf(Window.getWindows());
+
+                execute(commandBox, HelpCommand.COMMAND_WORD);
+                helpStage = Window.getWindows().stream()
+                        .filter(window -> !windowsBeforeHelp.contains(window))
+                        .filter(Stage.class::isInstance)
+                        .map(Stage.class::cast)
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("Help window did not open"));
+                assertTrue(helpStage.isShowing());
+                assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, resultText.getText());
+
+                execute(commandBox, ExitCommand.COMMAND_WORD);
+                assertEquals(ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, resultText.getText());
+                assertFalse(primaryStage.isShowing());
+                assertFalse(helpStage.isShowing());
+            } finally {
+                if (helpStage != null) {
+                    helpStage.hide();
+                }
+                primaryStage.hide();
+            }
+        });
+        assertArrayEquals(originalContents, Files.readAllBytes(dataFilePath.resolveSibling(
+                dataFilePath.getFileName() + ".backup")));
     }
 
     private static void execute(TextField commandBox, String command) {

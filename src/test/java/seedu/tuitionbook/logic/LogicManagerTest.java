@@ -1,9 +1,11 @@
 package seedu.tuitionbook.logic;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
+import static seedu.tuitionbook.logic.Messages.getInvalidPersonDisplayedIndexMessage;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.NAME_DESC_AMY;
@@ -25,7 +27,10 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.logic.commands.AddCommand;
 import seedu.tuitionbook.logic.commands.CommandResult;
+import seedu.tuitionbook.logic.commands.ExitCommand;
+import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
+import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.Model;
@@ -33,6 +38,8 @@ import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
+import seedu.tuitionbook.model.person.Address;
+import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
@@ -43,29 +50,7 @@ import seedu.tuitionbook.testutil.PersonBuilder;
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
     private static final IOException DUMMY_AD_EXCEPTION = new AccessDeniedException("dummy access denied exception");
-    private static final String CONFLICTING_TUITION_BOOK_JSON = """
-            {
-              "persons" : [ {
-                "name" : "Alice",
-                "phone" : "91234567",
-                "email" : "alice@example.com",
-                "address" : "Alice Street",
-                "tags" : [ ]
-              }, {
-                "name" : "alice",
-                "phone" : "91234567",
-                "email" : "other-alice@example.com",
-                "address" : "Other Street",
-                "tags" : [ ]
-              }, {
-                "name" : "Bob",
-                "phone" : "98765432",
-                "email" : "bob@example.com",
-                "address" : "Bob Street",
-                "tags" : [ ]
-              } ]
-            }
-            """;
+    private static final String MALFORMED_TUITION_BOOK_JSON = "{broken";
 
     @TempDir
     public Path temporaryFolder;
@@ -91,13 +76,44 @@ public class LogicManagerTest {
     @Test
     public void execute_commandExecutionError_throwsCommandException() {
         String deleteCommand = "delete 9";
-        assertCommandException(deleteCommand, MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertCommandException(deleteCommand, getInvalidPersonDisplayedIndexMessage(0));
     }
 
     @Test
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
+    }
+
+    @Test
+    public void execute_overLengthEdit_throwsParseExceptionAndLeavesContactUnchanged() {
+        Person originalPerson = new PersonBuilder().withName("Original Name").withAddress("Original Address").build();
+        model.addPerson(originalPerson);
+
+        assertParseException("edit 1 n/" + "A".repeat(Name.MAX_LENGTH + 1), Name.MESSAGE_CONSTRAINTS);
+        assertContactIsUnchanged(originalPerson);
+
+        assertParseException("edit 1 a/" + "A".repeat(Address.MAX_LENGTH + 1), Address.MESSAGE_CONSTRAINTS);
+        assertContactIsUnchanged(originalPerson);
+    }
+
+    private void assertContactIsUnchanged(Person originalPerson) {
+        assertEquals(List.of(originalPerson), logic.getPersonList());
+        assertEquals(originalPerson.getId(), logic.getPersonList().getFirst().getId());
+    }
+
+    @Test
+    public void execute_add_savesContactData() throws Exception {
+        String addCommand = AddCommand.COMMAND_WORD + ROLE_DESC_STUDENT + NAME_DESC_AMY + PHONE_DESC_AMY
+                + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
+        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
+        ModelManager expectedModel = new ModelManager();
+        expectedModel.addPerson(expectedPerson);
+
+        assertCommandSuccess(addCommand, String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(expectedPerson)),
+                expectedModel);
+        Path dataFilePath = temporaryFolder.resolve("tuitionBook.json");
+        assertEquals(model.getTuitionBook(), new JsonTuitionBookStorage(dataFilePath).readTuitionBook().orElseThrow());
     }
 
     @Test
@@ -113,24 +129,113 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_listAfterConfiguredLoadFailure_doesNotOverwriteOriginalFile() throws Exception {
-        Path tuitionBookFilePath = temporaryFolder.resolve("ConflictingTuitionBook.json");
-        Files.writeString(tuitionBookFilePath, CONFLICTING_TUITION_BOOK_JSON);
-        String originalContents = Files.readString(tuitionBookFilePath);
+    public void execute_nonMutatingCommandsAfterConfiguredLoadFailure_leaveBackupUnchanged() throws Exception {
+        Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook.json");
+        Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
+        Person person = new PersonBuilder().withName("Alex Lim").build();
+        fallbackModel.addPerson(person);
+        Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);
+        byte[] originalContents = Files.readAllBytes(tuitionBookFilePath.resolveSibling(
+                tuitionBookFilePath.getFileName() + ".backup"));
+
+        CommandResult helpResult = blockedLogic.execute(HelpCommand.COMMAND_WORD);
+        assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, helpResult.getFeedbackToUser());
+        assertTrue(helpResult.isShowHelp());
+        assertFalse(helpResult.isExit());
+
+        CommandResult listResult = blockedLogic.execute(ListCommand.COMMAND_WORD);
+        assertEquals(ListCommand.MESSAGE_SUCCESS, listResult.getFeedbackToUser());
+
+        CommandResult findResult = blockedLogic.execute("find Alex");
+        assertEquals(String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1), findResult.getFeedbackToUser());
+        assertEquals(1, blockedLogic.getFilteredPersonList().size());
+        assertEquals(person, blockedLogic.getFilteredPersonList().get(0));
+
+        CommandResult viewResult = blockedLogic.execute("view 1");
+        assertEquals(String.format(ViewCommand.MESSAGE_SUCCESS, person.getName()), viewResult.getFeedbackToUser());
+        assertTrue(viewResult.getDetailsToShow().isPresent());
+
+        CommandResult exitResult = blockedLogic.execute(ExitCommand.COMMAND_WORD);
+        assertEquals(ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, exitResult.getFeedbackToUser());
+        assertTrue(exitResult.isExit());
+        assertFalse(exitResult.isShowHelp());
+        assertArrayEquals(originalContents, Files.readAllBytes(tuitionBookFilePath.resolveSibling(
+                tuitionBookFilePath.getFileName() + ".backup")));
+    }
+
+    @Test
+    public void execute_helpAndExitAfterFailedBackup_leaveOriginalDataUnchanged() throws Exception {
+        Path tuitionBookFilePath = temporaryFolder.resolve("BlockedMalformedTuitionBook.json");
+        Logic blockedLogic = createLogicWithBlockedStorage(tuitionBookFilePath, new ModelManager());
+
+        CommandResult helpResult = blockedLogic.execute(HelpCommand.COMMAND_WORD);
+        assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, helpResult.getFeedbackToUser());
+        assertTrue(helpResult.isShowHelp());
+
+        CommandResult exitResult = blockedLogic.execute(ExitCommand.COMMAND_WORD);
+        assertEquals(ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, exitResult.getFeedbackToUser());
+        assertTrue(exitResult.isExit());
+        assertEquals(MALFORMED_TUITION_BOOK_JSON, Files.readString(tuitionBookFilePath));
+    }
+
+    @Test
+    public void execute_addAfterConfiguredLoadFailure_savesNewDataAndPreservesBackup() throws Exception {
+        Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook.json");
+        Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
+        Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);
+        Path backupPath = tuitionBookFilePath.resolveSibling(tuitionBookFilePath.getFileName() + ".backup");
+        byte[] originalContents = Files.readAllBytes(backupPath);
+        String addCommand = AddCommand.COMMAND_WORD + ROLE_DESC_STUDENT + NAME_DESC_AMY + PHONE_DESC_AMY
+                + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
+
+        blockedLogic.execute(addCommand);
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+        assertTrue(Files.exists(tuitionBookFilePath));
+    }
+
+    @Test
+    public void execute_mutatingCommandsAfterConfiguredLoadFailure_preserveBackup()
+            throws Exception {
+        String[] commands = {"edit 1 n/New Student", "delete 1", "clear", "link 1 2"};
+        for (int i = 0; i < commands.length; i++) {
+            String command = commands[i];
+            Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook" + i + ".json");
+            Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
+            fallbackModel.addPerson(new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT).build());
+            fallbackModel.addPerson(new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build());
+            Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);
+            Path backupPath = tuitionBookFilePath.resolveSibling(tuitionBookFilePath.getFileName() + ".backup");
+            byte[] originalContents = Files.readAllBytes(backupPath);
+
+            blockedLogic.execute(command);
+            assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+            assertTrue(Files.exists(tuitionBookFilePath));
+        }
+    }
+
+    private Logic createLogicWithRecoveredStorage(Path tuitionBookFilePath, Model fallbackModel) throws Exception {
+        Files.writeString(tuitionBookFilePath, MALFORMED_TUITION_BOOK_JSON);
         JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(tuitionBookFilePath);
         JsonUserPrefsStorage userPrefsStorage =
-                new JsonUserPrefsStorage(temporaryFolder.resolve("ConflictingUserPrefs.json"));
+                new JsonUserPrefsStorage(temporaryFolder.resolve("BlockedUserPrefs.json"));
         StorageManager storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
-
         assertThrows(DataLoadingException.class, storage::readTuitionBook);
-        Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
-        Logic blockedLogic = new LogicManager(fallbackModel, storage);
-        String expectedMessage = String.format(LogicManager.FILE_OPS_ERROR_FORMAT,
-                String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, tuitionBookFilePath));
+        return new LogicManager(fallbackModel, storage);
+    }
 
-        assertThrows(CommandException.class, expectedMessage, () -> blockedLogic.execute(ListCommand.COMMAND_WORD));
-        assertTrue(Files.exists(tuitionBookFilePath));
-        assertEquals(originalContents, Files.readString(tuitionBookFilePath));
+    private Logic createLogicWithBlockedStorage(Path tuitionBookFilePath, Model fallbackModel) throws Exception {
+        Files.writeString(tuitionBookFilePath, MALFORMED_TUITION_BOOK_JSON);
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(tuitionBookFilePath) {
+            @Override
+            protected void moveFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated backup failure");
+            }
+        };
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("BlockedUserPrefs.json"));
+        StorageManager storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+        return new LogicManager(fallbackModel, storage);
     }
 
     @Test

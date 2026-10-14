@@ -23,6 +23,7 @@ import static seedu.tuitionbook.logic.commands.CommandTestUtil.VALID_TAG_FRIEND;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseFailure;
@@ -37,6 +38,7 @@ import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.EditCommand;
 import seedu.tuitionbook.logic.commands.EditCommand.EditPersonDescriptor;
+import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Email;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Phone;
@@ -128,6 +130,39 @@ public class EditCommandParserTest {
         EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_maximumLengthNameAndAddress_success() {
+        String maximumLengthName = "\uD801\uDC00".repeat(Name.MAX_LENGTH);
+        String maximumLengthAddress = "\uD83D\uDE00".repeat(Address.MAX_LENGTH);
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(maximumLengthName)
+                .withAddress(maximumLengthAddress).build();
+
+        assertParseSuccess(parser, "1 " + PREFIX_NAME + "  " + maximumLengthName
+                + "  " + PREFIX_ADDRESS + "  " + maximumLengthAddress + "  ",
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_maximumLengthAsciiNameAndAddress_success() {
+        String maximumLengthName = "A".repeat(Name.MAX_LENGTH);
+        String maximumLengthAddress = "X".repeat(Address.MAX_LENGTH);
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(maximumLengthName)
+                .withAddress(maximumLengthAddress).build();
+
+        assertParseSuccess(parser, "1 " + PREFIX_NAME + maximumLengthName
+                + " " + PREFIX_ADDRESS + maximumLengthAddress,
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_overLengthNameAndAddress_failure() {
+        String overLengthName = "A".repeat(Name.MAX_LENGTH + 1);
+        String overLengthAddress = "A".repeat(Address.MAX_LENGTH + 1);
+
+        assertParseFailure(parser, "1 " + PREFIX_NAME + overLengthName, Name.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 " + PREFIX_ADDRESS + overLengthAddress, Address.MESSAGE_CONSTRAINTS);
     }
 
     @Test

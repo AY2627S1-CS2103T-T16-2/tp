@@ -38,11 +38,16 @@ public class ViewCommand extends Command {
     }
 
     @Override
+    public boolean requiresSave() {
+        return false;
+    }
+
+    @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         List<Person> displayedPersons = model.getFilteredPersonList();
         if (targetIndex.getZeroBased() >= displayedPersons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+            throw new CommandException(Messages.getInvalidPersonDisplayedIndexMessage(displayedPersons.size()));
         }
 
         Person selectedPerson = displayedPersons.get(targetIndex.getZeroBased());

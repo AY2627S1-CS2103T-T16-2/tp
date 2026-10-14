@@ -23,7 +23,7 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 1. Copy the file to the folder you want to use as the _home folder_ for your TuitionBook.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar tuitionbook.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. On first launch, the contact list is empty.<br>
+   A GUI similar to the one below should appear in a few seconds. If no data file exists, TuitionBook starts with an empty contact list and shows an information dialog. Dismiss the dialog to use the app.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
@@ -33,7 +33,7 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
    * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student contact named `John Doe` to TuitionBook.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 1` : Deletes the 1st contact shown in the current list.
 
    * `clear` : Deletes all contacts.
 
@@ -88,12 +88,16 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `ROLE`, `NAME`, and `PHONE` are mandatory.
 * `ROLE` must be either `student` or `guardian`, case-insensitively.
 * `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
-  marks, spaces, periods (`.`), straight apostrophes (`'`), and hyphens (`-`). Surrounding whitespace is ignored,
-  while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
+  marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding
+  whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are
+  preserved.
+* `NAME` can contain at most 100 characters. A supplementary Unicode letter such as `𐐀` counts as one character.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
-* `EMAIL` and `ADDRESS` are optional.
+* `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
+* After a contact is added, TuitionBook shows the full contact list: any active name or role filter is cleared so
+  that the new contact is visible.
 
 <box type="tip" seamless>
 
@@ -128,6 +132,7 @@ Format: `list [r/ROLE]`
 * Student cards display a `Guardian:` line with the linked guardian's name, or `-` when no guardian is linked.
   Guardian cards do not display this line.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
+* If a name, phone number, email address, guardian name, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
 
 ### Viewing a contact: `view`
 
@@ -145,7 +150,13 @@ Format: `view INDEX`
 * Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
   contact data or the active filter.
 
-Examples using the initial sample contacts:
+To try the examples below from an empty contact list, enter these commands first:
+
+1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/guardian n/Bernice Yu p/99272758`
+1. `link 1 2`
+
+Examples using the contacts created above:
 
 * `view 1` replaces the contact list with Alex Yeoh's details and the details of his linked guardian, Bernice Yu.
 * `view 2` replaces the contact list with Bernice Yu's details and lists Alex Yeoh as a linked student.
@@ -164,12 +175,16 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * `edit` cannot change a person's role or guardian link. Use `link` to change a student's guardian.
   The role specified with `add` applies only to the new contact.
 * `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
-  marks, spaces, periods (`.`), straight apostrophes (`'`), and hyphens (`-`). Surrounding whitespace is ignored,
-  while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
+  marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding
+  whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are
+  preserved.
+* `NAME` can contain at most 100 characters. A supplementary Unicode letter such as `𐐀` counts as one character.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
+* A supplied `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
+* After a successful edit, TuitionBook shows the full contact list: any active name or role filter is cleared.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -187,6 +202,8 @@ Format: `link STUDENT_INDEX GUARDIAN_INDEX`
   previous guardian.
 * Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already
   exists and makes no change.
+* After a link is created or replaced, TuitionBook shows the full contact list: any active name or role filter is
+  cleared. Reporting an already-existing link makes no change, so the displayed list and its filter are preserved.
 
 Example: `link 1 2` links the student at index 1 to the guardian at index 2.
 
@@ -217,6 +234,8 @@ Format: `delete INDEX`
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, ...
 * Deleting a guardian keeps their linked students, but clears those students' guardian links.
+* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name or role filter: the remaining contacts of
+  the filtered view stay listed.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in TuitionBook.
@@ -230,17 +249,20 @@ Format: `clear`
 
 ### Exiting the program: `exit`
 
-Exits the program. All data is already saved, so it is always safe to exit.
+Exits the program without attempting to save contact data. If an earlier contact-changing command reported a save error, its changes may not be available after restarting TuitionBook.
 
 Format: `exit`
 
 ### Saving the data
 
-TuitionBook automatically saves data after every command. You do not need to save manually.
+TuitionBook attempts to save contact data after commands that can change contacts or guardian links. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error, and changes from that command may not be available after restarting. You do not need to save manually.
+If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and restart the app.
 
 ### Editing the data file
 
-TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+TuitionBook data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file.
+On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path.
+If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged.
 
 Each contact in the file has these relationship fields:
 
@@ -258,13 +280,16 @@ Data files created before these relationship fields were introduced remain suppo
 when TuitionBook next saves the data file.
 
 If a `guardianId` is malformed, refers to a missing contact, refers to a student, or links a student to itself,
-TuitionBook keeps the contact but removes that guardian link when loading the file.
+TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present.
 
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, TuitionBook starts with an empty contact list at the next run. It leaves the invalid file unchanged and blocks saves to avoid overwriting it. Back up and correct or remove the file before restarting TuitionBook. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, TuitionBook starts with an empty contact list and shows a warning at the next run. It moves the unreadable file unchanged to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`; the warning names the exact backup path. The backup is kept unchanged, and TuitionBook can then save new contact data to `tuitionbook.json`.<br>
+To restore the original data, first fix the JSON in the backup file, then rename it to `tuitionbook.json`, replacing the new file, and restart TuitionBook. Contacts added after recovery are stored in the new file and must be re-entered because TuitionBook cannot merge the two files automatically. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves; correct or move that file, then restart TuitionBook. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+
+The 100-character name limit and 200-character address limit also apply to values edited directly in the data file. A file containing a longer value is invalid and follows the recovery behavior above: TuitionBook moves it unchanged to an unused sibling backup and allows new data to be saved; if that backup cannot be created, TuitionBook leaves the original file in place and blocks saves.
 </box>
 
 ### Archiving data files `[coming in v2.0]`
@@ -284,14 +309,14 @@ _Details coming soon ..._
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
-3. **Names cannot contain `/`**, and name text resembling a parameter prefix (e.g. the ` a/p ` in `Rina a/p Kaur`) is read as the start of the address parameter instead of part of the name. Write such name particles in full (e.g. `anak perempuan`) or omit them.
+3. **Name text resembling a parameter prefix** (e.g. the ` a/p ` in `Rina a/p Kaur`) is read as the start of the address parameter instead of part of the name, even though `/` itself is allowed in names (e.g. `Muhammad s/o Ali` is accepted). Write such name particles in full (e.g. `anak perempuan`) or omit them.
 4. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
-5. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming (Sec 2)`.
+5. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 6. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
 7. **There is no `unlink` command.** Linking a student to a different guardian replaces the existing link, and deleting either linked contact removes the link.
 8. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
 9. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
-10. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list.** The invalid file is left unchanged and saving is blocked so it is not overwritten; back it up, then fix or remove it before restarting. We recommend backing up the data file before hand-editing it.
+10. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
 11. **`find` matches whole words in names only**: `find Ale` does not match `Alex`. Search using at least one complete word of the name.
 
 --------------------------------------------------------------------------------------------------------------------

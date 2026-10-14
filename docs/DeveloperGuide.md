@@ -111,6 +111,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. A save failure becomes a command error, so the UI does not report the command as successful.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -179,6 +180,14 @@ tags are sorted alphabetically.
 `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a
 command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active
 filter remain in the model while the detail view is visible.
+
+### Contact field validation
+
+`Name` and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names contain at most 100 characters and addresses contain at most 200 characters. Both limits count Unicode code points rather than UTF-16 `char` values, so a supplementary Unicode character counts as one character.
+
+`JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
+
+`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long names, phone numbers, email addresses, resolved guardian names, and addresses retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also provides the full details through the keyboard-driven workflow.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -542,6 +551,21 @@ Priority represents importance to the target user and does not indicate whether 
 
 The role-filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` displays only contacts with the specified role. Other trailing text is rejected.
 
+**Startup data rule**
+
+If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample
+contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not
+change the separate recovery behaviour for a malformed data file.
+
+**Malformed-file recovery policy**
+
+When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named
+`<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes.
+After a successful move, the load failure carries the exact backup path to the UI. TuitionBook starts with an empty
+contact list, can save new data at the configured path, and shows the exact backup path and recovery steps in both a
+warning dialog and the result display. If no backup can be created, it leaves the original file in place, blocks saving
+so that it cannot be overwritten, and tells the user to correct or move the original file before restarting.
+
 ### Non-Functional Requirements
 
 1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
@@ -550,7 +574,7 @@ The role-filtered form supersedes the plain-list rule: `list` displays all conta
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty data set and inform the user; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
 
 ### Glossary
 
@@ -590,7 +614,7 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens with an empty contact list. The window size may not be optimal.
+      Expected: The GUI opens with an empty contact list and an information dialog explaining that no data file was found. The window size may not be optimal.
 
 1. Saving window preferences
 
@@ -620,7 +644,14 @@ testers are expected to do more *exploratory* testing.
 
 ### Viewing a contact
 
-Use a fresh, disposable folder so the application loads its sample contacts. Do not use real contact data.
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+Enter these commands to create the contacts used below:
+
+1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/guardian n/Bernice Yu p/99272758`
+1. `link 1 2`
+1. `add r/student n/Charlotte Oliveiro p/93210283`
+1. `add r/guardian n/David Li p/91031282`
 
 1. Enter `view 1`.<br>
    Expected: The contact list is replaced by Alex Yeoh's details and Bernice Yu's guardian details. The result area
@@ -631,15 +662,37 @@ Use a fresh, disposable folder so the application loads its sample contacts. Do 
    Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports
    `No students linked.`
 1. Enter `list r/student`, then `view 1`.<br>
-   Expected: Bernice Yu's details still appear. Enter another valid command and confirm that the restored list remains
-   filtered to students.
+   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored
+   list remains filtered to students. Note that `add`, `edit`, and `link` clear the active filter, while `list`
+   and `find` replace it, so they are unsuitable for this check.
 1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
 ### Saving data
 
-1. Dealing with missing/corrupted data files
+1. Recovering from malformed contact data
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+   1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
-1. _{ more test cases … }_
+   1. Launch TuitionBook.<br>
+      Expected: TuitionBook opens with an empty contact list and a warning. The original bytes are in
+      `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+
+   1. Enter `help`.<br>
+      Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
+
+   1. Close the help window, then enter `add r/student n/Alex Lim p/91234567`.<br>
+      Expected: TuitionBook saves the new contact in `data/tuitionbook.json`. The backup file remains unchanged.
+
+   1. Enter `exit`.<br>
+      Expected: TuitionBook exits normally without displaying a storage error.
+
+   1. Compare `data/tuitionbook.json.backup` with the saved copy.<br>
+      Expected: The backup file is identical to the saved copy; TuitionBook did not modify its malformed contents.
+
+1. Warning about a repaired guardian link
+
+   1. In a fresh, disposable folder, create a valid `data/tuitionbook.json` containing a student whose `guardianId` refers to a missing contact.
+
+   1. Launch TuitionBook.<br>
+      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link.

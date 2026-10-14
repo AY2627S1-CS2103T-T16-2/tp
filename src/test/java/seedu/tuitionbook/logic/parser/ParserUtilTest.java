@@ -22,7 +22,7 @@ import seedu.tuitionbook.model.tag.Tag;
 public class ParserUtilTest {
     private static final String INVALID_NAME = "R@chel";
     private static final String INVALID_PHONE = "++651234";
-    private static final String INVALID_ADDRESS = " ";
+    private static final String BLANK_ADDRESS = " ";
     private static final String INVALID_EMAIL = "example.com";
     private static final String INVALID_TAG = "#friend";
     private static final String INVALID_ROLE = "teacher";
@@ -124,7 +124,7 @@ public class ParserUtilTest {
 
     @Test
     public void parseAddress_invalidValue_throwsParseException() {
-        assertThrows(ParseException.class, () -> ParserUtil.parseAddress(INVALID_ADDRESS));
+        assertThrows(ParseException.class, () -> ParserUtil.parseAddress(BLANK_ADDRESS));
     }
 
     @Test

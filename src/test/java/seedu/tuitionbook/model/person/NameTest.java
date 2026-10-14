@@ -42,9 +42,11 @@ public class NameTest {
         assertFalse(Name.isValidName("James&")); // contains an unsupported symbol
         assertFalse(Name.isValidName(" Amy Bee")); // starts with whitespace
         assertFalse(Name.isValidName("\u0301Jose")); // starts with a combining mark
+        assertFalse(Name.isValidName("/John")); // starts with a forward slash
 
         // valid name
         assertTrue(Name.isValidName("Amy Bee"));
+        assertTrue(Name.isValidName("Muhammad s/o Ali")); // contains a forward-slash name particle
         assertTrue(Name.isValidName("Mary-Jane Tan"));
         assertTrue(Name.isValidName("O'Connor"));
         assertTrue(Name.isValidName("Dr. Lee"));
@@ -57,6 +59,33 @@ public class NameTest {
         assertTrue(Name.isValidName("peter the 2nd")); // alphanumeric characters
         assertTrue(Name.isValidName("Capital Tan")); // with capital letters
         assertTrue(Name.isValidName("David Roger Jackson Ray Jr 2nd")); // long names
+    }
+
+    @Test
+    public void isValidName_lengthBoundariesCountUnicodeCodePoints() {
+        String supplementaryLetter = "\uD801\uDC00";
+        String nameWith99CodePoints = supplementaryLetter.repeat(99);
+        String nameWith100CodePoints = supplementaryLetter.repeat(100);
+        String nameWith101CodePoints = supplementaryLetter.repeat(101);
+
+        assertEquals(198, nameWith99CodePoints.length());
+        assertEquals(99, nameWith99CodePoints.codePointCount(0, nameWith99CodePoints.length()));
+        assertTrue(Name.isValidName(nameWith99CodePoints));
+        assertTrue(Name.isValidName(nameWith100CodePoints));
+        assertFalse(Name.isValidName(nameWith101CodePoints));
+    }
+
+    @Test
+    public void constructor_slashContainingNameAtLengthBoundary_enforcesMaximum() {
+        String nameWith100CodePoints = "A/" + "B".repeat(Name.MAX_LENGTH - 2);
+        String nameWith101CodePoints = nameWith100CodePoints + "B";
+
+        assertEquals(Name.MAX_LENGTH,
+                nameWith100CodePoints.codePointCount(0, nameWith100CodePoints.length()));
+        assertEquals(nameWith100CodePoints, new Name(nameWith100CodePoints).fullName);
+        assertEquals(Name.MAX_LENGTH + 1,
+                nameWith101CodePoints.codePointCount(0, nameWith101CodePoints.length()));
+        assertThrows(IllegalArgumentException.class, () -> new Name(nameWith101CodePoints));
     }
 
     @Test
