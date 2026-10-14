@@ -33,10 +33,10 @@ The format is based on Keep a Changelog.
 ![Managing students and guardians](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-manage-studentandguardian.jpeg)
 Manage student and guardian contacts together, with linked guardians and subject tags visible.
 
-![Linking a guardian](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-guardianlinking.jpeg)
+![Viewing contact details](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-viewdetails.jpeg)
 View a student’s details and their guardian’s contact information in one command.
 
-![Viewing contact details](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-viewdetails.jpeg)
+![Linking a guardian](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-guardianlinking.jpeg)
 A guardian can be linked to multiple students, such as siblings.
 
 ![Filtering contacts](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-viewfiltering.jpeg)
