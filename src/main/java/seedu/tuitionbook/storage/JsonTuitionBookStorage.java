@@ -3,6 +3,7 @@ package seedu.tuitionbook.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -95,10 +96,43 @@ public class JsonTuitionBookStorage {
             }
         } catch (DataLoadingException dle) {
             if (isConfiguredFile) {
-                isWriteBlocked = true;
+                throw new DataLoadingException(dle, preserveMalformedFile().orElse(null));
             }
             throw dle;
         }
+    }
+
+    /**
+     * Moves an unreadable configured data file to an unused sibling backup file.
+     * Saving remains blocked if the original file cannot be preserved.
+     */
+    private Optional<Path> preserveMalformedFile() {
+        Path backupPath = getAvailableBackupPath();
+        try {
+            moveFile(filePath, backupPath);
+            isWriteBlocked = false;
+            logger.warning("Moved unreadable data file from " + filePath + " to " + backupPath + ".");
+            return Optional.of(backupPath);
+        } catch (IOException ioe) {
+            isWriteBlocked = true;
+            logger.warning("Could not preserve unreadable data file at " + filePath + ": " + ioe);
+            return Optional.empty();
+        }
+    }
+
+    /** Moves {@code source} to {@code target}; overridden in tests to simulate a failed recovery. */
+    protected void moveFile(Path source, Path target) throws IOException {
+        Files.move(source, target);
+    }
+
+    /** Returns an unused sibling backup path, starting with {@code <file>.backup}. */
+    private Path getAvailableBackupPath() {
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
+        int suffix = 1;
+        while (Files.exists(backupPath)) {
+            backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup." + suffix++);
+        }
+        return backupPath;
     }
 
     /**

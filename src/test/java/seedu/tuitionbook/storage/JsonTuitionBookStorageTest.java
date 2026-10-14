@@ -1,5 +1,6 @@
 package seedu.tuitionbook.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -79,18 +80,18 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
-    public void readTuitionBook_nullRoot_throwsDataLoadingException() throws Exception {
-        assertMalformedDataIsPreservedAndSavingIsBlocked("null");
+    public void readTuitionBook_nullRoot_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("null");
     }
 
     @Test
-    public void readTuitionBook_nullPerson_throwsDataLoadingException() throws Exception {
-        assertMalformedDataIsPreservedAndSavingIsBlocked("{\"persons\":[null]}");
+    public void readTuitionBook_nullPerson_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("{\"persons\":[null]}");
     }
 
     @Test
-    public void readTuitionBook_nullTag_throwsDataLoadingException() throws Exception {
-        assertMalformedDataIsPreservedAndSavingIsBlocked("""
+    public void readTuitionBook_nullTag_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("""
                 {"persons":[{"name":"Test Student","phone":"81234567","tags":[null]}]}
                 """);
     }
@@ -175,24 +176,53 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
-    public void readTuitionBook_conflictingConfiguredFile_blocksSaveUntilSuccessfulRead() throws Exception {
+    public void readTuitionBook_conflictingConfiguredFile_movesFileToBackupAndAllowsSave() throws Exception {
         Path filePath = testFolder.resolve("ConflictingTuitionBook.json");
         Files.writeString(filePath, CONFLICTING_TUITION_BOOK_JSON);
         String originalContents = Files.readString(filePath);
         JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
 
         assertThrows(DataLoadingException.class, storage::readTuitionBook);
-        String expectedMessage = String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, filePath);
-        assertThrows(IOException.class, expectedMessage, () -> storage.saveTuitionBook(new TuitionBook()));
-        assertTrue(Files.exists(filePath));
-        assertEquals(originalContents, Files.readString(filePath));
-
-        String correctedContents = originalContents.replace("9123-4567", "9123-4568");
-        Files.writeString(filePath, correctedContents);
-        assertEquals(3, storage.readTuitionBook().orElseThrow().getPersonList().size());
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
+        assertFalse(Files.exists(filePath));
+        assertEquals(originalContents, Files.readString(backupPath));
 
         storage.saveTuitionBook(new TuitionBook());
         assertEquals(new TuitionBook(), new TuitionBook(storage.readTuitionBook().orElseThrow()));
+    }
+
+    @Test
+    public void readTuitionBook_existingBackup_usesNextBackup() throws Exception {
+        Path filePath = testFolder.resolve("ConflictingTuitionBook.json");
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
+        Files.writeString(filePath, CONFLICTING_TUITION_BOOK_JSON);
+        Files.writeString(backupPath, "existing backup");
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+
+        assertEquals("existing backup", Files.readString(backupPath));
+        assertEquals(CONFLICTING_TUITION_BOOK_JSON,
+                Files.readString(filePath.resolveSibling(filePath.getFileName() + ".backup.1")));
+    }
+
+    @Test
+    public void readTuitionBook_backupMoveFails_leavesOriginalAndBlocksSave() throws Exception {
+        Path filePath = testFolder.resolve("ConflictingTuitionBook.json");
+        Files.writeString(filePath, CONFLICTING_TUITION_BOOK_JSON);
+        byte[] originalContents = Files.readAllBytes(filePath);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void moveFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated backup failure");
+            }
+        };
+
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+
+        assertArrayEquals(originalContents, Files.readAllBytes(filePath));
+        String expectedMessage = String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, filePath);
+        assertThrows(IOException.class, expectedMessage, () -> storage.saveTuitionBook(new TuitionBook()));
     }
 
     @Test
@@ -266,14 +296,16 @@ public class JsonTuitionBookStorageTest {
         assertThrows(NullPointerException.class, () -> saveTuitionBook(new TuitionBook(), null));
     }
 
-    private void assertMalformedDataIsPreservedAndSavingIsBlocked(String contents) throws Exception {
+    private void assertMalformedDataIsBackedUpAndSavingIsAllowed(String contents) throws Exception {
         Path filePath = testFolder.resolve("MalformedTuitionBook.json");
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
         Files.writeString(filePath, contents);
         JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
 
         assertThrows(DataLoadingException.class, storage::readTuitionBook);
-        assertEquals(contents, Files.readString(filePath));
-        assertThrows(IOException.class, () -> storage.saveTuitionBook(new TuitionBook()));
-        assertEquals(contents, Files.readString(filePath));
+        assertFalse(Files.exists(filePath));
+        assertEquals(contents, Files.readString(backupPath));
+        storage.saveTuitionBook(new TuitionBook());
+        assertTrue(Files.exists(filePath));
     }
 }

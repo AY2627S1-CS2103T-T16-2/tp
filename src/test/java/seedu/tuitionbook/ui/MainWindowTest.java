@@ -79,7 +79,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void helpAndExit_withBlockedContactStorage_openHelpAndCloseMainWindow() throws Exception {
+    public void helpAndExit_afterMalformedContactStorageIsBackedUp_openHelpAndCloseMainWindow() throws Exception {
         Path dataFilePath = temporaryFolder.resolve("tuitionBook.json");
         Files.writeString(dataFilePath, "{broken");
         byte[] originalContents = Files.readAllBytes(dataFilePath);
@@ -121,7 +121,8 @@ public class MainWindowTest {
                 primaryStage.hide();
             }
         });
-        assertArrayEquals(originalContents, Files.readAllBytes(dataFilePath));
+        assertArrayEquals(originalContents, Files.readAllBytes(dataFilePath.resolveSibling(
+                dataFilePath.getFileName() + ".backup")));
     }
 
     private static void execute(TextField commandBox, String command) {

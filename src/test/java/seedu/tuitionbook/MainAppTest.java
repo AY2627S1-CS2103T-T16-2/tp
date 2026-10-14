@@ -3,8 +3,8 @@ package seedu.tuitionbook;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.tuitionbook.testutil.Assert.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -57,18 +57,18 @@ public class MainAppTest {
     }
 
     @Test
-    public void loadStartupState_nullRoot_startsEmptyWithoutOverwritingFile() throws Exception {
-        assertMalformedDataStartsEmptyWithoutOverwriting("null");
+    public void loadStartupState_nullRoot_startsEmptyAndPreservesBackup() throws Exception {
+        assertMalformedDataStartsEmptyAndPreservesBackup("null");
     }
 
     @Test
-    public void loadStartupState_nullPerson_startsEmptyWithoutOverwritingFile() throws Exception {
-        assertMalformedDataStartsEmptyWithoutOverwriting("{\"persons\":[null]}");
+    public void loadStartupState_nullPerson_startsEmptyAndPreservesBackup() throws Exception {
+        assertMalformedDataStartsEmptyAndPreservesBackup("{\"persons\":[null]}");
     }
 
     @Test
-    public void loadStartupState_nullTag_startsEmptyWithoutOverwritingFile() throws Exception {
-        assertMalformedDataStartsEmptyWithoutOverwriting("""
+    public void loadStartupState_nullTag_startsEmptyAndPreservesBackup() throws Exception {
+        assertMalformedDataStartsEmptyAndPreservesBackup("""
                 {"persons":[{"name":"Test Student","phone":"81234567","tags":[null]}]}
                 """);
     }
@@ -144,7 +144,7 @@ public class MainAppTest {
     }
 
     @Test
-    public void loadStartupState_malformedFile_blocksSavingAndPreservesOriginal() throws Exception {
+    public void loadStartupState_malformedFile_createsBackupAndAllowsSaving() throws Exception {
         Path dataFile = testFolder.resolve("contacts.json");
         Files.writeString(dataFile, "{broken");
         StorageManager storage = storage();
@@ -152,9 +152,32 @@ public class MainAppTest {
         MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
 
         assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
-        assertEquals(StartupNotice.loadFailed(), state.notice().orElseThrow());
-        assertThrows(IOException.class, () -> storage.saveTuitionBook(state.model().getTuitionBook()));
+        Path backupPath = dataFile.resolveSibling(dataFile.getFileName() + ".backup");
+        assertEquals(StartupNotice.loadFailedBackedUp(backupPath), state.notice().orElseThrow());
+        assertFalse(Files.exists(dataFile));
+        assertEquals("{broken", Files.readString(backupPath));
+        storage.saveTuitionBook(state.model().getTuitionBook());
+        assertTrue(Files.exists(dataFile));
+    }
+
+    @Test
+    public void loadStartupState_malformedFileBackupFails_blocksSavingAndShowsNotice() throws Exception {
+        Path dataFile = testFolder.resolve("contacts.json");
+        Files.writeString(dataFile, "{broken");
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(dataFile) {
+            @Override
+            protected void moveFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated backup failure");
+            }
+        };
+        StorageManager storage = new StorageManager(tuitionBookStorage,
+                new JsonUserPrefsStorage(testFolder.resolve("preferences.json")));
+
+        MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
+
+        assertEquals(StartupNotice.loadFailedBackupFailed(), state.notice().orElseThrow());
         assertEquals("{broken", Files.readString(dataFile));
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(state.model().getTuitionBook()));
     }
 
     @Test
@@ -248,17 +271,19 @@ public class MainAppTest {
                     "Missing <" + expectedFragment + "> in:\n" + details);
         }
     }
-    private void assertMalformedDataStartsEmptyWithoutOverwriting(String contents) throws Exception {
+    private void assertMalformedDataStartsEmptyAndPreservesBackup(String contents) throws Exception {
         Path dataFile = testFolder.resolve("contacts.json");
+        Path backupFile = dataFile.resolveSibling(dataFile.getFileName() + ".backup");
         Files.writeString(dataFile, contents);
         StorageManager storage = storage();
 
         MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
 
         assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
-        assertEquals(StartupNotice.loadFailed(), state.notice().orElseThrow());
+        assertEquals(StartupNotice.loadFailedBackedUp(backupFile), state.notice().orElseThrow());
+        assertFalse(Files.exists(dataFile));
+        assertEquals(contents, Files.readString(backupFile));
+        storage.saveTuitionBook(state.model().getTuitionBook());
         assertTrue(Files.exists(dataFile));
-        assertEquals(contents, Files.readString(dataFile));
-        assertThrows(IOException.class, () -> storage.saveTuitionBook(state.model().getTuitionBook()));
     }
 }
