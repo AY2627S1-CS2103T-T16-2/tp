@@ -155,3 +155,11 @@ sourceSets {
 tasks.named('compileJava') {
     dependsOn tasks.named('generateVersionSource')
 }
+
+tasks.named('checkstyleMain') {
+    dependsOn tasks.named('generateVersionSource')
+}
+
+tasks.named('checkstyleTest') {
+    dependsOn tasks.named('generateVersionSource')
+}
