@@ -30,14 +30,14 @@ The format is based on Keep a Changelog.
 
 ### Screenshots
 
-![Managing students and guardians](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/branch-v1.3-screenshots/docs/images/v1.3-manage-studentandguardian.jpeg)
+![Managing students and guardians](https://raw.githubusercontent.com/origami10004/tp/branch-v1.3-screenshots/docs/images/v1.3-manage-studentandguardian.jpeg)
 Manage student and guardian contacts together, with linked guardians and subject tags visible.
 
-![Linking a guardian](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/branch-v1.3-screenshots/docs/images/v1.3-guardianlinking.jpeg)
+![Linking a guardian](https://raw.githubusercontent.com/origami10004/tp/branch-v1.3-screenshots/docs/images/v1.3-guardianlinking.jpeg)
 View a student’s details and their guardian’s contact information in one command.
 
-![Viewing contact details](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/branch-v1.3-screenshots/docs/images/v1.3-viewdetails.jpeg)
+![Viewing contact details](https://raw.githubusercontent.com/origami10004/tp/branch-v1.3-screenshots/docs/images/v1.3-viewdetails.jpeg)
 A guardian can be linked to multiple students, such as siblings.22:10
 
-![Filtering contacts](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/branch-v1.3-screenshots/docs/images/v1.3-viewfiltering.jpeg)
+![Filtering contacts](https://raw.githubusercontent.com/origami10004/tp/branch-v1.3-screenshots/docs/images/v1.3-viewfiltering.jpeg)
 Filter the list to students while keeping their guardian relationships visible.
