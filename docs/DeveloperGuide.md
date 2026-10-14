@@ -187,7 +187,7 @@ filter remain in the model while the detail view is visible.
 
 `Name` and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names and addresses support UTF-8 text subject to their field-specific validation rules. Names contain at most 100 Unicode code points and addresses contain at most 200 Unicode code points.
 
-Duplicate checking treat equivalent Unicode forms as the same, for example, `é` and e + ◌́  giving `é` are considered as equivalent. Equivalent unicode forms will result in duplicates.
+Name comparison treats canonically equivalent Unicode forms, such as `é` and e + ◌́  giving `é`, as equal. Contacts are duplicates only when both their normalized names and normalized phone numbers match
 
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
