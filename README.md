@@ -9,6 +9,8 @@
 
 It is optimised for tutors who prefer typing: while it has a GUI, most interactions happen through a Command Line Interface (CLI), so frequent tasks can be done faster than with a mouse.
 
+TuitionBook supports English-speaking users and the `en-SG` locale only. Its user interface, commands, messages, and contact information are intended to use Singapore English conventions; other languages, scripts, and locale-specific formats are outside the supported scope.
+
 ## Features
 
 * Add, edit, find, list and delete contacts
