@@ -35,6 +35,12 @@ import seedu.tuitionbook.testutil.PersonBuilder;
 @EnabledIfEnvironmentVariable(named = "RUN_JAVAFX_TESTS", matches = "true")
 public class CardDisplayUiTest {
 
+    private static final int OVERSIZED_TAG_LENGTH = 1000;
+    private static final double TAG_OVERFLOW_SCENE_WIDTH = 340;
+    private static final double TAG_OVERFLOW_SCENE_HEIGHT = 500;
+    private static final double TAG_RESIZED_WINDOW_WIDTH = 700;
+    private static final double LAYOUT_BOUNDS_TOLERANCE = 0.5;
+
     @BeforeAll
     public static void startJavaFxToolkit() {
         JavaFxTestUtil.initialize();
@@ -181,7 +187,7 @@ public class CardDisplayUiTest {
     @Test
     public void personCard_tags_stayWithinCardAndRemainAccessibleAfterResize() throws Exception {
         JavaFxTestUtil.callOnFxThread(() -> {
-            String longTag = "longtag".repeat(143);
+            String longTag = "x".repeat(OVERSIZED_TAG_LENGTH);
             Person longTagPerson = new PersonBuilder().withTags(longTag).build();
             Person multipleTagsPerson = new PersonBuilder().withTags("zulu", "alpha", "middle").build();
             Person noTagsPerson = new PersonBuilder().withTags().build();
@@ -192,7 +198,7 @@ public class CardDisplayUiTest {
             Stage stage = new Stage();
 
             try {
-                stage.setScene(new Scene(cards, 340, 500));
+                stage.setScene(new Scene(cards, TAG_OVERFLOW_SCENE_WIDTH, TAG_OVERFLOW_SCENE_HEIGHT));
                 stage.show();
                 layout(cards);
 
@@ -205,7 +211,7 @@ public class CardDisplayUiTest {
                 assertTagsStayInsideCard(longTagCard);
                 assertTagsStayInsideCard(multipleTagsCard);
 
-                stage.setWidth(700);
+                stage.setWidth(TAG_RESIZED_WINDOW_WIDTH);
                 layout(cards);
                 assertTagsStayInsideCard(longTagCard);
                 assertTagsStayInsideCard(multipleTagsCard);
@@ -300,12 +306,12 @@ public class CardDisplayUiTest {
         FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
         Bounds cardBounds = card.getRoot().localToScene(card.getRoot().getBoundsInLocal());
         Bounds tagPaneBounds = tags.localToScene(tags.getBoundsInLocal());
-        assertTrue(tagPaneBounds.getMinX() >= cardBounds.getMinX() - 0.5);
-        assertTrue(tagPaneBounds.getMaxX() <= cardBounds.getMaxX() + 0.5,
+        assertTrue(tagPaneBounds.getMinX() >= cardBounds.getMinX() - LAYOUT_BOUNDS_TOLERANCE);
+        assertTrue(tagPaneBounds.getMaxX() <= cardBounds.getMaxX() + LAYOUT_BOUNDS_TOLERANCE,
                 "Tag pane extends past card: " + tagPaneBounds + " vs " + cardBounds);
         for (Label tagLabel : getTagLabels(card)) {
             Bounds labelBounds = tagLabel.localToScene(tagLabel.getBoundsInLocal());
-            assertTrue(labelBounds.getMaxX() <= cardBounds.getMaxX() + 0.5,
+            assertTrue(labelBounds.getMaxX() <= cardBounds.getMaxX() + LAYOUT_BOUNDS_TOLERANCE,
                     "Tag extends past card: " + labelBounds + " vs " + cardBounds);
         }
     }

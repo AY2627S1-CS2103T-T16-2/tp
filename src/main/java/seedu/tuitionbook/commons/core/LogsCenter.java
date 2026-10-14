@@ -96,7 +96,8 @@ public class LogsCenter {
      */
     static boolean addFileHandler(Logger targetLogger, Path logFile) {
         try {
-            FileHandler fileHandler = new FileHandler(logFile.toString(),
+            String escapedLogFilePattern = logFile.toString().replace("%", "%%");
+            FileHandler fileHandler = new FileHandler(escapedLogFilePattern,
                     MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
             fileHandler.setFormatter(new SimpleFormatter());
             fileHandler.setLevel(Level.ALL);

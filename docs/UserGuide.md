@@ -22,7 +22,11 @@ TuitionBook is a **desktop application for managing tutoring contacts, optimized
 
 1. Copy the file to the folder you want to use as the _home folder_ for your TuitionBook.
 
-1. Open a terminal and run `java -jar /path/to/tuitionbook.jar`. You may run this command from any folder.<br>
+1. Open a terminal. Replace the example JAR path below with the actual location of your downloaded JAR. You may run the command from any folder.
+
+   * **macOS/Linux:** `java -jar "/path/to/tuitionbook.jar"`
+   * **Windows:** `java -jar "C:\path\to\tuitionbook.jar"`
+
    A GUI similar to the one below should appear in a few seconds. If no data file exists, TuitionBook starts with an empty contact list and shows an information dialog. Dismiss the dialog to use the app.<br>
    ![Ui](images/Ui.png)
 
