@@ -8,6 +8,8 @@
 
 TuitionBook is a **desktop application for managing tutoring contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, TuitionBook can help you manage students and guardians faster than traditional GUI applications.
 
+TuitionBook is intended for English-speaking users and supports the `en-SG` locale only. The user interface, commands, messages, and contact information should use Singapore English conventions. Other languages, scripts, and locale-specific formats are outside the supported scope and may not be handled reliably.
+
 <!-- * Table of Contents -->
 <page-nav-print />
 
@@ -87,11 +89,10 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 * `ROLE`, `NAME`, and `PHONE` are mandatory.
 * `ROLE` must be either `student` or `guardian`, case-insensitively.
-* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
-  marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding
-  whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are
-  preserved.
-* `NAME` can contain at most 100 characters. A supplementary Unicode letter such as `𐐀` counts as one character.
+* `NAME` must start with an English letter or number. It may contain English letters and numbers, spaces, periods (`.`),
+  straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is ignored, while the
+  accepted name's capitalization and punctuation are preserved.
+* `NAME` can contain at most 100 characters.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
@@ -104,9 +105,9 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 **Tip:** A person can have any number of tags, including zero.
 
 TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match.
-Name comparison is case-insensitive, ignores surrounding and repeated spaces, and treats precomposed and decomposed
-Unicode forms as equivalent. Phone comparison removes spaces and hyphens while retaining a leading `+`. Country-code
-equivalence is not applied, so phone numbers that differ by a leading `+` are distinct.
+Name comparison is case-insensitive and ignores surrounding and repeated spaces. Phone comparison removes spaces and
+hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a
+leading `+` are distinct.
 
 A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the
 guardian's email may also be reused. The student and guardian remain distinct contacts because their names differ.
@@ -174,11 +175,10 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * Existing values will be updated to the input values.
 * `edit` cannot change a person's role or guardian link. Use `link` to change a student's guardian.
   The role specified with `add` applies only to the new contact.
-* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining
-  marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding
-  whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are
-  preserved.
-* `NAME` can contain at most 100 characters. A supplementary Unicode letter such as `𐐀` counts as one character.
+* `NAME` must start with an English letter or number. It may contain English letters and numbers, spaces, periods (`.`),
+  straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is ignored, while the
+  accepted name's capitalization and punctuation are preserved.
+* `NAME` can contain at most 100 characters.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * A supplied `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
