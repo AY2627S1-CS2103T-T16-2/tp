@@ -145,6 +145,21 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_helpAndExitAfterFailedBackup_leaveOriginalDataUnchanged() throws Exception {
+        Path tuitionBookFilePath = temporaryFolder.resolve("BlockedMalformedTuitionBook.json");
+        Logic blockedLogic = createLogicWithBlockedStorage(tuitionBookFilePath, new ModelManager());
+
+        CommandResult helpResult = blockedLogic.execute(HelpCommand.COMMAND_WORD);
+        assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, helpResult.getFeedbackToUser());
+        assertTrue(helpResult.isShowHelp());
+
+        CommandResult exitResult = blockedLogic.execute(ExitCommand.COMMAND_WORD);
+        assertEquals(ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, exitResult.getFeedbackToUser());
+        assertTrue(exitResult.isExit());
+        assertEquals(MALFORMED_TUITION_BOOK_JSON, Files.readString(tuitionBookFilePath));
+    }
+
+    @Test
     public void execute_addAfterConfiguredLoadFailure_savesNewDataAndPreservesBackup() throws Exception {
         Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook.json");
         Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
@@ -182,6 +197,21 @@ public class LogicManagerTest {
     private Logic createLogicWithRecoveredStorage(Path tuitionBookFilePath, Model fallbackModel) throws Exception {
         Files.writeString(tuitionBookFilePath, MALFORMED_TUITION_BOOK_JSON);
         JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(tuitionBookFilePath);
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("BlockedUserPrefs.json"));
+        StorageManager storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+        return new LogicManager(fallbackModel, storage);
+    }
+
+    private Logic createLogicWithBlockedStorage(Path tuitionBookFilePath, Model fallbackModel) throws Exception {
+        Files.writeString(tuitionBookFilePath, MALFORMED_TUITION_BOOK_JSON);
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(tuitionBookFilePath) {
+            @Override
+            protected void moveFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated backup failure");
+            }
+        };
         JsonUserPrefsStorage userPrefsStorage =
                 new JsonUserPrefsStorage(temporaryFolder.resolve("BlockedUserPrefs.json"));
         StorageManager storage = new StorageManager(tuitionBookStorage, userPrefsStorage);

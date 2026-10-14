@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.tuitionbook.testutil.Assert.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -134,12 +135,32 @@ public class MainAppTest {
         MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
 
         assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
-        assertEquals(StartupNotice.loadFailed(), state.notice().orElseThrow());
         Path backupPath = dataFile.resolveSibling(dataFile.getFileName() + ".backup");
+        assertEquals(StartupNotice.loadFailedBackedUp(backupPath), state.notice().orElseThrow());
         assertFalse(Files.exists(dataFile));
         assertEquals("{broken", Files.readString(backupPath));
         storage.saveTuitionBook(state.model().getTuitionBook());
         assertTrue(Files.exists(dataFile));
+    }
+
+    @Test
+    public void loadStartupState_malformedFileBackupFails_blocksSavingAndShowsNotice() throws Exception {
+        Path dataFile = testFolder.resolve("contacts.json");
+        Files.writeString(dataFile, "{broken");
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(dataFile) {
+            @Override
+            protected void moveFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated backup failure");
+            }
+        };
+        StorageManager storage = new StorageManager(tuitionBookStorage,
+                new JsonUserPrefsStorage(testFolder.resolve("preferences.json")));
+
+        MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
+
+        assertEquals(StartupNotice.loadFailedBackupFailed(), state.notice().orElseThrow());
+        assertEquals("{broken", Files.readString(dataFile));
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(state.model().getTuitionBook()));
     }
 
     @Test

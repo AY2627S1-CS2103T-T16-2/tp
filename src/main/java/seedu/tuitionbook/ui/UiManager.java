@@ -66,13 +66,27 @@ public class UiManager implements Ui {
     }
 
     private void showStartupNotice(StartupNotice notice) {
+        Path displayedDataFilePath = displayedPath(dataFilePath);
         switch (notice.type()) {
             case MISSING_DATA_FILE -> showAlertDialogAndWait(AlertType.INFORMATION, "No data file found",
                     "TuitionBook started with an empty contact list",
-                    "No contact data was found at " + dataFilePath + ". Add contacts to get started.");
-            case LOAD_FAILED -> showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded",
-                    "TuitionBook started with an empty contact list",
-                    "The original data was moved to a backup. You can save new contacts to " + dataFilePath + ".");
+                    "No contact data was found at " + displayedDataFilePath + ". Add contacts to get started.");
+            case LOAD_FAILED_BACKED_UP -> showLoadFailureNotice("TuitionBook started with an empty contact list",
+                    "Your data file could not be read, so it was moved unchanged to "
+                            + displayedPath(notice.malformedFileBackupPath())
+                            + ". Your original data is not lost. TuitionBook will save new contacts to "
+                            + displayedDataFilePath + ". To restore the original data, fix the JSON in the backup, "
+                            + "rename it to " + displayedDataFilePath + " (replacing the new file), "
+                            + "then restart TuitionBook. "
+                            + "Contacts added after recovery are in the new file and must be re-entered; "
+                            + "the files cannot be merged automatically.");
+            case LOAD_FAILED_BACKUP_FAILED -> showLoadFailureNotice(
+                    "TuitionBook started with an empty contact list, but saving is disabled",
+                    "Your data file could not be read and could not be moved to a backup. It remains at "
+                            + displayedDataFilePath
+                            + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, "
+                            + "then restart "
+                            + "TuitionBook.");
             case GUARDIAN_LINKS_REPAIRED -> {
                 int count = notice.repairedGuardianLinkCount();
                 String header = count + (count == 1 ? " guardian link was repaired" : " guardian links were repaired");
@@ -82,6 +96,15 @@ public class UiManager implements Ui {
             }
             default -> throw new AssertionError("Unexpected startup notice: " + notice.type());
         }
+    }
+
+    private Path displayedPath(Path path) {
+        return path.toAbsolutePath().normalize();
+    }
+
+    private void showLoadFailureNotice(String header, String message) {
+        mainWindow.showStartupMessage(message);
+        showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded", header, message);
     }
 
     void showAlertDialogAndWait(Alert.AlertType type, String title, String headerText, String contentText) {

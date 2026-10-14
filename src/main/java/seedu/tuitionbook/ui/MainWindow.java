@@ -176,6 +176,11 @@ public class MainWindow extends UiPart<Stage> {
         return personListPanel;
     }
 
+    /** Shows startup information in the result display until the user enters a command. */
+    void showStartupMessage(String message) {
+        resultDisplay.setFeedbackToUser(message);
+    }
+
     private void showPersonList() {
         personListPanel.getRoot().setManaged(true);
         personListPanel.getRoot().setVisible(true);

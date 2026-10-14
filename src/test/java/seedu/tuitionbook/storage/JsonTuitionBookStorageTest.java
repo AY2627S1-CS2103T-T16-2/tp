@@ -1,5 +1,6 @@
 package seedu.tuitionbook.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -186,6 +187,25 @@ public class JsonTuitionBookStorageTest {
         assertEquals("existing backup", Files.readString(backupPath));
         assertEquals(CONFLICTING_TUITION_BOOK_JSON,
                 Files.readString(filePath.resolveSibling(filePath.getFileName() + ".backup.1")));
+    }
+
+    @Test
+    public void readTuitionBook_backupMoveFails_leavesOriginalAndBlocksSave() throws Exception {
+        Path filePath = testFolder.resolve("ConflictingTuitionBook.json");
+        Files.writeString(filePath, CONFLICTING_TUITION_BOOK_JSON);
+        byte[] originalContents = Files.readAllBytes(filePath);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void moveFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated backup failure");
+            }
+        };
+
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+
+        assertArrayEquals(originalContents, Files.readAllBytes(filePath));
+        String expectedMessage = String.format(JsonTuitionBookStorage.MESSAGE_WRITE_BLOCKED, filePath);
+        assertThrows(IOException.class, expectedMessage, () -> storage.saveTuitionBook(new TuitionBook()));
     }
 
     @Test

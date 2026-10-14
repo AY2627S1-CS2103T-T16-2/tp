@@ -252,7 +252,7 @@ Format: `exit`
 ### Saving the data
 
 TuitionBook attempts to save contact data after commands that can change contacts or guardian links. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error, and changes from that command may not be available after restarting. You do not need to save manually.
-If TuitionBook cannot load an existing data file, a startup warning explains that saving is blocked until you correct or move the file and restart the app.
+If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and restart the app.
 
 ### Editing the data file
 
@@ -281,7 +281,8 @@ TuitionBook keeps the contact but removes that guardian link when loading the fi
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, TuitionBook starts with an empty contact list and shows a warning at the next run. It moves the unreadable file to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`. The backup is kept unchanged; after it is created, TuitionBook can save new contact data to `tuitionbook.json`. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves. Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, TuitionBook starts with an empty contact list and shows a warning at the next run. It moves the unreadable file unchanged to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`; the warning names the exact backup path. The backup is kept unchanged, and TuitionBook can then save new contact data to `tuitionbook.json`.<br>
+To restore the original data, first fix the JSON in the backup file, then rename it to `tuitionbook.json`, replacing the new file, and restart TuitionBook. Contacts added after recovery are stored in the new file and must be re-entered because TuitionBook cannot merge the two files automatically. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves; correct or move that file, then restart TuitionBook. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -309,7 +310,7 @@ _Details coming soon ..._
 7. **There is no `unlink` command.** Linking a student to a different guardian replaces the existing link, and deleting either linked contact removes the link.
 8. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
 9. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
-10. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** It moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), then allows new data to be saved. If the backup fails, the original remains in place and saving is blocked. We recommend backing up the data file before hand-editing it.
+10. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
 11. **`find` matches whole words in names only**: `find Ale` does not match `Alex`. Search using at least one complete word of the name.
 
 --------------------------------------------------------------------------------------------------------------------

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
 import javafx.scene.control.DialogPane;
+import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.tuitionbook.logic.Logic;
@@ -49,9 +50,24 @@ public class UiManagerStartupTest {
 
     @Test
     public void loadFailure_showsWarningWithRecoveryAction() throws Exception {
-        assertStartupDialog(StartupNotice.loadFailed(), "Contact data could not be loaded",
+        Path backupPath = testFolder.resolve("contacts.json.backup.1");
+        assertStartupDialog(StartupNotice.loadFailedBackedUp(backupPath), "Contact data could not be loaded",
                 "TuitionBook started with an empty contact list",
-                "The original data was moved to a backup. You can save new contacts to " + dataFilePath() + ".",
+                "Your data file could not be read, so it was moved unchanged to " + backupPath
+                        + ". Your original data is not lost. TuitionBook will save new contacts to " + dataFilePath()
+                        + ". To restore the original data, fix the JSON in the backup, rename it to " + dataFilePath()
+                        + " (replacing the new file), then restart TuitionBook. Contacts added after recovery "
+                        + "are in the new file and must be re-entered; the files cannot be merged automatically.",
+                "warning");
+    }
+
+    @Test
+    public void loadFailure_backupFailureShowsWarningWithBlockedSavingAction() throws Exception {
+        assertStartupDialog(StartupNotice.loadFailedBackupFailed(), "Contact data could not be loaded",
+                "TuitionBook started with an empty contact list, but saving is disabled",
+                "Your data file could not be read and could not be moved to a backup. It remains at " + dataFilePath()
+                        + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, then restart "
+                        + "TuitionBook.",
                 "warning");
     }
 
@@ -112,6 +128,11 @@ public class UiManagerStartupTest {
                 assertEquals(content, pane.getContentText());
                 assertTrue(pane.getStyleClass().contains(styleClass));
                 assertFalse(pane.getButtonTypes().isEmpty());
+                if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP
+                        || notice.type() == StartupNotice.Type.LOAD_FAILED_BACKUP_FAILED) {
+                    TextArea resultDisplay = (TextArea) owner.get().getScene().lookup("#resultDisplay");
+                    assertEquals(content, resultDisplay.getText());
+                }
                 pane.getScene().getWindow().hide();
             } catch (Throwable throwable) {
                 failure.set(throwable);

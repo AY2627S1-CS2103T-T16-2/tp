@@ -96,7 +96,7 @@ public class JsonTuitionBookStorage {
             }
         } catch (DataLoadingException dle) {
             if (isConfiguredFile) {
-                preserveMalformedFile();
+                throw new DataLoadingException(dle, preserveMalformedFile().orElse(null));
             }
             throw dle;
         }
@@ -106,16 +106,23 @@ public class JsonTuitionBookStorage {
      * Moves an unreadable configured data file to an unused sibling backup file.
      * Saving remains blocked if the original file cannot be preserved.
      */
-    private void preserveMalformedFile() {
+    private Optional<Path> preserveMalformedFile() {
         Path backupPath = getAvailableBackupPath();
         try {
-            Files.move(filePath, backupPath);
+            moveFile(filePath, backupPath);
             isWriteBlocked = false;
             logger.warning("Moved unreadable data file from " + filePath + " to " + backupPath + ".");
+            return Optional.of(backupPath);
         } catch (IOException ioe) {
             isWriteBlocked = true;
             logger.warning("Could not preserve unreadable data file at " + filePath + ": " + ioe);
+            return Optional.empty();
         }
+    }
+
+    /** Moves {@code source} to {@code target}; overridden in tests to simulate a failed recovery. */
+    protected void moveFile(Path source, Path target) throws IOException {
+        Files.move(source, target);
     }
 
     /** Returns an unused sibling backup path, starting with {@code <file>.backup}. */

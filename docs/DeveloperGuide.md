@@ -551,10 +551,12 @@ change the separate recovery behaviour for a malformed data file.
 
 **Malformed-file recovery policy**
 
-When the configured data file cannot be read, TuitionBook moves it unchanged to a sibling backup named
+When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named
 `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes.
-After a successful move, TuitionBook starts with an empty contact list and can save new data at the configured path.
-If no backup can be created, it leaves the original file in place and blocks saving so that it cannot be overwritten.
+After a successful move, the load failure carries the exact backup path to the UI. TuitionBook starts with an empty
+contact list, can save new data at the configured path, and shows the exact backup path and recovery steps in both a
+warning dialog and the result display. If no backup can be created, it leaves the original file in place, blocks saving
+so that it cannot be overwritten, and tells the user to correct or move the original file before restarting.
 
 ### Non-Functional Requirements
 
@@ -564,9 +566,7 @@ If no backup can be created, it leaves the original file in place and blocks sav
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed, it shall retain a backup of the malformed file, start with an empty data set, and show a warning; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
-
-The malformed-file backup requirement is not yet implemented. TuitionBook currently preserves the existing file in place and blocks saving after a load failure. Issue #87 tracks the decision and implementation of a separate backup policy.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
 
 ### Glossary
 
@@ -662,9 +662,9 @@ Enter these commands to create the contacts used below:
 
 ### Saving data
 
-1. Keeping read-only commands available when contact saving is blocked
+1. Recovering from malformed contact data
 
-   1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/addressbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
+   1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
    1. Launch TuitionBook.<br>
       Expected: TuitionBook opens with an empty contact list and a warning. The original bytes are in
@@ -679,7 +679,7 @@ Enter these commands to create the contacts used below:
    1. Enter `exit`.<br>
       Expected: TuitionBook exits normally without displaying a storage error.
 
-   1. Compare `data/tuitionbook.json` with the saved copy.<br>
+   1. Compare `data/tuitionbook.json.backup` with the saved copy.<br>
       Expected: The backup file is identical to the saved copy; TuitionBook did not modify its malformed contents.
 
 1. Warning about a repaired guardian link
