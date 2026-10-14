@@ -109,9 +109,7 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 **Tip:** A person can have any number of tags, including zero.
 
 TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match.
-Name comparison is case-insensitive and ignores surrounding and repeated spaces. Phone comparison removes spaces and
-hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a
-leading `+` are distinct.
+Name comparison is case-insensitive, ignores surrounding and repeated spaces, and treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Phone comparison removes spaces and hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a leading `+` are distinct.
 
 A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the
 guardian's email may also be reused. The student and guardian remain distinct contacts because their names differ.
