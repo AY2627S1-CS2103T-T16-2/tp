@@ -4,7 +4,11 @@ import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.ListCommand;
@@ -29,6 +33,21 @@ public class ListCommandParserTest {
 
         ListCommand expectedGuardianCommand = new ListCommand(new PersonHasRolePredicate(Role.GUARDIAN));
         assertParseSuccess(parser, " r/guardian", expectedGuardianCommand);
+    }
+
+    @Test
+    @ResourceLock(Resources.LOCALE)
+    public void parse_rolesInTurkishLocale_success() {
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            ListCommand expectedGuardianCommand = new ListCommand(new PersonHasRolePredicate(Role.GUARDIAN));
+            assertParseSuccess(parser, " r/guardian", expectedGuardianCommand);
+            assertParseSuccess(parser, " r/GUARDIAN", expectedGuardianCommand);
+            assertParseSuccess(parser, " r/GuArDiAn", expectedGuardianCommand);
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 
     @Test

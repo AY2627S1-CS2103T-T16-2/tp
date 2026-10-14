@@ -35,7 +35,11 @@ import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseFa
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.tuitionbook.testutil.TypicalPersons.BOB;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.AddCommand;
@@ -86,6 +90,25 @@ public class AddCommandParserTest {
         Person expectedPerson = new PersonBuilder(BOB).withRole(Role.GUARDIAN).withTags().build();
         assertParseSuccess(parser, " r/GuArDiAn" + NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB
                 + ADDRESS_DESC_BOB, new AddCommand(expectedPerson));
+    }
+
+    @Test
+    @ResourceLock(Resources.LOCALE)
+    public void parse_rolesInTurkishLocale_success() {
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            Person expectedGuardian = new PersonBuilder(BOB).withRole(Role.GUARDIAN).withoutEmail().withoutAddress()
+                    .withTags().build();
+            assertParseSuccess(parser, " r/guardian" + NAME_DESC_BOB + PHONE_DESC_BOB,
+                    new AddCommand(expectedGuardian));
+            assertParseSuccess(parser, " r/GUARDIAN" + NAME_DESC_BOB + PHONE_DESC_BOB,
+                    new AddCommand(expectedGuardian));
+            assertParseSuccess(parser, " r/GuArDiAn" + NAME_DESC_BOB + PHONE_DESC_BOB,
+                    new AddCommand(expectedGuardian));
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 
     @Test
