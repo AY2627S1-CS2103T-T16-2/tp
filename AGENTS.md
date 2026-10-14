@@ -93,7 +93,21 @@ These summarise explicit requirements in the [overview][overview] and
 5. Make a small, buildable change. As a team workflow default, include affected tests,
    UG/DG sections, diagrams and help/messages in the same PR as behaviour changes.
    Avoid unrelated upgrades, formatting or renaming.
-6. Review the final diff, run relevant checks and report results. Do not disable tests
+   Record release changes in `CHANGELOG.md` in the same PR, including the
+   AB3-to-TuitionBook changes documented for the first release.
+   `CHANGELOG.md` follows Keep a Changelog: keep the
+   format guidance at the top, add each release as a versioned heading with its
+   date, place the newest release first, and organise concise entries under
+   `Added`, `Changed`, and, where applicable, `Fixed`. Do not manually wrap
+   prose or list items in the file.
+6. Release screenshots belong in a tracked repository directory such as
+   `docs/images/`. Reference them in the relevant changelog section with an
+   absolute tag-based URL such as
+   `https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/v1.3/docs/images/release-add-contact.png`.
+   Commit the image before creating the release tag so GitHub can serve it from
+   `raw.githubusercontent.com`; do not rely on local file paths or untracked
+   screenshots.
+7. Review the final diff, run relevant checks and report results. Do not disable tests
    to hide failures, weaken security/CI policies, fabricate evidence or hide incomplete work.
 
 When multiple agents are requested, assign disjoint write areas and agreed interfaces;
