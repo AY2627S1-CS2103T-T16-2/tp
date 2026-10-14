@@ -17,4 +17,9 @@ public abstract class Command {
      */
     public abstract CommandResult execute(Model model) throws CommandException;
 
+    /**
+     * Returns whether this command requires the contact data to be saved after successful execution.
+     */
+    public abstract boolean requiresSave();
+
 }

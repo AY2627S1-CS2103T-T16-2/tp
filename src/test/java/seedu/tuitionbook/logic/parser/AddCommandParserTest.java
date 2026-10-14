@@ -5,7 +5,8 @@ import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.EMAIL_DESC_BOB;
-import static seedu.tuitionbook.logic.commands.CommandTestUtil.INVALID_ADDRESS_DESC;
+import static seedu.tuitionbook.logic.commands.CommandTestUtil.EMPTY_ADDRESS_DESC;
+import static seedu.tuitionbook.logic.commands.CommandTestUtil.EMPTY_EMAIL_DESC;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.INVALID_EMAIL_DESC;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.INVALID_NAME_DESC;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.INVALID_PHONE_DESC;
@@ -203,7 +204,7 @@ public class AddCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE));
         assertParseFailure(parser, INVALID_EMAIL_DESC + validPerson,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
-        assertParseFailure(parser, INVALID_ADDRESS_DESC + validPerson,
+        assertParseFailure(parser, EMPTY_ADDRESS_DESC + validPerson,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ADDRESS));
 
         // Valid value followed by invalid value.
@@ -215,7 +216,7 @@ public class AddCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE));
         assertParseFailure(parser, validPerson + INVALID_EMAIL_DESC,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_EMAIL));
-        assertParseFailure(parser, validPerson + INVALID_ADDRESS_DESC,
+        assertParseFailure(parser, validPerson + EMPTY_ADDRESS_DESC,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ADDRESS));
 
         // Every duplicated single-valued prefix is identified in the combined error.
@@ -243,11 +244,13 @@ public class AddCommandParserTest {
         assertParseFailure(parser, ROLE_DESC_STUDENT + INVALID_NAME_DESC + PHONE_DESC_BOB, Name.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, mandatoryFields + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, mandatoryFields + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS);
+        // An empty e/ is rejected; omit e/ entirely to add a contact without an email.
+        assertParseFailure(parser, mandatoryFields + EMPTY_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, mandatoryFields + EMPTY_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, mandatoryFields + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS);
 
         // When two values are invalid, the first parsed error is reported.
-        assertParseFailure(parser, ROLE_DESC_STUDENT + INVALID_NAME_DESC + PHONE_DESC_BOB + INVALID_ADDRESS_DESC,
+        assertParseFailure(parser, ROLE_DESC_STUDENT + INVALID_NAME_DESC + PHONE_DESC_BOB + INVALID_EMAIL_DESC,
                 Name.MESSAGE_CONSTRAINTS);
 
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + mandatoryFields,

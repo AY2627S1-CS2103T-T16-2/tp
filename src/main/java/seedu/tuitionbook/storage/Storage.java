@@ -48,6 +48,13 @@ public interface Storage {
     Optional<ReadOnlyTuitionBook> readTuitionBook() throws DataLoadingException;
 
     /**
+     * Returns loaded contact data with the number of guardian links repaired, or empty if the file is missing.
+     *
+     * @throws DataLoadingException if loading the data from storage failed.
+     */
+    Optional<TuitionBookLoadResult> readTuitionBookWithResult() throws DataLoadingException;
+
+    /**
      * Saves the given {@link ReadOnlyTuitionBook} to the storage.
      * @param tuitionBook cannot be null.
      * @throws IOException if there was any problem writing to the file.

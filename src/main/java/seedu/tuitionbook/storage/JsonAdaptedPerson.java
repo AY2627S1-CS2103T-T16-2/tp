@@ -28,6 +28,7 @@ class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
     public static final String INVALID_ID_MESSAGE = "Person's id field is invalid!";
+    public static final String NULL_TAG_MESSAGE = "Person's tags list contains a null tag.";
 
     private static final Logger logger = LogsCenter.getLogger(JsonAdaptedPerson.class);
 
@@ -90,8 +91,18 @@ class JsonAdaptedPerson {
      * @throws IllegalValueException if there were any data constraints violated in the adapted person.
      */
     public Person toModelType() throws IllegalValueException {
+        return toModelTypeWithResult().person();
+    }
+
+    /**
+     * Returns the converted person and whether an invalid guardian link was removed.
+     */
+    PersonLoadResult toModelTypeWithResult() throws IllegalValueException {
         final List<Tag> personTags = new ArrayList<>();
         for (JsonAdaptedTag tag : tags) {
+            if (tag == null) {
+                throw new IllegalValueException(NULL_TAG_MESSAGE);
+            }
             personTags.add(tag.toModelType());
         }
 
@@ -124,6 +135,7 @@ class JsonAdaptedPerson {
         UUID modelId;
         Role modelRole;
         UUID modelGuardianId = null;
+        boolean hasRepairedGuardianLink = false;
         if (isLegacyPerson()) {
             modelId = UUID.randomUUID();
             modelRole = Role.STUDENT;
@@ -137,15 +149,22 @@ class JsonAdaptedPerson {
             }
             modelRole = Role.fromString(role);
             modelGuardianId = parseGuardianId();
+            hasRepairedGuardianLink = guardianId != null && modelGuardianId == null;
             if (modelGuardianId != null && (modelRole != Role.STUDENT || modelGuardianId.equals(modelId))) {
                 logger.warning("Discarding invalid guardian link for contact " + modelName);
                 modelGuardianId = null;
+                hasRepairedGuardianLink = true;
             }
         }
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelId, modelRole, modelGuardianId, modelName, modelPhone, modelEmail, modelAddress,
-                modelTags);
+        Person person = new Person(modelId, modelRole, modelGuardianId, modelName, modelPhone, modelEmail,
+                modelAddress, modelTags);
+        return new PersonLoadResult(person, hasRepairedGuardianLink);
+    }
+
+    /** A converted contact and its guardian-link repair status. */
+    record PersonLoadResult(Person person, boolean hasRepairedGuardianLink) {
     }
 
     private boolean isLegacyPerson() {
