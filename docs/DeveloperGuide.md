@@ -6,7 +6,7 @@
 
 # AB-3 Developer Guide
 
-TuitionBook is scoped to English-speaking users and the `en-SG` locale. The user interface, commands, messages, and stored contact information are designed for Singapore English input. Support for other languages, scripts, and locale-specific formats is outside the current product scope and those inputs may not be handled reliably.
+TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). The user interface, commands, messages, and stored contact information support ASCII input. Unicode input is outside the current product scope and may encounter unexpected behaviour. Field-specific validation rules still apply to ASCII input.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -185,7 +185,7 @@ filter remain in the model while the detail view is visible.
 
 ### Contact field validation
 
-`Name` and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Within the supported `en-SG` scope, names use English letters and addresses use Singapore English conventions. Names contain at most 100 characters and addresses contain at most 200 characters.
+`Name` and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Within the supported ASCII character set, names use ASCII letters and addresses use ASCII input. Names contain at most 100 characters and addresses contain at most 200 characters.
 
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
@@ -310,7 +310,7 @@ _{Explain here how the data archiving feature will be implemented}_
 * prefers a single-user desktop application
 * can type quickly, prefers typing over other input methods, and is comfortable with a command-based interface
 * prefers contact information to be stored locally and restored automatically between application sessions
-* uses Singapore English and the `en-SG` locale
+* uses English and an `en-*` locale
 
 **Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage linked student and guardian contacts, group students by academic level and subject, and retrieve the correct contact and home address quickly, instead of using a generic contact list or manually cross-referencing separate records.
 
@@ -591,7 +591,7 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
 * **Index**: A positive one-based position in the current contact list, used by index-based commands.
 * **Mainstream OS**: Windows, macOS, or a commonly used Linux distribution.
-* **Normalised name**: An English (Singapore) name converted to its comparison form before duplicate checking: leading and trailing spaces are removed, each internal run of spaces is collapsed to one space, and names are compared case-insensitively while preserving display casing.
+* **Normalised name**: An ASCII English name converted to its comparison form before duplicate checking: leading and trailing spaces are removed, each internal run of spaces is collapsed to one space, and names are compared case-insensitively while preserving display casing.
 * **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: spaces and hyphens are removed while a leading `+` is retained. Country-code equivalence is not applied in the MVP.
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.

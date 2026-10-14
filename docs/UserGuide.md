@@ -8,7 +8,7 @@
 
 TuitionBook is a **desktop application for managing tutoring contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, TuitionBook can help you manage students and guardians faster than traditional GUI applications.
 
-TuitionBook is intended for English-speaking users and supports the `en-SG` locale only. The user interface, commands, messages, and contact information should use Singapore English conventions. Other languages, scripts, and locale-specific formats are outside the supported scope and may not be handled reliably.
+TuitionBook is intended for English-language users and supports any `en-*` locale. ASCII input is within the supported character set. Unicode input is outside the supported scope and may encounter unexpected behaviour. Field-specific validation rules still apply to ASCII input.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -89,7 +89,7 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 * `ROLE`, `NAME`, and `PHONE` are mandatory.
 * `ROLE` must be either `student` or `guardian`, case-insensitively.
-* `NAME` must start with an English letter or number. It may contain English letters and numbers, spaces, periods (`.`),
+* `NAME` must start with an ASCII letter or number. It may contain ASCII letters and numbers, spaces, periods (`.`),
   straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is ignored, while the
   accepted name's capitalization and punctuation are preserved.
 * `NAME` can contain at most 100 characters.
@@ -175,7 +175,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * Existing values will be updated to the input values.
 * `edit` cannot change a person's role or guardian link. Use `link` to change a student's guardian.
   The role specified with `add` applies only to the new contact.
-* `NAME` must start with an English letter or number. It may contain English letters and numbers, spaces, periods (`.`),
+* `NAME` must start with an ASCII letter or number. It may contain ASCII letters and numbers, spaces, periods (`.`),
   straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is ignored, while the
   accepted name's capitalization and punctuation are preserved.
 * `NAME` can contain at most 100 characters.
