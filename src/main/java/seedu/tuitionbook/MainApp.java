@@ -3,12 +3,12 @@ package seedu.tuitionbook;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import seedu.tuitionbook.commons.core.ApplicationPaths;
 import seedu.tuitionbook.commons.core.LogsCenter;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.commons.util.StringUtil;
@@ -37,9 +37,9 @@ public class MainApp extends Application {
     public static final String VERSION = "V0.5.1";
 
     private static final Logger logger = LogsCenter.getLogger(MainApp.class);
-    private static final Path USER_PREFS_FILE_PATH = Paths.get("preferences.json");
-    private static final Path TUITION_BOOK_FILE_PATH = Paths.get("data", "tuitionbook.json");
-    private static final Path LEGACY_TUITION_BOOK_FILE_PATH = Paths.get("data", "addressbook.json");
+    private static final Path USER_PREFS_FILE_PATH = ApplicationPaths.resolve("preferences.json");
+    private static final Path TUITION_BOOK_FILE_PATH = ApplicationPaths.resolve("data", "tuitionbook.json");
+    private static final Path LEGACY_TUITION_BOOK_FILE_PATH = ApplicationPaths.resolve("data", "addressbook.json");
 
     protected Ui ui;
     protected Logic logic;

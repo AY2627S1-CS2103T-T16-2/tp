@@ -5,7 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 public class RoleTest {
 
@@ -48,5 +52,25 @@ public class RoleTest {
     public void toString_returnsLowercaseName() {
         assertEquals("student", Role.STUDENT.toString());
         assertEquals("guardian", Role.GUARDIAN.toString());
+    }
+
+    @Test
+    @ResourceLock(Resources.LOCALE)
+    public void roleOperations_turkishLocale_remainLocaleIndependent() {
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+
+            assertTrue(Role.isValidRole("guardian"));
+            assertTrue(Role.isValidRole("STUDENT"));
+            assertTrue(Role.isValidRole(" GuArDiAn "));
+            assertEquals(Role.GUARDIAN, Role.fromString("guardian"));
+            assertEquals(Role.STUDENT, Role.fromString("STUDENT"));
+            assertEquals(Role.GUARDIAN, Role.fromString(" GuArDiAn "));
+            assertEquals("student", Role.STUDENT.toString());
+            assertEquals("guardian", Role.GUARDIAN.toString());
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 }
