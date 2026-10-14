@@ -85,7 +85,13 @@ jobs:
         run: |
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             echo "Release already exists: $TAG_NAME"
-            exit 0
+            exit 1
+          fi
+
+          EXPECTED_VERSION="$(./gradlew -q printVersion)"
+          if [[ "$TAG_NAME" != "$EXPECTED_VERSION" ]]; then
+            echo "Tag $TAG_NAME does not match Gradle version $EXPECTED_VERSION"
+            exit 1
           fi
 
           RELEASE_NOTES="$(./gradlew -q printReleaseNotes)"

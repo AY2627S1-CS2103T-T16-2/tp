@@ -80,6 +80,16 @@ defaultTasks 'clean', 'test'
 version = providers.gradleProperty('appVersion')
         .orElse('0.0.0')
         .get()
+
+tasks.register('printVersion') {
+    group = 'documentation'
+    description = 'Prints the application version.'
+
+    doLast {
+        println project.version
+    }
+}
+
 tasks.register('printReleaseNotes') {
     group = 'documentation'
     description = 'Prints release notes for the current version.'
@@ -103,10 +113,6 @@ tasks.register('printReleaseNotes') {
         println match.group().trim()
     }
 }
-
-version = providers.gradleProperty('appVersion')
-        .orElse('0.0.0')
-        .get()
 
 def generatedVersionDir = layout.buildDirectory.dir('generated/sources/version/main')
 
