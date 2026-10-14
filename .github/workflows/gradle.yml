@@ -1,11 +1,6 @@
 name: Java CI
 
-on:
-  push:
-    branches: [master]
-    tags:
-      - 'v*'
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   build:
@@ -32,6 +27,12 @@ jobs:
           distribution: 'zulu'
           java-version: '25'
           java-package: jdk+fx
+
+      - name: Validate release metadata
+        if: runner.os == 'Linux'
+        run: |
+          ./gradlew -q printVersion
+          ./gradlew -q printReleaseNotes
 
       - name: Build and check with Gradle on Linux
         if: runner.os == 'Linux'
@@ -83,11 +84,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
-          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            echo "Release already exists: $TAG_NAME"
-            exit 1
-          fi
-
           EXPECTED_VERSION="$(./gradlew -q printVersion)"
           if [[ "$TAG_NAME" != "$EXPECTED_VERSION" ]]; then
             echo "Tag $TAG_NAME does not match Gradle version $EXPECTED_VERSION"
@@ -95,6 +91,21 @@ jobs:
           fi
 
           RELEASE_NOTES="$(./gradlew -q printReleaseNotes)"
+
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            IS_DRAFT="$(gh release view "$TAG_NAME" --json isDraft --jq '.isDraft')"
+            if [[ "$IS_DRAFT" != "true" ]]; then
+              echo "Release already exists and is not a draft: $TAG_NAME"
+              exit 1
+            fi
+
+            gh release edit "$TAG_NAME" \
+              --title "$TAG_NAME" \
+              --notes "$RELEASE_NOTES" \
+              --draft
+            gh release upload "$TAG_NAME" build/libs/tuitionbook.jar --clobber
+            exit 0
+          fi
 
           gh release create "$TAG_NAME" \
             build/libs/tuitionbook.jar \
