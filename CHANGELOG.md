@@ -6,6 +6,12 @@ The format is based on Keep a Changelog.
 
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 
+## [v1.4] - 2026-10-22
+
+### Added
+
+- Added the `unlink` command to remove a student's guardian link without deleting either contact.
+
 ## [v1.3] - 2026-10-14
 
 ### Added

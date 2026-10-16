@@ -196,7 +196,7 @@ public class LogicManagerTest {
     @Test
     public void execute_mutatingCommandsAfterConfiguredLoadFailure_preserveBackup()
             throws Exception {
-        String[] commands = {"edit 1 n/New Student", "delete 1", "clear", "link 1 2"};
+        String[] commands = {"edit 1 n/New Student", "delete 1", "clear", "link 1 2", "unlink 1"};
         for (int i = 0; i < commands.length; i++) {
             String command = commands[i];
             Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook" + i + ".json");
