@@ -319,7 +319,7 @@ _{Explain here how the data archiving feature will be implemented}_
 * prefers contact information to be stored locally and restored automatically between application sessions
 * uses English and an `en-*` operating-system locale, and records contact information in English
 
-**Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage linked student and guardian contacts, organise contacts with roles and tags, and retrieve the correct contact and home address quickly, instead of using a generic contact list or manually cross-referencing separate records. Grouping students by academic level and subject is planned future work (see the Beyond-MVP user stories below), not part of the current product.
+**Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage student and guardian contacts, organise contacts with roles and tags, and retrieve the correct contact details quickly, instead of using a generic contact list or manually cross-referencing separate records. Guardian links and home addresses are optional. Tutors can label academic levels and subjects using generic tags, for example `t/Sec4 t/AMath` when adding or editing a contact. Dedicated level/subject fields and filtering by those fields are descoped from the final release; they remain possible future enhancements, not promised features. Tag filtering is separately scheduled for v1.4 in [#133](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/133).
 
 TuitionBook supports English-speaking users only: its interface, documentation, and messages are in English, and contact information is expected to be recorded in English. Input in other languages or scripts is not rejected, but TuitionBook does not commit to displaying, searching, or comparing non-English text correctly across platforms and locales.
 
@@ -331,9 +331,13 @@ Priorities: High (must have) - `***`, Medium (nice to have) - `**`, Low (unlikel
 
 Priority represents importance to the target user and does not indicate whether a requirement is currently implemented.
 
-`Scope` is a planning classification, not a claim about the current implementation state. `MVP` identifies requirements in the agreed minimum TuitionBook product, while `Beyond MVP` identifies retained or future requirements that are not required by the MVP.
+`Scope` is a planning classification, not a claim about the current implementation state. `MVP` identifies requirements in the agreed minimum TuitionBook product, while `Beyond MVP` identifies requirements outside that minimum, including implemented, scheduled, deferred, and descoped stories. The table retains these stories as a record of user needs; inclusion does not promise delivery.
 
-As of release v1.3, all MVP requirements are implemented, together with two Beyond-MVP requirements: filtering contacts by role, and preserving an unreadable data file as a backup. The remaining Beyond-MVP requirements are future work: those selected for the next few iterations are scheduled through the issue tracker's milestones (`v1.4`, `v1.5`), and the rest remain candidates for later iterations.
+As of release v1.3, all MVP requirements are implemented, together with two Beyond-MVP requirements: filtering contacts by role, and preserving an unreadable data file as a backup. The remaining stories have distinct planning statuses:
+
+* **Scheduled**: selected work is tracked through the issue tracker's milestones (`v1.4`, `v1.5`). For example, unlinking a guardian ([#125](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/125)), partial-name search ([#127](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/127)), and single-tag filtering ([#133](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/133)) are scheduled for v1.4, not available in v1.3.
+* **Descoped**: the decisions recorded in [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/134) exclude dedicated level/subject fields and filtering, inactive-student management, sorting, area search, notes, clipboard support, import/export, undo, confirmation prompts, and an in-app command list from the final release. Generic tags remain the supported way to label levels and subjects. Descoped stories are not release commitments; any later reconsideration requires a new scope decision.
+* **Deferred**: other unimplemented Beyond-MVP stories without a scheduled issue remain unscheduled backlog ideas, with no promised release or delivery date.
 
 | Priority | Scope | As a … | I want to … | So that I can… |
 |----------|-------|--------|-------------|----------------|
