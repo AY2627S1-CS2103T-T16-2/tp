@@ -116,7 +116,10 @@ replace genuine teammate review. The responsible human must understand the work.
 When drafting or suggesting PR review feedback, provide inline review comments
 anchored to the relevant diff lines, plus a top-level summary comment on submitting
 the review, as any reviewer would; only the inline comments count towards course
-review grading.
+review grading. Include inline comments highlighting specific details done well
+and explain why they are good. Read existing review comments before drafting;
+do not repeat other reviewers' inline comments. Make a best effort to find other
+useful observations, without inventing issues or praise just to add a comment.
 Do not change Git identity, rewrite history or delete PR branches automatically;
 consult the course workflow before authorised Git operations.
 
