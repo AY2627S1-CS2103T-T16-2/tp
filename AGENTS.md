@@ -7,10 +7,18 @@
 * **Never push directly to the team repository's `master` (`upstream/master`).** Land
   every change through a reviewed pull request from a fork or feature branch, and do
   not leave local branches tracking or defaulting their pushes to `upstream/master`.
+* Retain branches used by merged PRs as required by the [course workflow][github];
+  do not delete them during cleanup, as course scripts use them to verify branch use.
 * **Do not credit AI in commit messages.** The course permits and encourages AI use
   but allows only the five team members as commit authors/co-authors: never add AI
   tools as `Co-Authored-By` or include lines such as "Generated with [AI]". Credit
-  AI assistance only through the course's designated channels.
+  localized AI assistance in nearby comments. For widespread assistance, instead
+  record the tool, who used it and the extent of use in the DG Acknowledgements,
+  following the [attribution policy][reuse].
+* Credit externally reused or adapted code near its use and comply with its licence.
+  Keep DG Acknowledgements accurate for reused or externally inspired ideas, code
+  and documentation, with source links and the extent of reuse. Apply the course's
+  stated exceptions for course materials, normal AB3 evolution and within-team reuse.
 * Use synthetic test data and disposable storage; protect real contacts and secrets.
 * Keep released JAR behaviour and published UG/DG claims consistent; label future work.
 * Run proportionate checks and disclose failures, skipped checks and uncertainty.
@@ -81,6 +89,10 @@ These summarise explicit requirements in the [overview][overview] and
 
 1. Inspect branch, working changes and applicable instructions. Confirm the human
    owner, issue/milestone, acceptance criteria, non-goals and affected components.
+   When authorised to manage issues/PRs, assign scheduled issues to their responsible
+   members and target milestone, and assign incoming PRs to the appropriate milestone.
+   Before closing a milestone, reconcile it with actual delivery and move unfinished
+   issues/PRs to a future milestone; do not count unfinished work as released.
 2. Before code changes, check the active iteration and any freeze restrictions using
    the sources below. Stop for clarification if permission or remaining budget is unclear.
 3. Trace parser → command → model → storage/UI and read related tests. Resolve
@@ -92,6 +104,9 @@ These summarise explicit requirements in the [overview][overview] and
    mistake; capture individual bugs in regression tests where feasible.
 5. Make a small, buildable change. As a team workflow default, include affected tests,
    UG/DG sections, diagrams and help/messages in the same PR as behaviour changes.
+   Maintain the DG's `Instructions for Manual Testing` appendix for user-testable
+   features added or changed from AB3. Include useful copyable inputs and accurate
+   expected results that complement the UG; exhaustive test variations are not needed.
    Avoid unrelated upgrades, formatting or renaming.
    Record release changes in `CHANGELOG.md` in the same PR, including the
    AB3-to-TuitionBook changes documented for the first release.
@@ -120,8 +135,10 @@ review grading. Include inline comments highlighting specific details done well
 and explain why they are good. Read existing review comments before drafting;
 do not repeat other reviewers' inline comments. Make a best effort to find other
 useful observations, without inventing issues or praise just to add a comment.
-Do not change Git identity, rewrite history or delete PR branches automatically;
-consult the course workflow before authorised Git operations.
+Do not change Git identity or rewrite history automatically; consult the course
+workflow before authorised Git operations. Prefer merge commits over squash/rebase
+when merging PRs, and merge `master` into branches when synchronising them: the
+course discourages timestamp changes that interfere with progress tracking.
 
 ## Code and test essentials
 
