@@ -7,10 +7,18 @@
 * **Never push directly to the team repository's `master` (`upstream/master`).** Land
   every change through a reviewed pull request from a fork or feature branch, and do
   not leave local branches tracking or defaulting their pushes to `upstream/master`.
+* Retain branches used by merged PRs as required by the [course workflow][github];
+  do not delete them during cleanup, as course scripts use them to verify branch use.
 * **Do not credit AI in commit messages.** The course permits and encourages AI use
   but allows only the five team members as commit authors/co-authors: never add AI
   tools as `Co-Authored-By` or include lines such as "Generated with [AI]". Credit
-  AI assistance only through the course's designated channels.
+  localized AI assistance in nearby comments. For widespread assistance, instead
+  record the tool, who used it and the extent of use in the DG Acknowledgements,
+  following the [attribution policy][reuse].
+* Credit externally reused or adapted code near its use and comply with its licence.
+  Keep DG Acknowledgements accurate for reused or externally inspired ideas, code
+  and documentation, with source links and the extent of reuse. Apply the course's
+  stated exceptions for course materials, normal AB3 evolution and within-team reuse.
 * Use synthetic test data and disposable storage; protect real contacts and secrets.
 * Keep released JAR behaviour and published UG/DG claims consistent; label future work.
 * Run proportionate checks and disclose failures, skipped checks and uncertainty.
@@ -81,6 +89,10 @@ These summarise explicit requirements in the [overview][overview] and
 
 1. Inspect branch, working changes and applicable instructions. Confirm the human
    owner, issue/milestone, acceptance criteria, non-goals and affected components.
+   When authorised to manage issues/PRs, assign scheduled issues to their responsible
+   members and target milestone, and assign incoming PRs to the appropriate milestone.
+   Before closing a milestone, reconcile it with actual delivery and move unfinished
+   issues/PRs to a future milestone; do not count unfinished work as released.
 2. Before code changes, check the active iteration and any freeze restrictions using
    the sources below. Stop for clarification if permission or remaining budget is unclear.
 3. Trace parser → command → model → storage/UI and read related tests. Resolve
@@ -92,6 +104,9 @@ These summarise explicit requirements in the [overview][overview] and
    mistake; capture individual bugs in regression tests where feasible.
 5. Make a small, buildable change. As a team workflow default, include affected tests,
    UG/DG sections, diagrams and help/messages in the same PR as behaviour changes.
+   Maintain the DG's `Instructions for Manual Testing` appendix for user-testable
+   features added or changed from AB3. Include useful copyable inputs and accurate
+   expected results that complement the UG; exhaustive test variations are not needed.
    Avoid unrelated upgrades, formatting or renaming.
    Record release changes in `CHANGELOG.md` in the same PR, including the
    AB3-to-TuitionBook changes documented for the first release.
@@ -116,9 +131,16 @@ replace genuine teammate review. The responsible human must understand the work.
 When drafting or suggesting PR review feedback, provide inline review comments
 anchored to the relevant diff lines, plus a top-level summary comment on submitting
 the review, as any reviewer would; only the inline comments count towards course
-review grading.
-Do not change Git identity, rewrite history or delete PR branches automatically;
-consult the course workflow before authorised Git operations.
+review grading. Include inline comments highlighting specific details done well
+and explain why they are good. Read existing review comments before drafting;
+do not repeat other reviewers' inline comments. Replies that build on an existing
+inline comment are welcome when they add useful reasoning, evidence, clarification
+or a proposed solution. Make a best effort to find other useful observations,
+without inventing issues or praise just to add a comment.
+Do not change Git identity or rewrite history automatically; consult the course
+workflow before authorised Git operations. Prefer merge commits over squash/rebase
+when merging PRs, and merge `master` into branches when synchronising them: the
+course discourages timestamp changes that interfere with progress tracking.
 
 ## Code and test essentials
 
@@ -174,9 +196,11 @@ seek clarification before proceeding with work that depends on it. Do not guess.
 | Tests or alpha testing | [Testing guide](docs/Testing.md), neighbouring tests and [course alpha-testing guidance][alpha]. |
 | UG/DG/diagram changes | [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading], [requirements notation][notation] and [NFR definitions][requirements]. |
 | Iteration planning or Git/PR actions | [Timeline][timeline], its active week's instructions and [GitHub workflow][github]. |
-| Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. Flaws not fixable within freeze limits may qualify for the DG "Planned Enhancements" appendix — rules in [deliverables][deliverables]. |
+| Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. Verify any eligibility for a DG "Planned Enhancements" appendix against the live [deliverables][deliverables] and [PE rules][pe] before relying on it. |
 | PE reports/responses/evaluations | [PE rules][pe] for the active phase and [grading][grading]; verify facts, impact and allowed issue edits, not presumed severity. |
 | AI assistance or external reuse | [AI guidance][ai] and [reuse/attribution policy][reuse]; credit actual tools, authors and extent, preserving human ownership. |
+
+Note the Planned Enhancements appendix couldn't be verified on this cohort's live deliverables/PE pages — verify before relying on it.
 
 ## Handoff
 
