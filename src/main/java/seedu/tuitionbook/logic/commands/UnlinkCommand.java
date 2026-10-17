@@ -40,6 +40,11 @@ public class UnlinkCommand extends Command {
     }
 
     @Override
+    public boolean canMutate() {
+        return true;
+    }
+
+    @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         requiresSave = false;

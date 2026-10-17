@@ -743,6 +743,18 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 ### Saving data
 
+1. Recovering from a save failure
+
+   1. In a fresh, disposable folder, launch TuitionBook and enter `add r/student n/Alex Yeoh p/87438807`, then close the application.
+
+   1. Remove your current user's write permission from the `data` folder beside the JAR, then relaunch TuitionBook.
+
+   1. Enter `list r/student`, then `edit 1 n/Updated Alex`.<br>
+      Expected: TuitionBook reports that it could not save. Alex Yeoh's name remains unchanged and the displayed list remains filtered to students.
+
+   1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
+      Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
+
 1. Recovering from malformed contact data
 
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.

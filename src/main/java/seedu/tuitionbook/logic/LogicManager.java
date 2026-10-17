@@ -48,8 +48,12 @@ public class LogicManager implements Logic {
 
         CommandResult commandResult;
         Command command = tuitionBookParser.parseCommand(commandText);
-        TuitionBook originalTuitionBook = new TuitionBook(model.getTuitionBook());
-        Predicate<Person> originalFilter = model.getFilteredPersonListPredicate();
+        TuitionBook originalTuitionBook = null;
+        Predicate<Person> originalFilter = null;
+        if (command.canMutate()) {
+            originalTuitionBook = new TuitionBook(model.getTuitionBook());
+            originalFilter = model.getFilteredPersonListPredicate();
+        }
         commandResult = command.execute(model);
 
         if (command.requiresSave()) {
