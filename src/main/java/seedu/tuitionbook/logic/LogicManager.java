@@ -2,6 +2,7 @@ package seedu.tuitionbook.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -13,6 +14,7 @@ import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.TuitionBookParser;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.Model;
+import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.storage.Storage;
 
@@ -46,19 +48,28 @@ public class LogicManager implements Logic {
 
         CommandResult commandResult;
         Command command = tuitionBookParser.parseCommand(commandText);
+        TuitionBook originalTuitionBook = new TuitionBook(model.getTuitionBook());
+        Predicate<Person> originalFilter = model.getFilteredPersonListPredicate();
         commandResult = command.execute(model);
 
         if (command.requiresSave()) {
             try {
                 storage.saveTuitionBook(model.getTuitionBook());
             } catch (AccessDeniedException e) {
+                restoreModel(originalTuitionBook, originalFilter);
                 throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
             } catch (IOException ioe) {
+                restoreModel(originalTuitionBook, originalFilter);
                 throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
             }
         }
 
         return commandResult;
+    }
+
+    private void restoreModel(TuitionBook tuitionBook, Predicate<Person> filter) {
+        model.setTuitionBook(tuitionBook);
+        model.updateFilteredPersonList(filter);
     }
 
     @Override

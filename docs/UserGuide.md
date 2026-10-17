@@ -251,13 +251,13 @@ Format: `clear`
 
 ### Exiting the program: `exit`
 
-Exits the program without attempting to save contact data. If an earlier contact-changing command reported a save error, its changes may not be available after restarting TuitionBook.
+Exits the program without attempting to save contact data.
 
 Format: `exit`
 
 ### Saving the data
 
-TuitionBook attempts to save contact data after commands that can change contacts or guardian links. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error, and changes from that command may not be available after restarting. You do not need to save manually.
+TuitionBook attempts to save contact data after commands that change contacts or guardian links. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores the contacts and active filter to their state before the command. You do not need to save manually.
 If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and restart the app.
 
 ### Editing the data file

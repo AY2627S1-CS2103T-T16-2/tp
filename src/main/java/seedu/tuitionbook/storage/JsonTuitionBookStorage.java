@@ -3,15 +3,16 @@ package seedu.tuitionbook.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import seedu.tuitionbook.commons.core.LogsCenter;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.commons.exceptions.IllegalValueException;
-import seedu.tuitionbook.commons.util.FileUtil;
 import seedu.tuitionbook.commons.util.JsonUtil;
 import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 
@@ -157,8 +158,28 @@ public class JsonTuitionBookStorage {
             throw new IOException(String.format(MESSAGE_WRITE_BLOCKED, this.filePath));
         }
 
-        FileUtil.createIfMissing(filePath);
-        JsonUtil.saveJsonFile(new JsonSerializableTuitionBook(tuitionBook), filePath);
+        Path absoluteFilePath = filePath.toAbsolutePath();
+        Files.createDirectories(absoluteFilePath.getParent());
+        Path temporaryFile = Files.createTempFile(absoluteFilePath.getParent(),
+                absoluteFilePath.getFileName() + ".", ".tmp");
+        try {
+            writeJsonFile(new JsonSerializableTuitionBook(tuitionBook), temporaryFile);
+            replaceFile(temporaryFile, absoluteFilePath);
+        } finally {
+            Files.deleteIfExists(temporaryFile);
+        }
+    }
+
+    protected void writeJsonFile(JsonSerializableTuitionBook tuitionBook, Path filePath) throws IOException {
+        JsonUtil.saveJsonFile(tuitionBook, filePath);
+    }
+
+    protected void replaceFile(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     /**
