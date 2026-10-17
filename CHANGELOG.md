@@ -6,6 +6,12 @@ The format is based on Keep a Changelog.
 
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 
+## [v1.4] - 2026-10-22
+
+### Changed
+
+- Moved the User Guide command summary before Quick start and corrected its sidebar link.
+
 ## [v1.3] - 2026-10-14
 
 ### Added
