@@ -30,6 +30,7 @@ import seedu.tuitionbook.logic.commands.CommandResult;
 import seedu.tuitionbook.logic.commands.ExitCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
+import seedu.tuitionbook.logic.commands.UnlinkCommand;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
@@ -117,6 +118,52 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_unlinkAlreadyUnlinkedStudent_skipsSaveAndPreservesContactsAndFilter() throws Exception {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).build();
+        model.addPerson(student);
+        model.addPerson(guardian);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        CountingTuitionBookStorage tuitionBookStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("NoOpUnlink.json"), DUMMY_IO_EXCEPTION);
+        logic = new LogicManager(model, new StorageManager(tuitionBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("NoOpUnlinkPrefs.json"))));
+
+        CommandResult result = logic.execute(UnlinkCommand.COMMAND_WORD + " 1");
+
+        assertEquals(String.format(UnlinkCommand.MESSAGE_NO_LINKED_GUARDIAN, student.getName()),
+                result.getFeedbackToUser());
+        assertEquals(0, tuitionBookStorage.getSaveCallCount());
+        assertEquals(List.of(student, guardian), logic.getPersonList());
+        assertEquals(List.of(student), logic.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_unlink_savesUnlinkedStudentAndPreservesContactsAfterReload() throws Exception {
+        Path dataFilePath = temporaryFolder.resolve("UnlinkRoundTrip.json");
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        model.addPerson(student);
+        model.addPerson(guardian);
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(dataFilePath);
+        logic = new LogicManager(model, new StorageManager(tuitionBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("UnlinkRoundTripPrefs.json"))));
+
+        logic.execute(UnlinkCommand.COMMAND_WORD + " 1");
+
+        ReadOnlyTuitionBook reloadedTuitionBook = tuitionBookStorage.readTuitionBook().orElseThrow();
+        Person reloadedStudent = reloadedTuitionBook.getPersonList().get(0);
+        Person reloadedGuardian = reloadedTuitionBook.getPersonList().get(1);
+        assertEquals(student.clearGuardian(), reloadedStudent);
+        assertEquals(guardian, reloadedGuardian);
+        assertTrue(reloadedStudent.getGuardianId().isEmpty());
+    }
+
+    @Test
     public void execute_storageThrowsIoException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
@@ -201,8 +248,11 @@ public class LogicManagerTest {
             String command = commands[i];
             Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook" + i + ".json");
             Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
-            fallbackModel.addPerson(new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT).build());
-            fallbackModel.addPerson(new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build());
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person student = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT)
+                    .withGuardian(guardian).build();
+            fallbackModel.addPerson(student);
+            fallbackModel.addPerson(guardian);
             Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);
             Path backupPath = tuitionBookFilePath.resolveSibling(tuitionBookFilePath.getFileName() + ".backup");
             byte[] originalContents = Files.readAllBytes(backupPath);
@@ -345,5 +395,28 @@ public class LogicManagerTest {
         ModelManager expectedModel = new ModelManager();
         expectedModel.addPerson(expectedPerson);
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+    }
+
+    private static class CountingTuitionBookStorage extends JsonTuitionBookStorage {
+        private final IOException exceptionToThrow;
+        private int saveCallCount;
+
+        CountingTuitionBookStorage(Path filePath, IOException exceptionToThrow) {
+            super(filePath);
+            this.exceptionToThrow = exceptionToThrow;
+        }
+
+        @Override
+        public void saveTuitionBook(ReadOnlyTuitionBook tuitionBook) throws IOException {
+            saveCallCount++;
+            if (exceptionToThrow != null) {
+                throw exceptionToThrow;
+            }
+            super.saveTuitionBook(tuitionBook);
+        }
+
+        int getSaveCallCount() {
+            return saveCallCount;
+        }
     }
 }

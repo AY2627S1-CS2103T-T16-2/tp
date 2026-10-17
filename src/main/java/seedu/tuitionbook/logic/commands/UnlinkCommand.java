@@ -27,6 +27,7 @@ public class UnlinkCommand extends Command {
     public static final String MESSAGE_STUDENT_REQUIRED = "The index must refer to a student.";
 
     private final Index studentIndex;
+    private boolean requiresSave;
 
     /** Creates an unlink command for the student at the given displayed index. */
     public UnlinkCommand(Index studentIndex) {
@@ -35,12 +36,13 @@ public class UnlinkCommand extends Command {
 
     @Override
     public boolean requiresSave() {
-        return true;
+        return requiresSave;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        requiresSave = false;
         List<Person> persons = model.getFilteredPersonList();
         int displayedPersonCount = persons.size();
         if (studentIndex.getZeroBased() >= displayedPersonCount) {
@@ -63,6 +65,7 @@ public class UnlinkCommand extends Command {
 
         model.setPerson(student, student.clearGuardian());
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        requiresSave = true;
         return new CommandResult(String.format(MESSAGE_UNLINK_SUCCESS, student.getName(), guardian.getName()));
     }
 
