@@ -11,10 +11,7 @@
   do not delete them during cleanup, as course scripts use them to verify branch use.
 * **Do not credit AI in commit messages.** The course permits and encourages AI use
   but allows only the five team members as commit authors/co-authors: never add AI
-  tools as `Co-Authored-By` or include lines such as "Generated with [AI]". Credit
-  localized AI assistance in nearby comments. For widespread assistance, instead
-  record the tool, who used it and the extent of use in the DG Acknowledgements,
-  following the [attribution policy][reuse].
+  tools as `Co-Authored-By` or include lines such as "Generated with [AI]".
 * Credit externally reused or adapted code near its use and comply with its licence.
   Keep DG Acknowledgements accurate for reused or externally inspired ideas, code
   and documentation, with source links and the extent of reuse. Apply the course's
@@ -137,6 +134,9 @@ do not repeat other reviewers' inline comments. Replies that build on an existin
 inline comment are welcome when they add useful reasoning, evidence, clarification
 or a proposed solution. Make a best effort to find other useful observations,
 without inventing issues or praise just to add a comment.
+Also flag likely merge conflicts or integration interactions with other open PRs as
+review heads-ups, linking the related PR and identifying the overlapping files or
+behaviour; distinguish potential conflicts from conflicts actually verified.
 Do not change Git identity or rewrite history automatically; consult the course
 workflow before authorised Git operations. Prefer merge commits over squash/rebase
 when merging PRs, and merge `master` into branches when synchronising them: the
@@ -198,7 +198,7 @@ seek clarification before proceeding with work that depends on it. Do not guess.
 | Iteration planning or Git/PR actions | [Timeline][timeline], its active week's instructions and [GitHub workflow][github]. |
 | Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. Verify any eligibility for a DG "Planned Enhancements" appendix against the live [deliverables][deliverables] and [PE rules][pe] before relying on it. |
 | PE reports/responses/evaluations | [PE rules][pe] for the active phase and [grading][grading]; verify facts, impact and allowed issue edits, not presumed severity. |
-| AI assistance or external reuse | [AI guidance][ai] and [reuse/attribution policy][reuse]; credit actual tools, authors and extent, preserving human ownership. |
+| External reuse | [Reuse/attribution policy][reuse]; credit actual sources and extent of reuse. |
 
 Note the Planned Enhancements appendix couldn't be verified on this cohort's live deliverables/PE pages — verify before relying on it.
 
@@ -222,7 +222,6 @@ and limited to stable instructions rather than dated feature-status claims.
 [alpha]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w11.html
 [release]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-w12.html
 [pe]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-pe.html
-[ai]: https://nus-cs2103-ay2627-s1.github.io/website/admin/courseExpectations.html#use-of-ai
 [reuse]: https://nus-cs2103-ay2627-s1.github.io/website/admin/appendixB-policies.html#policy-reuse
 [notation]: https://nus-cs2103-ay2627-s1.github.io/website/se-book-adapted/chapters/specifyingRequirements.html
 [requirements]: https://nus-cs2103-ay2627-s1.github.io/website/se-book-adapted/chapters/requirements.html
