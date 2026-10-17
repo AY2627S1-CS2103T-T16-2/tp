@@ -15,7 +15,8 @@ TuitionBook is scoped to English-language users and any `en-*` locale (for examp
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+* Xuan Shan (ooixs) used [OpenAI Codex](https://openai.com/codex/) to assist with the optional quoted-name
+  parsing implementation for #97, its regression and persistence tests, command help, and UG/DG documentation.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -197,6 +198,16 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long names, phone numbers, email addresses, resolved guardian names, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also provides the full details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
+
+### Quoted-name parsing
+
+`AddCommandParser` and `EditCommandParser` opt into
+`ArgumentTokenizer.tokenizeWithQuotedValue` for `PREFIX_NAME`.
+The tokenizer visits prefix positions in order and ignores positions inside a quoted name,
+then removes the enclosing quotes before normal name validation. It rejects unclosed quotes and
+trailing text outside the closing quote. Other fields and commands retain their existing quote
+and prefix behaviour. The model and JSON store the plain name; no storage migration is needed.
+Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -626,6 +637,26 @@ Given below are instructions to test the app manually.
 **Note:** These instructions only provide a starting point for testers to work on;
 testers are expected to do more *exploratory* testing.
 </box>
+
+### Quoted names in add and edit
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Enter `add r/student n/"Rina a/p Kaur" p/91234567 a/123 Main Street`.<br>
+   Expected: The name is `Rina a/p Kaur` and the address is `123 Main Street`; neither includes quotation marks.
+1. Enter `add r/guardian n/Guardian p/98765432`, then `link 1 2`.
+1. Enter `edit 1 n/"Rina s/o Kaur"`, then `view 1`.<br>
+   Expected: The full updated name appears; the phone, address and guardian link are unchanged.
+1. Exit and restart the app, then enter `view 1`.<br>
+   Expected: The full updated name and guardian link remain.
+1. Enter `edit 1 n/"Rina a/p Kaur`.<br>
+   Expected: An error explains the missing closing double quote; the contact is unchanged.
+1. Enter `edit 1 n/"Rina" extra`.<br>
+   Expected: An error explains that a quoted name must be followed by another field or the end of the command;
+   the contact is unchanged.
+1. Enter `add r/student n/Rina a/p Kaur p/90000001`.<br>
+   Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`.
+   This is the documented limitation; quotation marks are required to enter that full name.
 
 ### Launch and shutdown
 

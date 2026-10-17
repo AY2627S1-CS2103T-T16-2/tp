@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import seedu.tuitionbook.logic.parser.exceptions.ParseException;
+
 /**
  * Tokenizes arguments string of the form: {@code preamble <prefix>value <prefix>value ...}<br>
  *     e.g. {@code some preamble text t/ 11.00 t/12.00 k/ m/ July}  where prefixes are {@code t/ k/ m/}.<br>
@@ -14,6 +16,11 @@ import java.util.stream.Collectors;
  *    in the above example.<br>
  */
 public class ArgumentTokenizer {
+
+    public static final String MESSAGE_UNCLOSED_QUOTE =
+            "Missing closing double quote in name. Use n/\"Rina a/p Kaur\".";
+    public static final String MESSAGE_TEXT_AFTER_QUOTE =
+            "After a quoted name, enter a space followed by another field prefix, or end the command.";
 
     /**
      * Tokenizes an arguments string and returns an {@code ArgumentMultimap} object that maps prefixes to their
@@ -26,6 +33,60 @@ public class ArgumentTokenizer {
     public static ArgumentMultimap tokenize(String argsString, Prefix... prefixes) {
         List<PrefixPosition> positions = findAllPrefixPositions(argsString, prefixes);
         return extractArguments(argsString, positions);
+    }
+
+    /**
+     * Tokenizes with optional double quotes around the value of {@code quotedPrefix}.
+     * Only that field interprets quotes; existing prefix boundaries and other fields are unchanged.
+     * Quotes are syntax, not part of the returned value. No escaping or nested quotes are supported.
+     *
+     * @throws ParseException if a quoted value is unclosed or has trailing text.
+     */
+    public static ArgumentMultimap tokenizeWithQuotedValue(String argsString, Prefix quotedPrefix,
+            Prefix... prefixes) throws ParseException {
+        List<PrefixPosition> candidates = findAllPrefixPositions(argsString, prefixes);
+        candidates.sort((first, second) -> Integer.compare(first.getStartPosition(), second.getStartPosition()));
+        List<PrefixPosition> positions = new ArrayList<>();
+        int quotedEnd = -1;
+        for (PrefixPosition candidate : candidates) {
+            if (candidate.getStartPosition() <= quotedEnd) {
+                continue;
+            }
+            positions.add(candidate);
+            if (candidate.getPrefix().equals(quotedPrefix)) {
+                int valueStart = candidate.getStartPosition() + quotedPrefix.getPrefix().length();
+                while (valueStart < argsString.length() && argsString.charAt(valueStart) <= ' ') {
+                    valueStart++;
+                }
+                if (valueStart < argsString.length() && argsString.charAt(valueStart) == '"') {
+                    quotedEnd = argsString.indexOf('"', valueStart + 1);
+                    if (quotedEnd == -1) {
+                        throw new ParseException(MESSAGE_UNCLOSED_QUOTE);
+                    }
+                }
+            }
+        }
+
+        ArgumentMultimap rawArguments = extractArguments(argsString, positions);
+        ArgumentMultimap result = new ArgumentMultimap();
+        result.put(new Prefix(""), rawArguments.getPreamble());
+        for (Prefix prefix : Arrays.stream(prefixes).distinct().toList()) {
+            for (String value : rawArguments.getAllValues(prefix)) {
+                result.put(prefix, prefix.equals(quotedPrefix) ? unwrapQuotedValue(value) : value);
+            }
+        }
+        return result;
+    }
+
+    private static String unwrapQuotedValue(String value) throws ParseException {
+        if (!value.startsWith("\"")) {
+            return value;
+        }
+        int closingQuote = value.indexOf('"', 1);
+        if (closingQuote != value.length() - 1) {
+            throw new ParseException(MESSAGE_TEXT_AFTER_QUOTE);
+        }
+        return value.substring(1, closingQuote).trim();
     }
 
     /**
