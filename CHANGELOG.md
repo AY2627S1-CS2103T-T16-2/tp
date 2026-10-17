@@ -10,12 +10,14 @@ The format is based on Keep a Changelog.
 
 ### Added
 
+- Added a scrollable in-app summary of every implemented command and its syntax.
+- Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
 - Added the `unlink` command to remove a student's guardian link without deleting either contact.
 
 ### Changed
 
+- Replaced the nested Help menu with a one-click top-level Help control while retaining the `help` command, <kbd>F1</kbd> shortcut, and `Copy URL` action.
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
-
 
 ## [v1.3] - 2026-10-14
 

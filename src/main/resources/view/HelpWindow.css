@@ -1,19 +1,35 @@
-#copyButton, #helpMessage {
+#copyButton, #openUserGuideButton, #helpMessage, #browserStatus, .help-heading {
     -fx-text-fill: white;
 }
 
-#copyButton {
+#copyButton, #openUserGuideButton {
     -fx-background-color: dimgray;
 }
 
-#copyButton:hover {
+#copyButton:hover, #openUserGuideButton:hover {
     -fx-background-color: gray;
 }
 
-#copyButton:armed {
+#copyButton:armed, #openUserGuideButton:armed {
     -fx-background-color: darkgray;
 }
 
 #helpMessageContainer {
     -fx-background-color: derive(#1d1d1d, 20%);
+}
+
+.help-heading {
+    -fx-font-size: 16pt;
+    -fx-font-weight: bold;
+}
+
+#commandSummary {
+    -fx-control-inner-background: #1d1d1d;
+    -fx-font-family: monospace;
+    -fx-font-size: 11pt;
+    -fx-text-fill: white;
+}
+
+#browserStatus.error {
+    -fx-text-fill: #ffb4a2;
 }

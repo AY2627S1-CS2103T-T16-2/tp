@@ -15,7 +15,9 @@ TuitionBook is scoped to English-language users and any `en-*` locale (for examp
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+* [OpenAI Codex](https://openai.com/codex/) was used by
+  [Kia-Lok](https://github.com/Kia-Lok) to implement and test the issue #93 Help UI changes and update the related
+  documentation. The contributor reviewed the generated changes.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -681,6 +683,24 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases … }_
+
+### Getting help
+
+1. Click the top-level `Help` control once.<br>
+   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`,
+   `list`, `view`, `edit`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, and `exit`.
+1. Minimize the Help window, focus the command box, and press <kbd>F1</kbd>.<br>
+   Expected: The same Help window is restored and focused; no second Help window appears.
+1. Close the Help window, enter `help`, then enter `help` again.<br>
+   Expected: The first command opens the Help window and reports `Opened help window.` The second command focuses the
+   same window.
+1. Click `Open User Guide`.<br>
+   Expected: The User Guide opens in the system default browser. If the desktop environment cannot open a browser,
+   TuitionBook remains open, displays fallback guidance, and leaves `Copy URL` available.
+1. Click `Copy URL`, paste into a text editor, and confirm that the copied value is
+   `https://ay2627s1-cs2103t-t16-2.github.io/tp/UserGuide.html`.
+1. With the Help window open, use `File` → `Exit`.<br>
+   Expected: Both the main window and Help window close.
 
 ### Deleting a person
 
