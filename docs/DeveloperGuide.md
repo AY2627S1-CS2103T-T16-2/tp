@@ -15,9 +15,6 @@ TuitionBook is scoped to English-language users and any `en-*` locale (for examp
 
 ## **Acknowledgements**
 
-* Xuan Shan (ooixs) used [OpenAI Codex](https://openai.com/codex/) to assist with moving the
-  User Guide command summary and correcting its sidebar link for #126.
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Setting up, getting started**
