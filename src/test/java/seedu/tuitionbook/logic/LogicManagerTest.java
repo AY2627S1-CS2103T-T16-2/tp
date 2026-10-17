@@ -160,6 +160,8 @@ public class LogicManagerTest {
         Person reloadedGuardian = reloadedTuitionBook.getPersonList().get(1);
         assertEquals(student.clearGuardian(), reloadedStudent);
         assertEquals(guardian, reloadedGuardian);
+        assertEquals(student.getId(), reloadedStudent.getId());
+        assertEquals(guardian.getId(), reloadedGuardian.getId());
         assertTrue(reloadedStudent.getGuardianId().isEmpty());
     }
 
