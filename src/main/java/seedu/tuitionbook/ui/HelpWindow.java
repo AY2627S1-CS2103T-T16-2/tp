@@ -1,12 +1,13 @@
 package seedu.tuitionbook.ui;
 
-import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -26,6 +27,7 @@ public class HelpWindow extends UiPart<Stage> {
     static final String OPEN_GUIDE_SUCCESS = "Opened the User Guide in your default browser.";
     static final String OPEN_GUIDE_FAILURE = "Could not open the User Guide. "
             + "Copy the URL and open it in your browser.";
+    static final String OPEN_GUIDE_PENDING = "Opening the User Guide...";
 
     static final String COMMAND_SUMMARY = """
             add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...
@@ -65,7 +67,9 @@ public class HelpWindow extends UiPart<Stage> {
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
 
-    private final UrlOpener urlOpener;
+    private final DesktopAdapter desktopAdapter;
+    private final Executor browserExecutor;
+    private boolean isOpeningUserGuide;
 
     @FXML
     private Label browserStatus;
@@ -79,21 +83,32 @@ public class HelpWindow extends UiPart<Stage> {
     @FXML
     private Label helpMessage;
 
+    @FXML
+    private Button openUserGuideButton;
+
     /**
      * Creates a new HelpWindow.
      *
      * @param root Stage to use as the root of the HelpWindow.
      */
     public HelpWindow(Stage root) {
-        this(root, HelpWindow::openInDefaultBrowser);
+        this(root, new DesktopAdapter());
     }
 
     /**
-     * Creates a new HelpWindow with the specified URL-opening behavior.
+     * Creates a new HelpWindow with the specified desktop integration.
      */
-    HelpWindow(Stage root, UrlOpener urlOpener) {
+    HelpWindow(Stage root, DesktopAdapter desktopAdapter) {
+        this(root, desktopAdapter, HelpWindow::runInBackground);
+    }
+
+    /**
+     * Creates a new HelpWindow with the specified desktop integration and background executor.
+     */
+    HelpWindow(Stage root, DesktopAdapter desktopAdapter, Executor browserExecutor) {
         super(FXML, root);
-        this.urlOpener = Objects.requireNonNull(urlOpener);
+        this.desktopAdapter = Objects.requireNonNull(desktopAdapter);
+        this.browserExecutor = Objects.requireNonNull(browserExecutor);
         helpMessage.setText(HELP_MESSAGE);
         commandSummary.setText(COMMAND_SUMMARY);
     }
@@ -157,13 +172,39 @@ public class HelpWindow extends UiPart<Stage> {
      */
     @FXML
     private void openUserGuide() {
+        if (isOpeningUserGuide) {
+            return;
+        }
+
+        isOpeningUserGuide = true;
+        openUserGuideButton.setDisable(true);
+        showBrowserStatus(OPEN_GUIDE_PENDING, false);
         try {
-            urlOpener.open(USERGUIDE_URL);
-            showBrowserStatus(OPEN_GUIDE_SUCCESS, false);
+            browserExecutor.execute(this::openUserGuideInBackground);
+        } catch (RuntimeException exception) {
+            showBrowserFailure(exception);
+        }
+    }
+
+    private void openUserGuideInBackground() {
+        try {
+            openInDefaultBrowser(USERGUIDE_URL, desktopAdapter);
+            Platform.runLater(() -> finishOpeningUserGuide(OPEN_GUIDE_SUCCESS, false));
         } catch (IOException | RuntimeException exception) {
             logger.log(Level.WARNING, "Failed to open the User Guide at " + USERGUIDE_URL, exception);
-            showBrowserStatus(OPEN_GUIDE_FAILURE, true);
+            Platform.runLater(() -> finishOpeningUserGuide(OPEN_GUIDE_FAILURE, true));
         }
+    }
+
+    private void showBrowserFailure(RuntimeException exception) {
+        logger.log(Level.WARNING, "Failed to start browser opening for " + USERGUIDE_URL, exception);
+        finishOpeningUserGuide(OPEN_GUIDE_FAILURE, true);
+    }
+
+    private void finishOpeningUserGuide(String message, boolean isError) {
+        isOpeningUserGuide = false;
+        openUserGuideButton.setDisable(false);
+        showBrowserStatus(message, isError);
     }
 
     private void showBrowserStatus(String message, boolean isError) {
@@ -176,16 +217,21 @@ public class HelpWindow extends UiPart<Stage> {
         }
     }
 
-    private static void openInDefaultBrowser(String url) throws IOException {
-        if (!Desktop.isDesktopSupported()) {
+    private static void openInDefaultBrowser(String url, DesktopAdapter desktopAdapter) throws IOException {
+        if (!desktopAdapter.isDesktopSupported()) {
             throw new IOException("Desktop integration is not supported");
         }
 
-        Desktop desktop = Desktop.getDesktop();
-        if (!desktop.isSupported(Desktop.Action.BROWSE)) {
+        if (!desktopAdapter.isBrowseSupported()) {
             throw new IOException("Opening browser URLs is not supported");
         }
-        desktop.browse(URI.create(url));
+        desktopAdapter.browse(URI.create(url));
+    }
+
+    private static void runInBackground(Runnable action) {
+        Thread thread = new Thread(action, "user-guide-opener");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     /**
@@ -197,10 +243,5 @@ public class HelpWindow extends UiPart<Stage> {
         final ClipboardContent url = new ClipboardContent();
         url.putString(USERGUIDE_URL);
         clipboard.setContent(url);
-    }
-
-    @FunctionalInterface
-    interface UrlOpener {
-        void open(String url) throws IOException;
     }
 }

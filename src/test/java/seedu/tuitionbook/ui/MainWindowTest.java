@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -151,6 +152,30 @@ public class MainWindowTest {
     }
 
     @Test
+    public void nonF1KeyWithCommandBoxFocused_doesNotOpenHelpAndReachesDownstreamHandler() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Stage primaryStage = new Stage();
+            try {
+                MainWindow mainWindow = new MainWindow(primaryStage, new FakeLogic(), Path.of("synthetic.json"));
+                mainWindow.fillInnerParts();
+                mainWindow.show();
+                TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+                AtomicBoolean downstreamHandlerReached = new AtomicBoolean();
+                commandBox.addEventHandler(KeyEvent.KEY_PRESSED, event -> downstreamHandlerReached.set(true));
+                commandBox.requestFocus();
+
+                Event.fireEvent(commandBox, new KeyEvent(KeyEvent.KEY_PRESSED, "a", "a", KeyCode.A,
+                        false, false, false, false));
+
+                assertTrue(downstreamHandlerReached.get());
+                assertFalse(isHelpStageShowing());
+            } finally {
+                primaryStage.hide();
+            }
+        });
+    }
+
+    @Test
     public void minimizedHelpWindow_helpActivationRestoresSameWindow() throws Exception {
         Stage primaryStage = JavaFxTestUtil.callOnFxThread(Stage::new);
         MainWindow mainWindow = JavaFxTestUtil.callOnFxThread(() ->
@@ -278,6 +303,14 @@ public class MainWindowTest {
                 .filter(stage -> "Help".equals(stage.getTitle()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Help window did not open"));
+    }
+
+    private static boolean isHelpStageShowing() {
+        return Window.getWindows().stream()
+                .filter(Window::isShowing)
+                .filter(Stage.class::isInstance)
+                .map(Stage.class::cast)
+                .anyMatch(stage -> "Help".equals(stage.getTitle()));
     }
 
     private static void assertListVisible(MainWindow mainWindow, TextArea detailText,
