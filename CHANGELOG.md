@@ -8,8 +8,13 @@ The format is based on Keep a Changelog.
 
 ## [v1.4] - 2026-10-22
 
+### Added
+
+- Added the `unlink` command to remove a student's guardian link without deleting either contact.
+
 ### Changed
 
+- Clarified that `link` indexes refer to the currently displayed, filtered contact list.
 - Changed `find` to use case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
 
 ## [v1.3] - 2026-10-14
