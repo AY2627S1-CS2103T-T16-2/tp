@@ -133,8 +133,10 @@ anchored to the relevant diff lines, plus a top-level summary comment on submitt
 the review, as any reviewer would; only the inline comments count towards course
 review grading. Include inline comments highlighting specific details done well
 and explain why they are good. Read existing review comments before drafting;
-do not repeat other reviewers' inline comments. Make a best effort to find other
-useful observations, without inventing issues or praise just to add a comment.
+do not repeat other reviewers' inline comments. Replies that build on an existing
+inline comment are welcome when they add useful reasoning, evidence, clarification
+or a proposed solution. Make a best effort to find other useful observations,
+without inventing issues or praise just to add a comment.
 Do not change Git identity or rewrite history automatically; consult the course
 workflow before authorised Git operations. Prefer merge commits over squash/rebase
 when merging PRs, and merge `master` into branches when synchronising them: the
@@ -194,9 +196,11 @@ seek clarification before proceeding with work that depends on it. Do not guess.
 | Tests or alpha testing | [Testing guide](docs/Testing.md), neighbouring tests and [course alpha-testing guidance][alpha]. |
 | UG/DG/diagram changes | [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading], [requirements notation][notation] and [NFR definitions][requirements]. |
 | Iteration planning or Git/PR actions | [Timeline][timeline], its active week's instructions and [GitHub workflow][github]. |
-| Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. Flaws not fixable within freeze limits may qualify for the DG "Planned Enhancements" appendix — rules in [deliverables][deliverables]. |
+| Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. Verify any eligibility for a DG "Planned Enhancements" appendix against the live [deliverables][deliverables] and [PE rules][pe] before relying on it. |
 | PE reports/responses/evaluations | [PE rules][pe] for the active phase and [grading][grading]; verify facts, impact and allowed issue edits, not presumed severity. |
 | AI assistance or external reuse | [AI guidance][ai] and [reuse/attribution policy][reuse]; credit actual tools, authors and extent, preserving human ownership. |
+
+Note the Planned Enhancements appendix couldn't be verified on this cohort's live deliverables/PE pages — verify before relying on it.
 
 ## Handoff
 
