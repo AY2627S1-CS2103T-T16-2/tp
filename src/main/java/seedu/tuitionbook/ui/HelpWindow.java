@@ -43,6 +43,9 @@ public class HelpWindow extends UiPart<Stage> {
             link STUDENT_INDEX GUARDIAN_INDEX
               Link a displayed student to a displayed guardian.
 
+            unlink STUDENT_INDEX
+              Remove a displayed student's guardian link.
+
             find KEYWORD [MORE_KEYWORDS]
               Find contacts whose names contain any full keyword.
 

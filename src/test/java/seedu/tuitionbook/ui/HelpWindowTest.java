@@ -25,6 +25,7 @@ public class HelpWindowTest {
             "view INDEX",
             "edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...",
             "link STUDENT_INDEX GUARDIAN_INDEX",
+            "unlink STUDENT_INDEX",
             "find KEYWORD [MORE_KEYWORDS]",
             "delete INDEX",
             "clear",

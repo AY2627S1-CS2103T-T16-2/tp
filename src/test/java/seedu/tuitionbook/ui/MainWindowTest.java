@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -123,7 +124,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void f1WithCommandBoxFocused_opensAndRestoresSameHelpWindow() throws Exception {
+    public void f1WithCommandBoxFocused_opensAndReusesSameHelpWindow() throws Exception {
         JavaFxTestUtil.runOnFxThread(() -> {
             Stage primaryStage = new Stage();
             Stage helpStage = null;
@@ -136,11 +137,10 @@ public class MainWindowTest {
 
                 fireF1(commandBox);
                 helpStage = findShowingHelpStage();
-                helpStage.setIconified(true);
+                Stage firstHelpStage = helpStage;
 
                 fireF1(commandBox);
-                assertSame(helpStage, findShowingHelpStage());
-                assertFalse(helpStage.isIconified());
+                assertSame(firstHelpStage, findShowingHelpStage());
             } finally {
                 if (helpStage != null) {
                     helpStage.hide();
@@ -148,6 +148,40 @@ public class MainWindowTest {
                 primaryStage.hide();
             }
         });
+    }
+
+    @Test
+    public void minimizedHelpWindow_helpActivationRestoresSameWindow() throws Exception {
+        Stage primaryStage = JavaFxTestUtil.callOnFxThread(Stage::new);
+        MainWindow mainWindow = JavaFxTestUtil.callOnFxThread(() ->
+                new MainWindow(primaryStage, new FakeLogic(), Path.of("synthetic.json")));
+        Stage helpStage = null;
+        try {
+            JavaFxTestUtil.runOnFxThread(() -> {
+                mainWindow.show();
+                Button helpButton = (Button) mainWindow.getRoot().getScene().lookup("#helpButton");
+                helpButton.fire();
+            });
+            helpStage = JavaFxTestUtil.callOnFxThread(MainWindowTest::findShowingHelpStage);
+            Stage sameHelpStage = helpStage;
+
+            JavaFxTestUtil.runOnFxThread(() -> sameHelpStage.setIconified(true));
+            Assumptions.assumeTrue(JavaFxTestUtil.waitForFxCondition(sameHelpStage::isIconified),
+                    "The window manager does not support iconification");
+
+            JavaFxTestUtil.runOnFxThread(mainWindow::handleHelp);
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> !sameHelpStage.isIconified()),
+                    "Help window was not restored within the timeout");
+            assertSame(sameHelpStage, JavaFxTestUtil.callOnFxThread(MainWindowTest::findShowingHelpStage));
+        } finally {
+            Stage helpStageToHide = helpStage;
+            JavaFxTestUtil.runOnFxThread(() -> {
+                if (helpStageToHide != null) {
+                    helpStageToHide.hide();
+                }
+                primaryStage.hide();
+            });
+        }
     }
 
     @Test
