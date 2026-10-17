@@ -284,6 +284,45 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void saveTuitionBook_writeFailure_preservesExistingFile() throws Exception {
+        Path filePath = testFolder.resolve("AtomicSaveTuitionBook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(filePath, originalContents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void writeJsonFile(JsonSerializableTuitionBook tuitionBook, Path temporaryFile)
+                    throws IOException {
+                Files.writeString(temporaryFile, "partial JSON");
+                throw new IOException("simulated write failure");
+            }
+        };
+
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(getTypicalTuitionBook()));
+
+        assertEquals(originalContents, Files.readString(filePath));
+    }
+
+    @Test
+    public void saveTuitionBook_replacementFailure_preservesExistingFileAndCleansUpTemporaryFile() throws Exception {
+        Path filePath = testFolder.resolve("AtomicSaveTuitionBook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(filePath, originalContents);
+        Path[] temporaryFile = new Path[1];
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void replaceFile(Path source, Path target) throws IOException {
+                temporaryFile[0] = source;
+                throw new IOException("simulated replacement failure");
+            }
+        };
+
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(getTypicalTuitionBook()));
+
+        assertEquals(originalContents, Files.readString(filePath));
+        assertFalse(Files.exists(temporaryFile[0]));
+    }
+
+    @Test
     public void readTuitionBookWithResult_repairedLink_keepsContactsAndAllowsSave() throws Exception {
         Path filePath = testFolder.resolve("RepairedTuitionBook.json");
         Files.writeString(filePath, """
