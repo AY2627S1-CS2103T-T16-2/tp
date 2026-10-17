@@ -100,6 +100,9 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
+* Each `TAG` must contain one or more ASCII alphanumeric segments separated by single hyphens (`-`). Hyphens cannot
+  be leading, trailing, or consecutive. Spaces, underscores, slashes, and other punctuation are not accepted. Tag
+  spelling and capitalization are preserved.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
 * After a contact is added, TuitionBook shows the full contact list: any active name or role filter is cleared so
   that the new contact is visible.
@@ -118,6 +121,7 @@ guardian's email may also be reused. The student and guardian remain distinct co
 Examples:
 * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add r/guardian n/Betsy Crowe p/1234567 t/family`
+* `add r/student n/Alex Lim p/91234567 t/Sec-4 t/referred-by-Mrs-Lim`
 
 ### Listing contacts: `list`
 
@@ -184,6 +188,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * A supplied `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
+* `TAG` follows the same alphanumeric-segment and internal-hyphen rules described for [`add`](#adding-a-contact-add).
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * After a successful edit, TuitionBook shows the full contact list: any active name or role filter is cleared.
