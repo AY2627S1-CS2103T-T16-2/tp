@@ -725,6 +725,22 @@ Enter these commands to create the contacts used below:
 1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
+### Removing a guardian link
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/student n/Alex Yeoh p/87438807`, `add r/guardian n/Bernice Yu p/99272758`, and `link 1 2`.<br>
+   Expected: Alex Yeoh is linked to Bernice Yu.
+1. Enter `list r/student`, then `unlink 1`.<br>
+   Expected: The result area displays `Unlinked student Alex Yeoh from guardian Bernice Yu.` The full contact list is
+   restored, both contacts remain, and Alex Yeoh has no guardian link.
+1. Enter `list r/student`, then `unlink 1` again.<br>
+   Expected: The result area displays `Student Alex Yeoh has no linked guardian.` The list remains filtered to Alex
+   Yeoh; neither contact changes.
+1. Close and relaunch the application, then enter `view 1`.<br>
+   Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
+   restart.
+
 ### Saving data
 
 1. Recovering from malformed contact data
