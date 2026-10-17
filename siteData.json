@@ -66,6 +66,7 @@
         "launch-and-shutdown": "Launch and shutdown",
         "deleting-a-person": "Deleting a person",
         "viewing-a-contact": "Viewing a contact",
+        "removing-a-guardian-link": "Removing a guardian link",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
@@ -119,6 +120,7 @@
         "viewing-a-contact-view": "Viewing a contact: view",
         "editing-a-person-edit": "Editing a person: edit",
         "linking-a-student-to-a-guardian-link": "Linking a student to a guardian: link",
+        "removing-a-guardian-link-unlink": "Removing a guardian link: unlink",
         "locating-persons-by-name-find": "Locating persons by name: find",
         "deleting-a-person-delete": "Deleting a person: delete",
         "clearing-all-entries-clear": "Clearing all entries: clear",
