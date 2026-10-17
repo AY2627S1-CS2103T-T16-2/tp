@@ -199,9 +199,8 @@ Links a student contact to a guardian contact.
 Format: `link STUDENT_INDEX GUARDIAN_INDEX`
 
 * The first index must refer to a student and the second index must refer to a guardian.
-* Both indexes refer to the positive index numbers in the currently displayed contact list, not to positions in the
-  full contact list. After `find` or `list r/ROLE`, choose indexes from the filtered results currently on screen.
-  If either contact is hidden by the filter, enter `list` before using `link`.
+* Both indexes refer to positive index numbers in the currently displayed contact list. Both contacts must be visible.
+  If a filter hides either contact, enter `list` to restore the full list before using `link`.
 * If the student already has a different guardian, the previous guardian is unlinked and the result identifies that
   previous guardian.
 * Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already
