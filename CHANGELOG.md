@@ -6,6 +6,12 @@ The format is based on Keep a Changelog.
 
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 
+## [v1.4] - 2026-10-22
+
+### Added
+
+- Added optional double-quoted names to `add` and `edit`, allowing names such as `n/"Rina a/p Kaur"` without interpreting embedded field prefixes. Unquoted field parsing remains unchanged.
+
 ## [v1.3] - 2026-10-14
 
 ### Added
