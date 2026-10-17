@@ -5,7 +5,7 @@
 
 ![Ui](docs/images/Ui.png)
 
-**TuitionBook is a desktop address book for private tutors.** Every student comes with a guardian who pays and a home address to travel to. TuitionBook keeps student and guardian contacts linked and grouped by level and subject, so the tutor can reach the right person and find the right address quickly.
+**TuitionBook is a desktop address book for private one-to-one home tutors.** It manages student and guardian contacts, supports optional guardian links and home addresses, and organises contacts using roles and tags so tutors can retrieve the right contact details quickly. Tutors can use tags such as `Sec4` and `AMath` to label levels and subjects; dedicated level and subject fields are not available.
 
 It is optimised for tutors who prefer typing: while it has a GUI, most interactions happen through a Command Line Interface (CLI), so frequent tasks can be done faster than with a mouse.
 
