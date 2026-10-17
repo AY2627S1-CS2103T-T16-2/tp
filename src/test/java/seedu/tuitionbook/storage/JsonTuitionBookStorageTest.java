@@ -19,9 +19,13 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
+import seedu.tuitionbook.logic.commands.UnlinkCommand;
+import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
@@ -192,6 +196,29 @@ public class JsonTuitionBookStorageTest {
         assertEquals(restoredGuardian.getId(), restoredStudent.getGuardianId().orElseThrow());
         assertTrue(restoredStudent.getEmail().isEmpty());
         assertTrue(restoredStudent.getAddress().isEmpty());
+    }
+
+    @Test
+    public void readAndSaveTuitionBook_unlinkedStudent_hasNoGuardianAfterReload() throws Exception {
+        Path filePath = testFolder.resolve("UnlinkedContactsTuitionBook.json");
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        TuitionBook tuitionBook = new TuitionBook();
+        tuitionBook.addPerson(student);
+        tuitionBook.addPerson(guardian);
+        ModelManager model = new ModelManager(tuitionBook, new UserPrefs());
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        new UnlinkCommand(Index.fromOneBased(1)).execute(model);
+        storage.saveTuitionBook(model.getTuitionBook());
+
+        ReadOnlyTuitionBook readBack = storage.readTuitionBook().orElseThrow();
+        Person restoredStudent = readBack.getPersonList().get(0);
+
+        assertEquals(model.getTuitionBook(), new TuitionBook(readBack));
+        assertTrue(restoredStudent.getGuardianId().isEmpty());
     }
 
     @Test

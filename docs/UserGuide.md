@@ -175,7 +175,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * At least one of the optional fields must be provided.
 * To remove an existing email or address, use `e/` or `a/` with no value respectively.
 * Existing values will be updated to the input values.
-* `edit` cannot change a person's role or guardian link. Use `link` to change a student's guardian.
+* `edit` cannot change a person's role or guardian link. Use `link` or `unlink` to change a student's guardian link.
   The role specified with `add` applies only to the new contact.
 * `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining marks,
   spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is
@@ -209,6 +209,21 @@ Format: `link STUDENT_INDEX GUARDIAN_INDEX`
   cleared. Reporting an already-existing link makes no change, so the displayed list and its filter are preserved.
 
 Example: `link 1 2` links the student at index 1 to the guardian at index 2.
+
+### Removing a guardian link: `unlink`
+
+Removes a student contact's guardian link without deleting either contact.
+
+Format: `unlink STUDENT_INDEX`
+
+* `STUDENT_INDEX` is the positive index shown in the currently displayed contact list. After `find` or
+  `list r/ROLE`, it refers to the filtered list.
+* The index must refer to a student.
+* If the student has no linked guardian, TuitionBook reports this and makes no change. The displayed list and any
+  active filter are preserved.
+* After a guardian link is removed, TuitionBook shows the full contact list: any active name or role filter is cleared.
+
+Example: `unlink 1` removes the guardian link of the student at index 1.
 
 ### Locating persons by name: `find`
 
@@ -318,11 +333,10 @@ _Details coming soon ..._
 4. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 5. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 6. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
-7. **There is no `unlink` command.** Linking a student to a different guardian replaces the existing link, and deleting either linked contact removes the link.
-8. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
-9. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
-10. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
-11. **`find` matches whole words in names only**: `find Ale` does not match `Alex`. Search using at least one complete word of the name.
+7. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
+8. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
+9. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
+10. **`find` matches whole words in names only**: `find Ale` does not match `Alex`. Search using at least one complete word of the name.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -339,4 +353,5 @@ Action     | Format, Examples
 **Help**   | `help`
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
 **List**   | `list [r/ROLE]`<br> e.g., `list r/student`
+**Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
 **View**   | `view INDEX`<br> e.g., `view 1`

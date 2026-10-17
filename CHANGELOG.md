@@ -8,9 +8,14 @@ The format is based on Keep a Changelog.
 
 ## [v1.4] - 2026-10-22
 
+### Added
+
+- Added the `unlink` command to remove a student's guardian link without deleting either contact.
+
 ### Changed
 
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
+
 
 ## [v1.3] - 2026-10-14
 
