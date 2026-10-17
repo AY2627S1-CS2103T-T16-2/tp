@@ -34,11 +34,17 @@ jobs:
           ./gradlew -q printVersion
           ./gradlew -q printReleaseNotes
 
+      - name: Install Linux window manager
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes openbox x11-utils
+
       - name: Build and check with Gradle on Linux
         if: runner.os == 'Linux'
         env:
           RUN_JAVAFX_TESTS: 'true'
-        run: xvfb-run -a ./gradlew check coverage
+        run: xvfb-run -a bash .github/run-with-openbox.sh ./gradlew check coverage
 
       - name: Build and check with Gradle on other platforms
         if: runner.os != 'Linux'
