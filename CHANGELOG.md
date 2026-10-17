@@ -6,6 +6,12 @@ The format is based on Keep a Changelog.
 
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 
+## [v1.4] - 2026-10-22
+
+### Changed
+
+- Changed `find` to use case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
+
 ## [v1.3] - 2026-10-14
 
 ### Added

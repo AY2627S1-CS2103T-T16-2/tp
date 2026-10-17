@@ -8,7 +8,7 @@ import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.person.NameContainsKeywordsPredicate;
 
 /**
- * Finds and lists all persons in TuitionBook whose name contains any of the argument keywords.
+ * Finds and lists all persons in TuitionBook whose name contains any of the argument substrings.
  * Keyword matching is case insensitive.
  */
 public class FindCommand extends Command {

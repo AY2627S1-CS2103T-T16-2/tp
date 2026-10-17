@@ -1,13 +1,13 @@
 package seedu.tuitionbook.model.person;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Predicate;
 
-import seedu.tuitionbook.commons.util.StringUtil;
 import seedu.tuitionbook.commons.util.ToStringBuilder;
 
 /**
- * Tests that a {@code Person}'s {@code Name} matches any of the keywords given.
+ * Tests that a {@code Person}'s {@code Name} contains any of the keywords given.
  */
 public class NameContainsKeywordsPredicate implements Predicate<Person> {
     private final List<String> keywords;
@@ -18,8 +18,10 @@ public class NameContainsKeywordsPredicate implements Predicate<Person> {
 
     @Override
     public boolean test(Person person) {
+        String lowerCaseName = person.getName().fullName.toLowerCase(Locale.ROOT);
         return keywords.stream()
-                .anyMatch(keyword -> StringUtil.containsWordIgnoreCase(person.getName().fullName, keyword));
+                .map(keyword -> keyword.toLowerCase(Locale.ROOT))
+                .anyMatch(lowerCaseName::contains);
     }
 
     @Override
