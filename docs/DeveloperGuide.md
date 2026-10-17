@@ -650,7 +650,9 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name consists of
+  one or more ASCII alphanumeric segments separated by single hyphens; hyphens cannot be leading, trailing, or
+  consecutive.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -739,6 +741,20 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Yeoh; neither contact changes.
 1. Close and relaunch the application, then enter `view 1`.<br>
    Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
+   restart.
+
+### Adding and editing hyphenated tags
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/student n/Alex Lim p/91234567 t/Sec-4 t/referred-by-Mrs-Lim`.<br>
+   Expected: Alex Lim is added with both tags, preserving their spelling and capitalization.
+1. Enter `edit 1 t/A1-B2 t/Math`.<br>
+   Expected: The existing tags are replaced with `A1-B2` and `Math`.
+1. Enter `edit 1 t/Math--Science`.<br>
+   Expected: The edit is rejected with the tag constraint message; the existing tags remain unchanged.
+1. Close and relaunch the application.<br>
+   Expected: Alex Lim still has the tags `A1-B2` and `Math`, confirming that the hyphenated tag persisted across the
    restart.
 
 ### Saving data

@@ -15,6 +15,7 @@ The format is based on Keep a Changelog.
 ### Changed
 
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
+- Allowed single internal hyphens between alphanumeric segments in tag names.
 
 
 ## [v1.3] - 2026-10-14

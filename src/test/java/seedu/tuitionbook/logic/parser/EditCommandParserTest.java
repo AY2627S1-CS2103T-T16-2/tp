@@ -121,6 +121,20 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_hyphenatedTag_success() {
+        String hyphenatedTag = "A1-B2";
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags(hyphenatedTag).build();
+
+        assertParseSuccess(parser, "1 " + PREFIX_TAG + hyphenatedTag,
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_consecutiveHyphenTag_failure() {
+        assertParseFailure(parser, "1 " + PREFIX_TAG + "Math--Science", Tag.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_someFieldsSpecified_success() {
         Index targetIndex = INDEX_FIRST_PERSON;
         String userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + EMAIL_DESC_AMY;
