@@ -75,13 +75,15 @@ TuitionBook is intended for English-language users and supports any `en-*` local
 
 ### Viewing help: `help`
 
-Shows a message with a link to this User Guide, where every command is explained. Use the `Copy URL` button to copy the link, then open it in your browser.
-
-![help message](images/helpMessage.png)
+Opens the Help window, which contains a scrollable summary of every command and its syntax.
 
 Format: `help`
 
-* You can also open the help window by pressing <kbd>F1</kbd> or via the `Help` menu.
+* You can also open or focus the same Help window by clicking the one-click `Help` control at the top of the main
+  window, or by pressing <kbd>F1</kbd> even while the command box has focus.
+* Use `Open User Guide` to open this User Guide in your system's default browser.
+* If TuitionBook cannot open a browser, the Help window displays fallback guidance and remains open. Use `Copy URL`
+  to copy the User Guide address and open it manually.
 * An internet connection is needed to open the linked page itself.
 
 
@@ -312,16 +314,15 @@ _Details coming soon ..._
 ## Known issues
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
-3. **Name text resembling a parameter prefix** (e.g. the ` a/p ` in `Rina a/p Kaur`) is read as the start of the address parameter instead of part of the name, even though `/` itself is allowed in names (e.g. `Muhammad s/o Ali` is accepted). Write such name particles in full (e.g. `anak perempuan`) or omit them.
-4. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
-5. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
-6. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
-7. **There is no `unlink` command.** Linking a student to a different guardian replaces the existing link, and deleting either linked contact removes the link.
-8. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
-9. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
-10. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
-11. **`find` matches whole words in names only**: `find Ale` does not match `Alex`. Search using at least one complete word of the name.
+2. **Name text resembling a parameter prefix** (e.g. the ` a/p ` in `Rina a/p Kaur`) is read as the start of the address parameter instead of part of the name, even though `/` itself is allowed in names (e.g. `Muhammad s/o Ali` is accepted). Write such name particles in full (e.g. `anak perempuan`) or omit them.
+3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
+4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
+5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
+6. **There is no `unlink` command.** Linking a student to a different guardian replaces the existing link, and deleting either linked contact removes the link.
+7. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
+8. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
+9. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
+10. **`find` matches whole words in names only**: `find Ale` does not match `Alex`. Search using at least one complete word of the name.
 
 --------------------------------------------------------------------------------------------------------------------
 
