@@ -15,6 +15,7 @@ The format is based on Keep a Changelog.
 ### Changed
 
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
+- Changed `list` to allow tag filtering, includes case-insensitive AND matching with the optional role filtering
 
 
 ## [v1.3] - 2026-10-14
