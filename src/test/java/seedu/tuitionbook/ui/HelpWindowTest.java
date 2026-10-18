@@ -42,6 +42,7 @@ public class HelpWindowTest {
             "delete INDEX",
             "clear",
             "help",
+            "reload",
             "exit");
 
     @BeforeAll

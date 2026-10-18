@@ -377,6 +377,75 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_reloadCorrectedFile_unblocksSavingAndReplacesFilteredContacts() throws Exception {
+        Path file = temporaryFolder.resolve("reload.json");
+        model.addPerson(AMY);
+        model.updateFilteredPersonList(person -> false);
+        Logic blocked = createLogicWithBlockedStorage(file, model);
+        assertThrows(CommandException.class, () -> blocked.execute("clear"));
+        TuitionBook corrected = new TuitionBook();
+        Person recovered = new PersonBuilder().withName("Recovered Student").build();
+        corrected.addPerson(recovered);
+        new JsonTuitionBookStorage(file).saveTuitionBook(corrected);
+        byte[] originalBytes = Files.readAllBytes(file);
+
+        assertTrue(blocked.execute("reload").getFeedbackToUser().contains("Reloaded 1 contact(s)"));
+        assertEquals(List.of(recovered), model.getFilteredPersonList());
+        assertArrayEquals(originalBytes, Files.readAllBytes(file));
+        blocked.execute("edit 1 n/Saved Student");
+        assertEquals("Saved Student", new JsonTuitionBookStorage(file).readTuitionBook().orElseThrow()
+                .getPersonList().getFirst().getName().fullName);
+    }
+
+    @Test
+    public void execute_reloadStillBlocked_preservesModelFilterAndOriginalFile() throws Exception {
+        Path file = temporaryFolder.resolve("stillBlocked.json");
+        model.addPerson(AMY);
+        model.updateFilteredPersonList(person -> false);
+        Logic blocked = createLogicWithBlockedStorage(file, model);
+        assertThrows(CommandException.class, () -> blocked.execute("reload"));
+        assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertEquals(MALFORMED_TUITION_BOOK_JSON, Files.readString(file));
+        assertThrows(CommandException.class, () -> blocked.execute("clear"));
+    }
+
+    @Test
+    public void execute_reloadMissingFile_unblocksSavingAndShowsEmptyList() throws Exception {
+        Path file = temporaryFolder.resolve("removed.json");
+        Logic blocked = createLogicWithBlockedStorage(file, model);
+        Files.delete(file);
+        assertTrue(blocked.execute("reload").getFeedbackToUser().contains("Reloaded 0 contact(s)"));
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertFalse(Files.exists(file));
+        blocked.execute("add r/student n/New Student p/91234567");
+        assertEquals(1, new JsonTuitionBookStorage(file).readTuitionBook().orElseThrow().getPersonList().size());
+    }
+
+    @Test
+    public void execute_reloadWithArguments_rejectedBeforeReading() throws Exception {
+        model.addPerson(AMY);
+        assertThrows(ParseException.class, () -> logic.execute("reload extra"));
+        assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
+    }
+
+    @Test
+    public void execute_reloadMalformedFile_preservesBackupAndCurrentContacts() throws Exception {
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        model.addPerson(AMY);
+        model.updateFilteredPersonList(person -> false);
+        Files.writeString(file, MALFORMED_TUITION_BOOK_JSON);
+        assertThrows(CommandException.class, () -> logic.execute("reload"));
+        assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertEquals(MALFORMED_TUITION_BOOK_JSON,
+                Files.readString(temporaryFolder.resolve("tuitionBook.json.backup")));
+        assertFalse(Files.exists(file));
+        logic.execute("clear");
+        assertTrue(Files.exists(file));
+    }
+
+    @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
     }
