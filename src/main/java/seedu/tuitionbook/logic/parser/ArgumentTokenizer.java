@@ -40,6 +40,11 @@ public class ArgumentTokenizer {
      * Only that field interprets quotes; existing prefix boundaries and other fields are unchanged.
      * Quotes are syntax, not part of the returned value. No escaping or nested quotes are supported.
      *
+     * @param argsString Arguments string containing an optional preamble and prefixed field values.
+     * @param quotedPrefix Prefix whose values may be enclosed in double quotes.
+     * @param prefixes Prefixes to recognize, including {@code quotedPrefix} when it should be tokenized.
+     * @return ArgumentMultimap mapping recognized prefixes to their values, with enclosing quotes removed
+     *         from quoted values of {@code quotedPrefix}.
      * @throws ParseException if a quoted value is unclosed or has trailing text.
      */
     public static ArgumentMultimap tokenizeWithQuotedValue(String argsString, Prefix quotedPrefix,

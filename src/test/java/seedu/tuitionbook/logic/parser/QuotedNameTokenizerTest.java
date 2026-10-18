@@ -52,6 +52,13 @@ public class QuotedNameTokenizerTest {
     }
 
     @Test
+    public void tokenize_emptyUnquotedName_preservesEmptyValueForParserValidation() throws Exception {
+        for (String input : List.of(" n/", " n/   ", " n/\t")) {
+            assertEquals(List.of(""), tokenize(input).getAllValues(PREFIX_NAME));
+        }
+    }
+
+    @Test
     public void tokenize_unclosedQuote_throwsHelpfulError() {
         assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE, () ->
                 tokenize(" n/\"Rina a/p Kaur p/91234567"));

@@ -19,9 +19,13 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
+import seedu.tuitionbook.logic.commands.UnlinkCommand;
+import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
@@ -195,6 +199,29 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readAndSaveTuitionBook_unlinkedStudent_hasNoGuardianAfterReload() throws Exception {
+        Path filePath = testFolder.resolve("UnlinkedContactsTuitionBook.json");
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        TuitionBook tuitionBook = new TuitionBook();
+        tuitionBook.addPerson(student);
+        tuitionBook.addPerson(guardian);
+        ModelManager model = new ModelManager(tuitionBook, new UserPrefs());
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        new UnlinkCommand(Index.fromOneBased(1)).execute(model);
+        storage.saveTuitionBook(model.getTuitionBook());
+
+        ReadOnlyTuitionBook readBack = storage.readTuitionBook().orElseThrow();
+        Person restoredStudent = readBack.getPersonList().get(0);
+
+        assertEquals(model.getTuitionBook(), new TuitionBook(readBack));
+        assertTrue(restoredStudent.getGuardianId().isEmpty());
+    }
+
+    @Test
     public void readTuitionBook_conflictingConfiguredFile_movesFileToBackupAndAllowsSave() throws Exception {
         Path filePath = testFolder.resolve("ConflictingTuitionBook.json");
         Files.writeString(filePath, CONFLICTING_TUITION_BOOK_JSON);
@@ -254,6 +281,45 @@ public class JsonTuitionBookStorageTest {
 
         assertTrue(Files.exists(filePath));
         assertEquals(new TuitionBook(), new TuitionBook(storage.readTuitionBook().orElseThrow()));
+    }
+
+    @Test
+    public void saveTuitionBook_writeFailure_preservesExistingFile() throws Exception {
+        Path filePath = testFolder.resolve("AtomicSaveTuitionBook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(filePath, originalContents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void writeJsonFile(JsonSerializableTuitionBook tuitionBook, Path temporaryFile)
+                    throws IOException {
+                Files.writeString(temporaryFile, "partial JSON");
+                throw new IOException("simulated write failure");
+            }
+        };
+
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(getTypicalTuitionBook()));
+
+        assertEquals(originalContents, Files.readString(filePath));
+    }
+
+    @Test
+    public void saveTuitionBook_replacementFailure_preservesExistingFileAndCleansUpTemporaryFile() throws Exception {
+        Path filePath = testFolder.resolve("AtomicSaveTuitionBook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(filePath, originalContents);
+        Path[] temporaryFile = new Path[1];
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void replaceFile(Path source, Path target) throws IOException {
+                temporaryFile[0] = source;
+                throw new IOException("simulated replacement failure");
+            }
+        };
+
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(getTypicalTuitionBook()));
+
+        assertEquals(originalContents, Files.readString(filePath));
+        assertFalse(Files.exists(temporaryFile[0]));
     }
 
     @Test

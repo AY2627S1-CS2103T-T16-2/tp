@@ -18,7 +18,7 @@ public class LinkCommand extends Command {
 
     public static final String COMMAND_WORD = "link";
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Links a student to a guardian using their displayed indexes.\n"
+            + ": Links a student to a guardian using indexes in the currently displayed contact list.\n"
             + "Parameters: STUDENT_INDEX GUARDIAN_INDEX\n"
             + "Example: " + COMMAND_WORD + " 1 2";
     public static final String MESSAGE_LINK_SUCCESS = "Linked student %1$s to guardian %2$s.";

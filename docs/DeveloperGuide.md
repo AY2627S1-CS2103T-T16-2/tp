@@ -113,7 +113,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. A save failure becomes a command error, so the UI does not report the command as successful.
+1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. If saving fails, `LogicManager` restores the contacts and active filter that existed before the command, then reports a command error.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -369,7 +369,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 | `**` | Beyond MVP | private tutor | record a student's academic level and subject or subjects | keep track of what I teach each student |
 | `**` | Beyond MVP | private tutor | filter students by academic level and/or subject | find students studying a particular subject at a given level |
 | `**` | MVP | private tutor | assign tags to contacts | organise contacts using flexible labels |
-| `*` | Beyond MVP | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
+| `**` | Beyond MVP | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
 | `*` | Beyond MVP | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
 | `*` | Beyond MVP | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
 | `*` | Beyond MVP | private tutor | delete a contact by name | remove a contact without first locating its displayed index |
@@ -462,7 +462,44 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC03 Edit a contact**
+**Use case: UC03 Unlink a guardian from a student**
+
+**Preconditions**
+
+* A student is visible in the current contact list.
+
+**Guarantee**
+
+* On success, the student has no guardian link; neither contact is deleted.
+
+**MSS**
+
+1.  User requests to unlink a displayed student.
+2.  TuitionBook removes the guardian link and displays confirmation naming the student and former guardian.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The specified index is missing, malformed, or does not refer to a contact in the current list.
+
+    * 1a1. TuitionBook shows an error message.
+
+      Use case ends.
+
+* 1b. The selected contact is not a student.
+
+    * 1b1. TuitionBook shows an error message describing the role mismatch.
+
+      Use case ends.
+
+* 1c. The selected student has no guardian link.
+
+    * 1c1. TuitionBook reports that the student has no linked guardian without changing it.
+
+      Use case ends.
+
+**Use case: UC04 Edit a contact**
 
 **Preconditions**
 
@@ -495,7 +532,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC04 Find contacts by name**
+**Use case: UC05 Find contacts by name**
 
 **MSS**
 
@@ -512,7 +549,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC05 View contact details**
+**Use case: UC06 View contact details**
 
 **Preconditions**
 
@@ -534,7 +571,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC06 Delete a contact**
+**Use case: UC07 Delete a contact**
 
 **Preconditions**
 
@@ -560,7 +597,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC07 Filter contacts by role**
+**Use case: UC08 Filter contacts by role**
 
 **MSS**
 
@@ -599,11 +636,11 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 ### Non-Functional Requirements
 
 1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
-2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, or linking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
-3.  All documented add, edit, delete, list, find, filter, view, and link operations shall be executable through keyboard-entered commands, without requiring a mouse.
+2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, linking, or unlinking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
+3.  All documented add, edit, delete, list, find, filter, view, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
-6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
+6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and active filter to their state before that operation.
 7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
 
 ### Glossary
@@ -713,12 +750,40 @@ Enter these commands to create the contacts used below:
    `No students linked.`
 1. Enter `list r/student`, then `view 1`.<br>
    Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored
-   list remains filtered to students. Note that `add`, `edit`, and `link` clear the active filter, while `list`
+   list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list`
    and `find` replace it, so they are unsuitable for this check.
 1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
+### Removing a guardian link
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/student n/Alex Yeoh p/87438807`, `add r/guardian n/Bernice Yu p/99272758`, and `link 1 2`.<br>
+   Expected: Alex Yeoh is linked to Bernice Yu.
+1. Enter `list r/student`, then `unlink 1`.<br>
+   Expected: The result area displays `Unlinked student Alex Yeoh from guardian Bernice Yu.` The full contact list is
+   restored, both contacts remain, and Alex Yeoh has no guardian link.
+1. Enter `list r/student`, then `unlink 1` again.<br>
+   Expected: The result area displays `Student Alex Yeoh has no linked guardian.` The list remains filtered to Alex
+   Yeoh; neither contact changes.
+1. Close and relaunch the application, then enter `view 1`.<br>
+   Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
+   restart.
+
 ### Saving data
+
+1. Recovering from a save failure
+
+   1. In a fresh, disposable folder, launch TuitionBook and enter `add r/student n/Alex Yeoh p/87438807`, then close the application.
+
+   1. Remove your current user's write permission from the `data` folder beside the JAR, then relaunch TuitionBook.
+
+   1. Enter `list r/student`, then `edit 1 n/Updated Alex`.<br>
+      Expected: TuitionBook reports that it could not save. Alex Yeoh's name remains unchanged and the displayed list remains filtered to students.
+
+   1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
+      Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
 
 1. Recovering from malformed contact data
 
