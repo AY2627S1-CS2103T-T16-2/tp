@@ -606,8 +606,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
 **Role-filter command rule**
 
-The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while
-`list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
+The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
 **Startup data rule**
 
