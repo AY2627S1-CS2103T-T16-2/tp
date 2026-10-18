@@ -54,8 +54,8 @@ public class HelpWindow extends UiPart<Stage> {
             delete INDEX
               Delete a displayed contact.
 
-            clear
-              Delete every contact.
+            clear confirm
+              Delete every contact, including contacts hidden by the current filter.
 
             help
               Open or focus this Help window.

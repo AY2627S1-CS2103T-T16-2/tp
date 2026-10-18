@@ -228,7 +228,7 @@ public class LogicManagerTest {
     @Test
     public void execute_failedMutatingCommands_restoreContactsAndFilter() throws Exception {
         String[] commands = {"add r/student n/New Student p/90000003", "edit 1 n/Renamed Student", "delete 1",
-            "clear", "link 1 2"};
+            "clear confirm", "link 1 2"};
         for (String command : commands) {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
                     .withRole(Role.GUARDIAN).build();
@@ -368,7 +368,7 @@ public class LogicManagerTest {
     @Test
     public void execute_mutatingCommandsAfterConfiguredLoadFailure_preserveBackup()
             throws Exception {
-        String[] commands = {"edit 1 n/New Student", "delete 1", "clear", "link 1 2", "unlink 1"};
+        String[] commands = {"edit 1 n/New Student", "delete 1", "clear confirm", "link 1 2", "unlink 1"};
         for (int i = 0; i < commands.length; i++) {
             String command = commands[i];
             Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook" + i + ".json");

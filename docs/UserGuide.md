@@ -20,7 +20,7 @@ TuitionBook is intended for English-language users and supports any `en-*` local
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear**  | `clear`
+**Clear**  | `clear confirm`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Exit**   | `exit`
@@ -59,7 +59,7 @@ Action     | Format, Examples
 
    * `delete 1` : Deletes the 1st contact shown in the current list.
 
-   * `clear` : Deletes all contacts.
+   * `clear confirm` : Deletes all contacts, including contacts hidden by the current filter.
 
    * `exit` : Exits the app.
 
@@ -85,7 +85,7 @@ Action     | Format, Examples
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `exit`, and `clear`, are ignored.<br>
+* Extraneous parameters for commands that take no parameters, such as `help` and `exit`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -300,11 +300,14 @@ Examples:
 * `list` followed by `delete 2` deletes the 2nd person in TuitionBook.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
 
-### Clearing all entries: `clear`
+### Clearing all entries: `clear confirm`
 
-Clears all entries from TuitionBook.
+Clears all entries from TuitionBook, including contacts hidden by the current filter.
 
-Format: `clear`
+Format: `clear confirm`
+
+* The confirmation keyword must be the exact lowercase word `confirm`.
+* `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
 
 ### Exiting the program: `exit`
 
@@ -373,6 +376,6 @@ _Details coming soon ..._
 3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
-6. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
+6. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
 7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
 8. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
