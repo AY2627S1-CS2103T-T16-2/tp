@@ -2,6 +2,7 @@ package seedu.tuitionbook.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_ROLE;
+import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.Objects;
@@ -9,10 +10,11 @@ import java.util.Objects;
 import seedu.tuitionbook.commons.util.ToStringBuilder;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.model.Model;
-import seedu.tuitionbook.model.person.PersonHasRolePredicate;
+import java.util.function.Predicate;
+import seedu.tuitionbook.model.person.Person;
 
 /**
- * Lists persons in TuitionBook to the user, either all of them or only those with a given role.
+ * Lists persons in TuitionBook to the user, optionally filtered by role and tags.
  */
 public class ListCommand extends Command {
 
@@ -21,11 +23,11 @@ public class ListCommand extends Command {
     public static final String MESSAGE_SUCCESS = "Listed all persons.";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Lists all persons, or only those with the given role.\n"
-            + "Parameters: [" + PREFIX_ROLE + "ROLE]\n"
-            + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "student";
+            + ": Lists all persons, or only those matching the given role and tags.\n"
+            + "Parameters: [" + PREFIX_ROLE + "ROLE] [" + PREFIX_TAG + "TAG]...\n"
+            + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "student " + PREFIX_TAG + "Sec4";
 
-    private final PersonHasRolePredicate predicate;
+    private final Predicate<Person> predicate;
 
     /**
      * Creates a ListCommand that lists every person.
@@ -37,7 +39,7 @@ public class ListCommand extends Command {
     /**
      * Creates a ListCommand that lists only the persons matching the given predicate.
      */
-    public ListCommand(PersonHasRolePredicate predicate) {
+    public ListCommand(Predicate<Person> predicate) {
         requireNonNull(predicate);
         this.predicate = predicate;
     }
