@@ -113,7 +113,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. A save failure becomes a command error, so the UI does not report the command as successful.
+1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. If saving fails, `LogicManager` restores the contacts and active filter that existed before the command, then reports a command error.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -630,7 +630,7 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 3.  All documented add, edit, delete, list, find, filter, view, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
-6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
+6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and active filter to their state before that operation.
 7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
 
 ### Glossary
@@ -742,6 +742,18 @@ Use a fresh, disposable folder and start the application with an empty contact l
    restart.
 
 ### Saving data
+
+1. Recovering from a save failure
+
+   1. In a fresh, disposable folder, launch TuitionBook and enter `add r/student n/Alex Yeoh p/87438807`, then close the application.
+
+   1. Remove your current user's write permission from the `data` folder beside the JAR, then relaunch TuitionBook.
+
+   1. Enter `list r/student`, then `edit 1 n/Updated Alex`.<br>
+      Expected: TuitionBook reports that it could not save. Alex Yeoh's name remains unchanged and the displayed list remains filtered to students.
+
+   1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
+      Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
 
 1. Recovering from malformed contact data
 
