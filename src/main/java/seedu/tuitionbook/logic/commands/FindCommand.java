@@ -8,17 +8,18 @@ import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.person.NameContainsKeywordsPredicate;
 
 /**
- * Finds and lists all persons in TuitionBook whose name contains any of the argument keywords.
- * Keyword matching is case insensitive.
+ * Finds and lists persons whose names contain at least one argument as a literal substring anywhere,
+ * using case-insensitive matching. Only names are searched, and multiple keywords use OR.
  */
 public class FindCommand extends Command {
 
     public static final String COMMAND_WORD = "find";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds all persons whose names contain any of "
-            + "the specified keywords (case-insensitive) and displays them as a list with index numbers.\n"
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds persons whose names contain any specified "
+            + "literal substring (case-insensitive). Each keyword matches anywhere in the name; keywords use OR, "
+            + "and only names are searched.\n"
             + "Parameters: KEYWORD [MORE_KEYWORDS]...\n"
-            + "Example: " + COMMAND_WORD + " alice bob charlie";
+            + "Example: " + COMMAND_WORD + " rac bob";
 
     private final NameContainsKeywordsPredicate predicate;
 

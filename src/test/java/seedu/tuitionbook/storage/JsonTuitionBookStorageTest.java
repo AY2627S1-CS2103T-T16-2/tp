@@ -175,9 +175,10 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
-    public void readAndSaveTuitionBook_alphanumericAndHyphenatedTags_preservesSpellingAndCase() throws Exception {
+    public void readAndSaveTuitionBook_longMultiSegmentTag_preservesExactValue() throws Exception {
         Path filePath = testFolder.resolve("TagsTuitionBook.json");
-        Person person = new PersonBuilder().withTags("Sec4", "referred-by-Mrs-Lim").build();
+        String longMultiSegmentTag = "A-".repeat(5000) + "B";
+        Person person = new PersonBuilder().withTags("Sec4", longMultiSegmentTag).build();
         TuitionBook original = new TuitionBook();
         original.addPerson(person);
         JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
@@ -186,7 +187,7 @@ public class JsonTuitionBookStorageTest {
         ReadOnlyTuitionBook readBack = storage.readTuitionBook().orElseThrow();
 
         assertEquals(original, new TuitionBook(readBack));
-        assertEquals(Set.of(new Tag("Sec4"), new Tag("referred-by-Mrs-Lim")),
+        assertEquals(Set.of(new Tag("Sec4"), new Tag(longMultiSegmentTag)),
                 readBack.getPersonList().get(0).getTags());
     }
 
@@ -299,6 +300,45 @@ public class JsonTuitionBookStorageTest {
 
         assertTrue(Files.exists(filePath));
         assertEquals(new TuitionBook(), new TuitionBook(storage.readTuitionBook().orElseThrow()));
+    }
+
+    @Test
+    public void saveTuitionBook_writeFailure_preservesExistingFile() throws Exception {
+        Path filePath = testFolder.resolve("AtomicSaveTuitionBook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(filePath, originalContents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void writeJsonFile(JsonSerializableTuitionBook tuitionBook, Path temporaryFile)
+                    throws IOException {
+                Files.writeString(temporaryFile, "partial JSON");
+                throw new IOException("simulated write failure");
+            }
+        };
+
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(getTypicalTuitionBook()));
+
+        assertEquals(originalContents, Files.readString(filePath));
+    }
+
+    @Test
+    public void saveTuitionBook_replacementFailure_preservesExistingFileAndCleansUpTemporaryFile() throws Exception {
+        Path filePath = testFolder.resolve("AtomicSaveTuitionBook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(filePath, originalContents);
+        Path[] temporaryFile = new Path[1];
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void replaceFile(Path source, Path target) throws IOException {
+                temporaryFile[0] = source;
+                throw new IOException("simulated replacement failure");
+            }
+        };
+
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(getTypicalTuitionBook()));
+
+        assertEquals(originalContents, Files.readString(filePath));
+        assertFalse(Files.exists(temporaryFile[0]));
     }
 
     @Test

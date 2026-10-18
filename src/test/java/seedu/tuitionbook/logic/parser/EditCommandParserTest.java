@@ -130,6 +130,15 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_longMultiSegmentTag_success() {
+        String longMultiSegmentTag = "A-".repeat(5000) + "B";
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags(longMultiSegmentTag).build();
+
+        assertParseSuccess(parser, "1 " + PREFIX_TAG + longMultiSegmentTag,
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
     public void parse_consecutiveHyphenTag_failure() {
         assertParseFailure(parser, "1 " + PREFIX_TAG + "Math--Science", Tag.MESSAGE_CONSTRAINTS);
     }

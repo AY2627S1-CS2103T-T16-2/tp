@@ -4,10 +4,13 @@ import java.awt.GraphicsEnvironment;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 
 import org.junit.jupiter.api.Assumptions;
 
+import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 
 /**
@@ -21,6 +24,7 @@ import javafx.application.Platform;
  */
 final class JavaFxTestUtil {
     private static final long TIMEOUT_SECONDS = 10;
+    private static final long CONDITION_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(3);
     private static final Object INITIALIZATION_LOCK = new Object();
     private static volatile boolean initialized;
 
@@ -94,6 +98,56 @@ final class JavaFxTestUtil {
         AtomicReference<T> result = new AtomicReference<>();
         runOnFxThread(() -> result.set(action.call()));
         return result.get();
+    }
+
+    /**
+     * Waits for a condition that must be evaluated on the JavaFX application thread.
+     *
+     * <p>An animation timer lets the JavaFX event loop and native window manager process
+     * state changes between checks. Returns false if the condition is not met within the
+     * bounded timeout, for example when a window manager does not support iconification.</p>
+     */
+    static boolean waitForFxCondition(BooleanSupplier condition) {
+        initialize();
+        if (Platform.isFxApplicationThread()) {
+            throw new IllegalStateException("Cannot wait for a JavaFX condition on the JavaFX application thread");
+        }
+
+        CountDownLatch finished = new CountDownLatch(1);
+        AtomicBoolean conditionMet = new AtomicBoolean();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Platform.runLater(() -> new AnimationTimer() {
+            private long deadlineNanos;
+
+            @Override
+            public void handle(long now) {
+                if (deadlineNanos == 0) {
+                    deadlineNanos = now + CONDITION_TIMEOUT_NANOS;
+                }
+                try {
+                    if (condition.getAsBoolean()) {
+                        conditionMet.set(true);
+                        complete();
+                    } else if (now >= deadlineNanos) {
+                        complete();
+                    }
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                    complete();
+                }
+            }
+
+            private void complete() {
+                stop();
+                finished.countDown();
+            }
+        }.start());
+
+        await(finished, "JavaFX condition");
+        if (failure.get() != null) {
+            throw new AssertionError(failure.get());
+        }
+        return conditionMet.get();
     }
 
     private static void await(CountDownLatch latch, String operation) {

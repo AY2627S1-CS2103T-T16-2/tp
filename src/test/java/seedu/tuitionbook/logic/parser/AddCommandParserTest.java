@@ -83,6 +83,18 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_longMultiSegmentAndRepeatedTags_success() {
+        String longMultiSegmentTag = "A-".repeat(5000) + "B";
+        String secondTag = "Sec4";
+        Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withoutAddress()
+                .withTags(longMultiSegmentTag, secondTag).build();
+
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB
+                + " " + PREFIX_TAG + longMultiSegmentTag + " " + PREFIX_TAG + secondTag,
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
     public void parse_leadingHyphenTag_failure() {
         String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
 
