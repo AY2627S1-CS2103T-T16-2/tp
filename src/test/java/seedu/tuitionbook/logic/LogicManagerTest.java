@@ -144,16 +144,21 @@ public class LogicManagerTest {
     @Test
     public void execute_invalidQuotedNames_leavesModelAndSavedDataUnchanged() throws Exception {
         logic.execute("add r/student n/Original p/91234567");
+        logic.execute("add r/guardian n/Hidden Guardian p/90000001");
+        Person hiddenGuardian = model.getTuitionBook().getPersonList().get(1);
         Person original = model.getTuitionBook().getPersonList().get(0);
         Path dataFile = temporaryFolder.resolve("tuitionBook.json");
         byte[] originalBytes = Files.readAllBytes(dataFile);
         model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        assertEquals(List.of(original), model.getFilteredPersonList());
         for (String name : List.of("\"Rina a/p Kaur", "\"Rina\" extra", "\"@invalid\"",
                 "\"\"", "\"" + "A".repeat(Name.MAX_LENGTH + 1) + "\"",
                 "\"Rina\" n/Other", "\"Rina\"p/98765432")) {
             for (String command : List.of("add r/student p/98765432 n/", "edit 1 n/")) {
                 assertThrows(ParseException.class, () -> logic.execute(command + name));
-                assertContactIsUnchanged(original);
+                assertEquals(List.of(original, hiddenGuardian), logic.getPersonList());
+                assertEquals(original.getId(), logic.getPersonList().get(0).getId());
+                assertEquals(hiddenGuardian.getId(), logic.getPersonList().get(1).getId());
                 assertEquals(List.of(original), model.getFilteredPersonList());
                 assertArrayEquals(originalBytes, Files.readAllBytes(dataFile));
             }

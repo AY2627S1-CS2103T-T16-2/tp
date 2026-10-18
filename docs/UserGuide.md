@@ -15,6 +15,24 @@ TuitionBook is intended for English-language users and supports any `en-*` local
 
 --------------------------------------------------------------------------------------------------------------------
 
+## Command summary
+
+Action     | Format, Examples
+-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+**Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Clear**  | `clear`
+**Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Exit**   | `exit`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
+**Help**   | `help`
+**Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
+**List**   | `list [r/ROLE]`<br> e.g., `list r/student`
+**Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
+**View**   | `view INDEX`<br> e.g., `view 1`
+
+--------------------------------------------------------------------------------------------------------------------
+
 ## Quick start
 
 1. Ensure that Java `25` or later is installed on your computer.<br>
@@ -75,13 +93,15 @@ TuitionBook is intended for English-language users and supports any `en-*` local
 
 ### Viewing help: `help`
 
-Shows a message with a link to this User Guide, where every command is explained. Use the `Copy URL` button to copy the link, then open it in your browser.
-
-![help message](images/helpMessage.png)
+Opens the Help window, which contains a scrollable summary of every command and its syntax.
 
 Format: `help`
 
-* You can also open the help window by pressing <kbd>F1</kbd> or via the `Help` menu.
+* You can also open or focus the same Help window by clicking the one-click `Help` control at the top of the main
+  window, or by pressing <kbd>F1</kbd> even while the command box has focus.
+* Use `Open User Guide` to open this User Guide in your system's default browser.
+* If TuitionBook cannot open a browser, the Help window displays fallback guidance and remains open. Use `Copy URL`
+  to copy the User Guide address and open it manually.
 * An internet connection is needed to open the linked page itself.
 
 
@@ -238,18 +258,23 @@ Example: `unlink 1` removes the guardian link of the student at index 1.
 
 ### Locating persons by name: `find`
 
-Finds persons whose names contain any of the given keywords.
+Finds persons whose names contain any of the given literal substrings.
 
-Format: `find KEYWORD [MORE_KEYWORDS]`
+Format: `find KEYWORD [MORE_KEYWORDS]...`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
-* Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* The search considers only names.
-* Only full words match; for example, `Han` does not match `Hans`.
-* Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
+* Each keyword matches anywhere within a name, including the start, middle, or end of a name component. For example,
+  `rac` matches `Grace Tan`.
+* The search is Unicode-aware and case-insensitive; for example, `GRACE` matches `Grace Tan`, and `ışık`
+  matches `Işık`.
+* The search considers only contact names. Text found only in a phone number, email address, home address, tag, role,
+  or linked contact's name does not match.
+* Keywords are treated as literal text, so punctuation is not interpreted as a search pattern.
+* Persons matching at least one keyword are returned (an `OR` search). A person is listed only once even if multiple
+  keywords match their name.
 
 Examples:
-* `find John` returns `john` and `John Doe`
+* `find gr`, `find rac`, `find ace`, and `find GRACE` each return `Grace Tan`.
+* `find rac bob` returns contacts whose names contain either `rac` or `bob`, such as `Grace Tan` and `Bob Lim`.
 * `find alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
@@ -339,30 +364,10 @@ _Details coming soon ..._
 ## Known issues
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
-3. **Unquoted name text resembling a parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Wrap the entire name in straight double quotes: `n/"Rina a/p Kaur"`. Slashes without a recognised prefix, as in `Muhammad s/o Ali`, also work without quotes.
-4. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
-5. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
-6. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
-7. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
-8. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
-9. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
-10. **`find` matches whole words in names only**: `find Ale` does not match `Alex`. Search using at least one complete word of the name.
-
---------------------------------------------------------------------------------------------------------------------
-
-## Command summary
-
-Action     | Format, Examples
------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear**  | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
-**Exit**   | `exit`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**Help**   | `help`
-**Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
-**List**   | `list [r/ROLE]`<br> e.g., `list r/student`
-**Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
-**View**   | `view INDEX`<br> e.g., `view 1`
+2. **Unquoted name text resembling a parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Wrap the entire name in straight double quotes: `n/"Rina a/p Kaur"`. Slashes without a recognised prefix, as in `Muhammad s/o Ali`, also work without quotes.
+3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
+4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
+5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
+6. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
+7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
+8. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
