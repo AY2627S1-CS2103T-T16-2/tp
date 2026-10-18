@@ -121,11 +121,13 @@ Examples:
 
 ### Listing contacts: `list`
 
-Shows all contacts, or only contacts with a specified role. `list` clears any active name or role filter.
+Shows all contacts, or only contacts matching a specified role and/or all specified tags. `list` clears any active name, role, or tag filter.
 
-Format: `list [r/ROLE]`
+Format: `list [r/ROLE] [t/TAG]...`
 
 * `ROLE` is `student` or `guardian`, case-insensitively.
+* Each `TAG` must be alphanumeric. Tag matching is exact but case-insensitive; all specified tags must be present.
+* Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
 * Other trailing text is rejected.
 * Before linking a student to a guardian after role filtering, enter `list` to restore the full list so that both
