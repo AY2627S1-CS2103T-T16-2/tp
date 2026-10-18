@@ -22,6 +22,10 @@ The format is based on Keep a Changelog.
 - Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
 - Restored contacts and the active filter when a contact-changing command cannot save its changes.
 
+### Fixed
+
+- Treat inaccessible JSON files as loading errors rather than missing files, preventing reload from clearing contacts when file existence cannot be determined.
+
 ## [v1.3] - 2026-10-14
 
 ### Added

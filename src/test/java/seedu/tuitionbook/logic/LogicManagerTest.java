@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.tuitionbook.logic.Messages.getInvalidPersonDisplayedIndexMessage;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -18,10 +19,15 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
@@ -46,6 +52,7 @@ import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
+import seedu.tuitionbook.storage.TuitionBookLoadResult;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
 public class LogicManagerTest {
@@ -427,6 +434,77 @@ public class LogicManagerTest {
         model.addPerson(AMY);
         assertThrows(ParseException.class, () -> logic.execute("reload extra"));
         assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
+    }
+
+    @Test
+    public void execute_reloadAccessDenied_preservesContactsAndFilter() throws Exception {
+        model.addPerson(AMY);
+        model.updateFilteredPersonList(person -> false);
+        StorageManager inaccessibleStorage = new StorageManager(
+                new JsonTuitionBookStorage(temporaryFolder.resolve("inaccessible.json")),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))) {
+            @Override
+            public Optional<TuitionBookLoadResult> readTuitionBookWithResult() throws DataLoadingException {
+                throw new DataLoadingException(new AccessDeniedException("simulated unreadable data file"));
+            }
+        };
+        Logic inaccessibleLogic = new LogicManager(model, inaccessibleStorage);
+        assertThrows(CommandException.class, () -> inaccessibleLogic.execute("reload"));
+        assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
+        assertTrue(model.getFilteredPersonList().isEmpty());
+    }
+
+    @Test
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    public void execute_reloadInaccessibleDirectory_doesNotTreatUnknownExistenceAsAbsence() throws Exception {
+        Path directory = Files.createDirectory(temporaryFolder.resolve("restricted"));
+        Path file = directory.resolve("contacts.json");
+        JsonTuitionBookStorage fileStorage = new JsonTuitionBookStorage(file);
+        fileStorage.saveTuitionBook(new TuitionBook());
+        Logic restrictedLogic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("restrictedPrefs.json"))));
+        model.addPerson(AMY);
+        model.updateFilteredPersonList(person -> false);
+        Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(directory);
+        try {
+            Files.setPosixFilePermissions(directory, Set.of());
+            assumeFalse(Files.exists(file), "Privileged process bypasses directory permissions");
+            assertFalse(Files.notExists(file));
+            assertThrows(CommandException.class, () -> restrictedLogic.execute("reload"));
+            assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
+            assertTrue(model.getFilteredPersonList().isEmpty());
+        } finally {
+            Files.setPosixFilePermissions(directory, originalPermissions);
+        }
+        assertThrows(IOException.class, () -> fileStorage.saveTuitionBook(model.getTuitionBook()));
+    }
+
+    @Test
+    public void execute_reloadInvalidGuardian_repairsOnlyLinkWithoutSaving() throws Exception {
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        Person missingGuardian = new PersonBuilder().withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Linked Student").withGuardian(missingGuardian).build();
+        TuitionBook persisted = new TuitionBook();
+        persisted.addPerson(student);
+        persisted.addPerson(AMY);
+        JsonTuitionBookStorage fileStorage = new JsonTuitionBookStorage(file);
+        fileStorage.saveTuitionBook(persisted);
+        byte[] originalBytes = Files.readAllBytes(file);
+        model.addPerson(AMY);
+        model.updateFilteredPersonList(person -> false);
+
+        CommandResult result = logic.execute("reload");
+
+        assertTrue(result.getFeedbackToUser().contains("Removed 1 invalid guardian link(s) in memory."));
+        assertEquals(List.of(student.clearGuardian(), AMY), model.getFilteredPersonList());
+        assertEquals(student.getId(), model.getFilteredPersonList().getFirst().getId());
+        assertTrue(model.getFilteredPersonList().getFirst().getGuardianId().isEmpty());
+        assertArrayEquals(originalBytes, Files.readAllBytes(file));
+
+        logic.execute("edit 1 n/Saved Student");
+        assertFalse(java.util.Arrays.equals(originalBytes, Files.readAllBytes(file)));
+        assertEquals(0, fileStorage.readTuitionBookWithResult().orElseThrow().repairedGuardianLinkCount());
+        assertEquals(AMY, fileStorage.readTuitionBook().orElseThrow().getPersonList().get(1));
     }
 
     @Test
