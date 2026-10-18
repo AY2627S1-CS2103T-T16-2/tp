@@ -85,6 +85,7 @@ public class CardDisplayUiTest {
             PersonCard card = new PersonCard(student, 1, "-");
 
             assertEquals("Guardian: -", getLabel(card, "relationship").getText());
+            assertEquals("Guardian: -", getLabel(card, "relationship").getTooltip().getText());
             assertEquals("Address: -", getLabel(card, "address").getText());
             assertEquals("Email: -", getLabel(card, "email").getText());
             assertEquals("Address: -", getLabel(card, "address").getTooltip().getText());
@@ -103,6 +104,7 @@ public class CardDisplayUiTest {
             assertEquals("GUARDIAN", getLabel(card, "role").getText());
             assertTrue(getLabel(card, "role").getStyleClass().contains("guardian"));
             assertEquals("Students: -", getLabel(card, "relationship").getText());
+            assertEquals("Students: -", getLabel(card, "relationship").getTooltip().getText());
             assertTrue(getLabel(card, "relationship").isManaged());
             assertTrue(getLabel(card, "relationship").isVisible());
             return null;
@@ -132,7 +134,8 @@ public class CardDisplayUiTest {
                 assertTrue(relationship.getTooltip().isWrapText());
                 assertEquals(OverrunStyle.ELLIPSIS, relationship.getTextOverrun());
                 assertFalse(relationship.isWrapText());
-                assertTrue(relationship.getWidth() <= card.getRoot().getWidth());
+                assertTrue(relationship.prefWidth(-1) > relationship.getWidth());
+                assertLabelStaysInsideCard(relationship, card);
             } finally {
                 stage.close();
             }
@@ -412,6 +415,14 @@ public class CardDisplayUiTest {
             assertTrue(labelBounds.getMaxX() <= cardBounds.getMaxX() + LAYOUT_BOUNDS_TOLERANCE,
                     "Tag extends past card: " + labelBounds + " vs " + cardBounds);
         }
+    }
+
+    private static void assertLabelStaysInsideCard(Label label, PersonCard card) {
+        Bounds cardBounds = card.getRoot().localToScene(card.getRoot().getBoundsInLocal());
+        Bounds labelBounds = label.localToScene(label.getBoundsInLocal());
+        assertTrue(labelBounds.getMinX() >= cardBounds.getMinX() - LAYOUT_BOUNDS_TOLERANCE);
+        assertTrue(labelBounds.getMaxX() <= cardBounds.getMaxX() + LAYOUT_BOUNDS_TOLERANCE,
+                "Label extends past card: " + labelBounds + " vs " + cardBounds);
     }
 
     private static Label getLabel(PersonCard card, String id) {
