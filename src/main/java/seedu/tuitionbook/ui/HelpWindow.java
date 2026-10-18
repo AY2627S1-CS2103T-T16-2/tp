@@ -48,7 +48,7 @@ public class HelpWindow extends UiPart<Stage> {
             unlink STUDENT_INDEX
               Remove a displayed student's guardian link.
 
-            find KEYWORD [MORE_KEYWORDS]
+            find KEYWORD [MORE_KEYWORDS]...
               Find contacts whose names contain any full keyword.
 
             delete INDEX

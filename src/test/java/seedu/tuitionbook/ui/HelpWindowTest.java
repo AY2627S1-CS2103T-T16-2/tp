@@ -38,7 +38,7 @@ public class HelpWindowTest {
             "edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...",
             "link STUDENT_INDEX GUARDIAN_INDEX",
             "unlink STUDENT_INDEX",
-            "find KEYWORD [MORE_KEYWORDS]",
+            "find KEYWORD [MORE_KEYWORDS]...",
             "delete INDEX",
             "clear",
             "help",
