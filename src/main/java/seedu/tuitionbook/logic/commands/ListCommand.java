@@ -6,11 +6,11 @@ import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import seedu.tuitionbook.commons.util.ToStringBuilder;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.model.Model;
-import java.util.function.Predicate;
 import seedu.tuitionbook.model.person.Person;
 
 /**

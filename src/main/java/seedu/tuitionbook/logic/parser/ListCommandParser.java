@@ -9,9 +9,9 @@ import java.util.List;
 
 import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
+import seedu.tuitionbook.model.person.PersonHasRolePredicate;
 import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
 import seedu.tuitionbook.model.person.Role;
-import seedu.tuitionbook.model.person.PersonHasRolePredicate;
 
 /**
  * Parses input arguments and creates a new ListCommand object

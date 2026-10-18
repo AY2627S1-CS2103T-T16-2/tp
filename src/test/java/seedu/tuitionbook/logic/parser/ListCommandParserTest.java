@@ -4,8 +4,8 @@ import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
-import java.util.Locale;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.ResourceLock;
@@ -14,8 +14,8 @@ import org.junit.jupiter.api.parallel.Resources;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.model.person.PersonHasRolePredicate;
-import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
+import seedu.tuitionbook.model.person.Role;
 
 public class ListCommandParserTest {
 
@@ -75,7 +75,8 @@ public class ListCommandParserTest {
     @Test
     public void parse_tagsAndRole_returnsCombinedFilter() {
         assertParseSuccess(parser, " r/student t/sec4 t/AMath",
-                new ListCommand(new PersonMatchesListFilterPredicate(Role.STUDENT, java.util.List.of("sec4", "AMath"))));
+                new ListCommand(new PersonMatchesListFilterPredicate(Role.STUDENT,
+                java.util.List.of("sec4", "AMath"))));
     }
 
     @Test
