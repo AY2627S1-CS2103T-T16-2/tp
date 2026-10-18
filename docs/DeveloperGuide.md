@@ -799,7 +799,42 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 ### Saving data
 
-1. Recovering from a save failure
+Run each scenario below independently in a fresh, disposable folder. An ordinary save failure rolls back the attempted change but does not set the storage write block: restore write access and repeat the failed command. A failed load whose backup also fails does set the write block: correct or move the file and use `reload` (or restart) before retrying contact-changing commands. If backing up an unreadable file succeeds, saving is already enabled and no reload is required. Reload reads the file; it does not save or replay a failed command.
+
+1. Reloading corrected data without restarting
+
+   1. Launch TuitionBook with an empty, disposable data folder. Enter `add r/student n/Alex Yeoh p/87438807`, then `find Nobody`.
+
+   1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
+      Expected: the list contains Reloaded Alex, the filter is cleared, and the result reports one loaded contact. Reload does not rewrite the file.
+
+   1. Enter `reload extra`.<br>
+      Expected: invalid command format; contacts remain unchanged.
+
+1. Reloading after the data file has been moved
+
+   1. Launch TuitionBook in a fresh, disposable folder and enter `add r/student n/Alex Yeoh p/87438807`.
+
+   1. Move `data/tuitionbook.json` to a separate backup location while the app stays open. Enter `reload`.<br>
+      Expected: the contact list becomes empty and the result reports zero loaded contacts. The data file remains absent; reload does not recreate it.
+
+   1. Enter `add r/student n/Alex Lim p/91234567`.<br>
+      Expected: saving creates a new data file containing Alex Lim. The moved file remains unchanged.
+
+1. Recovering when both loading and backing up the file failed
+
+   1. In a fresh, disposable folder, add `add r/student n/Alex Yeoh p/87438807`, close TuitionBook, and keep a separate copy of the valid `data/tuitionbook.json`.
+
+   1. Replace the data file's contents with `{broken`. Configure permissions so the app can read the file but cannot move it to a backup, then launch TuitionBook. Permission controls differ by operating system; verify that the startup warning explicitly reports backup failure before continuing.<br>
+      Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
+
+   1. While the app stays open, restore normal permissions and replace the malformed file with the saved valid copy. Enter `reload`.<br>
+      Expected: Alex Yeoh appears, the filter is cleared, and saving is enabled. Merely correcting the file without reloading would leave the write block set.
+
+   1. Enter `edit 1 n/Updated Alex`, then close and relaunch TuitionBook.<br>
+      Expected: the edit saves successfully and Updated Alex remains visible after restart.
+
+1. Recovering from an ordinary save failure (data loaded successfully)
 
    1. In a fresh, disposable folder, launch TuitionBook and enter `add r/student n/Alex Yeoh p/87438807`, then close the application.
 
@@ -811,7 +846,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
    1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
       Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
 
-1. Recovering from malformed contact data
+1. Recovering from malformed contact data (backup succeeds)
 
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
