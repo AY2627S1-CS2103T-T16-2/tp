@@ -22,4 +22,14 @@ public abstract class Command {
      */
     public abstract boolean requiresSave();
 
+    /**
+     * Returns whether executing this command can change contact data and may require persistence.
+     *
+     * <p>This is distinct from {@link #requiresSave()}, which is evaluated after execution and can be false when a
+     * command completes without making a change.</p>
+     */
+    public boolean canMutate() {
+        return requiresSave();
+    }
+
 }
