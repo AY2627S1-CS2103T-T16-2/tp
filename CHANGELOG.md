@@ -16,8 +16,8 @@ The format is based on Keep a Changelog.
 
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
 - Changed `list` to allow tag filtering, includes case-insensitive AND matching with the optional role filtering
+- Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
 - Restored contacts and the active filter when a contact-changing command cannot save its changes.
-
 
 ## [v1.3] - 2026-10-14
 
