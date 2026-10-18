@@ -15,8 +15,6 @@ TuitionBook is scoped to English-language users and any `en-*` locale (for examp
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Setting up, getting started**
@@ -113,7 +111,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. A save failure becomes a command error, so the UI does not report the command as successful.
+1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. If saving fails, `LogicManager` restores the contacts and active filter that existed before the command, then reports a command error.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -334,9 +332,9 @@ Priority represents importance to the target user and does not indicate whether 
 
 `Scope` is a planning classification, not a claim about the current implementation state. `MVP` identifies requirements in the agreed minimum TuitionBook product, while `Beyond MVP` identifies requirements outside that minimum, including implemented, scheduled, deferred, and descoped stories. The table retains these stories as a record of user needs; inclusion does not promise delivery.
 
-As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP needs include filtering contacts by role, preserving an unreadable data file as a backup, and recording academic levels and subjects through generic tags. Tags provide flexible labels without dedicated academic fields or validation. Other stories have distinct planning statuses:
+As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP needs include filtering contacts by role, preserving an unreadable data file as a backup, and recording academic levels and subjects through generic tags. Tags provide flexible labels without dedicated academic fields or validation. For v1.4, [#127](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/127) adds case-insensitive literal substring matching anywhere in contact names; other fields remain excluded from `find`. Other stories have distinct planning statuses:
 
-* **Scheduled**: selected work is tracked through the issue tracker's milestones (`v1.4`, `v1.5`). Unlinking a guardian ([#125](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/125)), partial-name search ([#127](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/127)), tag filtering ([#133](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/133)), a static in-app command summary ([#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93)), and explicit confirmation for clearing all contacts ([#141](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/141)) are scheduled for v1.4, not available in v1.3. The agreed tag-filtering scope is `list [r/ROLE] [t/TAG]...`: exact, case-insensitive tag matching, requiring all supplied tags and the optional role to match. This supports role-plus-tag filtering; it does not implement role-plus-name filtering. The agreed clear behaviour requires `clear confirm` before deleting all contacts, rejects other trailing arguments, and makes clear in its message that contacts hidden by the current filter are also affected. This is a specific safeguard for clearing data, not a commitment to confirmation prompts for every deletion.
+* **Scheduled**: selected work is tracked through the issue tracker's milestones (`v1.4`, `v1.5`). Unlinking a guardian ([#125](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/125)), tag filtering ([#133](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/133)), a static in-app command summary ([#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93)), and explicit confirmation for clearing all contacts ([#141](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/141)) are scheduled for v1.4, not available in v1.3. The agreed tag-filtering scope is `list [r/ROLE] [t/TAG]...`: exact, case-insensitive tag matching, requiring all supplied tags and the optional role to match. This supports role-plus-tag filtering; it does not implement role-plus-name filtering. The agreed clear behaviour requires `clear confirm` before deleting all contacts, rejects other trailing arguments, and makes clear in its message that contacts hidden by the current filter are also affected. This is a specific safeguard for clearing data, not a commitment to confirmation prompts for every deletion.
 * **Tag-based organisation**: [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/134) records a workflow using generic tags to distinguish active and inactive students. These labels are already supported in v1.3; `Inactive` has no special behaviour and does not automatically hide or archive a contact. Filtering by status tags depends on the scheduled tag-filtering feature. Editing tags replaces the complete tag set, so tutors must retain any level, subject, or other tags they still need when changing a status label. Dedicated inactive/archive state and restore operations remain descoped.
 * **Descoped**: the decisions recorded in [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/134) exclude dedicated level/subject fields and filtering by those fields, dedicated inactive/archive functionality, sorting, area search, notes, clipboard support, import/export, and undo from the final release. This does not exclude organising contacts through generic tags or the in-app command summary scheduled in #93. Descoped features are not release commitments; any later reconsideration requires a new scope decision.
 * **Deferred**: other unimplemented Beyond-MVP stories without a scheduled issue remain unscheduled backlog ideas, with no promised release or delivery date.
@@ -359,7 +357,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 | `**` | Beyond MVP | private tutor | record a student's academic level and subject or subjects | keep track of what I teach each student |
 | `**` | Beyond MVP | private tutor | filter students by academic level and/or subject | find students studying a particular subject at a given level |
 | `**` | MVP | private tutor | assign tags to contacts | organise contacts using flexible labels |
-| `*` | Beyond MVP | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
+| `**` | Beyond MVP | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
 | `*` | Beyond MVP | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
 | `*` | Beyond MVP | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
 | `*` | Beyond MVP | private tutor | delete a contact by name | remove a contact without first locating its displayed index |
@@ -452,7 +450,44 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC03 Edit a contact**
+**Use case: UC03 Unlink a guardian from a student**
+
+**Preconditions**
+
+* A student is visible in the current contact list.
+
+**Guarantee**
+
+* On success, the student has no guardian link; neither contact is deleted.
+
+**MSS**
+
+1.  User requests to unlink a displayed student.
+2.  TuitionBook removes the guardian link and displays confirmation naming the student and former guardian.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The specified index is missing, malformed, or does not refer to a contact in the current list.
+
+    * 1a1. TuitionBook shows an error message.
+
+      Use case ends.
+
+* 1b. The selected contact is not a student.
+
+    * 1b1. TuitionBook shows an error message describing the role mismatch.
+
+      Use case ends.
+
+* 1c. The selected student has no guardian link.
+
+    * 1c1. TuitionBook reports that the student has no linked guardian without changing it.
+
+      Use case ends.
+
+**Use case: UC04 Edit a contact**
 
 **Preconditions**
 
@@ -485,24 +520,26 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC04 Find contacts by name**
+**Use case: UC05 Find contacts by name**
 
 **MSS**
 
-1.  User submits a find request with one or more name keywords.
-2.  TuitionBook displays the contacts matching the requested name keywords and reports the number of matches.
+1.  User submits a find request with one or more name substrings.
+2.  TuitionBook displays each contact whose name contains at least one requested substring, using Unicode-aware,
+    case-insensitive literal matching, and reports the number of matches. Other contact fields and linked contact names
+    are not searched.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. No name keyword is provided.
+* 1a. No name substring is provided.
 
     * 1a1. TuitionBook shows an error message describing the invalid request.
 
       Use case ends.
 
-**Use case: UC05 View contact details**
+**Use case: UC06 View contact details**
 
 **Preconditions**
 
@@ -524,7 +561,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC06 Delete a contact**
+**Use case: UC07 Delete a contact**
 
 **Preconditions**
 
@@ -550,7 +587,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
       Use case ends.
 
-**Use case: UC07 Filter contacts by role**
+**Use case: UC08 Filter contacts by role**
 
 **MSS**
 
@@ -589,11 +626,11 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 ### Non-Functional Requirements
 
 1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
-2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, or linking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
-3.  All documented add, edit, delete, list, find, filter, view, and link operations shall be executable through keyboard-entered commands, without requiring a mouse.
+2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, linking, or unlinking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
+3.  All documented add, edit, delete, list, find, filter, view, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
-6.  Changes made by successful mutating operations shall be available after a normal application restart. This does not guarantee preservation of a change when saving it reports a storage error.
+6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and active filter to their state before that operation.
 7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
 
 ### Glossary
@@ -645,6 +682,26 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases … }_
 
+### Getting help
+
+1. Click the top-level `Help` control once.<br>
+   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`,
+   `list`, `view`, `edit`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, and `exit`. The Help window becomes
+   active, so focus leaves the main TuitionBook window.
+1. Minimize the Help window, focus the command box, and press <kbd>F1</kbd>.<br>
+   Expected: The same Help window is restored and focused; no second Help window appears.
+1. Close the Help window. In the main TuitionBook window, focus the command box and enter `help`. The Help window
+   becomes active. Return to the main TuitionBook window, focus its command box, and enter `help` again.<br>
+   Expected: The first command opens the Help window and reports `Opened help window.` The second command focuses the
+   same window.
+1. Click `Open User Guide`.<br>
+   Expected: The User Guide opens in the system default browser. If the desktop environment cannot open a browser,
+   TuitionBook remains open, displays fallback guidance, and leaves `Copy URL` available.
+1. Click `Copy URL`, paste into a text editor, and confirm that the copied value is
+   `https://ay2627s1-cs2103t-t16-2.github.io/tp/UserGuide.html`.
+1. With the Help window open, activate the main TuitionBook window and select its `File` → `Exit`.<br>
+   Expected: Both the main window and Help window close.
+
 ### Deleting a person
 
 1. Deleting a person while all persons are being shown
@@ -683,12 +740,76 @@ Enter these commands to create the contacts used below:
    `No students linked.`
 1. Enter `list r/student`, then `view 1`.<br>
    Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored
-   list remains filtered to students. Note that `add`, `edit`, and `link` clear the active filter, while `list`
+   list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list`
    and `find` replace it, so they are unsuitable for this check.
 1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
+### Finding contacts by name substring
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+Enter these commands to create the contacts used below:
+
+1. `add r/guardian n/Grace Tan p/91230001 e/parent@example.com a/Needle Street t/Family`
+1. `add r/student n/Bob Lim p/91230002 e/student@example.com a/Example Road t/Math`
+1. `link 2 1`
+1. `add r/student n/A.B Tan p/91230003`
+1. `add r/student n/Işık p/91230004`
+
+1. Enter `find gr`, `find rac`, `find ace`, and `find GRACE` one at a time.<br>
+   Expected: Each command shows only Grace Tan and reports `1 person(s) listed!`.
+1. Enter `find tan`.<br>
+   Expected: Grace Tan and A.B Tan are shown in their original order and the result reports `2 person(s) listed!`.
+1. Enter `find rac bob`.<br>
+   Expected: Grace Tan and Bob Lim are shown once each in their original order and the result reports
+   `2 person(s) listed!`.
+1. Enter `find ışık`, then `find ışı`.<br>
+   Expected: Each command shows only Işık and reports `1 person(s) listed!`; matching is Unicode-aware and
+   case-insensitive, including for a partial name.
+1. Enter `find .`, then `find .*`.<br>
+   Expected: The first command shows only A.B Tan. The second command shows no contacts because `.*` is matched
+   literally rather than interpreted as a pattern.
+1. Enter `find 91230002`, `find student@example.com`, `find Road`, `find Math`, and `find student` one at a time.<br>
+   Expected: Each command shows no contacts and reports `0 person(s) listed!`; phone, email, address, tag, and role fields
+   are not searched.
+1. Enter `find grace`.<br>
+   Expected: Only Grace Tan is shown; Bob Lim is not matched through the guardian link.
+1. Enter `find bob`, then `list`.<br>
+   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all five contacts in
+   their original order. None of the contacts or the guardian link has changed.
+1. Enter `find`, then enter `find` followed only by spaces.<br>
+   Expected: Each command reports an invalid-command format message containing the updated `find` usage, including
+   `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
+
+### Removing a guardian link
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/student n/Alex Yeoh p/87438807`, `add r/guardian n/Bernice Yu p/99272758`, and `link 1 2`.<br>
+   Expected: Alex Yeoh is linked to Bernice Yu.
+1. Enter `list r/student`, then `unlink 1`.<br>
+   Expected: The result area displays `Unlinked student Alex Yeoh from guardian Bernice Yu.` The full contact list is
+   restored, both contacts remain, and Alex Yeoh has no guardian link.
+1. Enter `list r/student`, then `unlink 1` again.<br>
+   Expected: The result area displays `Student Alex Yeoh has no linked guardian.` The list remains filtered to Alex
+   Yeoh; neither contact changes.
+1. Close and relaunch the application, then enter `view 1`.<br>
+   Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
+   restart.
+
 ### Saving data
+
+1. Recovering from a save failure
+
+   1. In a fresh, disposable folder, launch TuitionBook and enter `add r/student n/Alex Yeoh p/87438807`, then close the application.
+
+   1. Remove your current user's write permission from the `data` folder beside the JAR, then relaunch TuitionBook.
+
+   1. Enter `list r/student`, then `edit 1 n/Updated Alex`.<br>
+      Expected: TuitionBook reports that it could not save. Alex Yeoh's name remains unchanged and the displayed list remains filtered to students.
+
+   1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
+      Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
 
 1. Recovering from malformed contact data
 

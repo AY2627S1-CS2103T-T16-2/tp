@@ -22,6 +22,7 @@ import seedu.tuitionbook.logic.commands.FindCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.LinkCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
+import seedu.tuitionbook.logic.commands.UnlinkCommand;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.person.NameContainsKeywordsPredicate;
@@ -97,6 +98,12 @@ public class TuitionBookParserTest {
     public void parseCommand_link() throws Exception {
         assertEquals(new LinkCommand(INDEX_FIRST_PERSON, seedu.tuitionbook.testutil.TypicalIndexes.INDEX_SECOND_PERSON),
                 parser.parseCommand(LinkCommand.COMMAND_WORD + " 1 2"));
+    }
+
+    @Test
+    public void parseCommand_unlink() throws Exception {
+        assertEquals(new UnlinkCommand(INDEX_FIRST_PERSON),
+                parser.parseCommand(UnlinkCommand.COMMAND_WORD + " 1"));
     }
 
     @Test

@@ -8,9 +8,19 @@ The format is based on Keep a Changelog.
 
 ## [v1.4] - 2026-10-22
 
+### Added
+
+- Added a scrollable in-app summary of every implemented command and its syntax.
+- Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
+- Added the `unlink` command to remove a student's guardian link without deleting either contact.
+
 ### Changed
 
 - Moved the User Guide command summary before Quick start and corrected its sidebar link.
+- Replaced the nested Help menu with a one-click top-level Help control while retaining the `help` command, <kbd>F1</kbd> shortcut, and `Copy URL` action.
+- Clarified that `link` indexes refer to the currently displayed, filtered contact list.
+- Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
+- Restored contacts and the active filter when a contact-changing command cannot save its changes.
 
 ## [v1.3] - 2026-10-14
 
@@ -33,17 +43,3 @@ The format is based on Keep a Changelog.
 - Improved contact cards to display roles, relationships, and long values clearly.
 - Improved validation messages for invalid commands, indexes, roles, duplicate fields, and field values.
 - Updated the User Guide and help content for TuitionBook commands and data handling.
-
-### Screenshots
-
-![Managing students and guardians](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-manage-studentandguardian.jpeg)
-Manage student and guardian contacts together, with linked guardians and subject tags visible.
-
-![Viewing contact details](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-viewdetails.jpeg)
-View a student’s details and their guardian’s contact information in one command.
-
-![Linking a guardian](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-guardianlinking.jpeg)
-A guardian can be linked to multiple students, such as siblings.
-
-![Filtering contacts](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/master/docs/images/v1.3-viewfiltering.jpeg)
-Filter the list to students while keeping their guardian relationships visible.
