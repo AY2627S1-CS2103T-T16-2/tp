@@ -15,6 +15,7 @@ The format is based on Keep a Changelog.
 ### Changed
 
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
+- Restored contacts and the active filter when a contact-changing command cannot save its changes.
 
 
 ## [v1.3] - 2026-10-14

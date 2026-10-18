@@ -178,6 +178,81 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_failedMutatingCommands_restoreContactsAndFilter() throws Exception {
+        String[] commands = {"add r/student n/New Student p/90000003", "edit 1 n/Renamed Student", "delete 1",
+            "clear", "link 1 2"};
+        for (String command : commands) {
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                    .withRole(Role.GUARDIAN).build();
+            Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                    .withRole(Role.STUDENT).build();
+            Model failedSaveModel = new ModelManager(new TuitionBook(), new UserPrefs());
+            failedSaveModel.addPerson(student);
+            failedSaveModel.addPerson(guardian);
+            if (!command.startsWith("link")) {
+                failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+            }
+            Logic failedSaveLogic = new LogicManager(failedSaveModel, storageThatFailsOnSave(
+                    temporaryFolder.resolve(command.split(" ")[0] + ".json")));
+
+            assertThrows(CommandException.class, () -> failedSaveLogic.execute(command));
+
+            List<Person> restoredPersons = failedSaveLogic.getPersonList();
+            assertEquals(List.of(student, guardian), restoredPersons);
+            assertEquals(student.getId(), restoredPersons.get(0).getId());
+            assertEquals(guardian.getId(), restoredPersons.get(1).getId());
+            assertEquals(command.startsWith("link") ? List.of(student, guardian) : List.of(student),
+                    failedSaveLogic.getFilteredPersonList());
+        }
+    }
+
+    @Test
+    public void execute_failedDeleteOfLinkedGuardian_restoresContactsLinksFilterAndIds() throws Exception {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        Model failedSaveModel = new ModelManager(new TuitionBook(), new UserPrefs());
+        failedSaveModel.addPerson(student);
+        failedSaveModel.addPerson(guardian);
+        failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.GUARDIAN);
+        Logic failedSaveLogic = new LogicManager(failedSaveModel,
+                storageThatFailsOnSave(temporaryFolder.resolve("deleteLinkedGuardian.json")));
+
+        assertThrows(CommandException.class, () -> failedSaveLogic.execute("delete 1"));
+
+        List<Person> restoredPersons = failedSaveLogic.getPersonList();
+        assertEquals(List.of(student, guardian), restoredPersons);
+        assertEquals(student.getId(), restoredPersons.get(0).getId());
+        assertEquals(guardian.getId(), restoredPersons.get(1).getId());
+        assertEquals(guardian.getId(), restoredPersons.get(0).getGuardianId().orElseThrow());
+        assertEquals(List.of(guardian), failedSaveLogic.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_failedUnlink_restoresContactsLinksFilterAndIds() throws Exception {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        Model failedSaveModel = new ModelManager(new TuitionBook(), new UserPrefs());
+        failedSaveModel.addPerson(student);
+        failedSaveModel.addPerson(guardian);
+        failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        Logic failedSaveLogic = new LogicManager(failedSaveModel,
+                storageThatFailsOnSave(temporaryFolder.resolve("unlink.json")));
+
+        assertThrows(CommandException.class, () -> failedSaveLogic.execute("unlink 1"));
+
+        List<Person> restoredPersons = failedSaveLogic.getPersonList();
+        assertEquals(List.of(student, guardian), restoredPersons);
+        assertEquals(student.getId(), restoredPersons.get(0).getId());
+        assertEquals(guardian.getId(), restoredPersons.get(1).getId());
+        assertEquals(guardian.getId(), restoredPersons.get(0).getGuardianId().orElseThrow());
+        assertEquals(List.of(student), failedSaveLogic.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_nonMutatingCommandsAfterConfiguredLoadFailure_leaveBackupUnchanged() throws Exception {
         Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook.json");
         Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
@@ -273,6 +348,17 @@ public class LogicManagerTest {
         StorageManager storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
         assertThrows(DataLoadingException.class, storage::readTuitionBook);
         return new LogicManager(fallbackModel, storage);
+    }
+
+    private StorageManager storageThatFailsOnSave(Path filePath) {
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            public void saveTuitionBook(ReadOnlyTuitionBook tuitionBook) throws IOException {
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        return new StorageManager(tuitionBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve(filePath.getFileName() + "Prefs.json")));
     }
 
     private Logic createLogicWithBlockedStorage(Path tuitionBookFilePath, Model fallbackModel) throws Exception {
@@ -393,9 +479,7 @@ public class LogicManagerTest {
         // Triggers the saveTuitionBook method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + ROLE_DESC_STUDENT + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
         ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
     }
 
