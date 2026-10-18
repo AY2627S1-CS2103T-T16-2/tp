@@ -13,6 +13,7 @@ The format is based on Keep a Changelog.
 - Added a scrollable in-app summary of every implemented command and its syntax.
 - Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
 - Added the `unlink` command to remove a student's guardian link without deleting either contact.
+- Added `reload` to reread the configured contact file and retry recovery from blocked saving without restarting.
 
 ### Changed
 
