@@ -82,10 +82,7 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
-`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the
-filtered list while using the complete list to resolve a student's guardian name, including when a role filter hides
-the guardian's own card. The panel refreshes its cards when the complete list changes so that relationship details
-remain current.
+`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the filtered list while using the complete list to resolve a student's guardian name, including when a role filter hides the guardian's own card. The panel refreshes its cards when the complete list changes so that relationship details remain current.
 
 ### Logic component
 
@@ -155,10 +152,7 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
-`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory
-containing the executable JAR as the application home, independent of the process working directory. Development runs
-from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data
-migration, preferences, logs, and log rotation/lock files therefore share the same application home.
+`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
 
 ### Common classes
 
@@ -172,19 +166,11 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Viewing contact relationships
 
-`ViewCommandParser` parses `view INDEX` with the same positive-index rule as other index-based commands.
-`ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve
-relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked
-guardian or student from the result. The command does not change the model or its active filter.
+`ViewCommandParser` parses `view INDEX` with the same positive-index rule as other index-based commands. `ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked guardian or student from the result. The command does not change the model or its active filter.
 
-For a student, the command displays the linked guardian's contact details or `No guardian linked.` For a guardian, it
-lists linked student names in address-book order or displays `No students linked.` Missing optional fields use `-`, and
-tags are sorted alphabetically.
+For a student, the command displays the linked guardian's contact details or `No guardian linked.` For a guardian, it lists linked student names in address-book order or displays `No students linked.` Missing optional fields use `-`, and tags are sorted alphabetically.
 
-`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text.
-`MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a
-command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active
-filter remain in the model while the detail view is visible.
+`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active filter remain in the model while the detail view is visible.
 
 ### Contact field validation
 
@@ -198,13 +184,7 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 ### Quoted-name parsing
 
-`AddCommandParser` and `EditCommandParser` opt into
-`ArgumentTokenizer.tokenizeWithQuotedValue` for `PREFIX_NAME`.
-The tokenizer visits prefix positions in order and ignores positions inside a quoted name,
-then removes the enclosing quotes before normal name validation. It rejects unclosed quotes and
-trailing text outside the closing quote. Other fields and commands retain their existing quote
-and prefix behaviour. The model and JSON store the plain name; no storage migration is needed.
-Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
+`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValue` for `PREFIX_NAME`. The tokenizer visits prefix positions in order and ignores positions inside a quoted name, then removes the enclosing quotes before normal name validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields and commands retain their existing quote and prefix behaviour. The model and JSON store the plain name; no storage migration is needed. Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -244,8 +224,7 @@ Step 4. The user now decides that adding the person was a mistake, and decides t
 
 <box type="info" seamless>
 
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial TuitionBook state, then there are no previous TuitionBook states to restore. The `undo` command uses `Model#canUndoTuitionBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
+**Note:** If the `currentStatePointer` is at index 0, pointing to the initial TuitionBook state, then there are no previous TuitionBook states to restore. The `undo` command uses `Model#canUndoTuitionBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the undo.
 </box>
 
 The following sequence diagram shows how an undo operation goes through the `Logic` component:
@@ -288,8 +267,7 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Pros: Easy to implement.
   * Cons: May have performance issues in terms of memory usage.
 
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
+* **Alternative 2:** Individual command knows how to undo/redo by itself.
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
 
@@ -535,9 +513,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 **MSS**
 
 1.  User submits a find request with one or more name substrings.
-2.  TuitionBook displays each contact whose name contains at least one requested substring, using Unicode-aware,
-    case-insensitive literal matching, and reports the number of matches. Other contact fields and linked contact names
-    are not searched.
+2.  TuitionBook displays each contact whose name contains at least one requested substring, using Unicode-aware, case-insensitive literal matching, and reports the number of matches. Other contact fields and linked contact names are not searched.
 
     Use case ends.
 
@@ -620,18 +596,11 @@ The role-filtered form supersedes the plain-list rule: `list` displays all conta
 
 **Startup data rule**
 
-If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample
-contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not
-change the separate recovery behaviour for a malformed data file.
+If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not change the separate recovery behaviour for a malformed data file.
 
 **Malformed-file recovery policy**
 
-When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named
-`<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes.
-After a successful move, the load failure carries the exact backup path to the UI. TuitionBook starts with an empty
-contact list, can save new data at the configured path, and shows the exact backup path and recovery steps in both a
-warning dialog and the result display. If no backup can be created, it leaves the original file in place, blocks saving
-so that it cannot be overwritten, and tells the user to correct or move the original file before restarting.
+When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows the exact backup path and recovery steps in both a warning dialog and the result display. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and tells the user to correct or move the original file before restarting.
 
 ### Non-Functional Requirements
 
@@ -660,9 +629,7 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name consists of
-  one or more ASCII alphanumeric segments separated by single hyphens; hyphens cannot be leading, trailing, or
-  consecutive.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name consists of one or more ASCII alphanumeric segments separated by single hyphens; hyphens cannot be leading, trailing, or consecutive.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -672,8 +639,7 @@ Given below are instructions to test the app manually.
 
 <box type="info" seamless>
 
-**Note:** These instructions only provide a starting point for testers to work on;
-testers are expected to do more *exploratory* testing.
+**Note:** These instructions only provide a starting point for testers to work on; testers are expected to do more *exploratory* testing.
 </box>
 
 ### Quoted names in add and edit
@@ -690,11 +656,9 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `edit 1 n/"Rina a/p Kaur`.<br>
    Expected: An error explains the missing closing double quote; the contact is unchanged.
 1. Enter `edit 1 n/"Rina" extra`.<br>
-   Expected: An error explains that a quoted name must be followed by another field or the end of the command;
-   the contact is unchanged.
+   Expected: An error explains that a quoted name must be followed by another field or the end of the command; the contact is unchanged.
 1. Enter `add r/student n/Rina a/p Kaur p/90000001`.<br>
-   Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`.
-   This is the documented limitation; quotation marks are required to enter that full name.
+   Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`. This is the documented limitation; quotation marks are required to enter that full name.
 
 ### Launch and shutdown
 
@@ -717,20 +681,14 @@ Use a fresh, disposable folder with an empty contact list.
 ### Getting help
 
 1. Click the top-level `Help` control once.<br>
-   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`,
-   `list`, `view`, `edit`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, and `exit`. The Help window becomes
-   active, so focus leaves the main TuitionBook window.
+   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`, `list`, `view`, `edit`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, and `exit`. The Help window becomes active, so focus leaves the main TuitionBook window.
 1. Minimize the Help window, focus the command box, and press <kbd>F1</kbd>.<br>
    Expected: The same Help window is restored and focused; no second Help window appears.
-1. Close the Help window. In the main TuitionBook window, focus the command box and enter `help`. The Help window
-   becomes active. Return to the main TuitionBook window, focus its command box, and enter `help` again.<br>
-   Expected: The first command opens the Help window and reports `Opened help window.` The second command focuses the
-   same window.
+1. Close the Help window. In the main TuitionBook window, focus the command box and enter `help`. The Help window becomes active. Return to the main TuitionBook window, focus its command box, and enter `help` again.<br>
+   Expected: The first command opens the Help window and reports `Opened help window.` The second command focuses the same window.
 1. Click `Open User Guide`.<br>
-   Expected: The User Guide opens in the system default browser. If the desktop environment cannot open a browser,
-   TuitionBook remains open, displays fallback guidance, and leaves `Copy URL` available.
-1. Click `Copy URL`, paste into a text editor, and confirm that the copied value is
-   `https://ay2627s1-cs2103t-t16-2.github.io/tp/UserGuide.html`.
+   Expected: The User Guide opens in the system default browser. If the desktop environment cannot open a browser, TuitionBook remains open, displays fallback guidance, and leaves `Copy URL` available.
+1. Click `Copy URL`, paste into a text editor, and confirm that the copied value is `https://ay2627s1-cs2103t-t16-2.github.io/tp/UserGuide.html`.
 1. With the Help window open, activate the main TuitionBook window and select its `File` → `Exit`.<br>
    Expected: Both the main window and Help window close.
 
@@ -753,8 +711,7 @@ Use a fresh, disposable folder with an empty contact list.
 
 ### Viewing a contact
 
-Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
-Enter these commands to create the contacts used below:
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data. Enter these commands to create the contacts used below:
 
 1. `add r/student n/Alex Yeoh p/87438807`
 1. `add r/guardian n/Bernice Yu p/99272758`
@@ -763,24 +720,19 @@ Enter these commands to create the contacts used below:
 1. `add r/guardian n/David Li p/91031282`
 
 1. Enter `view 1`.<br>
-   Expected: The contact list is replaced by Alex Yeoh's details and Bernice Yu's guardian details. The result area
-   displays `Viewing contact: Alex Yeoh`.
+   Expected: The contact list is replaced by Alex Yeoh's details and Bernice Yu's guardian details. The result area displays `Viewing contact: Alex Yeoh`.
 1. Enter `view 2`.<br>
    Expected: The detail view shows Bernice Yu's details, followed by Alex Yeoh under linked students.
 1. Enter `view 3`, then `view 4`.<br>
-   Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports
-   `No students linked.`
+   Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports `No students linked.`
 1. Enter `list r/student`, then `view 1`.<br>
-   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored
-   list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list`
-   and `find` replace it, so they are unsuitable for this check.
+   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list` and `find` replace it, so they are unsuitable for this check.
 1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
 ### Finding contacts by name substring
 
-Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
-Enter these commands to create the contacts used below:
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data. Enter these commands to create the contacts used below:
 
 1. `add r/guardian n/Grace Tan p/91230001 e/parent@example.com a/Needle Street t/Family`
 1. `add r/student n/Bob Lim p/91230002 e/student@example.com a/Example Road t/Math`
@@ -793,25 +745,19 @@ Enter these commands to create the contacts used below:
 1. Enter `find tan`.<br>
    Expected: Grace Tan and A.B Tan are shown in their original order and the result reports `2 person(s) listed!`.
 1. Enter `find rac bob`.<br>
-   Expected: Grace Tan and Bob Lim are shown once each in their original order and the result reports
-   `2 person(s) listed!`.
+   Expected: Grace Tan and Bob Lim are shown once each in their original order and the result reports `2 person(s) listed!`.
 1. Enter `find ışık`, then `find ışı`.<br>
-   Expected: Each command shows only Işık and reports `1 person(s) listed!`; matching is Unicode-aware and
-   case-insensitive, including for a partial name.
+   Expected: Each command shows only Işık and reports `1 person(s) listed!`; matching is Unicode-aware and case-insensitive, including for a partial name.
 1. Enter `find .`, then `find .*`.<br>
-   Expected: The first command shows only A.B Tan. The second command shows no contacts because `.*` is matched
-   literally rather than interpreted as a pattern.
+   Expected: The first command shows only A.B Tan. The second command shows no contacts because `.*` is matched literally rather than interpreted as a pattern.
 1. Enter `find 91230002`, `find student@example.com`, `find Road`, `find Math`, and `find student` one at a time.<br>
-   Expected: Each command shows no contacts and reports `0 person(s) listed!`; phone, email, address, tag, and role fields
-   are not searched.
+   Expected: Each command shows no contacts and reports `0 person(s) listed!`; phone, email, address, tag, and role fields are not searched.
 1. Enter `find grace`.<br>
    Expected: Only Grace Tan is shown; Bob Lim is not matched through the guardian link.
 1. Enter `find bob`, then `list`.<br>
-   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all five contacts in
-   their original order. None of the contacts or the guardian link has changed.
+   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all five contacts in their original order. None of the contacts or the guardian link has changed.
 1. Enter `find`, then enter `find` followed only by spaces.<br>
-   Expected: Each command reports an invalid-command format message containing the updated `find` usage, including
-   `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
+   Expected: Each command reports an invalid-command format message containing the updated `find` usage, including `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
 
 ### Removing a guardian link
 
@@ -820,14 +766,11 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `add r/student n/Alex Yeoh p/87438807`, `add r/guardian n/Bernice Yu p/99272758`, and `link 1 2`.<br>
    Expected: Alex Yeoh is linked to Bernice Yu.
 1. Enter `list r/student`, then `unlink 1`.<br>
-   Expected: The result area displays `Unlinked student Alex Yeoh from guardian Bernice Yu.` The full contact list is
-   restored, both contacts remain, and Alex Yeoh has no guardian link.
+   Expected: The result area displays `Unlinked student Alex Yeoh from guardian Bernice Yu.` The full contact list is restored, both contacts remain, and Alex Yeoh has no guardian link.
 1. Enter `list r/student`, then `unlink 1` again.<br>
-   Expected: The result area displays `Student Alex Yeoh has no linked guardian.` The list remains filtered to Alex
-   Yeoh; neither contact changes.
+   Expected: The result area displays `Student Alex Yeoh has no linked guardian.` The list remains filtered to Alex Yeoh; neither contact changes.
 1. Close and relaunch the application, then enter `view 1`.<br>
-   Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
-   restart.
+   Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after restart.
 
 ### Adding and editing hyphenated tags
 
@@ -840,8 +783,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `edit 1 t/Math--Science`.<br>
    Expected: The edit is rejected with the tag constraint message; the existing tags remain unchanged.
 1. Close and relaunch the application.<br>
-   Expected: Alex Lim still has the tags `A1-B2` and `Math`, confirming that the hyphenated tag persisted across the
-   restart.
+   Expected: Alex Lim still has the tags `A1-B2` and `Math`, confirming that the hyphenated tag persisted across the restart.
 
 ### Saving data
 
@@ -862,8 +804,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
    1. Launch TuitionBook.<br>
-      Expected: TuitionBook opens with an empty contact list and a warning. The original bytes are in
-      `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+      Expected: TuitionBook opens with an empty contact list and a warning. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
 
    1. Enter `help`.<br>
       Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
