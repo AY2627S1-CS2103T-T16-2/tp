@@ -16,6 +16,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Moved the User Guide command summary before Quick start and corrected its sidebar link.
 - Replaced the nested Help menu with a one-click top-level Help control while retaining the `help` command, <kbd>F1</kbd> shortcut, and `Copy URL` action.
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
 - Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
