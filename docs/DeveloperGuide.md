@@ -829,6 +829,28 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
    restart.
 
+### Filtering contacts by tags
+
+Use a fresh, disposable folder with an empty contact list. Enter these commands in order:
+
+```text
+add r/student n/Alex Tan p/91234561 t/active t/math
+add r/student n/Beth Lim p/91234562 t/active
+add r/guardian n/Chris Ong p/91234563 t/active t/math
+add r/student n/Dana Lee p/91234564 t/inactive t/math
+```
+
+1. Enter `list r/guardian`, then `list r/student t/ACTIVE t/math`.<br>
+   Expected: only Alex Tan appears, with `1 person(s) listed!`. The tag-and-role filter replaces the guardian filter. Beth lacks math, Chris has the wrong role, and Dana's inactive tag is not an exact match for active.
+1. Enter `list`.<br>
+   Expected: Alex Tan, Beth Lim, Chris Ong, and Dana Lee appear in that order, with `Listed all persons.`.
+1. Enter `find Beth`, then `list t/math`.<br>
+   Expected: Alex Tan, Chris Ong, and Dana Lee appear in that order, with `3 person(s) listed!`. The tag filter replaces the name filter.
+1. Enter `list t/absent`.<br>
+   Expected: an empty displayed list and the successful result `0 person(s) listed!`.
+1. Enter `list` again.<br>
+   Expected: all four contacts return in their original order; none were deleted.
+
 ### Adding and editing hyphenated tags
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.

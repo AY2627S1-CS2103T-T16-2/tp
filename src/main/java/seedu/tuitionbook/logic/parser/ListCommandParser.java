@@ -32,17 +32,13 @@ public class ListCommandParser implements Parser<ListCommand> {
 
         argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_ROLE);
 
-        if (argMultimap.getValue(PREFIX_ROLE).isEmpty() && argMultimap.getAllValues(PREFIX_TAG).isEmpty()) {
-            return new ListCommand();
-        }
         Role role = null;
         if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
             role = ParserUtil.parseRole(argMultimap.getValue(PREFIX_ROLE).get());
         }
 
         if (argMultimap.getAllValues(PREFIX_TAG).isEmpty()) {
-            assert role != null;
-            return new ListCommand(new PersonHasRolePredicate(role));
+            return role == null ? new ListCommand() : new ListCommand(new PersonHasRolePredicate(role));
         }
 
         List<String> tagNames = new ArrayList<>();

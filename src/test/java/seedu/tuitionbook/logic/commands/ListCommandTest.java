@@ -9,6 +9,7 @@ import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.tuitionbook.testutil.TypicalPersons.getTypicalTuitionBook;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.UserPrefs;
+import seedu.tuitionbook.model.person.NameContainsKeywordsPredicate;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.PersonHasRolePredicate;
 import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
@@ -164,6 +166,46 @@ public class ListCommandTest {
             newModel.addPerson(person);
         }
         return newModel;
+    }
+
+    @Test
+    public void execute_tagFilter_replacesNameAndRoleFiltersAndBareListRestoresOrder() {
+        Person student = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT)
+                .withTags("math").build();
+        Person guardian = new PersonBuilder().withName("Gail Guardian").withRole(Role.GUARDIAN)
+                .withTags("active").build();
+        Person anotherStudent = new PersonBuilder().withName("Sue Student").withRole(Role.STUDENT)
+                .withTags("active").build();
+        List<Predicate<Person>> initialFilters = List.of(
+                new NameContainsKeywordsPredicate(List.of("Sam")), new PersonHasRolePredicate(Role.STUDENT));
+
+        for (Predicate<Person> initialFilter : initialFilters) {
+            Model actual = modelWith(student, guardian, anotherStudent);
+            actual.updateFilteredPersonList(initialFilter);
+            assertFalse(actual.getFilteredPersonList().contains(guardian));
+            Model expected = modelWith(student, guardian, anotherStudent);
+            PersonMatchesListFilterPredicate tagFilter =
+                    new PersonMatchesListFilterPredicate(null, List.of("ACTIVE"));
+            expected.updateFilteredPersonList(tagFilter);
+
+            assertCommandSuccess(new ListCommand(tagFilter), actual, "2 person(s) listed!", expected);
+            assertEquals(List.of(guardian, anotherStudent), actual.getFilteredPersonList());
+            assertCommandSuccess(new ListCommand(), actual, ListCommand.MESSAGE_SUCCESS,
+                    modelWith(student, guardian, anotherStudent));
+            assertEquals(List.of(student, guardian, anotherStudent), actual.getFilteredPersonList());
+        }
+    }
+
+    @Test
+    public void execute_tagFilterWithNoMatches_returnsSuccessfulZeroCount() {
+        Person person = new PersonBuilder().withTags("inactive").build();
+        Model actual = modelWith(person);
+        Model expected = modelWith(person);
+        PersonMatchesListFilterPredicate filter = new PersonMatchesListFilterPredicate(null, List.of("active"));
+        expected.updateFilteredPersonList(filter);
+        assertCommandSuccess(new ListCommand(filter), actual, "0 person(s) listed!", expected);
+        assertTrue(actual.getFilteredPersonList().isEmpty());
+        assertEquals(List.of(person), actual.getTuitionBook().getPersonList());
     }
 
     @Test

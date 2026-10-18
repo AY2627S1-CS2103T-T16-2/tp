@@ -33,8 +33,8 @@ public class HelpWindow extends UiPart<Stage> {
             add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...
               Add a student or guardian contact.
 
-            list [r/ROLE]
-              List every contact, or only students or guardians.
+            list [r/ROLE] [t/TAG]...
+              List contacts matching the role and all tags, ignoring case. Bare list resets filters.
 
             view INDEX
               View a contact together with their recorded relationships.

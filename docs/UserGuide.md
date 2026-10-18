@@ -27,7 +27,7 @@ Action     | Format, Examples
 **Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
 **Help**   | `help`
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
-**List**   | `list [r/ROLE]`<br> e.g., `list r/student`
+**List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/ACTIVE t/math`
 **Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
 **View**   | `view INDEX`<br> e.g., `view 1`
 
@@ -158,7 +158,8 @@ Shows all contacts, or only contacts matching a specified role and/or all specif
 Format: `list [r/ROLE] [t/TAG]...`
 
 * `ROLE` is `student` or `guardian`, case-insensitively.
-* Each `TAG` must be alphanumeric. Tag matching is exact but case-insensitive; all specified tags must be present.
+* Each `TAG` follows the same tag-name rules as [adding a contact](#adding-a-contact-add). Tag matching is exact but case-insensitive; all specified tags must be present.
+* A filtered `list` replaces any active name, role, or tag filter. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
 * Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
 * Other trailing text is rejected.
