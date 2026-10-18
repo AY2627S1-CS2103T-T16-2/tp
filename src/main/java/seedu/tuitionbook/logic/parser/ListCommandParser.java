@@ -4,7 +4,8 @@ import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
@@ -34,18 +35,20 @@ public class ListCommandParser implements Parser<ListCommand> {
         if (argMultimap.getValue(PREFIX_ROLE).isEmpty() && argMultimap.getAllValues(PREFIX_TAG).isEmpty()) {
             return new ListCommand();
         }
+        Role role = null;
+        if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
+            role = ParserUtil.parseRole(argMultimap.getValue(PREFIX_ROLE).get());
+        }
 
-        Role role = argMultimap.getValue(PREFIX_ROLE).map(value -> {
-            return ParserUtil.parseRole(value);
-        }).orElse(null);
         if (argMultimap.getAllValues(PREFIX_TAG).isEmpty()) {
             assert role != null;
             return new ListCommand(new PersonHasRolePredicate(role));
         }
-        return new ListCommand(new PersonMatchesListFilterPredicate(role,
-                argMultimap.getAllValues(PREFIX_TAG).stream()
-                        .map(value -> {
-                            return ParserUtil.parseTag(value).tagName;
-                        }).collect(Collectors.toList())));
+
+        List<String> tagNames = new ArrayList<>();
+        for (String tagValue : argMultimap.getAllValues(PREFIX_TAG)) {
+            tagNames.add(ParserUtil.parseTag(tagValue).tagName);
+        }
+        return new ListCommand(new PersonMatchesListFilterPredicate(role, tagNames));
     }
 }
