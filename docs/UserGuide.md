@@ -15,6 +15,24 @@ TuitionBook is intended for English-language users and supports any `en-*` local
 
 --------------------------------------------------------------------------------------------------------------------
 
+## Command summary
+
+Action     | Format, Examples
+-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+**Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Clear**  | `clear`
+**Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Exit**   | `exit`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
+**Help**   | `help`
+**Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
+**List**   | `list [r/ROLE]`<br> e.g., `list r/student`
+**Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
+**View**   | `view INDEX`<br> e.g., `view 1`
+
+--------------------------------------------------------------------------------------------------------------------
+
 ## Quick start
 
 1. Ensure that Java `25` or later is installed on your computer.<br>
@@ -99,6 +117,13 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
   spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is
   ignored, while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
 * `NAME` can contain at most 100 characters.
+* In `add` and `edit`, wrap the entire name in straight double quotes when it contains a field prefix:
+  `n/"Rina a/p Kaur"`. The quotes are not stored and do not count towards the name length.
+  Ordinary names still work without quotes. After the closing quote, end the command or enter a space
+  followed by another field prefix. Missing closing quotes and extra text after the closing quote are rejected.
+  Nested quotes and backslash escaping are not supported.
+* **Unquoted names still use normal field parsing:** `n/Rina a/p Kaur` is interpreted as name `Rina`
+  and address `p Kaur`, not as the full name. Use `n/"Rina a/p Kaur"` to preserve it.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
@@ -124,6 +149,7 @@ Examples:
 * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add r/guardian n/Betsy Crowe p/1234567 t/family`
 * `add r/student n/Alex Lim p/91234567 t/Sec-4 t/referred-by-Mrs-Lim`
+* `add r/student n/"Rina a/p Kaur" p/91234567 a/123 Main Street`
 
 ### Listing contacts: `list`
 
@@ -176,6 +202,9 @@ Examples using the contacts created above:
 Edits an existing person in TuitionBook.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
+
+Names support the same optional double quotes as `add`. For example, `edit 1 n/"Rina a/p Kaur"`
+changes the complete name without interpreting `a/` as an address prefix.
 
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
@@ -340,28 +369,10 @@ _Details coming soon ..._
 ## Known issues
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-2. **Name text resembling a parameter prefix** (e.g. the ` a/p ` in `Rina a/p Kaur`) is read as the start of the address parameter instead of part of the name, even though `/` itself is allowed in names (e.g. `Muhammad s/o Ali` is accepted). Write such name particles in full (e.g. `anak perempuan`) or omit them.
+2. **Unquoted name text resembling a parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Wrap the entire name in straight double quotes: `n/"Rina a/p Kaur"`. Slashes without a recognised prefix, as in `Muhammad s/o Ali`, also work without quotes.
 3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
 6. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
 7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
 8. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
-
---------------------------------------------------------------------------------------------------------------------
-
-## Command summary
-
-Action     | Format, Examples
------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear**  | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
-**Exit**   | `exit`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
-**Help**   | `help`
-**Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
-**List**   | `list [r/ROLE]`<br> e.g., `list r/student`
-**Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
-**View**   | `view INDEX`<br> e.g., `view 1`
