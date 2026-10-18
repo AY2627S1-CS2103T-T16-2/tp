@@ -66,6 +66,7 @@
         "launch-and-shutdown": "Launch and shutdown",
         "deleting-a-person": "Deleting a person",
         "viewing-a-contact": "Viewing a contact",
+        "finding-contacts-by-name-substring": "Finding contacts by name substring",
         "removing-a-guardian-link": "Removing a guardian link",
         "saving-data": "Saving data"
       },
