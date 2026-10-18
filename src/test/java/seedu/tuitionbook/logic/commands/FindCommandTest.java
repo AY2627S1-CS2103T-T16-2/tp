@@ -95,6 +95,22 @@ public class FindCommandTest {
     }
 
     @Test
+    public void execute_unicodeCaseVariant_filtersMatchingName() {
+        Person isik = new PersonBuilder().withName("Işık").build();
+        Person alice = new PersonBuilder().withName("Alice Ng").build();
+        Model unicodeModel = modelWith(isik, alice);
+        Model expectedUnicodeModel = modelWith(isik, alice);
+        NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("ışı"));
+        expectedUnicodeModel.updateFilteredPersonList(predicate);
+
+        FindCommand command = new FindCommand(predicate);
+        String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
+
+        assertCommandSuccess(command, unicodeModel, expectedMessage, expectedUnicodeModel);
+        assertEquals(List.of(isik), unicodeModel.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_multipleKeywordsMatchSamePerson_personListedOnce() {
         Person grace = new PersonBuilder().withName("Grace Tan").build();
         Model singlePersonModel = modelWith(grace);

@@ -229,11 +229,12 @@ Example: `unlink 1` removes the guardian link of the student at index 1.
 
 Finds persons whose names contain any of the given literal substrings.
 
-Format: `find KEYWORD [MORE_KEYWORDS]`
+Format: `find KEYWORD [MORE_KEYWORDS]...`
 
 * Each keyword matches anywhere within a name, including the start, middle, or end of a name component. For example,
   `rac` matches `Grace Tan`.
-* The search is case-insensitive; for example, `GRACE` matches `Grace Tan`.
+* The search is Unicode-aware and case-insensitive; for example, `GRACE` matches `Grace Tan`, and `ışık`
+  matches `Işık`.
 * The search considers only contact names. Text found only in a phone number, email address, home address, tag, role,
   or linked contact's name does not match.
 * Keywords are treated as literal text, so punctuation is not interpreted as a search pattern.
@@ -352,7 +353,7 @@ Action     | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Exit**   | `exit`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]` (name substrings)<br> e.g., `find gr bob`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
 **Help**   | `help`
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
 **List**   | `list [r/ROLE]`<br> e.g., `list r/student`

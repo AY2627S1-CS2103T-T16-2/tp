@@ -527,8 +527,9 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 **MSS**
 
 1.  User submits a find request with one or more name substrings.
-2.  TuitionBook displays each contact whose name contains at least one requested substring, using case-insensitive
-    literal matching, and reports the number of matches. Other contact fields and linked contact names are not searched.
+2.  TuitionBook displays each contact whose name contains at least one requested substring, using Unicode-aware,
+    case-insensitive literal matching, and reports the number of matches. Other contact fields and linked contact names
+    are not searched.
 
     Use case ends.
 
@@ -735,6 +736,7 @@ Enter these commands to create the contacts used below:
 1. `add r/student n/Bob Lim p/91230002 e/student@example.com a/Example Road t/Math`
 1. `link 2 1`
 1. `add r/student n/A.B Tan p/91230003`
+1. `add r/student n/Işık p/91230004`
 
 1. Enter `find gr`, `find rac`, `find ace`, and `find GRACE` one at a time.<br>
    Expected: Each command shows only Grace Tan and reports `1 person(s) listed!`.
@@ -743,6 +745,9 @@ Enter these commands to create the contacts used below:
 1. Enter `find rac bob`.<br>
    Expected: Grace Tan and Bob Lim are shown once each in their original order and the result reports
    `2 person(s) listed!`.
+1. Enter `find ışık`, then `find ışı`.<br>
+   Expected: Each command shows only Işık and reports `1 person(s) listed!`; matching is Unicode-aware and
+   case-insensitive, including for a partial name.
 1. Enter `find .`, then `find .*`.<br>
    Expected: The first command shows only A.B Tan. The second command shows no contacts because `.*` is matched
    literally rather than interpreted as a pattern.
@@ -752,7 +757,7 @@ Enter these commands to create the contacts used below:
 1. Enter `find grace`.<br>
    Expected: Only Grace Tan is shown; Bob Lim is not matched through the guardian link.
 1. Enter `find bob`, then `list`.<br>
-   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all three contacts in
+   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all four contacts in
    their original order. None of the contacts or the guardian link has changed.
 1. Enter `find`, then enter `find` followed only by spaces.<br>
    Expected: Each command reports the unchanged invalid-command format message and does not change the displayed list.

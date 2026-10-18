@@ -1,27 +1,37 @@
 package seedu.tuitionbook.model.person;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import seedu.tuitionbook.commons.util.ToStringBuilder;
 
 /**
- * Tests that a {@code Person}'s {@code Name} contains any of the keywords given.
+ * Tests whether a {@code Person}'s name contains any given keyword using literal,
+ * case-insensitive Unicode matching.
  */
 public class NameContainsKeywordsPredicate implements Predicate<Person> {
     private final List<String> keywords;
+    private final List<Pattern> keywordPatterns;
 
+    /**
+     * Creates a predicate that matches any of the given literal keywords.
+     *
+     * @param keywords Keywords to match case-insensitively against a person's name.
+     */
     public NameContainsKeywordsPredicate(List<String> keywords) {
-        this.keywords = keywords;
+        this.keywords = List.copyOf(keywords);
+        keywordPatterns = this.keywords.stream()
+                .map(keyword -> Pattern.compile(Pattern.quote(keyword),
+                        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE))
+                .toList();
     }
 
     @Override
     public boolean test(Person person) {
-        String lowerCaseName = person.getName().fullName.toLowerCase(Locale.ROOT);
-        return keywords.stream()
-                .map(keyword -> keyword.toLowerCase(Locale.ROOT))
-                .anyMatch(lowerCaseName::contains);
+        String fullName = person.getName().fullName;
+        return keywordPatterns.stream()
+                .anyMatch(pattern -> pattern.matcher(fullName).find());
     }
 
     @Override
