@@ -19,6 +19,7 @@ import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.PersonHasRolePredicate;
+import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
@@ -75,6 +76,82 @@ public class ListCommandTest {
         assertCommandSuccess(new ListCommand(predicate), studentOnlyModel, expectedMessage,
                 expectedStudentOnlyModel);
         assertEquals(List.of(), studentOnlyModel.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_filterByTag_usesExactCaseInsensitiveMatching() {
+        Person active = new PersonBuilder().withName("Active Student").withTags("active").build();
+        Person inactive = new PersonBuilder().withName("Inactive Student").withTags("inactive").build();
+        Model tagModel = modelWith(active, inactive);
+        Model expectedTagModel = modelWith(active, inactive);
+
+        PersonMatchesListFilterPredicate predicate =
+                new PersonMatchesListFilterPredicate(null, List.of("ACTIVE"));
+        expectedTagModel.updateFilteredPersonList(predicate);
+        String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
+
+        assertCommandSuccess(new ListCommand(predicate), tagModel, expectedMessage, expectedTagModel);
+        assertEquals(List.of(active), tagModel.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_filterByMultipleTags_returnsOnlyPersonsWithAllTags() {
+        Person bothTags = new PersonBuilder().withName("Both Tags")
+                .withTags("active", "math").build();
+        Person onlyActive = new PersonBuilder().withName("Only Active")
+                .withTags("active").build();
+        Person onlyMath = new PersonBuilder().withName("Only Math")
+                .withTags("math").build();
+        Model tagModel = modelWith(bothTags, onlyActive, onlyMath);
+        Model expectedTagModel = modelWith(bothTags, onlyActive, onlyMath);
+
+        PersonMatchesListFilterPredicate predicate =
+                new PersonMatchesListFilterPredicate(null, List.of("ACTIVE", "MATH"));
+        expectedTagModel.updateFilteredPersonList(predicate);
+        String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
+
+        assertCommandSuccess(new ListCommand(predicate), tagModel, expectedMessage, expectedTagModel);
+        assertEquals(List.of(bothTags), tagModel.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_filterByCaseInsensitiveDuplicateTags_returnsMatchingPerson() {
+        Person active = new PersonBuilder().withName("Active Student")
+                .withTags("active").build();
+        Person inactive = new PersonBuilder().withName("Inactive Student")
+                .withTags("inactive").build();
+        Model tagModel = modelWith(active, inactive);
+        Model expectedTagModel = modelWith(active, inactive);
+
+        PersonMatchesListFilterPredicate predicate =
+                new PersonMatchesListFilterPredicate(null, List.of("ACTIVE", "active"));
+        expectedTagModel.updateFilteredPersonList(predicate);
+        String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
+
+        assertCommandSuccess(new ListCommand(predicate), tagModel, expectedMessage, expectedTagModel);
+        assertEquals(List.of(active), tagModel.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_filterByRoleAndMultipleTags_returnsOnlyMatchingPerson() {
+        Person matchingStudent = new PersonBuilder().withName("Matching Student")
+                .withRole(Role.STUDENT).withTags("active", "inactive", "math").build();
+        Person wrongRole = new PersonBuilder().withName("Matching Guardian")
+                .withRole(Role.GUARDIAN).withTags("active", "inactive", "math").build();
+        Person missingTag = new PersonBuilder().withName("Missing Math")
+                .withRole(Role.STUDENT).withTags("active").build();
+        Person missingInactive = new PersonBuilder().withName("Missing Inactive")
+                .withRole(Role.STUDENT).withTags("active", "math").build();
+        Model filterModel = modelWith(matchingStudent, wrongRole, missingTag, missingInactive);
+        Model expectedFilterModel = modelWith(matchingStudent, wrongRole, missingTag, missingInactive);
+
+        PersonMatchesListFilterPredicate predicate = new PersonMatchesListFilterPredicate(
+                Role.STUDENT, List.of("ACTIVE", "INACTIVE", "MATH"));
+        expectedFilterModel.updateFilteredPersonList(predicate);
+        String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
+
+        assertCommandSuccess(new ListCommand(predicate), filterModel, expectedMessage, expectedFilterModel);
+        assertEquals(List.of(matchingStudent), filterModel.getFilteredPersonList());
     }
 
     /**
