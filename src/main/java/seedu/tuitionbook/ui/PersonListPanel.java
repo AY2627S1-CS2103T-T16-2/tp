@@ -3,9 +3,11 @@ package seedu.tuitionbook.ui;
 import static seedu.tuitionbook.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -24,12 +26,14 @@ public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
     private final Map<UUID, Person> personsById = new HashMap<>();
+    private final ObservableList<Person> allPersons;
 
     @FXML
     private ListView<Person> personListView;
 
     /**
-     * Creates a {@code PersonListPanel} using the filtered persons for display and all persons for relationship lookup.
+     * Creates a {@code PersonListPanel} using the filtered persons for display and all persons for
+     * relationship lookup.
      *
      * @param filteredPersons persons selected by the active filter
      * @param allPersons all persons available for relationship lookup
@@ -37,6 +41,7 @@ public class PersonListPanel extends UiPart<Region> {
     public PersonListPanel(ObservableList<Person> filteredPersons, ObservableList<Person> allPersons) {
         super(FXML);
         requireAllNonNull(filteredPersons, allPersons);
+        this.allPersons = allPersons;
         personListView.setItems(filteredPersons);
         rebuildPersonLookup(allPersons);
         allPersons.addListener((ListChangeListener<Person>) unused -> {
@@ -70,6 +75,26 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
+     * Returns the names of students linked to the guardian in contact-list order, or {@code "-"} if there are none.
+     *
+     * @param person guardian whose linked student names are required
+     * @param allPersons all persons in contact-list order
+     * @return comma-separated linked student names, or {@code "-"}
+     */
+    static String resolveLinkedStudentNames(Person person, List<Person> allPersons) {
+        requireAllNonNull(person, allPersons);
+        if (person.getRole() != Role.GUARDIAN) {
+            return "-";
+        }
+        String linkedStudentNames = allPersons.stream()
+                .filter(candidate -> candidate.getRole() == Role.STUDENT)
+                .filter(candidate -> candidate.getGuardianId().filter(person.getId()::equals).isPresent())
+                .map(candidate -> candidate.getName().fullName)
+                .collect(Collectors.joining(", "));
+        return linkedStudentNames.isEmpty() ? "-" : linkedStudentNames;
+    }
+
+    /**
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */
     class PersonListViewCell extends ListCell<Person> {
@@ -81,8 +106,10 @@ public class PersonListPanel extends UiPart<Region> {
                 setGraphic(null);
                 setText(null);
             } else {
-                String guardianName = resolveGuardianName(person, personsById);
-                setGraphic(new PersonCard(person, getIndex() + 1, guardianName).getRoot());
+                String relationshipNames = person.getRole() == Role.STUDENT
+                        ? resolveGuardianName(person, personsById)
+                        : resolveLinkedStudentNames(person, allPersons);
+                setGraphic(new PersonCard(person, getIndex() + 1, relationshipNames).getRoot());
             }
         }
     }

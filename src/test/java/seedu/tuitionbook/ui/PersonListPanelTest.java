@@ -65,4 +65,41 @@ public class PersonListPanelTest {
         assertEquals(guardian.getName().fullName,
                 PersonListPanel.resolveGuardianName(student, Map.of(guardian.getId(), guardian)));
     }
+
+    @Test
+    public void resolveLinkedStudentNames_guardianWithoutLinkedStudents_returnsPlaceholder() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+        Person unlinkedStudent = new PersonBuilder().withName("Una Student").build();
+
+        assertEquals("-", PersonListPanel.resolveLinkedStudentNames(guardian,
+                List.of(guardian, unlinkedStudent)));
+    }
+
+    @Test
+    public void resolveLinkedStudentNames_guardianWithOneLinkedStudent_returnsStudentName() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+        Person linkedStudent = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
+
+        assertEquals("Sam Student", PersonListPanel.resolveLinkedStudentNames(guardian,
+                List.of(guardian, linkedStudent)));
+    }
+
+    @Test
+    public void resolveLinkedStudentNames_multipleContacts_returnsLinkedStudentsInContactListOrder() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+        Person otherGuardian = new PersonBuilder().withName("Gina Guardian").withRole(Role.GUARDIAN).build();
+        Person secondLinkedStudent = new PersonBuilder().withName("Zara Student").withGuardian(guardian).build();
+        Person unrelatedStudent = new PersonBuilder().withName("Una Student").withGuardian(otherGuardian).build();
+        Person firstLinkedStudent = new PersonBuilder().withName("Alex Student").withGuardian(guardian).build();
+
+        assertEquals("Zara Student, Alex Student", PersonListPanel.resolveLinkedStudentNames(guardian,
+                List.of(secondLinkedStudent, unrelatedStudent, firstLinkedStudent, guardian, otherGuardian)));
+    }
+
+    @Test
+    public void resolveLinkedStudentNames_studentContact_returnsPlaceholder() {
+        Person student = new PersonBuilder().withName("Sam Student").build();
+
+        assertEquals("-", PersonListPanel.resolveLinkedStudentNames(student, List.of(student)));
+    }
 }

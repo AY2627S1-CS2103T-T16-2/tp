@@ -82,10 +82,7 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
-`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the
-filtered list while using the complete list to resolve a student's guardian name, including when a role filter hides
-the guardian's own card. The panel refreshes its cards when the complete list changes so that relationship details
-remain current.
+`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the filtered list while using the complete list to resolve a student's guardian name and a guardian's linked student names, including when a role filter hides the related contacts' cards. The panel refreshes its cards when the complete list changes so that relationship details remain current.
 
 ### Logic component
 
@@ -194,7 +191,7 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
-`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long names, phone numbers, email addresses, resolved guardian names, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also provides the full details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
+`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
 ### Quoted-name parsing
 
@@ -750,6 +747,21 @@ Use a fresh, disposable folder with an empty contact list.
       Expected: Similar to previous.
 
 1. _{ more test cases … }_
+
+### Displaying contact relationships in the list
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002`, `add r/student n/Alex Student p/90000003`, `link 2 1`, and `link 3 1`.<br>
+   Expected: Sam Student's and Alex Student's cards display `Guardian: Grace Guardian`. Grace Guardian's card displays `Students: Sam Student, Alex Student` in contact-list order.
+1. Enter `list r/guardian`.<br>
+   Expected: Only Grace Guardian's card remains visible, and its `Students:` line still displays both students.
+1. Add and link enough synthetic students for the `Students:` line to exceed the card width, then resize the window to the smallest supported size.<br>
+   Expected: The relationship stays on one line and ends with an ellipsis instead of widening the card. Hovering over the line shows every linked student name, and `view 1` provides the same complete list through the keyboard workflow.
+1. Enter `list`, followed by `unlink 2`.<br>
+   Expected: Grace Guardian's `Students:` line updates to `Students: Alex Student`.
+1. Enter `unlink 3`.<br>
+   Expected: Grace Guardian's `Students:` line updates to `Students: -`.
 
 ### Viewing a contact
 

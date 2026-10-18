@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -64,9 +67,9 @@ public class CardDisplayUiTest {
             assertEquals("STUDENT", getLabel(card, "role").getText());
             assertTrue(getLabel(card, "role").getStyleClass().contains("student"));
             assertEquals("Phone: 98765432", getLabel(card, "phone").getText());
-            assertEquals("Guardian: Grace Guardian", getLabel(card, "guardian").getText());
-            assertTrue(getLabel(card, "guardian").isManaged());
-            assertTrue(getLabel(card, "guardian").isVisible());
+            assertEquals("Guardian: Grace Guardian", getLabel(card, "relationship").getText());
+            assertTrue(getLabel(card, "relationship").isManaged());
+            assertTrue(getLabel(card, "relationship").isVisible());
             assertEquals("Address: 25 Clementi Road", getLabel(card, "address").getText());
             assertEquals("Email: sam@example.com", getLabel(card, "email").getText());
             assertEquals(List.of("math", "secondary"), getTagNames(card));
@@ -81,7 +84,7 @@ public class CardDisplayUiTest {
 
             PersonCard card = new PersonCard(student, 1, "-");
 
-            assertEquals("Guardian: -", getLabel(card, "guardian").getText());
+            assertEquals("Guardian: -", getLabel(card, "relationship").getText());
             assertEquals("Address: -", getLabel(card, "address").getText());
             assertEquals("Email: -", getLabel(card, "email").getText());
             assertEquals("Address: -", getLabel(card, "address").getTooltip().getText());
@@ -91,7 +94,7 @@ public class CardDisplayUiTest {
     }
 
     @Test
-    public void personCard_guardian_hidesGuardianRow() throws Exception {
+    public void personCard_guardianWithoutLinkedStudents_displaysPlaceholder() throws Exception {
         JavaFxTestUtil.callOnFxThread(() -> {
             Person guardian = new PersonBuilder().withRole(Role.GUARDIAN).build();
 
@@ -99,8 +102,40 @@ public class CardDisplayUiTest {
 
             assertEquals("GUARDIAN", getLabel(card, "role").getText());
             assertTrue(getLabel(card, "role").getStyleClass().contains("guardian"));
-            assertFalse(getLabel(card, "guardian").isManaged());
-            assertFalse(getLabel(card, "guardian").isVisible());
+            assertEquals("Students: -", getLabel(card, "relationship").getText());
+            assertTrue(getLabel(card, "relationship").isManaged());
+            assertTrue(getLabel(card, "relationship").isVisible());
+            return null;
+        });
+    }
+
+    @Test
+    public void personCard_guardianWithManyLinkedStudents_keepsRelationshipAccessibleAndCompact() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            String linkedStudentNames = IntStream.rangeClosed(1, 20)
+                    .mapToObj(index -> "Student " + index)
+                    .collect(Collectors.joining(", "));
+            Person guardian = new PersonBuilder().withRole(Role.GUARDIAN).build();
+            PersonCard card = new PersonCard(guardian, 1, linkedStudentNames);
+            VBox cards = new VBox(card.getRoot());
+            Stage stage = new Stage();
+
+            try {
+                stage.setScene(new Scene(cards, 340, 250));
+                stage.show();
+                layout(cards);
+
+                Label relationship = getLabel(card, "relationship");
+                String expectedText = "Students: " + linkedStudentNames;
+                assertEquals(expectedText, relationship.getText());
+                assertEquals(expectedText, relationship.getTooltip().getText());
+                assertTrue(relationship.getTooltip().isWrapText());
+                assertEquals(OverrunStyle.ELLIPSIS, relationship.getTextOverrun());
+                assertFalse(relationship.isWrapText());
+                assertTrue(relationship.getWidth() <= card.getRoot().getWidth());
+            } finally {
+                stage.close();
+            }
             return null;
         });
     }
@@ -147,7 +182,7 @@ public class CardDisplayUiTest {
                 Label name = getLabel(card, "name");
                 Label role = getLabel(card, "role");
                 Label phone = getLabel(card, "phone");
-                Label guardianName = getLabel(card, "guardian");
+                Label guardianName = getLabel(card, "relationship");
                 Label address = getLabel(card, "address");
                 Label email = getLabel(card, "email");
                 assertEquals(maximumLengthName, name.getText());
@@ -237,7 +272,28 @@ public class CardDisplayUiTest {
             ListCell<Person> studentCell = createCell(personListView, 0);
 
             assertSame(filteredPersons, personListView.getItems());
-            assertEquals("Guardian: Grace Guardian", getLabel(studentCell, "guardian").getText());
+            assertEquals("Guardian: Grace Guardian", getLabel(studentCell, "relationship").getText());
+            return null;
+        });
+    }
+
+    @Test
+    public void personListPanel_studentsFilteredOut_displaysLinkedStudentNames() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person firstStudent = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
+            Person secondStudent = new PersonBuilder().withName("Alex Student").withGuardian(guardian).build();
+            ObservableList<Person> filteredPersons = FXCollections.observableArrayList(guardian);
+            ObservableList<Person> allPersons = FXCollections.observableArrayList(
+                    guardian, firstStudent, secondStudent);
+
+            PersonListPanel panel = new PersonListPanel(filteredPersons, allPersons);
+            ListView<Person> personListView = getPersonListView(panel);
+            ListCell<Person> guardianCell = createCell(personListView, 0);
+
+            assertSame(filteredPersons, personListView.getItems());
+            assertEquals("Students: Sam Student, Alex Student",
+                    getLabel(guardianCell, "relationship").getText());
             return null;
         });
     }
@@ -258,24 +314,66 @@ public class CardDisplayUiTest {
                 stage.show();
                 ListCell<Person> displayedStudentCell = getDisplayedCell(personListView, student);
 
-                assertEquals("Guardian: -", getLabel(displayedStudentCell, "guardian").getText());
+                assertEquals("Guardian: -", getLabel(displayedStudentCell, "relationship").getText());
 
                 allPersons.add(guardian);
                 displayedStudentCell = getDisplayedCell(personListView, student);
 
                 assertEquals("Guardian: Grace Guardian",
-                        getLabel(displayedStudentCell, "guardian").getText());
+                        getLabel(displayedStudentCell, "relationship").getText());
 
                 Person renamedGuardian = new PersonBuilder(guardian).withName("Grace Lim").build();
                 allPersons.set(1, renamedGuardian);
                 displayedStudentCell = getDisplayedCell(personListView, student);
 
-                assertEquals("Guardian: Grace Lim", getLabel(displayedStudentCell, "guardian").getText());
+                assertEquals("Guardian: Grace Lim", getLabel(displayedStudentCell, "relationship").getText());
 
                 allPersons.remove(renamedGuardian);
                 displayedStudentCell = getDisplayedCell(personListView, student);
 
-                assertEquals("Guardian: -", getLabel(displayedStudentCell, "guardian").getText());
+                assertEquals("Guardian: -", getLabel(displayedStudentCell, "relationship").getText());
+            } finally {
+                stage.close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void personListPanel_allPersonsChanges_refreshLinkedStudentNames() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
+            ObservableList<Person> filteredPersons = FXCollections.observableArrayList(guardian);
+            ObservableList<Person> allPersons = FXCollections.observableArrayList(guardian);
+            PersonListPanel panel = new PersonListPanel(filteredPersons, allPersons);
+            ListView<Person> personListView = getPersonListView(panel);
+            Stage stage = new Stage();
+
+            try {
+                stage.setScene(new Scene(panel.getRoot(), 400, 300));
+                stage.show();
+                ListCell<Person> displayedGuardianCell = getDisplayedCell(personListView, guardian);
+
+                assertEquals("Students: -", getLabel(displayedGuardianCell, "relationship").getText());
+
+                allPersons.add(student);
+                displayedGuardianCell = getDisplayedCell(personListView, guardian);
+
+                assertEquals("Students: Sam Student",
+                        getLabel(displayedGuardianCell, "relationship").getText());
+
+                Person renamedStudent = new PersonBuilder(student).withName("Alex Student").build();
+                allPersons.set(1, renamedStudent);
+                displayedGuardianCell = getDisplayedCell(personListView, guardian);
+
+                assertEquals("Students: Alex Student",
+                        getLabel(displayedGuardianCell, "relationship").getText());
+
+                allPersons.remove(renamedStudent);
+                displayedGuardianCell = getDisplayedCell(personListView, guardian);
+
+                assertEquals("Students: -", getLabel(displayedGuardianCell, "relationship").getText());
             } finally {
                 stage.close();
             }

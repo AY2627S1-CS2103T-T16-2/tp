@@ -165,9 +165,9 @@ Format: `list [r/ROLE]`
 * Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
 * Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
 * Student cards display a `Guardian:` line with the linked guardian's name, or `-` when no guardian is linked.
-  Guardian cards do not display this line.
+* Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
-* If a name, phone number, email address, guardian name, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
+* If a name, phone number, email address, relationship summary, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
 
 ### Viewing a contact: `view`
 

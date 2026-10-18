@@ -42,7 +42,7 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label phone;
     @FXML
-    private Label guardian;
+    private Label relationship;
     @FXML
     private Label address;
     @FXML
@@ -51,13 +51,13 @@ public class PersonCard extends UiPart<Region> {
     private FlowPane tags;
 
     /**
-     * Creates a {@code PersonCard} with the given {@code Person}, index, and resolved guardian name to display.
+     * Creates a {@code PersonCard} with the given {@code Person}, index, and resolved relationship names to display.
      *
      * @param person person whose details are displayed
      * @param displayedIndex one-based index shown on the card
-     * @param guardianName resolved guardian name or {@code "-"}
+     * @param relationshipNames resolved guardian or student names, or {@code "-"}
      */
-    public PersonCard(Person person, int displayedIndex, String guardianName) {
+    public PersonCard(Person person, int displayedIndex, String relationshipNames) {
         super(FXML);
         this.person = person;
         id.setText(displayedIndex + ". ");
@@ -68,12 +68,10 @@ public class PersonCard extends UiPart<Region> {
         phone.setText("Phone: " + person.getPhone().value);
         phone.setTooltip(createFullValueTooltip(phone.getText()));
         boolean isStudent = person.getRole() == Role.STUDENT;
-        guardian.setManaged(isStudent);
-        guardian.setVisible(isStudent);
-        if (isStudent) {
-            guardian.setText("Guardian: " + guardianName);
-            guardian.setTooltip(createFullValueTooltip(guardian.getText()));
-        }
+        relationship.setText((isStudent ? "Guardian: " : "Students: ") + relationshipNames);
+        relationship.setTextOverrun(OverrunStyle.ELLIPSIS);
+        relationship.setWrapText(false);
+        relationship.setTooltip(createFullValueTooltip(relationship.getText()));
         address.setText("Address: " + person.getAddress().map(value -> value.value).orElse("-"));
         address.setTooltip(createFullValueTooltip(address.getText()));
         email.setText("Email: " + person.getEmail().map(value -> value.value).orElse("-"));
