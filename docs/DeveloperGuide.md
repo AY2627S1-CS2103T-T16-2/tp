@@ -682,6 +682,26 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases … }_
 
+### Getting help
+
+1. Click the top-level `Help` control once.<br>
+   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`,
+   `list`, `view`, `edit`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, and `exit`. The Help window becomes
+   active, so focus leaves the main TuitionBook window.
+1. Minimize the Help window, focus the command box, and press <kbd>F1</kbd>.<br>
+   Expected: The same Help window is restored and focused; no second Help window appears.
+1. Close the Help window. In the main TuitionBook window, focus the command box and enter `help`. The Help window
+   becomes active. Return to the main TuitionBook window, focus its command box, and enter `help` again.<br>
+   Expected: The first command opens the Help window and reports `Opened help window.` The second command focuses the
+   same window.
+1. Click `Open User Guide`.<br>
+   Expected: The User Guide opens in the system default browser. If the desktop environment cannot open a browser,
+   TuitionBook remains open, displays fallback guidance, and leaves `Copy URL` available.
+1. Click `Copy URL`, paste into a text editor, and confirm that the copied value is
+   `https://ay2627s1-cs2103t-t16-2.github.io/tp/UserGuide.html`.
+1. With the Help window open, activate the main TuitionBook window and select its `File` → `Exit`.<br>
+   Expected: Both the main window and Help window close.
+
 ### Deleting a person
 
 1. Deleting a person while all persons are being shown

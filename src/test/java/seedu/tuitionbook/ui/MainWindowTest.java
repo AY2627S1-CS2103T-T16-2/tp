@@ -3,13 +3,16 @@ package seedu.tuitionbook.ui;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -17,8 +20,13 @@ import org.junit.jupiter.api.io.TempDir;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.scene.control.Button;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.tuitionbook.commons.core.GuiSettings;
@@ -88,6 +96,146 @@ public class MainWindowTest {
     }
 
     @Test
+    public void topLevelHelpControl_opensAndReusesHelpWindowWithoutDropdown() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Stage primaryStage = new Stage();
+            Stage helpStage = null;
+            try {
+                MainWindow mainWindow = new MainWindow(primaryStage, new FakeLogic(), Path.of("synthetic.json"));
+                mainWindow.show();
+
+                MenuBar menuBar = (MenuBar) mainWindow.getRoot().getScene().lookup("#menuBar");
+                Button helpButton = (Button) mainWindow.getRoot().getScene().lookup("#helpButton");
+                assertEquals(1, menuBar.getMenus().size());
+                assertEquals("File", menuBar.getMenus().get(0).getText());
+
+                helpButton.fire();
+                helpStage = findShowingHelpStage();
+                Stage firstHelpStage = helpStage;
+
+                helpButton.fire();
+                assertSame(firstHelpStage, findShowingHelpStage());
+            } finally {
+                if (helpStage != null) {
+                    helpStage.hide();
+                }
+                primaryStage.hide();
+            }
+        });
+    }
+
+    @Test
+    public void f1WithCommandBoxFocused_opensAndReusesSameHelpWindow() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Stage primaryStage = new Stage();
+            Stage helpStage = null;
+            try {
+                MainWindow mainWindow = new MainWindow(primaryStage, new FakeLogic(), Path.of("synthetic.json"));
+                mainWindow.fillInnerParts();
+                mainWindow.show();
+                TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+                commandBox.requestFocus();
+
+                fireF1(commandBox);
+                helpStage = findShowingHelpStage();
+                Stage firstHelpStage = helpStage;
+
+                fireF1(commandBox);
+                assertSame(firstHelpStage, findShowingHelpStage());
+            } finally {
+                if (helpStage != null) {
+                    helpStage.hide();
+                }
+                primaryStage.hide();
+            }
+        });
+    }
+
+    @Test
+    public void nonF1KeyWithCommandBoxFocused_doesNotOpenHelpAndReachesDownstreamHandler() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Stage primaryStage = new Stage();
+            try {
+                MainWindow mainWindow = new MainWindow(primaryStage, new FakeLogic(), Path.of("synthetic.json"));
+                mainWindow.fillInnerParts();
+                mainWindow.show();
+                TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+                AtomicBoolean downstreamHandlerReached = new AtomicBoolean();
+                commandBox.addEventHandler(KeyEvent.KEY_PRESSED, event -> downstreamHandlerReached.set(true));
+                commandBox.requestFocus();
+
+                Event.fireEvent(commandBox, new KeyEvent(KeyEvent.KEY_PRESSED, "a", "a", KeyCode.A,
+                        false, false, false, false));
+
+                assertTrue(downstreamHandlerReached.get());
+                assertFalse(isHelpStageShowing());
+            } finally {
+                primaryStage.hide();
+            }
+        });
+    }
+
+    @Test
+    public void minimizedHelpWindow_helpActivationRestoresSameWindow() throws Exception {
+        Stage primaryStage = JavaFxTestUtil.callOnFxThread(Stage::new);
+        MainWindow mainWindow = JavaFxTestUtil.callOnFxThread(() ->
+                new MainWindow(primaryStage, new FakeLogic(), Path.of("synthetic.json")));
+        Stage helpStage = null;
+        try {
+            JavaFxTestUtil.runOnFxThread(() -> {
+                mainWindow.show();
+                Button helpButton = (Button) mainWindow.getRoot().getScene().lookup("#helpButton");
+                helpButton.fire();
+            });
+            helpStage = JavaFxTestUtil.callOnFxThread(MainWindowTest::findShowingHelpStage);
+            Stage sameHelpStage = helpStage;
+
+            JavaFxTestUtil.runOnFxThread(() -> sameHelpStage.setIconified(true));
+            Assumptions.assumeTrue(JavaFxTestUtil.waitForFxCondition(sameHelpStage::isIconified),
+                    "The window manager does not support iconification");
+
+            JavaFxTestUtil.runOnFxThread(mainWindow::handleHelp);
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> !sameHelpStage.isIconified()),
+                    "Help window was not restored within the timeout");
+            assertSame(sameHelpStage, JavaFxTestUtil.callOnFxThread(MainWindowTest::findShowingHelpStage));
+        } finally {
+            Stage helpStageToHide = helpStage;
+            JavaFxTestUtil.runOnFxThread(() -> {
+                if (helpStageToHide != null) {
+                    helpStageToHide.hide();
+                }
+                primaryStage.hide();
+            });
+        }
+    }
+
+    @Test
+    public void fileExit_hidesMainAndHelpWindows() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Stage primaryStage = new Stage();
+            Stage helpStage = null;
+            try {
+                MainWindow mainWindow = new MainWindow(primaryStage, new FakeLogic(), Path.of("synthetic.json"));
+                mainWindow.show();
+                Button helpButton = (Button) mainWindow.getRoot().getScene().lookup("#helpButton");
+                helpButton.fire();
+                helpStage = findShowingHelpStage();
+
+                MenuBar menuBar = (MenuBar) mainWindow.getRoot().getScene().lookup("#menuBar");
+                menuBar.getMenus().get(0).getItems().get(0).fire();
+
+                assertFalse(primaryStage.isShowing());
+                assertFalse(helpStage.isShowing());
+            } finally {
+                if (helpStage != null) {
+                    helpStage.hide();
+                }
+                primaryStage.hide();
+            }
+        });
+    }
+
+    @Test
     public void helpAndExit_afterMalformedContactStorageIsBackedUp_openHelpAndCloseMainWindow() throws Exception {
         Path dataFilePath = temporaryFolder.resolve("tuitionBook.json");
         Files.writeString(dataFilePath, "{broken");
@@ -119,6 +267,9 @@ public class MainWindowTest {
                 assertTrue(helpStage.isShowing());
                 assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, resultText.getText());
 
+                execute(commandBox, HelpCommand.COMMAND_WORD);
+                assertSame(helpStage, findShowingHelpStage());
+
                 execute(commandBox, ExitCommand.COMMAND_WORD);
                 assertEquals(ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, resultText.getText());
                 assertFalse(primaryStage.isShowing());
@@ -137,6 +288,29 @@ public class MainWindowTest {
     private static void execute(TextField commandBox, String command) {
         commandBox.setText(command);
         commandBox.getOnAction().handle(new ActionEvent());
+    }
+
+    private static void fireF1(TextField commandBox) {
+        Event.fireEvent(commandBox, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.F1,
+                false, false, false, false));
+    }
+
+    private static Stage findShowingHelpStage() {
+        return Window.getWindows().stream()
+                .filter(Window::isShowing)
+                .filter(Stage.class::isInstance)
+                .map(Stage.class::cast)
+                .filter(stage -> "Help".equals(stage.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Help window did not open"));
+    }
+
+    private static boolean isHelpStageShowing() {
+        return Window.getWindows().stream()
+                .filter(Window::isShowing)
+                .filter(Stage.class::isInstance)
+                .map(Stage.class::cast)
+                .anyMatch(stage -> "Help".equals(stage.getTitle()));
     }
 
     private static void assertListVisible(MainWindow mainWindow, TextArea detailText,
