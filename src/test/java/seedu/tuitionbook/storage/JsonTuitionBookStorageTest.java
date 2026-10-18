@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,6 +31,7 @@ import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
+import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
 public class JsonTuitionBookStorageTest {
@@ -170,6 +172,23 @@ public class JsonTuitionBookStorageTest {
         Person restoredPerson = readBack.getPersonList().get(0);
         assertTrue(restoredPerson.getEmail().isEmpty());
         assertTrue(restoredPerson.getAddress().isEmpty());
+    }
+
+    @Test
+    public void readAndSaveTuitionBook_longMultiSegmentTag_preservesExactValue() throws Exception {
+        Path filePath = testFolder.resolve("TagsTuitionBook.json");
+        String longMultiSegmentTag = "A-".repeat(5000) + "B";
+        Person person = new PersonBuilder().withTags("Sec4", longMultiSegmentTag).build();
+        TuitionBook original = new TuitionBook();
+        original.addPerson(person);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        storage.saveTuitionBook(original);
+        ReadOnlyTuitionBook readBack = storage.readTuitionBook().orElseThrow();
+
+        assertEquals(original, new TuitionBook(readBack));
+        assertEquals(Set.of(new Tag("Sec4"), new Tag(longMultiSegmentTag)),
+                readBack.getPersonList().get(0).getTags());
     }
 
     @Test

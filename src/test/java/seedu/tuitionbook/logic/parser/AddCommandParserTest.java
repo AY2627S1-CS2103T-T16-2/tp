@@ -31,6 +31,7 @@ import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_ROLE;
+import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.tuitionbook.testutil.TypicalPersons.BOB;
@@ -69,6 +70,35 @@ public class AddCommandParserTest {
         assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB
                 + ADDRESS_DESC_BOB + TAG_DESC_HUSBAND + TAG_DESC_FRIEND,
                 new AddCommand(expectedPersonMultipleTags));
+    }
+
+    @Test
+    public void parse_hyphenatedTag_success() {
+        String hyphenatedTag = "referred-by-Mrs-Lim";
+        Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withoutAddress()
+                .withTags(hyphenatedTag).build();
+
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB
+                + " " + PREFIX_TAG + hyphenatedTag, new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_longMultiSegmentAndRepeatedTags_success() {
+        String longMultiSegmentTag = "A-".repeat(5000) + "B";
+        String secondTag = "Sec4";
+        Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withoutAddress()
+                .withTags(longMultiSegmentTag, secondTag).build();
+
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB
+                + " " + PREFIX_TAG + longMultiSegmentTag + " " + PREFIX_TAG + secondTag,
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_leadingHyphenTag_failure() {
+        String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
+
+        assertParseFailure(parser, mandatoryFields + " " + PREFIX_TAG + "-Math", Tag.MESSAGE_CONSTRAINTS);
     }
 
     @Test

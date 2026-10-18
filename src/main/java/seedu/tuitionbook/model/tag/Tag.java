@@ -9,8 +9,8 @@ import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
  */
 public class Tag {
 
-    public static final String MESSAGE_CONSTRAINTS = "Tag names should be alphanumeric";
-    public static final String VALIDATION_REGEX = "\\p{Alnum}+";
+    public static final String MESSAGE_CONSTRAINTS = "Tag names should contain only ASCII letters and digits in "
+            + "segments separated by single hyphens; hyphens cannot be leading, trailing, or consecutive";
 
     public final String tagName;
 
@@ -29,7 +29,26 @@ public class Tag {
      * Returns true if a given string is a valid tag name.
      */
     public static boolean isValidTagName(String test) {
-        return test.matches(VALIDATION_REGEX);
+        requireNonNull(test);
+
+        boolean previousCharacterWasHyphen = true;
+        for (int i = 0; i < test.length(); i++) {
+            char character = test.charAt(i);
+            if (isAsciiLetterOrDigit(character)) {
+                previousCharacterWasHyphen = false;
+            } else if (character == '-' && !previousCharacterWasHyphen) {
+                previousCharacterWasHyphen = true;
+            } else {
+                return false;
+            }
+        }
+        return !previousCharacterWasHyphen;
+    }
+
+    private static boolean isAsciiLetterOrDigit(char character) {
+        return character >= 'A' && character <= 'Z'
+                || character >= 'a' && character <= 'z'
+                || character >= '0' && character <= '9';
     }
 
     @Override

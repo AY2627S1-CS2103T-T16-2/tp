@@ -196,6 +196,16 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long names, phone numbers, email addresses, resolved guardian names, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also provides the full details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
+### Quoted-name parsing
+
+`AddCommandParser` and `EditCommandParser` opt into
+`ArgumentTokenizer.tokenizeWithQuotedValue` for `PREFIX_NAME`.
+The tokenizer visits prefix positions in order and ignores positions inside a quoted name,
+then removes the enclosing quotes before normal name validation. It rejects unclosed quotes and
+trailing text outside the closing quote. Other fields and commands retain their existing quote
+and prefix behaviour. The model and JSON store the plain name; no storage migration is needed.
+Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -650,7 +660,9 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name consists of
+  one or more ASCII alphanumeric segments separated by single hyphens; hyphens cannot be leading, trailing, or
+  consecutive.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -663,6 +675,26 @@ Given below are instructions to test the app manually.
 **Note:** These instructions only provide a starting point for testers to work on;
 testers are expected to do more *exploratory* testing.
 </box>
+
+### Quoted names in add and edit
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Enter `add r/student n/"Rina a/p Kaur" p/91234567 a/123 Main Street`.<br>
+   Expected: The name is `Rina a/p Kaur` and the address is `123 Main Street`; neither includes quotation marks.
+1. Enter `add r/guardian n/Guardian p/98765432`, then `link 1 2`.
+1. Enter `edit 1 n/"Rina s/o Kaur"`, then `view 1`.<br>
+   Expected: The full updated name appears; the phone, address and guardian link are unchanged.
+1. Exit and restart the app, then enter `view 1`.<br>
+   Expected: The full updated name and guardian link remain.
+1. Enter `edit 1 n/"Rina a/p Kaur`.<br>
+   Expected: An error explains the missing closing double quote; the contact is unchanged.
+1. Enter `edit 1 n/"Rina" extra`.<br>
+   Expected: An error explains that a quoted name must be followed by another field or the end of the command;
+   the contact is unchanged.
+1. Enter `add r/student n/Rina a/p Kaur p/90000001`.<br>
+   Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`.
+   This is the documented limitation; quotation marks are required to enter that full name.
 
 ### Launch and shutdown
 
@@ -795,6 +827,20 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Yeoh; neither contact changes.
 1. Close and relaunch the application, then enter `view 1`.<br>
    Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
+   restart.
+
+### Adding and editing hyphenated tags
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/student n/Alex Lim p/91234567 t/Sec-4 t/referred-by-Mrs-Lim`.<br>
+   Expected: Alex Lim is added with both tags, preserving their spelling and capitalization.
+1. Enter `edit 1 t/A1-B2 t/Math`.<br>
+   Expected: The existing tags are replaced with `A1-B2` and `Math`.
+1. Enter `edit 1 t/Math--Science`.<br>
+   Expected: The edit is rejected with the tag constraint message; the existing tags remain unchanged.
+1. Close and relaunch the application.<br>
+   Expected: Alex Lim still has the tags `A1-B2` and `Math`, confirming that the hyphenated tag persisted across the
    restart.
 
 ### Saving data

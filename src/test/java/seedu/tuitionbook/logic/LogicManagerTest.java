@@ -118,6 +118,54 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_quotedNames_preservesNamesAndRelationshipsAfterReload() throws Exception {
+        logic.execute("add r/student n/\"Rina a/p Kaur\" p/91234567 a/123 Main Street");
+        Person savedStudent = new JsonTuitionBookStorage(temporaryFolder.resolve("tuitionBook.json"))
+                .readTuitionBook().orElseThrow().getPersonList().get(0);
+        assertEquals("Rina a/p Kaur", savedStudent.getName().fullName);
+        logic.execute("add r/guardian n/Guardian p/98765432");
+        logic.execute("link 1 2");
+        Person original = model.getTuitionBook().getPersonList().get(0);
+        assertEquals("Rina a/p Kaur", original.getName().fullName);
+        assertEquals("123 Main Street", original.getAddress().orElseThrow().value);
+
+        logic.execute("edit 1 n/\"Rina s/o Kaur\"");
+        ReadOnlyTuitionBook reloaded = new JsonTuitionBookStorage(temporaryFolder.resolve("tuitionBook.json"))
+                .readTuitionBook().orElseThrow();
+        Person restored = reloaded.getPersonList().get(0);
+        assertEquals("Rina s/o Kaur", restored.getName().fullName);
+        assertEquals(original.getId(), restored.getId());
+        assertEquals(original.getGuardianId(), restored.getGuardianId());
+        assertEquals(original.getPhone(), restored.getPhone());
+        assertEquals(original.getAddress(), restored.getAddress());
+        assertEquals(2, reloaded.getPersonList().size());
+    }
+
+    @Test
+    public void execute_invalidQuotedNames_leavesModelAndSavedDataUnchanged() throws Exception {
+        logic.execute("add r/student n/Original p/91234567");
+        logic.execute("add r/guardian n/Hidden Guardian p/90000001");
+        Person hiddenGuardian = model.getTuitionBook().getPersonList().get(1);
+        Person original = model.getTuitionBook().getPersonList().get(0);
+        Path dataFile = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(dataFile);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        assertEquals(List.of(original), model.getFilteredPersonList());
+        for (String name : List.of("\"Rina a/p Kaur", "\"Rina\" extra", "\"@invalid\"",
+                "\"\"", "\"" + "A".repeat(Name.MAX_LENGTH + 1) + "\"",
+                "\"Rina\" n/Other", "\"Rina\"p/98765432")) {
+            for (String command : List.of("add r/student p/98765432 n/", "edit 1 n/")) {
+                assertThrows(ParseException.class, () -> logic.execute(command + name));
+                assertEquals(List.of(original, hiddenGuardian), logic.getPersonList());
+                assertEquals(original.getId(), logic.getPersonList().get(0).getId());
+                assertEquals(hiddenGuardian.getId(), logic.getPersonList().get(1).getId());
+                assertEquals(List.of(original), model.getFilteredPersonList());
+                assertArrayEquals(originalBytes, Files.readAllBytes(dataFile));
+            }
+        }
+    }
+
+    @Test
     public void execute_unlinkAlreadyUnlinkedStudent_skipsSaveAndPreservesContactsAndFilter() throws Exception {
         Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
                 .withRole(Role.GUARDIAN).build();
