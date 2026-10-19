@@ -18,6 +18,7 @@ import seedu.tuitionbook.logic.commands.FindCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.LinkCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
+import seedu.tuitionbook.logic.commands.ReloadCommand;
 import seedu.tuitionbook.logic.commands.UnlinkCommand;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
@@ -55,10 +56,17 @@ public class TuitionBookParser {
         logger.fine("Command word: " + commandWord + "; Arguments: " + arguments);
 
         return switch (commandWord) {
+            case ReloadCommand.COMMAND_WORD -> {
+                if (!arguments.isBlank()) {
+                    throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
+                            ReloadCommand.MESSAGE_USAGE));
+                }
+                yield new ReloadCommand();
+            }
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
-            case ClearCommand.COMMAND_WORD -> new ClearCommand();
+            case ClearCommand.COMMAND_WORD -> new ClearCommandParser().parse(arguments);
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
             case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
             case LinkCommand.COMMAND_WORD -> new LinkCommandParser().parse(arguments);

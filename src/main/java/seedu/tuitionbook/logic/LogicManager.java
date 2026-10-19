@@ -54,7 +54,7 @@ public class LogicManager implements Logic {
             originalTuitionBook = new TuitionBook(model.getTuitionBook());
             originalFilter = model.getFilteredPersonListPredicate();
         }
-        commandResult = command.execute(model);
+        commandResult = command.execute(model, storage);
 
         if (command.requiresSave()) {
             try {

@@ -33,8 +33,8 @@ public class HelpWindow extends UiPart<Stage> {
             add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...
               Add a student or guardian contact.
 
-            list [r/ROLE]
-              List every contact, or only students or guardians.
+            list [r/ROLE] [t/TAG]...
+              List contacts matching the role and all tags, ignoring case. Bare list resets filters.
 
             view INDEX [v/]
               View a contact and linked contact summaries. Add v/ for full linked contact details.
@@ -54,11 +54,14 @@ public class HelpWindow extends UiPart<Stage> {
             delete INDEX
               Delete a displayed contact.
 
-            clear
-              Delete every contact.
+            clear confirm
+              Delete every contact, including contacts hidden by the current filter.
 
             help
               Open or focus this Help window.
+
+            reload
+              Replace contacts from the data file and clear the filter. Retry a blocked load.
 
             exit
               Exit TuitionBook.

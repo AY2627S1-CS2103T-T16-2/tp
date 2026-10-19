@@ -263,10 +263,6 @@ Step 5. The user then decides to execute the command `list`. Commands that do no
 
 <puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
 
-Step 6. The user executes `clear`, which calls `Model#commitTuitionBook()`. Since the `currentStatePointer` is not pointing at the end of the `tuitionBookStateList`, all TuitionBook states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
-
 The following activity diagram summarizes what happens when a user executes a new command:
 
 <puml src="diagrams/CommitActivityDiagram.puml" width="250" />
@@ -607,7 +603,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
 **Role-filter command rule**
 
-The role-filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` displays only contacts with the specified role. Other trailing text is rejected.
+The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
 **Startup data rule**
 
@@ -640,7 +636,7 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 * **Current contact list**: The contacts currently displayed after applying any active filter; indexes in index-based commands refer to this list.
 * **Contact ID**: A unique, persistent identifier assigned by TuitionBook to a contact.
 * **Data file**: The local text file that stores TuitionBook contacts and their recorded guardian links between application sessions.
-* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a role filter; applying a new filter replaces the previous one.
+* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a combined role-and-tag filter; applying a new filter replaces the previous one. The role is optional, and all supplied tags must match exactly, ignoring case.
 * **Guardian**: A contact with the `guardian` role. A guardian contact may have zero or more recorded student links; these links record information in TuitionBook and do not establish or determine real-world responsibility.
 * **Guardian link**: A recorded association from a student to a guardian contact. A student has at most one guardian link, while a guardian can be linked to multiple students.
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
@@ -686,6 +682,20 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `add r/student n/Rina a/p Kaur p/90000001`.<br>
    Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`.
    This is the documented limitation; quotation marks are required to enter that full name.
+
+### Clearing all contacts
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Enter `add r/guardian n/Grace Guardian p/90000001`, then enter `add r/student n/Sam Student p/90000002`.
+1. Enter `list r/student`.<br>
+   Expected: Only Sam Student is visible; Grace Guardian remains stored but hidden by the active filter.
+1. Enter `clear`, `clear CONFIRM`, and `clear confirm extra` one at a time.<br>
+   Expected: Each command reports the valid `clear confirm` format. Neither contact is deleted, and the student filter remains active.
+1. Enter `clear confirm`.<br>
+   Expected: All contacts are deleted, including Grace Guardian, who was hidden by the filter. The result states that contacts hidden by the current filter were also cleared.
+1. Exit and restart TuitionBook.<br>
+   Expected: The contact list remains empty.
 
 ### Launch and shutdown
 
@@ -835,6 +845,28 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
    restart.
 
+### Filtering contacts by tags
+
+Use a fresh, disposable folder with an empty contact list. Enter these commands in order:
+
+```text
+add r/student n/Alex Tan p/91234561 t/active t/math
+add r/student n/Beth Lim p/91234562 t/active
+add r/guardian n/Chris Ong p/91234563 t/active t/math
+add r/student n/Dana Lee p/91234564 t/inactive t/math
+```
+
+1. Enter `list r/guardian`, then `list r/student t/ACTIVE t/math`.<br>
+   Expected: only Alex Tan appears, with `1 person(s) listed!`. The tag-and-role filter replaces the guardian filter. Beth lacks math, Chris has the wrong role, and Dana's inactive tag is not an exact match for active.
+1. Enter `list`.<br>
+   Expected: Alex Tan, Beth Lim, Chris Ong, and Dana Lee appear in that order, with `Listed all persons.`.
+1. Enter `find Beth`, then `list t/math`.<br>
+   Expected: Alex Tan, Chris Ong, and Dana Lee appear in that order, with `3 person(s) listed!`. The tag filter replaces the name filter.
+1. Enter `list t/absent`.<br>
+   Expected: an empty displayed list and the successful result `0 person(s) listed!`.
+1. Enter `list` again.<br>
+   Expected: all four contacts return in their original order; none were deleted.
+
 ### Adding and editing hyphenated tags
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
@@ -851,7 +883,42 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 ### Saving data
 
-1. Recovering from a save failure
+Run each scenario below independently in a fresh, disposable folder. An ordinary save failure rolls back the attempted change but does not set the storage write block: restore write access and repeat the failed command. A failed load whose backup also fails does set the write block: correct or move the file and use `reload` (or restart) before retrying contact-changing commands. If backing up an unreadable file succeeds, saving is already enabled and no reload is required. Reload reads the file; it does not save or replay a failed command.
+
+1. Reloading corrected data without restarting
+
+   1. Launch TuitionBook with an empty, disposable data folder. Enter `add r/student n/Alex Yeoh p/87438807`, then `find Nobody`.
+
+   1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
+      Expected: the list contains Reloaded Alex, the filter is cleared, and the result reports one loaded contact. Reload does not rewrite the file.
+
+   1. Enter `reload extra`.<br>
+      Expected: invalid command format; contacts remain unchanged.
+
+1. Reloading after the data file has been moved
+
+   1. Launch TuitionBook in a fresh, disposable folder and enter `add r/student n/Alex Yeoh p/87438807`.
+
+   1. Move `data/tuitionbook.json` to a separate backup location while the app stays open. Enter `reload`.<br>
+      Expected: the contact list becomes empty and the result reports zero loaded contacts. The data file remains absent; reload does not recreate it.
+
+   1. Enter `add r/student n/Alex Lim p/91234567`.<br>
+      Expected: saving creates a new data file containing Alex Lim. The moved file remains unchanged.
+
+1. Recovering when both loading and backing up the file failed
+
+   1. In a fresh, disposable folder, add `add r/student n/Alex Yeoh p/87438807`, close TuitionBook, and keep a separate copy of the valid `data/tuitionbook.json`.
+
+   1. Replace the data file's contents with `{broken`. Configure permissions so the app can read the file but cannot move it to a backup, then launch TuitionBook. Permission controls differ by operating system; verify that the startup warning explicitly reports backup failure before continuing.<br>
+      Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
+
+   1. While the app stays open, restore normal permissions and replace the malformed file with the saved valid copy. Enter `reload`.<br>
+      Expected: Alex Yeoh appears, the filter is cleared, and saving is enabled. Merely correcting the file without reloading would leave the write block set.
+
+   1. Enter `edit 1 n/Updated Alex`, then close and relaunch TuitionBook.<br>
+      Expected: the edit saves successfully and Updated Alex remains visible after restart.
+
+1. Recovering from an ordinary save failure (data loaded successfully)
 
    1. In a fresh, disposable folder, launch TuitionBook and enter `add r/student n/Alex Yeoh p/87438807`, then close the application.
 
@@ -863,7 +930,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
    1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
       Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
 
-1. Recovering from malformed contact data
+1. Recovering from malformed contact data (backup succeeds)
 
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 

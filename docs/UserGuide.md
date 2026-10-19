@@ -20,14 +20,15 @@ TuitionBook is intended for English-language users and supports any `en-*` local
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear**  | `clear`
+**Clear**  | `clear confirm`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Exit**   | `exit`
+**Reload** | `reload`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
 **Help**   | `help`
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
-**List**   | `list [r/ROLE]`<br> e.g., `list r/student`
+**List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/ACTIVE t/math`
 **Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
 **View**   | `view INDEX [v/]`<br> e.g., `view 1 v/`
 
@@ -59,7 +60,7 @@ Action     | Format, Examples
 
    * `delete 1` : Deletes the 1st contact shown in the current list.
 
-   * `clear` : Deletes all contacts.
+   * `clear confirm` : Deletes all contacts, including contacts hidden by the current filter.
 
    * `exit` : Exits the app.
 
@@ -85,7 +86,7 @@ Action     | Format, Examples
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `exit`, and `clear`, are ignored.<br>
+* Extraneous parameters for commands that take no parameters, such as `help` and `exit`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -131,7 +132,7 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
   be leading, trailing, or consecutive. Spaces, underscores, slashes, and other punctuation are not accepted. Tag
   spelling and capitalization are preserved.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
-* After a contact is added, TuitionBook shows the full contact list: any active name or role filter is cleared so
+* After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so
   that the new contact is visible.
 
 <box type="tip" seamless>
@@ -153,14 +154,17 @@ Examples:
 
 ### Listing contacts: `list`
 
-Shows all contacts, or only contacts with a specified role. `list` clears any active name or role filter.
+Shows all contacts, or only contacts matching a specified role and/or all specified tags. `list` clears any active name, role, or tag filter.
 
-Format: `list [r/ROLE]`
+Format: `list [r/ROLE] [t/TAG]...`
 
 * `ROLE` is `student` or `guardian`, case-insensitively.
+* Each `TAG` follows the same tag-name rules as [adding a contact](#adding-a-contact-add). Tag matching is exact but case-insensitive; all specified tags must be present.
+* A filtered `list` replaces any active name, role, or tag filter. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
+* Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
 * Other trailing text is rejected.
-* Before linking a student to a guardian after role filtering, enter `list` to restore the full list so that both
+* Before linking a student to a guardian after applying a filter, enter `list` to restore the full list so that both
   contacts can be selected.
 * Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
 * Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
@@ -220,7 +224,7 @@ changes the complete name without interpreting `a/` as an address prefix.
 * `TAG` follows the same alphanumeric-segment and internal-hyphen rules described for [`add`](#adding-a-contact-add).
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
-* After a successful edit, TuitionBook shows the full contact list: any active name or role filter is cleared.
+* After a successful edit, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -239,7 +243,7 @@ Format: `link STUDENT_INDEX GUARDIAN_INDEX`
   previous guardian.
 * Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already
   exists and makes no change.
-* After a link is created or replaced, TuitionBook shows the full contact list: any active name or role filter is
+* After a link is created or replaced, TuitionBook shows the full contact list: any active name, role, or tag filter is
   cleared. Reporting an already-existing link makes no change, so the displayed list and its filter are preserved.
 
 Example: `link 1 2` links the student at index 1 to the guardian at index 2.
@@ -250,12 +254,11 @@ Removes a student contact's guardian link without deleting either contact.
 
 Format: `unlink STUDENT_INDEX`
 
-* `STUDENT_INDEX` is the positive index shown in the currently displayed contact list. After `find` or
-  `list r/ROLE`, it refers to the filtered list.
+* `STUDENT_INDEX` is the positive index shown in the currently displayed contact list. After `find` or a filtered `list`, it refers to the filtered list.
 * The index must refer to a student.
 * If the student has no linked guardian, TuitionBook reports this and makes no change. The displayed list and any
   active filter are preserved.
-* After a guardian link is removed, TuitionBook shows the full contact list: any active name or role filter is cleared.
+* After a guardian link is removed, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
 
 Example: `unlink 1` removes the guardian link of the student at index 1.
 
@@ -291,18 +294,29 @@ Format: `delete INDEX`
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, ...
 * Deleting a guardian keeps their linked students, but clears those students' guardian links.
-* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name or role filter: the remaining contacts of
+* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name, role, or tag filter: the remaining contacts of
   the filtered view stay listed.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in TuitionBook.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
 
-### Clearing all entries: `clear`
+### Clearing all entries: `clear confirm`
 
-Clears all entries from TuitionBook.
+Clears all entries from TuitionBook, including contacts hidden by the current filter.
 
-Format: `clear`
+Format: `clear confirm`
+
+* The confirmation keyword must be the exact lowercase word `confirm`.
+* `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
+
+### Reloading contacts: `reload`
+
+Format: `reload`
+
+Reads the configured contact file again and replaces the current contact list, clearing any active filter. Use this after correcting a file that could not be loaded and backed up. A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards. No arguments are accepted.
+
+If the file is missing, the contact list becomes empty and saving is enabled. Reloading does not save anything. If reading fails, the current contacts and filter are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Restore corrected data before reloading again if you want to recover contacts from the backup. Reload replaces rather than merges contacts; preserve any external file edits you need before using it.
 
 ### Exiting the program: `exit`
 
@@ -313,7 +327,7 @@ Format: `exit`
 ### Saving the data
 
 TuitionBook attempts to save contact data after commands that change contacts or guardian links. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores the contacts and active filter to their state before the command. You do not need to save manually.
-If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and restart the app.
+If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and run `reload` or restart the app.
 
 ### Editing the data file
 
@@ -371,6 +385,6 @@ _Details coming soon ..._
 3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
-6. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
+6. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
 7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
 8. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
