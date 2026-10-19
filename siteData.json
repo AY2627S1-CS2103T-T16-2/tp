@@ -69,6 +69,7 @@
         "launch-and-shutdown": "Launch and shutdown",
         "getting-help": "Getting help",
         "deleting-a-person": "Deleting a person",
+        "displaying-contact-relationships-in-the-list": "Displaying contact relationships in the list",
         "viewing-a-contact": "Viewing a contact",
         "finding-contacts-by-name-substring": "Finding contacts by name substring",
         "removing-a-guardian-link": "Removing a guardian link",
