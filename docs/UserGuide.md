@@ -164,25 +164,22 @@ Format: `list [r/ROLE]`
   contacts can be selected.
 * Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
 * Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
-* Student cards display a `Guardian:` line with the linked guardian's name, or `-` when no guardian is linked.
+* Student cards display a `Guardian:` line with the linked guardian's name and contact number, or `-` when no guardian is linked.
 * Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
 * If a name, phone number, email address, relationship summary, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX v/` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
 
 ### Viewing a contact: `view`
 
-Replaces the contact list with a contact's details and their recorded relationship. The next command other than
-`view` restores the contact list.
+Replaces the contact list with a contact's details and their recorded relationship. The next command other than `view` restores the contact list.
 
 Format: `view INDEX [v/]`
 
-* `INDEX` is the positive index shown in the current contact list. After `find` or `list r/ROLE`, it refers to the
-  filtered list.
+* `INDEX` is the positive index shown in the current contact list. After `find` or `list r/ROLE`, it refers to the filtered list.
 * Without `v/`, each linked contact appears as `NAME (CONTACT_NUMBER)`. A student view shows its linked guardian, while a guardian view lists its linked students in contact-list order.
 * Add `v/` to show the linked guardian's or linked students' full contact details, including their role, phone, email, address, and tags.
 * If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when the current filter hides them.
-* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
-  contact data or the active filter.
+* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change contact data or the active filter.
 
 To try the examples below from an empty contact list, enter these commands first:
 

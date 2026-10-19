@@ -51,13 +51,13 @@ public class PersonCard extends UiPart<Region> {
     private FlowPane tags;
 
     /**
-     * Creates a {@code PersonCard} with the given {@code Person}, index, and resolved relationship names to display.
+     * Creates a {@code PersonCard} with the given {@code Person}, index, and resolved relationship summary to display.
      *
      * @param person person whose details are displayed
      * @param displayedIndex one-based index shown on the card
-     * @param relationshipNames resolved guardian or student names, or {@code "-"}
+     * @param relationshipSummary resolved guardian summary or student names, or {@code "-"}
      */
-    public PersonCard(Person person, int displayedIndex, String relationshipNames) {
+    public PersonCard(Person person, int displayedIndex, String relationshipSummary) {
         super(FXML);
         this.person = person;
         id.setText(displayedIndex + ". ");
@@ -68,7 +68,7 @@ public class PersonCard extends UiPart<Region> {
         phone.setText("Phone: " + person.getPhone().value);
         phone.setTooltip(createFullValueTooltip(phone.getText()));
         boolean isStudent = person.getRole() == Role.STUDENT;
-        relationship.setText((isStudent ? "Guardian: " : "Students: ") + relationshipNames);
+        relationship.setText((isStudent ? "Guardian: " : "Students: ") + relationshipSummary);
         relationship.setTextOverrun(OverrunStyle.ELLIPSIS);
         relationship.setWrapText(false);
         relationship.setTooltip(createFullValueTooltip(relationship.getText()));

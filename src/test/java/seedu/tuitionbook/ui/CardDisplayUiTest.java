@@ -52,7 +52,8 @@ public class CardDisplayUiTest {
     @Test
     public void personCard_studentWithDetails_displaysLabeledValues() throws Exception {
         JavaFxTestUtil.callOnFxThread(() -> {
-            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("91234567")
+                    .withRole(Role.GUARDIAN).build();
             Person student = new PersonBuilder()
                     .withName("Sam Student")
                     .withPhone("98765432")
@@ -62,12 +63,12 @@ public class CardDisplayUiTest {
                     .withTags("secondary", "math")
                     .build();
 
-            PersonCard card = new PersonCard(student, 1, guardian.getName().fullName);
+            PersonCard card = new PersonCard(student, 1, "Grace Guardian (91234567)");
 
             assertEquals("STUDENT", getLabel(card, "role").getText());
             assertTrue(getLabel(card, "role").getStyleClass().contains("student"));
             assertEquals("Phone: 98765432", getLabel(card, "phone").getText());
-            assertEquals("Guardian: Grace Guardian", getLabel(card, "relationship").getText());
+            assertEquals("Guardian: Grace Guardian (91234567)", getLabel(card, "relationship").getText());
             assertTrue(getLabel(card, "relationship").isManaged());
             assertTrue(getLabel(card, "relationship").isVisible());
             assertEquals("Address: 25 Clementi Road", getLabel(card, "address").getText());
@@ -172,7 +173,8 @@ public class CardDisplayUiTest {
                     .withPhone(longPhone).withEmail(longEmail).build();
             Person student = new PersonBuilder().withName(maximumLengthName).withPhone(longPhone)
                     .withEmail(longEmail).withAddress(maximumLengthAddress).withGuardian(guardian).build();
-            PersonCard card = new PersonCard(student, 1, guardian.getName().fullName);
+            String guardianSummary = maximumLengthName + " (" + longPhone + ")";
+            PersonCard card = new PersonCard(student, 1, guardianSummary);
             PersonCard guardianCard = new PersonCard(guardian, 2, "-");
             Stage stage = new Stage();
 
@@ -190,12 +192,12 @@ public class CardDisplayUiTest {
                 Label email = getLabel(card, "email");
                 assertEquals(maximumLengthName, name.getText());
                 assertEquals("Phone: " + longPhone, phone.getText());
-                assertEquals("Guardian: " + maximumLengthName, guardianName.getText());
+                assertEquals("Guardian: " + guardianSummary, guardianName.getText());
                 assertEquals("Address: " + maximumLengthAddress, address.getText());
                 assertEquals("Email: " + longEmail, email.getText());
                 assertEquals(maximumLengthName, name.getTooltip().getText());
                 assertEquals("Phone: " + longPhone, phone.getTooltip().getText());
-                assertEquals("Guardian: " + maximumLengthName, guardianName.getTooltip().getText());
+                assertEquals("Guardian: " + guardianSummary, guardianName.getTooltip().getText());
                 assertEquals("Address: " + maximumLengthAddress, address.getTooltip().getText());
                 assertEquals("Email: " + longEmail, email.getTooltip().getText());
                 assertTrue(name.getTooltip().isWrapText());
@@ -263,9 +265,10 @@ public class CardDisplayUiTest {
     }
 
     @Test
-    public void personListPanel_guardianFilteredOut_displaysGuardianName() throws Exception {
+    public void personListPanel_guardianFilteredOut_displaysGuardianSummary() throws Exception {
         JavaFxTestUtil.callOnFxThread(() -> {
-            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("91234567")
+                    .withRole(Role.GUARDIAN).build();
             Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
             ObservableList<Person> filteredPersons = FXCollections.observableArrayList(student);
             ObservableList<Person> allPersons = FXCollections.observableArrayList(student, guardian);
@@ -275,7 +278,8 @@ public class CardDisplayUiTest {
             ListCell<Person> studentCell = createCell(personListView, 0);
 
             assertSame(filteredPersons, personListView.getItems());
-            assertEquals("Guardian: Grace Guardian", getLabel(studentCell, "relationship").getText());
+            assertEquals("Guardian: Grace Guardian (91234567)",
+                    getLabel(studentCell, "relationship").getText());
             return null;
         });
     }
@@ -302,9 +306,10 @@ public class CardDisplayUiTest {
     }
 
     @Test
-    public void personListPanel_allPersonsChanges_refreshGuardianName() throws Exception {
+    public void personListPanel_allPersonsChanges_refreshGuardianSummary() throws Exception {
         JavaFxTestUtil.callOnFxThread(() -> {
-            Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+            Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("91234567")
+                    .withRole(Role.GUARDIAN).build();
             Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
             ObservableList<Person> filteredPersons = FXCollections.observableArrayList(student);
             ObservableList<Person> allPersons = FXCollections.observableArrayList(student);
@@ -322,16 +327,18 @@ public class CardDisplayUiTest {
                 allPersons.add(guardian);
                 displayedStudentCell = getDisplayedCell(personListView, student);
 
-                assertEquals("Guardian: Grace Guardian",
+                assertEquals("Guardian: Grace Guardian (91234567)",
                         getLabel(displayedStudentCell, "relationship").getText());
 
-                Person renamedGuardian = new PersonBuilder(guardian).withName("Grace Lim").build();
-                allPersons.set(1, renamedGuardian);
+                Person updatedGuardian = new PersonBuilder(guardian).withName("Grace Lim")
+                        .withPhone("92345678").build();
+                allPersons.set(1, updatedGuardian);
                 displayedStudentCell = getDisplayedCell(personListView, student);
 
-                assertEquals("Guardian: Grace Lim", getLabel(displayedStudentCell, "relationship").getText());
+                assertEquals("Guardian: Grace Lim (92345678)",
+                        getLabel(displayedStudentCell, "relationship").getText());
 
-                allPersons.remove(renamedGuardian);
+                allPersons.remove(updatedGuardian);
                 displayedStudentCell = getDisplayedCell(personListView, student);
 
                 assertEquals("Guardian: -", getLabel(displayedStudentCell, "relationship").getText());

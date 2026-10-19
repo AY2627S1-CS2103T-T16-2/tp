@@ -82,7 +82,7 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
-`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the filtered list while using the complete list to resolve a student's guardian name and a guardian's linked student names, including when a role filter hides the related contacts' cards. The panel refreshes its cards when the complete list changes so that relationship details remain current.
+`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the filtered list while using the complete list to resolve a student's guardian name and contact number and a guardian's linked student names, including when a role filter hides the related contacts' cards. The panel refreshes its cards when the complete list changes so that relationship details remain current.
 
 ### Logic component
 
@@ -170,16 +170,12 @@ This section describes some noteworthy details on how certain features are imple
 ### Viewing contact relationships
 
 `ViewCommandParser` parses `view INDEX [v/]` with the same positive-index rule as other index-based commands. The optional empty `v/` prefix selects full details for linked contacts; the parser rejects duplicate prefixes and values after `v/`.
-`ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve
-relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked
-guardian or student from the result. The command does not change the model or its active filter.
+
+`ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked guardian or student from the result. The command does not change the model or its active filter.
 
 Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in address-book order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags are sorted alphabetically.
 
-`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text.
-`MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a
-command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active
-filter remain in the model while the detail view is visible.
+`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active filter remain in the model while the detail view is visible.
 
 ### Contact field validation
 
@@ -189,7 +185,7 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
-`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
+`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
 ### Quoted-name parsing
 
@@ -751,15 +747,15 @@ Use a fresh, disposable folder with an empty contact list.
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
 
 1. Enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002`, `add r/student n/Alex Student p/90000003`, `link 2 1`, and `link 3 1`.<br>
-   Expected: Sam Student's and Alex Student's cards display `Guardian: Grace Guardian`. Grace Guardian's card displays `Students: Sam Student, Alex Student` in contact-list order.
+   Expected: Sam Student's and Alex Student's cards display `Guardian: Grace Guardian (90000001)`. Grace Guardian's card displays `Students: Sam Student, Alex Student` in contact-list order.
 1. Enter `list r/guardian`.<br>
    Expected: Only Grace Guardian's card remains visible, and its `Students:` line still displays both students.
-1. Add and link enough synthetic students for the `Students:` line to exceed the card width, then resize the window to the smallest supported size.<br>
-   Expected: The relationship stays on one line and ends with an ellipsis instead of widening the card. Hovering over the line shows every linked student name, and `view 1` provides the complete list with contact numbers through the keyboard workflow.
 1. Enter `list`, followed by `unlink 2`.<br>
    Expected: Grace Guardian's `Students:` line updates to `Students: Alex Student`.
 1. Enter `unlink 3`.<br>
    Expected: Grace Guardian's `Students:` line updates to `Students: -`.
+1. Add and link enough synthetic students to Grace Guardian for the `Students:` line to exceed the card width, then resize the window to the smallest supported size.<br>
+   Expected: The relationship stays on one line and ends with an ellipsis instead of widening the card. Hovering over the line shows every linked student name, and `view 1` provides the complete list with contact numbers through the keyboard workflow.
 
 ### Viewing a contact
 
@@ -773,8 +769,7 @@ Enter these commands to create the contacts used below:
 1. `add r/guardian n/David Li p/91031282`
 
 1. Enter `view 1`.<br>
-   Expected: The contact list is replaced by Alex Yeoh's details and `Bernice Yu (99272758)`. The result area
-   displays `Viewing contact: Alex Yeoh`.
+   Expected: The contact list is replaced by Alex Yeoh's details and `Bernice Yu (99272758)`. The result area displays `Viewing contact: Alex Yeoh`.
 1. Enter `view 1 v/`.<br>
    Expected: Bernice Yu's full guardian details appear after Alex Yeoh's details.
 1. Enter `view 2`.<br>
@@ -782,12 +777,9 @@ Enter these commands to create the contacts used below:
 1. Enter `view 2 v/`.<br>
    Expected: Alex Yeoh's full contact details appear under linked students.
 1. Enter `view 3`, then `view 4`.<br>
-   Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports
-   `No students linked.`
+   Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports `No students linked.`
 1. Enter `list r/student`, then `view 1 v/`.<br>
-   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored
-   list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list`
-   and `find` replace it, so they are unsuitable for this check.
+   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list` and `find` replace it, so they are unsuitable for this check.
 1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, `view 1 v/details`, and `view 1 v/ v/`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 

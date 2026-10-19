@@ -14,7 +14,7 @@ The format is based on Keep a Changelog.
 - Added a scrollable in-app summary of every implemented command and its syntax.
 - Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
 - Added the `unlink` command to remove a student's guardian link without deleting either contact.
-- Added linked student names to guardian cards, with compact overflow handling for large groups.
+- Added linked student names to guardian cards and guardian names and contact numbers to student cards, with compact overflow handling for long relationship summaries.
 
 ### Changed
 

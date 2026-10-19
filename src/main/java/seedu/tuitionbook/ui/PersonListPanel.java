@@ -57,12 +57,13 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
-     * Returns the linked guardian's name, or {@code "-"} when the link cannot resolve to a guardian.
+     * Returns the linked guardian's name and phone number, or {@code "-"} when the link cannot resolve to a guardian.
      *
-     * @param person person whose guardian name is required
+     * @param person person whose guardian summary is required
      * @param personsById all persons indexed by id
+     * @return linked guardian summary, or {@code "-"}
      */
-    static String resolveGuardianName(Person person, Map<UUID, Person> personsById) {
+    static String resolveGuardianSummary(Person person, Map<UUID, Person> personsById) {
         requireAllNonNull(person, personsById);
         if (person.getRole() != Role.STUDENT) {
             return "-";
@@ -70,7 +71,7 @@ public class PersonListPanel extends UiPart<Region> {
         return person.getGuardianId()
                 .map(personsById::get)
                 .filter(guardian -> guardian.getRole() == Role.GUARDIAN)
-                .map(guardian -> guardian.getName().fullName)
+                .map(guardian -> guardian.getName().fullName + " (" + guardian.getPhone().value + ")")
                 .orElse("-");
     }
 
@@ -106,10 +107,10 @@ public class PersonListPanel extends UiPart<Region> {
                 setGraphic(null);
                 setText(null);
             } else {
-                String relationshipNames = person.getRole() == Role.STUDENT
-                        ? resolveGuardianName(person, personsById)
+                String relationshipSummary = person.getRole() == Role.STUDENT
+                        ? resolveGuardianSummary(person, personsById)
                         : resolveLinkedStudentNames(person, allPersons);
-                setGraphic(new PersonCard(person, getIndex() + 1, relationshipNames).getRoot());
+                setGraphic(new PersonCard(person, getIndex() + 1, relationshipSummary).getRoot());
             }
         }
     }

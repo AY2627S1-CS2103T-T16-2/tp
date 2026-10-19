@@ -36,8 +36,8 @@ public class HelpWindow extends UiPart<Stage> {
             list [r/ROLE]
               List every contact, or only students or guardians.
 
-            view INDEX
-              View a contact together with their recorded relationships.
+            view INDEX [v/]
+              View a contact and linked contact summaries. Add v/ for full linked contact details.
 
             edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...
               Edit one or more details of a displayed contact.
