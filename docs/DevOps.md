@@ -74,9 +74,7 @@ Any warnings or errors will be printed out to the console.
 
 ## Making a release
 
-GitHub Actions creates the draft GitHub release automatically when a version tag
-is pushed. The release includes the executable JAR built by CI and the matching
-version section from `CHANGELOG.md`.
+GitHub Actions creates the draft GitHub release automatically when a version tag is pushed. The release includes the executable JAR built by CI and the matching version section from `CHANGELOG.md`.
 
 1. Update `appVersion` in `gradle.properties`, for example `appVersion=v1.3`.
 1. Add the release notes under a matching heading in `CHANGELOG.md`, for example `## [v1.3] - 2026-10-14`.

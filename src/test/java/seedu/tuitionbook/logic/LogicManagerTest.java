@@ -3,8 +3,10 @@ package seedu.tuitionbook.logic;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.tuitionbook.logic.Messages.getInvalidPersonDisplayedIndexMessage;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -23,6 +25,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +35,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.logic.commands.AddCommand;
+import seedu.tuitionbook.logic.commands.ClearCommand;
 import seedu.tuitionbook.logic.commands.CommandResult;
 import seedu.tuitionbook.logic.commands.ExitCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
@@ -215,6 +219,36 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_clearArguments_preserveDataUntilConfirmation() throws Exception {
+        logic.execute("add r/student n/Sam Student p/90000002");
+        logic.execute("add r/guardian n/Grace Guardian p/90000001");
+        Person visibleStudent = model.getTuitionBook().getPersonList().get(0);
+        Person hiddenGuardian = model.getTuitionBook().getPersonList().get(1);
+        Path dataFile = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(dataFile);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+
+        List<Person> expectedPersons = List.of(visibleStudent, hiddenGuardian);
+        List<Person> expectedFilteredPersons = List.of(visibleStudent);
+        Predicate<Person> expectedFilter = model.getFilteredPersonListPredicate();
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
+
+        for (String command : List.of("clear", "clear CONFIRM", "clear confirm extra")) {
+            assertThrows(ParseException.class, expectedMessage, () -> logic.execute(command));
+
+            assertEquals(expectedPersons, logic.getPersonList());
+            assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());
+            assertSame(expectedFilter, model.getFilteredPersonListPredicate());
+            assertArrayEquals(originalBytes, Files.readAllBytes(dataFile));
+        }
+
+        assertEquals(ClearCommand.MESSAGE_SUCCESS, logic.execute("clear confirm").getFeedbackToUser());
+        assertTrue(logic.getPersonList().isEmpty());
+        assertTrue(logic.getFilteredPersonList().isEmpty());
+        assertTrue(new JsonTuitionBookStorage(dataFile).readTuitionBook().orElseThrow().getPersonList().isEmpty());
+    }
+
+    @Test
     public void execute_unlinkAlreadyUnlinkedStudent_skipsSaveAndPreservesContactsAndFilter() throws Exception {
         Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
                 .withRole(Role.GUARDIAN).build();
@@ -277,7 +311,7 @@ public class LogicManagerTest {
     @Test
     public void execute_failedMutatingCommands_restoreContactsAndFilter() throws Exception {
         String[] commands = {"add r/student n/New Student p/90000003", "edit 1 n/Renamed Student", "delete 1",
-            "clear", "link 1 2"};
+            "clear confirm", "link 1 2"};
         for (String command : commands) {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
                     .withRole(Role.GUARDIAN).build();
@@ -417,7 +451,7 @@ public class LogicManagerTest {
     @Test
     public void execute_mutatingCommandsAfterConfiguredLoadFailure_preserveBackup()
             throws Exception {
-        String[] commands = {"edit 1 n/New Student", "delete 1", "clear", "link 1 2", "unlink 1"};
+        String[] commands = {"edit 1 n/New Student", "delete 1", "clear confirm", "link 1 2", "unlink 1"};
         for (int i = 0; i < commands.length; i++) {
             String command = commands[i];
             Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook" + i + ".json");
@@ -479,7 +513,7 @@ public class LogicManagerTest {
         model.addPerson(AMY);
         model.updateFilteredPersonList(person -> false);
         Logic blocked = createLogicWithBlockedStorage(file, model);
-        assertThrows(CommandException.class, () -> blocked.execute("clear"));
+        assertThrows(CommandException.class, () -> blocked.execute("clear confirm"));
         TuitionBook corrected = new TuitionBook();
         Person recovered = new PersonBuilder().withName("Recovered Student").build();
         corrected.addPerson(recovered);
@@ -504,7 +538,7 @@ public class LogicManagerTest {
         assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
         assertTrue(model.getFilteredPersonList().isEmpty());
         assertEquals(MALFORMED_TUITION_BOOK_JSON, Files.readString(file));
-        assertThrows(CommandException.class, () -> blocked.execute("clear"));
+        assertThrows(CommandException.class, () -> blocked.execute("clear confirm"));
     }
 
     @Test
@@ -609,7 +643,7 @@ public class LogicManagerTest {
         assertEquals(MALFORMED_TUITION_BOOK_JSON,
                 Files.readString(temporaryFolder.resolve("tuitionBook.json.backup")));
         assertFalse(Files.exists(file));
-        logic.execute("clear");
+        logic.execute("clear confirm");
         assertTrue(Files.exists(file));
     }
 
