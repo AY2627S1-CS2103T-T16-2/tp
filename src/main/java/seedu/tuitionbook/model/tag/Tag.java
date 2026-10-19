@@ -9,8 +9,8 @@ import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
  */
 public class Tag {
 
-    public static final String MESSAGE_CONSTRAINTS = "Tag names should contain only ASCII letters and digits in "
-            + "segments separated by single hyphens; hyphens cannot be leading, trailing, or consecutive";
+    public static final String MESSAGE_CONSTRAINTS = "Tag names must not be blank and may contain only "
+            + "ASCII letters, digits, spaces, and printable punctuation";
 
     public final String tagName;
 
@@ -26,29 +26,21 @@ public class Tag {
     }
 
     /**
-     * Returns true if a given string is a valid tag name.
+     * Returns true if the name contains only printable ASCII characters and is not blank.
+     * Spaces and punctuation are preserved; command parsers trim surrounding whitespace.
      */
     public static boolean isValidTagName(String test) {
         requireNonNull(test);
 
-        boolean previousCharacterWasHyphen = true;
+        boolean hasNonSpace = false;
         for (int i = 0; i < test.length(); i++) {
             char character = test.charAt(i);
-            if (isAsciiLetterOrDigit(character)) {
-                previousCharacterWasHyphen = false;
-            } else if (character == '-' && !previousCharacterWasHyphen) {
-                previousCharacterWasHyphen = true;
-            } else {
+            if (character < ' ' || character > '~') {
                 return false;
             }
+            hasNonSpace |= character != ' ';
         }
-        return !previousCharacterWasHyphen;
-    }
-
-    private static boolean isAsciiLetterOrDigit(char character) {
-        return character >= 'A' && character <= 'Z'
-                || character >= 'a' && character <= 'z'
-                || character >= '0' && character <= '9';
+        return hasNonSpace;
     }
 
     @Override
