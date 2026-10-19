@@ -47,7 +47,7 @@
           <Double fx:constant="MAX_VALUE" />
         </maxWidth>
       </Label>
-      <Label fx:id="guardian" styleClass="cell_small_label">
+      <Label fx:id="relationship" styleClass="cell_small_label" minWidth="0.0">
         <maxWidth>
           <Double fx:constant="MAX_VALUE" />
         </maxWidth>

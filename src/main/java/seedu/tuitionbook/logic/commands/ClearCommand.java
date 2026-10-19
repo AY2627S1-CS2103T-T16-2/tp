@@ -11,7 +11,13 @@ import seedu.tuitionbook.model.TuitionBook;
 public class ClearCommand extends Command {
 
     public static final String COMMAND_WORD = "clear";
-    public static final String MESSAGE_SUCCESS = "TuitionBook has been cleared!";
+    public static final String CONFIRMATION_KEYWORD = "confirm";
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Clears all contacts, including contacts hidden by the current filter.\n"
+            + "Parameters: " + CONFIRMATION_KEYWORD + "\n"
+            + "Example: " + COMMAND_WORD + " " + CONFIRMATION_KEYWORD;
+    public static final String MESSAGE_SUCCESS =
+            "All contacts have been cleared, including contacts hidden by the current filter.";
 
 
     @Override

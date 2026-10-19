@@ -20,7 +20,7 @@ TuitionBook is intended for English-language users and supports any `en-*` local
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear**  | `clear`
+**Clear**  | `clear confirm`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Exit**   | `exit`
@@ -30,7 +30,7 @@ Action     | Format, Examples
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
 **List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/ACTIVE t/math`
 **Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
-**View**   | `view INDEX`<br> e.g., `view 1`
+**View**   | `view INDEX [v/]`<br> e.g., `view 1 v/`
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ Action     | Format, Examples
 
    * `delete 1` : Deletes the 1st contact shown in the current list.
 
-   * `clear` : Deletes all contacts.
+   * `clear confirm` : Deletes all contacts, including contacts hidden by the current filter.
 
    * `exit` : Exits the app.
 
@@ -86,7 +86,7 @@ Action     | Format, Examples
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `exit`, and `clear`, are ignored.<br>
+* Extraneous parameters for commands that take no parameters, such as `help` and `exit`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -98,11 +98,9 @@ Opens the Help window, which contains a scrollable summary of every command and 
 
 Format: `help`
 
-* You can also open or focus the same Help window by clicking the one-click `Help` control at the top of the main
-  window, or by pressing <kbd>F1</kbd> even while the command box has focus.
+* You can also open or focus the same Help window by clicking the one-click `Help` control at the top of the main window, or by pressing <kbd>F1</kbd> even while the command box has focus.
 * Use `Open User Guide` to open this User Guide in your system's default browser.
-* If TuitionBook cannot open a browser, the Help window displays fallback guidance and remains open. Use `Copy URL`
-  to copy the User Guide address and open it manually.
+* If TuitionBook cannot open a browser, the Help window displays fallback guidance and remains open. Use `Copy URL` to copy the User Guide address and open it manually.
 * An internet connection is needed to open the linked page itself.
 
 
@@ -114,35 +112,23 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 * `ROLE`, `NAME`, and `PHONE` are mandatory.
 * `ROLE` must be either `student` or `guardian`, case-insensitively.
-* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining marks,
-  spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is
-  ignored, while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
+* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
 * `NAME` can contain at most 100 characters.
-* In `add` and `edit`, wrap the entire name in straight double quotes when it contains a field prefix:
-  `n/"Rina a/p Kaur"`. The quotes are not stored and do not count towards the name length.
-  Ordinary names still work without quotes. After the closing quote, end the command or enter a space
-  followed by another field prefix. Missing closing quotes and extra text after the closing quote are rejected.
-  Nested quotes and backslash escaping are not supported.
-* **Unquoted names still use normal field parsing:** `n/Rina a/p Kaur` is interpreted as name `Rina`
-  and address `p Kaur`, not as the full name. Use `n/"Rina a/p Kaur"` to preserve it.
-* `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
-  digits. These formatting characters are preserved.
+* In `add` and `edit`, wrap the entire name in straight double quotes when it contains a field prefix: `n/"Rina a/p Kaur"`. The quotes are not stored and do not count towards the name length. Ordinary names still work without quotes. After the closing quote, end the command or enter a space followed by another field prefix. Missing closing quotes and extra text after the closing quote are rejected. Nested quotes and backslash escaping are not supported.
+* **Unquoted names still use normal field parsing:** `n/Rina a/p Kaur` is interpreted as name `Rina` and address `p Kaur`, not as the full name. Use `n/"Rina a/p Kaur"` to preserve it.
+* `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
-* Each `TAG` must be non-blank and may contain ASCII letters, digits, spaces, and printable punctuation, such as `Sec 4`, `Math--Science`, `C++`, or `Mrs. Lim's`. Leading, trailing, and repeated hyphens are allowed. Non-ASCII characters and internal control characters (such as tabs or newlines) are not accepted. Surrounding whitespace is trimmed; internal spaces, punctuation, spelling, and capitalization are preserved.
-* Tags do not need quotes for spaces. Quotes in a tag are literal characters, not quoting syntax. A space followed by a field prefix recognized by the command still starts that field: `t/Math/Science` is one tag, but `t/Math t/Science` is two. Avoid embedding recognized prefixes after spaces in a tag; use a separator such as `-` instead. Only names support quoting to protect embedded prefixes.
+* Each `TAG` must contain one or more ASCII alphanumeric segments separated by single hyphens (`-`). Hyphens cannot be leading, trailing, or consecutive. Spaces, underscores, slashes, and other punctuation are not accepted. Tag spelling and capitalization are preserved.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
-* After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so
-  that the new contact is visible.
+* After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so that the new contact is visible.
 
 <box type="tip" seamless>
 
 **Tip:** A person can have any number of tags, including zero.
 
-TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match.
-Name comparison is case-insensitive, ignores surrounding and repeated spaces, and treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Phone comparison removes spaces and hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a leading `+` are distinct.
+TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match. Name comparison is case-insensitive, ignores surrounding and repeated spaces, and treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Phone comparison removes spaces and hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a leading `+` are distinct.
 
-A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the
-guardian's email may also be reused. The student and guardian remain distinct contacts because their names differ.
+A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the guardian's email may also be reused. The student and guardian remain distinct contacts because their names differ.
 </box>
 
 Examples:
@@ -164,30 +150,25 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
 * Other trailing text is rejected.
-* Before linking a student to a guardian after applying a filter, enter `list` to restore the full list so that both
-  contacts can be selected.
+* Before linking a student to a guardian after applying a filter, enter `list` to restore the full list so that both contacts can be selected.
 * Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
 * Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
-* Student cards display a `Guardian:` line with the linked guardian's name, or `-` when no guardian is linked.
-  Guardian cards do not display this line.
+* Student cards display a `Guardian:` line with the linked guardian's name and contact number, or `-` when no guardian is linked.
+* Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
-* If a name, phone number, email address, guardian name, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
+* If a name, phone number, email address, relationship summary, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX v/` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
 
 ### Viewing a contact: `view`
 
-Replaces the contact list with a contact's details and their recorded relationship. The next command other than
-`view` restores the contact list.
+Replaces the contact list with a contact's details and their recorded relationship. The next command other than `view` restores the contact list.
 
-Format: `view INDEX`
+Format: `view INDEX [v/]`
 
-* `INDEX` is the positive index shown in the current contact list. After `find` or `list r/ROLE`, it refers to the
-  filtered list.
-* For a student, the result includes the linked guardian's name, role, phone, email, address, and tags. If the student
-  has no guardian link, it shows `No guardian linked.`
-* For a guardian, the result lists the names of linked students in contact-list order. If there are none, it shows
-  `No students linked.` Related contacts are shown even when the current filter hides them.
-* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
-  contact data or the active filter.
+* `INDEX` is the positive index shown in the current contact list. After `find` or `list r/ROLE`, it refers to the filtered list.
+* Without `v/`, each linked contact appears as `NAME (CONTACT_NUMBER)`. A student view shows its linked guardian, while a guardian view lists its linked students in contact-list order.
+* Add `v/` to show the linked guardian's or linked students' full contact details, including their role, phone, email, address, and tags.
+* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when the current filter hides them.
+* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change contact data or the active filter.
 
 To try the examples below from an empty contact list, enter these commands first:
 
@@ -197,9 +178,11 @@ To try the examples below from an empty contact list, enter these commands first
 
 Examples using the contacts created above:
 
-* `view 1` replaces the contact list with Alex Yeoh's details and the details of his linked guardian, Bernice Yu.
-* `view 2` replaces the contact list with Bernice Yu's details and lists Alex Yeoh as a linked student.
-* `list r/student` followed by `view 1` still shows Bernice Yu's details, although guardians are hidden from the list.
+* `view 1` replaces the contact list with Alex Yeoh's details and `Bernice Yu (99272758)` as his linked guardian.
+* `view 1 v/` also shows Bernice Yu's full contact details.
+* `view 2` replaces the contact list with Bernice Yu's details and lists `Alex Yeoh (87438807)` as a linked student.
+* `view 2 v/` also shows Alex Yeoh's full contact details.
+* `list r/student` followed by `view 1 v/` still shows Bernice Yu's details, although guardians are hidden from the list.
 
 ### Editing a person: `edit`
 
@@ -207,21 +190,16 @@ Edits an existing person in TuitionBook.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
-Names support the same optional double quotes as `add`. For example, `edit 1 n/"Rina a/p Kaur"`
-changes the complete name without interpreting `a/` as an address prefix.
+Names support the same optional double quotes as `add`. For example, `edit 1 n/"Rina a/p Kaur"` changes the complete name without interpreting `a/` as an address prefix.
 
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * To remove an existing email or address, use `e/` or `a/` with no value respectively.
 * Existing values will be updated to the input values.
-* `edit` cannot change a person's role or guardian link. Use `link` or `unlink` to change a student's guardian link.
-  The role specified with `add` applies only to the new contact.
-* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining marks,
-  spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is
-  ignored, while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
+* `edit` cannot change a person's role or guardian link. Use `link` or `unlink` to change a student's guardian link. The role specified with `add` applies only to the new contact.
+* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
 * `NAME` can contain at most 100 characters.
-* `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
-  digits. These formatting characters are preserved.
+* `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between digits. These formatting characters are preserved.
 * A supplied `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
 * `TAG` follows the same space-and-punctuation rules and field-prefix boundaries described for [`add`](#adding-a-contact-add).
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
@@ -239,14 +217,10 @@ Links a student contact to a guardian contact.
 Format: `link STUDENT_INDEX GUARDIAN_INDEX`
 
 * The first index must refer to a student and the second index must refer to a guardian.
-* Both indexes refer to positive index numbers in the currently displayed contact list. Both contacts must be visible.
-  If a filter hides either contact, enter `list` to restore the full list before using `link`.
-* If the student already has a different guardian, the previous guardian is unlinked and the result identifies that
-  previous guardian.
-* Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already
-  exists and makes no change.
-* After a link is created or replaced, TuitionBook shows the full contact list: any active name, role, or tag filter is
-  cleared. Reporting an already-existing link makes no change, so the displayed list and its filter are preserved.
+* Both indexes refer to positive index numbers in the currently displayed contact list. Both contacts must be visible. If a filter hides either contact, enter `list` to restore the full list before using `link`.
+* If the student already has a different guardian, the previous guardian is unlinked and the result identifies that previous guardian.
+* Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already exists and makes no change.
+* After a link is created or replaced, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared. Reporting an already-existing link makes no change, so the displayed list and its filter are preserved.
 
 Example: `link 1 2` links the student at index 1 to the guardian at index 2.
 
@@ -258,8 +232,7 @@ Format: `unlink STUDENT_INDEX`
 
 * `STUDENT_INDEX` is the positive index shown in the currently displayed contact list. After `find` or a filtered `list`, it refers to the filtered list.
 * The index must refer to a student.
-* If the student has no linked guardian, TuitionBook reports this and makes no change. The displayed list and any
-  active filter are preserved.
+* If the student has no linked guardian, TuitionBook reports this and makes no change. The displayed list and any active filter are preserved.
 * After a guardian link is removed, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
 
 Example: `unlink 1` removes the guardian link of the student at index 1.
@@ -270,15 +243,11 @@ Finds persons whose names contain any of the given literal substrings.
 
 Format: `find KEYWORD [MORE_KEYWORDS]...`
 
-* Each keyword matches anywhere within a name, including the start, middle, or end of a name component. For example,
-  `rac` matches `Grace Tan`.
-* The search is Unicode-aware and case-insensitive; for example, `GRACE` matches `Grace Tan`, and `ışık`
-  matches `Işık`.
-* The search considers only contact names. Text found only in a phone number, email address, home address, tag, role,
-  or linked contact's name does not match.
+* Each keyword matches anywhere within a name, including the start, middle, or end of a name component. For example, `rac` matches `Grace Tan`.
+* The search is Unicode-aware and case-insensitive; for example, `GRACE` matches `Grace Tan`, and `ışık` matches `Işık`.
+* The search considers only contact names. Text found only in a phone number, email address, home address, tag, role, or linked contact's name does not match.
 * Keywords are treated as literal text, so punctuation is not interpreted as a search pattern.
-* Persons matching at least one keyword are returned (an `OR` search). A person is listed only once even if multiple
-  keywords match their name.
+* Persons matching at least one keyword are returned (an `OR` search). A person is listed only once even if multiple keywords match their name.
 
 Examples:
 * `find gr`, `find rac`, `find ace`, and `find GRACE` each return `Grace Tan`.
@@ -296,18 +265,20 @@ Format: `delete INDEX`
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, ...
 * Deleting a guardian keeps their linked students, but clears those students' guardian links.
-* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name, role, or tag filter: the remaining contacts of
-  the filtered view stay listed.
+* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name, role, or tag filter: the remaining contacts of the filtered view stay listed.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in TuitionBook.
 * `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
 
-### Clearing all entries: `clear`
+### Clearing all entries: `clear confirm`
 
-Clears all entries from TuitionBook.
+Clears all entries from TuitionBook, including contacts hidden by the current filter.
 
-Format: `clear`
+Format: `clear confirm`
+
+* The confirmation keyword must be the exact lowercase word `confirm`.
+* `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
 
 ### Reloading contacts: `reload`
 
@@ -330,34 +301,23 @@ If TuitionBook cannot load an existing data file, it shows a startup warning wit
 
 ### Editing the data file
 
-TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder
-from which it is launched. Contact data is saved automatically as a JSON file
-`[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file.
-On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path.
-If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged.
+TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder from which it is launched. Contact data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file. On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path. If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged.
 
 Each contact in the file has these relationship fields:
 
 * `id`: the contact's unique identifier. It must be a valid UUID and must not be repeated in the file.
 * `role`: either `STUDENT` or `GUARDIAN`.
-* `guardianId`: optional. For a student, it is the `id` of a guardian contact; guardians must have no guardian link
-  (the field is absent or `null`).
+* `guardianId`: optional. For a student, it is the `id` of a guardian contact; guardians must have no guardian link (the field is absent or `null`).
 
-Do not change an existing `id` when editing the file. A current-format contact must include valid `id` and `role` fields.
-Contacts with the same normalized name and phone number are duplicates and make the file invalid, even when their `id`
-values differ.
+Do not change an existing `id` when editing the file. A current-format contact must include valid `id` and `role` fields. Contacts with the same normalized name and phone number are duplicates and make the file invalid, even when their `id` values differ.
 
-Data files created before these relationship fields were introduced remain supported. A contact that has none of `id`,
-`role`, or `guardianId` is loaded as an unlinked student and receives a generated `id`. The updated fields are written
-when TuitionBook next saves the data file.
+Data files created before these relationship fields were introduced remain supported. A contact that has none of `id`, `role`, or `guardianId` is loaded as an unlinked student and receives a generated `id`. The updated fields are written when TuitionBook next saves the data file.
 
-If a `guardianId` is malformed, refers to a missing contact, refers to a student, or links a student to itself,
-TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present.
+If a `guardianId` is malformed, refers to a missing contact, refers to a student, or links a student to itself, TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present.
 
 <box type="warning" seamless>
 
-**Caution:**
-If your changes make the data file invalid, TuitionBook starts with an empty contact list and shows a warning at the next run. It moves the unreadable file unchanged to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`; the warning names the exact backup path. The backup is kept unchanged, and TuitionBook can then save new contact data to `tuitionbook.json`.<br>
+**Caution:** If your changes make the data file invalid, TuitionBook starts with an empty contact list and shows a warning at the next run. It moves the unreadable file unchanged to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`; the warning names the exact backup path. The backup is kept unchanged, and TuitionBook can then save new contact data to `tuitionbook.json`.<br>
 To restore the original data, first fix the JSON in the backup file, then rename it to `tuitionbook.json`, replacing the new file, and restart TuitionBook. Contacts added after recovery are stored in the new file and must be re-entered because TuitionBook cannot merge the two files automatically. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves; correct or move that file, then restart TuitionBook. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 
@@ -384,6 +344,6 @@ _Details coming soon ..._
 3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
-6. **`delete` and `clear` ask for no confirmation and cannot be undone.** Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
+6. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
 7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
 8. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.

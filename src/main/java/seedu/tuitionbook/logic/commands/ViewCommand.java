@@ -22,19 +22,31 @@ public class ViewCommand extends Command {
     public static final String COMMAND_WORD = "view";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Displays a contact and their guardian or linked students.\n"
-            + "Parameters: INDEX (must be a positive integer)\n"
-            + "Example: " + COMMAND_WORD + " 1";
+            + "Parameters: INDEX (must be a positive integer) [v/]\n"
+            + "Use v/ to show the linked contacts' full details.\n"
+            + "Example: " + COMMAND_WORD + " 1 v/";
     public static final String MESSAGE_SUCCESS = "Viewing contact: %1$s";
     public static final String MESSAGE_NO_GUARDIAN = "No guardian linked.";
     public static final String MESSAGE_NO_STUDENTS = "No students linked.";
 
     private final Index targetIndex;
+    private final boolean shouldShowFullLinkedDetails;
 
     /**
      * Creates a command to view the contact at the given displayed index.
      */
     public ViewCommand(Index targetIndex) {
+        this(targetIndex, false);
+    }
+
+    /**
+     * Creates a command to view the contact at the given displayed index.
+     *
+     * @param shouldShowFullLinkedDetails whether to show full details instead of names for linked contacts
+     */
+    public ViewCommand(Index targetIndex, boolean shouldShowFullLinkedDetails) {
         this.targetIndex = requireNonNull(targetIndex);
+        this.shouldShowFullLinkedDetails = shouldShowFullLinkedDetails;
     }
 
     @Override
@@ -56,9 +68,9 @@ public class ViewCommand extends Command {
         appendContactDetails(result, selectedPerson);
 
         if (selectedPerson.getRole() == Role.STUDENT) {
-            appendGuardianDetails(result, selectedPerson, allPersons);
+            appendGuardianDetails(result, selectedPerson, allPersons, shouldShowFullLinkedDetails);
         } else {
-            appendLinkedStudents(result, selectedPerson, allPersons);
+            appendLinkedStudents(result, selectedPerson, allPersons, shouldShowFullLinkedDetails);
         }
         return new CommandResult(String.format(MESSAGE_SUCCESS, selectedPerson.getName()), result.toString());
     }
@@ -76,7 +88,8 @@ public class ViewCommand extends Command {
                 .append("Tags: ").append(tags.isEmpty() ? "-" : tags);
     }
 
-    private static void appendGuardianDetails(StringBuilder result, Person student, List<Person> allPersons) {
+    private static void appendGuardianDetails(StringBuilder result, Person student, List<Person> allPersons,
+            boolean shouldShowFullLinkedDetails) {
         if (student.getGuardianId().isEmpty()) {
             result.append("\n\n").append(MESSAGE_NO_GUARDIAN);
             return;
@@ -85,15 +98,21 @@ public class ViewCommand extends Command {
         UUID guardianId = student.getGuardianId().orElseThrow();
         for (Person person : allPersons) {
             if (person.getId().equals(guardianId) && person.getRole() == Role.GUARDIAN) {
-                result.append("\n\nGuardian details:\n");
-                appendContactDetails(result, person);
+                if (shouldShowFullLinkedDetails) {
+                    result.append("\n\nGuardian details:\n");
+                    appendContactDetails(result, person);
+                } else {
+                    result.append("\n\nGuardian: ");
+                    appendContactSummary(result, person);
+                }
                 return;
             }
         }
         result.append("\n\n").append(MESSAGE_NO_GUARDIAN);
     }
 
-    private static void appendLinkedStudents(StringBuilder result, Person guardian, List<Person> allPersons) {
+    private static void appendLinkedStudents(StringBuilder result, Person guardian, List<Person> allPersons,
+            boolean shouldShowFullLinkedDetails) {
         boolean hasLinkedStudents = false;
         for (Person person : allPersons) {
             boolean isLinkedStudent = person.getRole() == Role.STUDENT
@@ -103,12 +122,22 @@ public class ViewCommand extends Command {
                     result.append("\n\nLinked students:");
                     hasLinkedStudents = true;
                 }
-                result.append("\n- ").append(person.getName());
+                if (shouldShowFullLinkedDetails) {
+                    result.append("\n\n");
+                    appendContactDetails(result, person);
+                } else {
+                    result.append("\n- ");
+                    appendContactSummary(result, person);
+                }
             }
         }
         if (!hasLinkedStudents) {
             result.append("\n\n").append(MESSAGE_NO_STUDENTS);
         }
+    }
+
+    private static void appendContactSummary(StringBuilder result, Person person) {
+        result.append(person.getName()).append(" (").append(person.getPhone()).append(')');
     }
 
     @Override
@@ -119,13 +148,15 @@ public class ViewCommand extends Command {
         if (!(other instanceof ViewCommand otherViewCommand)) {
             return false;
         }
-        return targetIndex.equals(otherViewCommand.targetIndex);
+        return targetIndex.equals(otherViewCommand.targetIndex)
+                && shouldShowFullLinkedDetails == otherViewCommand.shouldShowFullLinkedDetails;
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("targetIndex", targetIndex)
+                .add("shouldShowFullLinkedDetails", shouldShowFullLinkedDetails)
                 .toString();
     }
 }
