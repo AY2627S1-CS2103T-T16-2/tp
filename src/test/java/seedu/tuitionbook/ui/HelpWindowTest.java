@@ -40,7 +40,7 @@ public class HelpWindowTest {
             "unlink STUDENT_INDEX",
             "find KEYWORD [MORE_KEYWORDS]...",
             "delete INDEX",
-            "clear",
+            "clear confirm",
             "help",
             "reload",
             "exit");

@@ -272,10 +272,6 @@ Step 5. The user then decides to execute the command `list`. Commands that do no
 
 <puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
 
-Step 6. The user executes `clear`, which calls `Model#commitTuitionBook()`. Since the `currentStatePointer` is not pointing at the end of the `tuitionBookStateList`, all TuitionBook states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
-
 The following activity diagram summarizes what happens when a user executes a new command:
 
 <puml src="diagrams/CommitActivityDiagram.puml" width="250" />
@@ -695,6 +691,20 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `add r/student n/Rina a/p Kaur p/90000001`.<br>
    Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`.
    This is the documented limitation; quotation marks are required to enter that full name.
+
+### Clearing all contacts
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Enter `add r/guardian n/Grace Guardian p/90000001`, then enter `add r/student n/Sam Student p/90000002`.
+1. Enter `list r/student`.<br>
+   Expected: Only Sam Student is visible; Grace Guardian remains stored but hidden by the active filter.
+1. Enter `clear`, `clear CONFIRM`, and `clear confirm extra` one at a time.<br>
+   Expected: Each command reports the valid `clear confirm` format. Neither contact is deleted, and the student filter remains active.
+1. Enter `clear confirm`.<br>
+   Expected: All contacts are deleted, including Grace Guardian, who was hidden by the filter. The result states that contacts hidden by the current filter were also cleared.
+1. Exit and restart TuitionBook.<br>
+   Expected: The contact list remains empty.
 
 ### Launch and shutdown
 

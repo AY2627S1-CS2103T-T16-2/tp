@@ -24,6 +24,7 @@ The format is based on Keep a Changelog.
 - Changed `list` to allow tag filtering, includes case-insensitive AND matching with the optional role filtering
 - Allowed single internal hyphens between alphanumeric segments in tag names.
 - Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
+- Required `clear confirm` before clearing all contacts and rejected every other argument to `clear`.
 - Restored contacts and the active filter when a contact-changing command cannot save its changes.
 
 ### Fixed

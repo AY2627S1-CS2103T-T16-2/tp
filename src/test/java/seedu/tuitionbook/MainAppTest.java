@@ -84,7 +84,7 @@ public class MainAppTest {
         Model model = startupState.model();
         assertTrue(model.getTuitionBook().getPersonList().contains(tuitionBook.getPersonList().get(0)));
         Logic logic = new LogicManager(model, storage);
-        logic.execute("clear");
+        logic.execute("clear confirm");
 
         MainApp.StartupState restartedState = MainApp.loadStartupState(storage, new UserPrefs());
 
