@@ -182,7 +182,7 @@ public class LogicManagerTest {
         Predicate<Person> expectedFilter = model.getFilteredPersonListPredicate();
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
 
-        assertParseException("clear confirm extra", expectedMessage);
+        assertThrows(ParseException.class, expectedMessage, () -> logic.execute("clear confirm extra"));
 
         assertEquals(expectedPersons, logic.getPersonList());
         assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());
