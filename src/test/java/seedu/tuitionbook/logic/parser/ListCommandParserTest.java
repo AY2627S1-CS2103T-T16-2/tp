@@ -4,6 +4,7 @@ import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
+import java.util.List;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.parallel.Resources;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.model.person.PersonHasRolePredicate;
+import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
 import seedu.tuitionbook.model.person.Role;
 
 public class ListCommandParserTest {
@@ -68,5 +70,25 @@ public class ListCommandParserTest {
     public void parse_duplicateRolePrefix_throwsParseException() {
         assertParseFailure(parser, " r/student r/guardian",
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ROLE));
+    }
+
+    @Test
+    public void parse_tagsAndRole_returnsCombinedFilter() {
+        assertParseSuccess(parser, " r/student t/sec4 t/AMath",
+                new ListCommand(new PersonMatchesListFilterPredicate(Role.STUDENT,
+                java.util.List.of("sec4", "AMath"))));
+    }
+
+    @Test
+    public void parse_invalidTag_throwsParseException() {
+        assertParseFailure(parser, " t/not valid", seedu.tuitionbook.model.tag.Tag.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_duplicateTagValues_returnsFilterWithBothTags() {
+        ListCommand expected = new ListCommand(new PersonMatchesListFilterPredicate(
+                null, List.of("Sec4", "sec4")));
+
+        assertParseSuccess(parser, " t/Sec4 t/sec4", expected);
     }
 }

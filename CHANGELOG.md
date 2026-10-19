@@ -21,6 +21,7 @@ The format is based on Keep a Changelog.
 - Moved the User Guide command summary before Quick start and corrected its sidebar link.
 - Replaced the nested Help menu with a one-click top-level Help control while retaining the `help` command, <kbd>F1</kbd> shortcut, and `Copy URL` action.
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
+- Changed `list` to allow tag filtering, includes case-insensitive AND matching with the optional role filtering
 - Allowed single internal hyphens between alphanumeric segments in tag names.
 - Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
 - Required `clear confirm` before clearing all contacts and rejected every other argument to `clear`.

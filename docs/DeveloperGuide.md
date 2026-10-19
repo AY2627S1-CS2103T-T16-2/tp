@@ -612,7 +612,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
 **Role-filter command rule**
 
-The role-filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` displays only contacts with the specified role. Other trailing text is rejected.
+The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
 **Startup data rule**
 
@@ -645,7 +645,7 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 * **Current contact list**: The contacts currently displayed after applying any active filter; indexes in index-based commands refer to this list.
 * **Contact ID**: A unique, persistent identifier assigned by TuitionBook to a contact.
 * **Data file**: The local text file that stores TuitionBook contacts and their recorded guardian links between application sessions.
-* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a role filter; applying a new filter replaces the previous one.
+* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a combined role-and-tag filter; applying a new filter replaces the previous one. The role is optional, and all supplied tags must match exactly, ignoring case.
 * **Guardian**: A contact with the `guardian` role. A guardian contact may have zero or more recorded student links; these links record information in TuitionBook and do not establish or determine real-world responsibility.
 * **Guardian link**: A recorded association from a student to a guardian contact. A student has at most one guardian link, while a guardian can be linked to multiple students.
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
@@ -838,6 +838,28 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Close and relaunch the application, then enter `view 1`.<br>
    Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after
    restart.
+
+### Filtering contacts by tags
+
+Use a fresh, disposable folder with an empty contact list. Enter these commands in order:
+
+```text
+add r/student n/Alex Tan p/91234561 t/active t/math
+add r/student n/Beth Lim p/91234562 t/active
+add r/guardian n/Chris Ong p/91234563 t/active t/math
+add r/student n/Dana Lee p/91234564 t/inactive t/math
+```
+
+1. Enter `list r/guardian`, then `list r/student t/ACTIVE t/math`.<br>
+   Expected: only Alex Tan appears, with `1 person(s) listed!`. The tag-and-role filter replaces the guardian filter. Beth lacks math, Chris has the wrong role, and Dana's inactive tag is not an exact match for active.
+1. Enter `list`.<br>
+   Expected: Alex Tan, Beth Lim, Chris Ong, and Dana Lee appear in that order, with `Listed all persons.`.
+1. Enter `find Beth`, then `list t/math`.<br>
+   Expected: Alex Tan, Chris Ong, and Dana Lee appear in that order, with `3 person(s) listed!`. The tag filter replaces the name filter.
+1. Enter `list t/absent`.<br>
+   Expected: an empty displayed list and the successful result `0 person(s) listed!`.
+1. Enter `list` again.<br>
+   Expected: all four contacts return in their original order; none were deleted.
 
 ### Adding and editing hyphenated tags
 
