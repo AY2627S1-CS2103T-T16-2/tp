@@ -23,9 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -471,7 +471,7 @@ public class LogicManagerTest {
         model.addPerson(AMY);
         model.updateFilteredPersonList(person -> false);
         Logic blocked = createLogicWithBlockedStorage(file, model);
-        assertThrows(CommandException.class, () -> blocked.execute("clear"));
+        assertThrows(CommandException.class, () -> blocked.execute("clear confirm"));
         TuitionBook corrected = new TuitionBook();
         Person recovered = new PersonBuilder().withName("Recovered Student").build();
         corrected.addPerson(recovered);
@@ -496,7 +496,7 @@ public class LogicManagerTest {
         assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
         assertTrue(model.getFilteredPersonList().isEmpty());
         assertEquals(MALFORMED_TUITION_BOOK_JSON, Files.readString(file));
-        assertThrows(CommandException.class, () -> blocked.execute("clear"));
+        assertThrows(CommandException.class, () -> blocked.execute("clear confirm"));
     }
 
     @Test
@@ -601,7 +601,7 @@ public class LogicManagerTest {
         assertEquals(MALFORMED_TUITION_BOOK_JSON,
                 Files.readString(temporaryFolder.resolve("tuitionBook.json.backup")));
         assertFalse(Files.exists(file));
-        logic.execute("clear");
+        logic.execute("clear confirm");
         assertTrue(Files.exists(file));
     }
 
