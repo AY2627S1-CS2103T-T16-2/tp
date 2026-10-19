@@ -7,6 +7,7 @@ import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 
 /**
@@ -23,6 +24,14 @@ public class ViewCommandParserTest {
     }
 
     @Test
+    public void parse_validIndexWithVerbosePrefix_returnsVerboseViewCommand() {
+        ViewCommand expectedCommand = new ViewCommand(INDEX_FIRST_PERSON, true);
+
+        assertParseSuccess(parser, "1 v/", expectedCommand);
+        assertParseSuccess(parser, "  1  v/  ", expectedCommand);
+    }
+
+    @Test
     public void parse_missingOrInvalidIndex_throwsParseException() {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ViewCommand.MESSAGE_USAGE);
         assertParseFailure(parser, "", expectedMessage);
@@ -31,5 +40,12 @@ public class ViewCommandParserTest {
         assertParseFailure(parser, "abc", expectedMessage);
         assertParseFailure(parser, Long.toString(Integer.MAX_VALUE + 1L), expectedMessage);
         assertParseFailure(parser, "1 extra", expectedMessage);
+        assertParseFailure(parser, "1 v/details", expectedMessage);
+    }
+
+    @Test
+    public void parse_duplicateVerbosePrefix_throwsParseException() {
+        assertParseFailure(parser, "1 v/ v/",
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_VERBOSE));
     }
 }

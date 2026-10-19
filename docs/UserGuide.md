@@ -29,7 +29,7 @@ Action     | Format, Examples
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
 **List**   | `list [r/ROLE]`<br> e.g., `list r/student`
 **Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
-**View**   | `view INDEX`<br> e.g., `view 1`
+**View**   | `view INDEX [v/]`<br> e.g., `view 1 v/`
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -167,21 +167,20 @@ Format: `list [r/ROLE]`
 * Student cards display a `Guardian:` line with the linked guardian's name, or `-` when no guardian is linked.
 * Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
-* If a name, phone number, email address, relationship summary, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
+* If a name, phone number, email address, relationship summary, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX v/` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
 
 ### Viewing a contact: `view`
 
 Replaces the contact list with a contact's details and their recorded relationship. The next command other than
 `view` restores the contact list.
 
-Format: `view INDEX`
+Format: `view INDEX [v/]`
 
 * `INDEX` is the positive index shown in the current contact list. After `find` or `list r/ROLE`, it refers to the
   filtered list.
-* For a student, the result includes the linked guardian's name, role, phone, email, address, and tags. If the student
-  has no guardian link, it shows `No guardian linked.`
-* For a guardian, the result lists the names of linked students in contact-list order. If there are none, it shows
-  `No students linked.` Related contacts are shown even when the current filter hides them.
+* Without `v/`, each linked contact appears as `NAME (CONTACT_NUMBER)`. A student view shows its linked guardian, while a guardian view lists its linked students in contact-list order.
+* Add `v/` to show the linked guardian's or linked students' full contact details, including their role, phone, email, address, and tags.
+* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when the current filter hides them.
 * Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change
   contact data or the active filter.
 
@@ -193,9 +192,11 @@ To try the examples below from an empty contact list, enter these commands first
 
 Examples using the contacts created above:
 
-* `view 1` replaces the contact list with Alex Yeoh's details and the details of his linked guardian, Bernice Yu.
-* `view 2` replaces the contact list with Bernice Yu's details and lists Alex Yeoh as a linked student.
-* `list r/student` followed by `view 1` still shows Bernice Yu's details, although guardians are hidden from the list.
+* `view 1` replaces the contact list with Alex Yeoh's details and `Bernice Yu (99272758)` as his linked guardian.
+* `view 1 v/` also shows Bernice Yu's full contact details.
+* `view 2` replaces the contact list with Bernice Yu's details and lists `Alex Yeoh (87438807)` as a linked student.
+* `view 2 v/` also shows Alex Yeoh's full contact details.
+* `list r/student` followed by `view 1 v/` still shows Bernice Yu's details, although guardians are hidden from the list.
 
 ### Editing a person: `edit`
 
