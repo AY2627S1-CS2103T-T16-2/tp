@@ -1,6 +1,7 @@
 package seedu.tuitionbook.logic.parser;
 
 import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_VERBOSE;
 
 import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.logic.commands.ViewCommand;
@@ -18,9 +19,17 @@ public class ViewCommandParser implements Parser<ViewCommand> {
      */
     @Override
     public ViewCommand parse(String args) throws ParseException {
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_VERBOSE);
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_VERBOSE);
+
+        boolean shouldShowFullLinkedDetails = argMultimap.getValue(PREFIX_VERBOSE).isPresent();
+        if (shouldShowFullLinkedDetails && !argMultimap.getValue(PREFIX_VERBOSE).orElseThrow().isEmpty()) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, ViewCommand.MESSAGE_USAGE));
+        }
+
         try {
-            Index index = ParserUtil.parseIndex(args);
-            return new ViewCommand(index);
+            Index index = ParserUtil.parseIndex(argMultimap.getPreamble());
+            return new ViewCommand(index, shouldShowFullLinkedDetails);
         } catch (ParseException pe) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, ViewCommand.MESSAGE_USAGE), pe);
         }

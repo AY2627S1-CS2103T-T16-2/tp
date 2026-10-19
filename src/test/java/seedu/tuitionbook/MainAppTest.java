@@ -84,7 +84,7 @@ public class MainAppTest {
         Model model = startupState.model();
         assertTrue(model.getTuitionBook().getPersonList().contains(tuitionBook.getPersonList().get(0)));
         Logic logic = new LogicManager(model, storage);
-        logic.execute("clear");
+        logic.execute("clear confirm");
 
         MainApp.StartupState restartedState = MainApp.loadStartupState(storage, new UserPrefs());
 
@@ -104,12 +104,14 @@ public class MainAppTest {
         logic.execute("add r/student n/Charlotte Oliveiro p/93210283");
         logic.execute("add r/guardian n/David Li p/91031282");
 
-        assertViewContains(logic.execute("view 1"), "Alex Yeoh", "Guardian details:", "Bernice Yu");
-        assertViewContains(logic.execute("view 2"), "Bernice Yu", "Linked students:", "Alex Yeoh");
+        assertViewContains(logic.execute("view 1"), "Alex Yeoh", "Guardian: Bernice Yu (99272758)");
+        assertViewContains(logic.execute("view 1 v/"), "Alex Yeoh", "Guardian details:", "Phone: 99272758");
+        assertViewContains(logic.execute("view 2"), "Bernice Yu", "Linked students:", "Alex Yeoh (87438807)");
+        assertViewContains(logic.execute("view 2 v/"), "Bernice Yu", "Name: Alex Yeoh", "Phone: 87438807");
         assertViewContains(logic.execute("view 3"), "Charlotte Oliveiro", "No guardian linked.");
         assertViewContains(logic.execute("view 4"), "David Li", "No students linked.");
         logic.execute("list r/student");
-        assertViewContains(logic.execute("view 1"), "Alex Yeoh", "Guardian details:", "Bernice Yu");
+        assertViewContains(logic.execute("view 1"), "Alex Yeoh", "Guardian: Bernice Yu (99272758)");
     }
 
     @Test

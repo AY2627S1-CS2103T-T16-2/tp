@@ -82,7 +82,7 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
-`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the filtered list while using the complete list to resolve a student's guardian name, including when a role filter hides the guardian's own card. The panel refreshes its cards when the complete list changes so that relationship details remain current.
+`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the filtered list while using the complete list to resolve a student's guardian name and contact number and a guardian's linked student names, including when a role filter hides the related contacts' cards. The panel refreshes its cards when the complete list changes so that relationship details remain current.
 
 ### Logic component
 
@@ -166,9 +166,11 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Viewing contact relationships
 
-`ViewCommandParser` parses `view INDEX` with the same positive-index rule as other index-based commands. `ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked guardian or student from the result. The command does not change the model or its active filter.
+`ViewCommandParser` parses `view INDEX [v/]` with the same positive-index rule as other index-based commands. The optional empty `v/` prefix selects full details for linked contacts; the parser rejects duplicate prefixes and values after `v/`.
 
-For a student, the command displays the linked guardian's contact details or `No guardian linked.` For a guardian, it lists linked student names in address-book order or displays `No students linked.` Missing optional fields use `-`, and tags are sorted alphabetically.
+`ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked guardian or student from the result. The command does not change the model or its active filter.
+
+Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in address-book order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags are sorted alphabetically.
 
 `ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active filter remain in the model while the detail view is visible.
 
@@ -180,7 +182,7 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
-`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Long names, phone numbers, email addresses, resolved guardian names, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; the `view` command also provides the full details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
+`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
 ### Quoted-name parsing
 
@@ -250,10 +252,6 @@ The `redo` command does the opposite — it calls `Model#redoTuitionBook()`, whi
 Step 5. The user then decides to execute the command `list`. Commands that do not modify TuitionBook, such as `list`, will usually not call `Model#commitTuitionBook()`, `Model#undoTuitionBook()` or `Model#redoTuitionBook()`. Thus, the `tuitionBookStateList` remains unchanged.
 
 <puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
-
-Step 6. The user executes `clear`, which calls `Model#commitTuitionBook()`. Since the `currentStatePointer` is not pointing at the end of the `tuitionBookStateList`, all TuitionBook states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
 
 The following activity diagram summarizes what happens when a user executes a new command:
 
@@ -592,7 +590,7 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 
 **Role-filter command rule**
 
-The role-filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` displays only contacts with the specified role. Other trailing text is rejected.
+The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
 **Startup data rule**
 
@@ -618,7 +616,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Current contact list**: The contacts currently displayed after applying any active filter; indexes in index-based commands refer to this list.
 * **Contact ID**: A unique, persistent identifier assigned by TuitionBook to a contact.
 * **Data file**: The local text file that stores TuitionBook contacts and their recorded guardian links between application sessions.
-* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a role filter; applying a new filter replaces the previous one.
+* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a combined role-and-tag filter; applying a new filter replaces the previous one. The role is optional, and all supplied tags must match exactly, ignoring case.
 * **Guardian**: A contact with the `guardian` role. A guardian contact may have zero or more recorded student links; these links record information in TuitionBook and do not establish or determine real-world responsibility.
 * **Guardian link**: A recorded association from a student to a guardian contact. A student has at most one guardian link, while a guardian can be linked to multiple students.
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
@@ -659,6 +657,20 @@ Use a fresh, disposable folder with an empty contact list.
    Expected: An error explains that a quoted name must be followed by another field or the end of the command; the contact is unchanged.
 1. Enter `add r/student n/Rina a/p Kaur p/90000001`.<br>
    Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`. This is the documented limitation; quotation marks are required to enter that full name.
+
+### Clearing all contacts
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Enter `add r/guardian n/Grace Guardian p/90000001`, then enter `add r/student n/Sam Student p/90000002`.
+1. Enter `list r/student`.<br>
+   Expected: Only Sam Student is visible; Grace Guardian remains stored but hidden by the active filter.
+1. Enter `clear`, `clear CONFIRM`, and `clear confirm extra` one at a time.<br>
+   Expected: Each command reports the valid `clear confirm` format. Neither contact is deleted, and the student filter remains active.
+1. Enter `clear confirm`.<br>
+   Expected: All contacts are deleted, including Grace Guardian, who was hidden by the filter. The result states that contacts hidden by the current filter were also cleared.
+1. Exit and restart TuitionBook.<br>
+   Expected: The contact list remains empty.
 
 ### Launch and shutdown
 
@@ -709,6 +721,21 @@ Use a fresh, disposable folder with an empty contact list.
 
 1. _{ more test cases … }_
 
+### Displaying contact relationships in the list
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002`, `add r/student n/Alex Student p/90000003`, `link 2 1`, and `link 3 1`.<br>
+   Expected: Sam Student's and Alex Student's cards display `Guardian: Grace Guardian (90000001)`. Grace Guardian's card displays `Students: Sam Student, Alex Student` in contact-list order.
+1. Enter `list r/guardian`.<br>
+   Expected: Only Grace Guardian's card remains visible, and its `Students:` line still displays both students.
+1. Enter `list`, followed by `unlink 2`.<br>
+   Expected: Grace Guardian's `Students:` line updates to `Students: Alex Student`.
+1. Enter `unlink 3`.<br>
+   Expected: Grace Guardian's `Students:` line updates to `Students: -`.
+1. Add and link enough synthetic students to Grace Guardian for the `Students:` line to exceed the card width, then resize the window to the smallest supported size.<br>
+   Expected: The relationship stays on one line and ends with an ellipsis instead of widening the card. Hovering over the line shows every linked student name, and `view 1` provides the complete list with contact numbers through the keyboard workflow.
+
 ### Viewing a contact
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data. Enter these commands to create the contacts used below:
@@ -720,14 +747,18 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. `add r/guardian n/David Li p/91031282`
 
 1. Enter `view 1`.<br>
-   Expected: The contact list is replaced by Alex Yeoh's details and Bernice Yu's guardian details. The result area displays `Viewing contact: Alex Yeoh`.
+   Expected: The contact list is replaced by Alex Yeoh's details and `Bernice Yu (99272758)`. The result area displays `Viewing contact: Alex Yeoh`.
+1. Enter `view 1 v/`.<br>
+   Expected: Bernice Yu's full guardian details appear after Alex Yeoh's details.
 1. Enter `view 2`.<br>
-   Expected: The detail view shows Bernice Yu's details, followed by Alex Yeoh under linked students.
+   Expected: The detail view shows Bernice Yu's details, followed by `Alex Yeoh (87438807)` under linked students.
+1. Enter `view 2 v/`.<br>
+   Expected: Alex Yeoh's full contact details appear under linked students.
 1. Enter `view 3`, then `view 4`.<br>
    Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports `No students linked.`
-1. Enter `list r/student`, then `view 1`.<br>
+1. Enter `list r/student`, then `view 1 v/`.<br>
    Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list` and `find` replace it, so they are unsuitable for this check.
-1. Enter `view 0`, `view 99`, `view`, and `view 1 extra`.<br>
+1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, `view 1 v/details`, and `view 1 v/ v/`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
 ### Finding contacts by name substring
@@ -772,6 +803,28 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Close and relaunch the application, then enter `view 1`.<br>
    Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after restart.
 
+### Filtering contacts by tags
+
+Use a fresh, disposable folder with an empty contact list. Enter these commands in order:
+
+```text
+add r/student n/Alex Tan p/91234561 t/active t/math
+add r/student n/Beth Lim p/91234562 t/active
+add r/guardian n/Chris Ong p/91234563 t/active t/math
+add r/student n/Dana Lee p/91234564 t/inactive t/math
+```
+
+1. Enter `list r/guardian`, then `list r/student t/ACTIVE t/math`.<br>
+   Expected: only Alex Tan appears, with `1 person(s) listed!`. The tag-and-role filter replaces the guardian filter. Beth lacks math, Chris has the wrong role, and Dana's inactive tag is not an exact match for active.
+1. Enter `list`.<br>
+   Expected: Alex Tan, Beth Lim, Chris Ong, and Dana Lee appear in that order, with `Listed all persons.`.
+1. Enter `find Beth`, then `list t/math`.<br>
+   Expected: Alex Tan, Chris Ong, and Dana Lee appear in that order, with `3 person(s) listed!`. The tag filter replaces the name filter.
+1. Enter `list t/absent`.<br>
+   Expected: an empty displayed list and the successful result `0 person(s) listed!`.
+1. Enter `list` again.<br>
+   Expected: all four contacts return in their original order; none were deleted.
+
 ### Adding and editing hyphenated tags
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
@@ -787,7 +840,42 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 ### Saving data
 
-1. Recovering from a save failure
+Run each scenario below independently in a fresh, disposable folder. An ordinary save failure rolls back the attempted change but does not set the storage write block: restore write access and repeat the failed command. A failed load whose backup also fails does set the write block: correct or move the file and use `reload` (or restart) before retrying contact-changing commands. If backing up an unreadable file succeeds, saving is already enabled and no reload is required. Reload reads the file; it does not save or replay a failed command.
+
+1. Reloading corrected data without restarting
+
+   1. Launch TuitionBook with an empty, disposable data folder. Enter `add r/student n/Alex Yeoh p/87438807`, then `find Nobody`.
+
+   1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
+      Expected: the list contains Reloaded Alex, the filter is cleared, and the result reports one loaded contact. Reload does not rewrite the file.
+
+   1. Enter `reload extra`.<br>
+      Expected: invalid command format; contacts remain unchanged.
+
+1. Reloading after the data file has been moved
+
+   1. Launch TuitionBook in a fresh, disposable folder and enter `add r/student n/Alex Yeoh p/87438807`.
+
+   1. Move `data/tuitionbook.json` to a separate backup location while the app stays open. Enter `reload`.<br>
+      Expected: the contact list becomes empty and the result reports zero loaded contacts. The data file remains absent; reload does not recreate it.
+
+   1. Enter `add r/student n/Alex Lim p/91234567`.<br>
+      Expected: saving creates a new data file containing Alex Lim. The moved file remains unchanged.
+
+1. Recovering when both loading and backing up the file failed
+
+   1. In a fresh, disposable folder, add `add r/student n/Alex Yeoh p/87438807`, close TuitionBook, and keep a separate copy of the valid `data/tuitionbook.json`.
+
+   1. Replace the data file's contents with `{broken`. Configure permissions so the app can read the file but cannot move it to a backup, then launch TuitionBook. Permission controls differ by operating system; verify that the startup warning explicitly reports backup failure before continuing.<br>
+      Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
+
+   1. While the app stays open, restore normal permissions and replace the malformed file with the saved valid copy. Enter `reload`.<br>
+      Expected: Alex Yeoh appears, the filter is cleared, and saving is enabled. Merely correcting the file without reloading would leave the write block set.
+
+   1. Enter `edit 1 n/Updated Alex`, then close and relaunch TuitionBook.<br>
+      Expected: the edit saves successfully and Updated Alex remains visible after restart.
+
+1. Recovering from an ordinary save failure (data loaded successfully)
 
    1. In a fresh, disposable folder, launch TuitionBook and enter `add r/student n/Alex Yeoh p/87438807`, then close the application.
 
@@ -799,7 +887,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
    1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
       Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
 
-1. Recovering from malformed contact data
+1. Recovering from malformed contact data (backup succeeds)
 
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 

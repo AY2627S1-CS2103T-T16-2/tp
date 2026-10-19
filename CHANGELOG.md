@@ -14,15 +14,24 @@ The format is based on Keep a Changelog.
 - Added a scrollable in-app summary of every implemented command and its syntax.
 - Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
 - Added the `unlink` command to remove a student's guardian link without deleting either contact.
+- Added linked student names to guardian cards and guardian names and contact numbers to student cards, with compact overflow handling for long relationship summaries.
+- Added `reload` to reread the configured contact file and retry recovery from blocked saving without restarting.
 
 ### Changed
 
 - Moved the User Guide command summary before Quick start and corrected its sidebar link.
 - Replaced the nested Help menu with a one-click top-level Help control while retaining the `help` command, <kbd>F1</kbd> shortcut, and `Copy URL` action.
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
+- Changed `list` to allow tag filtering, includes case-insensitive AND matching with the optional role filtering
 - Allowed single internal hyphens between alphanumeric segments in tag names.
 - Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
+- Required `clear confirm` before clearing all contacts and rejected every other argument to `clear`.
 - Restored contacts and the active filter when a contact-changing command cannot save its changes.
+- Changed `view` to show linked contact names and contact numbers by default and accept `v/` for their full contact details.
+
+### Fixed
+
+- Treat inaccessible JSON files as loading errors rather than missing files, preventing reload from clearing contacts when file existence cannot be determined.
 
 ## [v1.3] - 2026-10-14
 

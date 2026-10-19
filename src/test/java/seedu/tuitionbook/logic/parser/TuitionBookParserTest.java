@@ -46,8 +46,14 @@ public class TuitionBookParserTest {
 
     @Test
     public void parseCommand_clear() throws Exception {
-        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD) instanceof ClearCommand);
-        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " 3") instanceof ClearCommand);
+        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " confirm") instanceof ClearCommand);
+        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + "    confirm") instanceof ClearCommand);
+
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(
+                ClearCommand.COMMAND_WORD));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(
+                ClearCommand.COMMAND_WORD + " 3"));
     }
 
     @Test
@@ -110,6 +116,8 @@ public class TuitionBookParserTest {
     public void parseCommand_view() throws Exception {
         assertEquals(new ViewCommand(INDEX_FIRST_PERSON),
                 parser.parseCommand(ViewCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased()));
+        assertEquals(new ViewCommand(INDEX_FIRST_PERSON, true),
+                parser.parseCommand(ViewCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased() + " v/"));
         assertThrows(ParseException.class, () -> parser.parseCommand(ViewCommand.COMMAND_WORD));
     }
 
