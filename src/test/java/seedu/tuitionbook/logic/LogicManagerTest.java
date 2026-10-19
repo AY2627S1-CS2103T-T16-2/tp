@@ -3,7 +3,9 @@ package seedu.tuitionbook.logic;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.tuitionbook.logic.Messages.getInvalidPersonDisplayedIndexMessage;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -19,6 +21,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.logic.commands.AddCommand;
+import seedu.tuitionbook.logic.commands.ClearCommand;
 import seedu.tuitionbook.logic.commands.CommandResult;
 import seedu.tuitionbook.logic.commands.ExitCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
@@ -163,6 +167,26 @@ public class LogicManagerTest {
                 assertArrayEquals(originalBytes, Files.readAllBytes(dataFile));
             }
         }
+    }
+
+    @Test
+    public void execute_clearWithTrailingArguments_rejectsWithoutChangingContactsOrFilter() {
+        Person visibleStudent = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT).build();
+        Person hiddenGuardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
+        model.addPerson(visibleStudent);
+        model.addPerson(hiddenGuardian);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+
+        List<Person> expectedPersons = List.copyOf(logic.getPersonList());
+        List<Person> expectedFilteredPersons = List.copyOf(logic.getFilteredPersonList());
+        Predicate<Person> expectedFilter = model.getFilteredPersonListPredicate();
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
+
+        assertParseException("clear confirm extra", expectedMessage);
+
+        assertEquals(expectedPersons, logic.getPersonList());
+        assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());
+        assertSame(expectedFilter, model.getFilteredPersonListPredicate());
     }
 
     @Test
