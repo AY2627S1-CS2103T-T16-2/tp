@@ -33,7 +33,7 @@ public class HelpWindowTest {
 
     private static final List<String> IMPLEMENTED_COMMAND_SYNTAX = List.of(
             "add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...",
-            "list [r/ROLE]",
+            "list [r/ROLE] [t/TAG]...",
             "view INDEX",
             "edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...",
             "link STUDENT_INDEX GUARDIAN_INDEX",

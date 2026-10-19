@@ -28,7 +28,7 @@ Action     | Format, Examples
 **Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
 **Help**   | `help`
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
-**List**   | `list [r/ROLE]`<br> e.g., `list r/student`
+**List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/ACTIVE t/math`
 **Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
 **View**   | `view INDEX`<br> e.g., `view 1`
 
@@ -132,7 +132,7 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
   be leading, trailing, or consecutive. Spaces, underscores, slashes, and other punctuation are not accepted. Tag
   spelling and capitalization are preserved.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
-* After a contact is added, TuitionBook shows the full contact list: any active name or role filter is cleared so
+* After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so
   that the new contact is visible.
 
 <box type="tip" seamless>
@@ -154,14 +154,17 @@ Examples:
 
 ### Listing contacts: `list`
 
-Shows all contacts, or only contacts with a specified role. `list` clears any active name or role filter.
+Shows all contacts, or only contacts matching a specified role and/or all specified tags. `list` clears any active name, role, or tag filter.
 
-Format: `list [r/ROLE]`
+Format: `list [r/ROLE] [t/TAG]...`
 
 * `ROLE` is `student` or `guardian`, case-insensitively.
+* Each `TAG` follows the same tag-name rules as [adding a contact](#adding-a-contact-add). Tag matching is exact but case-insensitive; all specified tags must be present.
+* A filtered `list` replaces any active name, role, or tag filter. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
+* Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
 * Other trailing text is rejected.
-* Before linking a student to a guardian after role filtering, enter `list` to restore the full list so that both
+* Before linking a student to a guardian after applying a filter, enter `list` to restore the full list so that both
   contacts can be selected.
 * Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
 * Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
@@ -223,7 +226,7 @@ changes the complete name without interpreting `a/` as an address prefix.
 * `TAG` follows the same alphanumeric-segment and internal-hyphen rules described for [`add`](#adding-a-contact-add).
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
-* After a successful edit, TuitionBook shows the full contact list: any active name or role filter is cleared.
+* After a successful edit, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -242,7 +245,7 @@ Format: `link STUDENT_INDEX GUARDIAN_INDEX`
   previous guardian.
 * Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already
   exists and makes no change.
-* After a link is created or replaced, TuitionBook shows the full contact list: any active name or role filter is
+* After a link is created or replaced, TuitionBook shows the full contact list: any active name, role, or tag filter is
   cleared. Reporting an already-existing link makes no change, so the displayed list and its filter are preserved.
 
 Example: `link 1 2` links the student at index 1 to the guardian at index 2.
@@ -253,12 +256,11 @@ Removes a student contact's guardian link without deleting either contact.
 
 Format: `unlink STUDENT_INDEX`
 
-* `STUDENT_INDEX` is the positive index shown in the currently displayed contact list. After `find` or
-  `list r/ROLE`, it refers to the filtered list.
+* `STUDENT_INDEX` is the positive index shown in the currently displayed contact list. After `find` or a filtered `list`, it refers to the filtered list.
 * The index must refer to a student.
 * If the student has no linked guardian, TuitionBook reports this and makes no change. The displayed list and any
   active filter are preserved.
-* After a guardian link is removed, TuitionBook shows the full contact list: any active name or role filter is cleared.
+* After a guardian link is removed, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
 
 Example: `unlink 1` removes the guardian link of the student at index 1.
 
@@ -294,7 +296,7 @@ Format: `delete INDEX`
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, ...
 * Deleting a guardian keeps their linked students, but clears those students' guardian links.
-* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name or role filter: the remaining contacts of
+* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name, role, or tag filter: the remaining contacts of
   the filtered view stay listed.
 
 Examples:
