@@ -105,6 +105,38 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_tagWithAddressPrefix_delimitsAddressEvenInsideQuotes() {
+        String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
+        Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail()
+                .withAddress("c room").withTags("meet at").build();
+        assertParseSuccess(parser, mandatoryFields + " t/meet at a/c room", new AddCommand(expected));
+        Person quoted = new PersonBuilder(expected).withAddress("c room\"").withTags("\"meet at").build();
+        assertParseSuccess(parser, mandatoryFields + " t/\"meet at a/c room\"", new AddCommand(quoted));
+    }
+
+    @Test
+    public void parse_tagWithPhonePrefix_rejectsDuplicatePhone() {
+        assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " t/call p/92345678",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE));
+    }
+
+    @Test
+    public void parse_tagWithQuotes_preservesLiteralQuotes() {
+        Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withoutAddress()
+                .withTags("\"Sec 4\"").build();
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " t/\"Sec 4\"",
+                new AddCommand(expected));
+    }
+
+    @Test
+    public void parse_nonAsciiTag_reportsTagConstraints() {
+        for (String tag : new String[] {"caf\u00e9", "\u6570\u5b66", "\ud83d\ude00", "Sec\u00a04"}) {
+            assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " t/" + tag,
+                    Tag.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
     public void parse_internalTabTag_failure() {
         String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
 

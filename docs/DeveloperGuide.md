@@ -851,6 +851,8 @@ add r/student n/Dana Lee p/91234564 t/inactive t/math
 
 ### Adding, editing, and filtering tags with spaces and punctuation
 
+Tags support spaces and printable ASCII punctuation so tutors can use natural spaced labels. Existing tags remain valid without changing the JSON format. Once users save these broader tag names, reverting to the previous single-hyphen restriction would reject valid saved contacts; any future narrowing requires an explicit compatibility or migration plan. Internal spaces remain significant and quotes remain literal in tags.
+
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
 
 1. Enter `add r/student n/Alex Lim p/91234567 t/Sec 4 t/Math--Science`.<br>

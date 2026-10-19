@@ -129,7 +129,7 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
   digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
 * Each `TAG` must be non-blank and may contain ASCII letters, digits, spaces, and printable punctuation, such as `Sec 4`, `Math--Science`, `C++`, or `Mrs. Lim's`. Leading, trailing, and repeated hyphens are allowed. Non-ASCII characters and internal control characters (such as tabs or newlines) are not accepted. Surrounding whitespace is trimmed; internal spaces, punctuation, spelling, and capitalization are preserved.
-* Tags do not need quotes for spaces. Quotes in a tag are literal characters, not quoting syntax. A space followed by a field prefix recognized by the command still starts that field: `t/Math/Science` is one tag, but `t/Math t/Science` is two. Avoid embedding recognized prefixes after spaces in a tag; use a separator such as `-` instead. Only names support quoting to protect embedded prefixes.
+* Tags do not need quotes for spaces. Quotes in a tag are literal characters, not quoting syntax: `t/"Sec 4"` stores the quotes and does not match `list t/Sec 4`. A space followed by a field prefix recognized by the command still starts that field, even inside tag quotes: `t/Math/Science` is one tag, but `t/Math t/Science` is two. This also applies to `add` and `edit`; see [Known issues](#known-issues) for how embedded prefixes can change other fields. Avoid embedding recognized prefixes after spaces in a tag; use a separator such as `-` instead. Only names support quoting to protect embedded prefixes.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
 * After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so
   that the new contact is visible.
@@ -378,6 +378,8 @@ _Details coming soon ..._
 --------------------------------------------------------------------------------------------------------------------
 
 ## Known issues
+
+**Field prefixes inside tags can change other fields in `add` and `edit`.** For example, `edit 1 t/meet at a/c room` sets the tag to `meet at` and the address to `c room`. Using `t/"meet at a/c room"` does not protect the value: the tag becomes `"meet at` and the address becomes `c room"`. Similarly, `edit 1 t/call p/92345678` changes the phone number. Repeating an already supplied phone or address prefix rejects the command instead. Avoid a space immediately before a recognised prefix within a tag, for example use `t/meet at-a/c room`, and check the resulting contact details. This limitation applies even when tag values contain quotes.
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **Unquoted name text resembling a parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Wrap the entire name in straight double quotes: `n/"Rina a/p Kaur"`. Slashes without a recognised prefix, as in `Muhammad s/o Ali`, also work without quotes.
