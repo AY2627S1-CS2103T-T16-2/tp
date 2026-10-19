@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.testutil.PersonBuilder;
@@ -66,6 +68,22 @@ public class JsonTuitionBookStorageTest {
     @Test
     public void readTuitionBook_nullFilePath_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> readTuitionBook(null));
+    }
+
+    @Test
+    public void saveAndRead_specialCharactersAndLegacyTags_roundTripAndRemainFilterable() throws Exception {
+        Person person = new PersonBuilder().withRole(Role.STUDENT).withTags("friend", "Sec-4", "Math  Science",
+                "\"quotes\"", "C:\\notes", "<b>&</b>", "Math--Science", "!@#$%^&*()_+={}[]:;'<>,.?/\\|~`").build();
+        TuitionBook original = new TuitionBook();
+        original.addPerson(person);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(testFolder.resolve("tags.json"));
+        storage.saveTuitionBook(original);
+        ModelManager restored = new ModelManager(storage.readTuitionBook().orElseThrow(), new UserPrefs());
+        assertEquals(original, restored.getTuitionBook());
+        assertEquals(person.getTags(), restored.getTuitionBook().getPersonList().getFirst().getTags());
+        restored.updateFilteredPersonList(new PersonMatchesListFilterPredicate(Role.STUDENT,
+                List.of("math  science", "\"QUOTES\"", "c:\\NOTES")));
+        assertEquals(List.of(person), restored.getFilteredPersonList());
     }
 
     private java.util.Optional<ReadOnlyTuitionBook> readTuitionBook(String filePath) throws Exception {

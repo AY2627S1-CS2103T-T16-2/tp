@@ -49,6 +49,7 @@ import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
+import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
@@ -73,6 +74,47 @@ public class LogicManagerTest {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         StorageManager storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
         logic = new LogicManager(model, storage);
+    }
+
+    @Test
+    public void execute_addAndEdit_preservesSpacesPunctuationAndCase() throws Exception {
+        logic.execute("add r/student n/Alex Lim p/91234567 t/ Sec  4  t/Math--Science t/-active- t/C++ t/Mrs. Lim's");
+        assertEquals(Set.of(new Tag("Sec  4"), new Tag("Math--Science"), new Tag("-active-"),
+                new Tag("C++"), new Tag("Mrs. Lim's")), model.getTuitionBook().getPersonList().getFirst().getTags());
+
+        logic.execute("edit 1 t/Math/Science t/!@#$%^&*()_+={}[]:;\"'<>,.?/\\|~` t/Math/Science");
+        assertEquals(Set.of(new Tag("Math/Science"), new Tag("!@#$%^&*()_+={}[]:;\"'<>,.?/\\|~`")),
+                model.getTuitionBook().getPersonList().getFirst().getTags());
+        logic.execute("edit 1 t/");
+        assertTrue(model.getTuitionBook().getPersonList().getFirst().getTags().isEmpty());
+    }
+
+    @Test
+    public void execute_invalidTags_preservesContactsAndFilter() throws Exception {
+        logic.execute("add r/student n/Alex Lim p/91234567 t/Sec 4");
+        logic.execute("list t/missing");
+        TuitionBook original = new TuitionBook(model.getTuitionBook());
+        for (String invalid : List.of("bad\ttag", "bad\u007ftag", "bad\u00a0tag", "bad\u0000tag")) {
+            assertThrows(ParseException.class, () -> logic.execute("add r/student n/Beth Tan p/92345678 t/" + invalid));
+            assertThrows(ParseException.class, () -> logic.execute("edit 1 t/" + invalid));
+            assertThrows(ParseException.class, () -> logic.execute("list t/" + invalid));
+            assertEquals(original, model.getTuitionBook());
+            assertTrue(model.getFilteredPersonList().isEmpty());
+        }
+        assertThrows(ParseException.class, () -> logic.execute("add r/student n/Beth Tan p/92345678 t/   "));
+        assertThrows(ParseException.class, () -> logic.execute("list t/   "));
+    }
+
+    @Test
+    public void execute_longTagsAndManyDuplicates_preservesValues() throws Exception {
+        String longTag = "Math -- Science! ".repeat(1000) + "end";
+        logic.execute("add r/student n/Alex Lim p/91234567 t/" + longTag + " t/C++".repeat(200));
+        assertEquals(Set.of(new Tag(longTag), new Tag("C++")),
+                model.getTuitionBook().getPersonList().getFirst().getTags());
+        assertEquals("1 person(s) listed!",
+                logic.execute("list t/" + longTag + " t/c++".repeat(200)).getFeedbackToUser());
+        logic.execute("edit 1 t/" + longTag);
+        assertEquals(Set.of(new Tag(longTag)), model.getTuitionBook().getPersonList().getFirst().getTags());
     }
 
     @Test

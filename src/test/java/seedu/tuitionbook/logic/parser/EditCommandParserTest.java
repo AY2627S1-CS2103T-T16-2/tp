@@ -130,6 +130,14 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_flexibleTags_preservesPrefixBoundariesAndLiteralQuotes() {
+        EditPersonDescriptor separateTags = new EditPersonDescriptorBuilder().withTags("first", "second").build();
+        assertParseSuccess(parser, "1 t/first t/second", new EditCommand(INDEX_FIRST_PERSON, separateTags));
+        EditPersonDescriptor quotedTag = new EditPersonDescriptorBuilder().withTags("\"quoted\"").build();
+        assertParseSuccess(parser, "1 t/\"quoted\"", new EditCommand(INDEX_FIRST_PERSON, quotedTag));
+    }
+
+    @Test
     public void parse_longMultiSegmentTag_success() {
         String longMultiSegmentTag = "A-".repeat(5000) + "B";
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags(longMultiSegmentTag).build();
@@ -139,8 +147,8 @@ public class EditCommandParserTest {
     }
 
     @Test
-    public void parse_consecutiveHyphenTag_failure() {
-        assertParseFailure(parser, "1 " + PREFIX_TAG + "Math--Science", Tag.MESSAGE_CONSTRAINTS);
+    public void parse_internalTabTag_failure() {
+        assertParseFailure(parser, "1 " + PREFIX_TAG + "Ma\tth", Tag.MESSAGE_CONSTRAINTS);
     }
 
     @Test

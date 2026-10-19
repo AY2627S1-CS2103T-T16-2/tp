@@ -45,6 +45,35 @@ public class ListCommandTest {
     }
 
     @Test
+    public void execute_flexibleTags_exactCaseInsensitiveAndMatchingWithOptionalRole() throws Exception {
+        Person alex = new PersonBuilder().withName("Alex Lim").withRole(Role.STUDENT)
+                .withTags("active!", "Sec 4").build();
+        Person beth = new PersonBuilder().withName("Beth Tan").withRole(Role.STUDENT)
+                .withTags("active!", "Sec  4").build();
+        Person chris = new PersonBuilder().withName("Chris Ong").withRole(Role.STUDENT)
+                .withTags("inactive!", "Sec 4").build();
+        Person dana = new PersonBuilder().withName("Dana Lee").withRole(Role.GUARDIAN)
+                .withTags("active!", "Sec 4").build();
+        Model actual = modelWith(alex, beth, chris, dana);
+
+        assertEquals("2 person(s) listed!", new ListCommand(new PersonMatchesListFilterPredicate(
+                null, List.of("ACTIVE!", "sec 4", "active!"))).execute(actual).getFeedbackToUser());
+        assertEquals(List.of(alex, dana), actual.getFilteredPersonList());
+        assertEquals("1 person(s) listed!", new ListCommand(new PersonMatchesListFilterPredicate(
+                Role.STUDENT, List.of("ACTIVE!", "sec 4"))).execute(actual).getFeedbackToUser());
+        assertEquals(List.of(alex), actual.getFilteredPersonList());
+        assertEquals("0 person(s) listed!", new ListCommand(new PersonMatchesListFilterPredicate(
+                null, List.of("active"))).execute(actual).getFeedbackToUser());
+        assertTrue(actual.getFilteredPersonList().isEmpty());
+        new ListCommand().execute(actual);
+        assertEquals(List.of(alex, beth, chris, dana), actual.getFilteredPersonList());
+        new FindCommand(new NameContainsKeywordsPredicate(List.of("active!"))).execute(actual);
+        assertTrue(actual.getFilteredPersonList().isEmpty()); // find remains name-only
+        new ListCommand(new PersonMatchesListFilterPredicate(null, List.of("sec 4"))).execute(actual);
+        assertEquals(List.of(alex, chris, dana), actual.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_listIsFiltered_showsEverything() {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
         assertCommandSuccess(new ListCommand(), model, ListCommand.MESSAGE_SUCCESS, expectedModel);

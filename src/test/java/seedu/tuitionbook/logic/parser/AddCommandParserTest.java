@@ -83,6 +83,16 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_flexibleTagsAndQuotedName_preservesPrefixBoundaries() {
+        Person expected = new PersonBuilder().withRole(Role.STUDENT).withName("Rina a/p Kaur")
+                .withPhone("91234567").withoutEmail().withAddress("123 Main Street")
+                .withTags("Math/Science", "paid p.m.").build();
+        assertParseSuccess(parser,
+                " r/student n/\"Rina a/p Kaur\" p/91234567 t/Math/Science t/paid p.m. a/123 Main Street",
+                new AddCommand(expected));
+    }
+
+    @Test
     public void parse_longMultiSegmentAndRepeatedTags_success() {
         String longMultiSegmentTag = "A-".repeat(5000) + "B";
         String secondTag = "Sec4";
@@ -95,10 +105,10 @@ public class AddCommandParserTest {
     }
 
     @Test
-    public void parse_leadingHyphenTag_failure() {
+    public void parse_internalTabTag_failure() {
         String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
 
-        assertParseFailure(parser, mandatoryFields + " " + PREFIX_TAG + "-Math", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, mandatoryFields + " " + PREFIX_TAG + "Ma\tth", Tag.MESSAGE_CONSTRAINTS);
     }
 
     @Test
