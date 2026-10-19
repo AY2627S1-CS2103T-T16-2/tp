@@ -22,7 +22,7 @@ The format is based on Keep a Changelog.
 - Replaced the nested Help menu with a one-click top-level Help control while retaining the `help` command, <kbd>F1</kbd> shortcut, and `Copy URL` action.
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
 - Changed `list` to allow tag filtering, includes case-insensitive AND matching with the optional role filtering
-- Allowed single internal hyphens between alphanumeric segments in tag names.
+- Allowed spaces and printable ASCII punctuation in non-blank tag names, including repeated hyphens, while preserving exact case-insensitive tag filtering and existing field-prefix boundaries.
 - Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
 - Restored contacts and the active filter when a contact-changing command cannot save its changes.
 
