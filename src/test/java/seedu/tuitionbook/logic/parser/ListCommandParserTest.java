@@ -81,7 +81,16 @@ public class ListCommandParserTest {
 
     @Test
     public void parse_invalidTag_throwsParseException() {
-        assertParseFailure(parser, " t/not valid", seedu.tuitionbook.model.tag.Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " t/not\tvalid", seedu.tuitionbook.model.tag.Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " t/   ", seedu.tuitionbook.model.tag.Tag.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_flexibleTags_preservesPrefixBoundariesAndLiteralQuotes() {
+        assertParseSuccess(parser, " t/first r/student t/second",
+                new ListCommand(new PersonMatchesListFilterPredicate(Role.STUDENT, List.of("first", "second"))));
+        assertParseSuccess(parser, " t/\"quoted\"",
+                new ListCommand(new PersonMatchesListFilterPredicate(null, List.of("\"quoted\""))));
     }
 
     @Test

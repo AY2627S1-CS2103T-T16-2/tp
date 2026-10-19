@@ -5,9 +5,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 public class TagTest {
+
+    @Test
+    public void constructor_spacesAndPunctuation_preservesExactValue() {
+        for (String value : List.of("Sec 4", "Math--Science", "-Math-", "Math/Science",
+                "Mrs. Lim's class", "C++", "!@#$%^&*()_+={}[]:;\"'<>,.?/\\|~`", "Math  Science")) {
+            assertEquals(value, new Tag(value).tagName);
+        }
+    }
 
     @Test
     public void constructor_null_throwsNullPointerException() {
@@ -36,14 +46,9 @@ public class TagTest {
         // invalid tag names
         assertFalse(Tag.isValidTagName("")); // empty string
         assertFalse(Tag.isValidTagName(" ")); // whitespace only
-        assertFalse(Tag.isValidTagName("-Math")); // leading hyphen
-        assertFalse(Tag.isValidTagName("Math-")); // trailing hyphen
-        assertFalse(Tag.isValidTagName("Math--Science")); // consecutive hyphens
-        assertFalse(Tag.isValidTagName("-")); // hyphen without alphanumeric segments
-        assertFalse(Tag.isValidTagName("Math Science")); // internal space
-        assertFalse(Tag.isValidTagName("Math_Science")); // underscore
-        assertFalse(Tag.isValidTagName("Math/Science")); // slash
-        assertFalse(Tag.isValidTagName("Math.Science")); // other unsupported punctuation
+        assertFalse(Tag.isValidTagName("Math\tScience")); // internal tab
+        assertFalse(Tag.isValidTagName("Math\nScience")); // newline
+        assertFalse(Tag.isValidTagName("Math\rScience")); // carriage return
         assertFalse(Tag.isValidTagName("é")); // non-ASCII Latin letter
         assertFalse(Tag.isValidTagName("数学")); // non-ASCII letters
         assertFalse(Tag.isValidTagName("١")); // non-ASCII digit
@@ -61,9 +66,16 @@ public class TagTest {
     public void isValidTagName_longInvalidTags_returnsFalse() {
         String manySegments = "A-".repeat(5000);
 
-        assertFalse(Tag.isValidTagName(manySegments)); // trailing hyphen
-        assertFalse(Tag.isValidTagName(manySegments + "-B")); // consecutive hyphens near the end
-        assertFalse(Tag.isValidTagName(manySegments + "B_")); // invalid character near the end
+        assertFalse(Tag.isValidTagName(manySegments + "\tB")); // control character near the end
+        assertFalse(Tag.isValidTagName(" ".repeat(10000))); // long blank tag
+    }
+
+    @Test
+    public void isValidTagName_asciiBoundaries_acceptsOnlyPrintableCharacters() {
+        for (char character = 0; character < 128; character++) {
+            assertEquals(character >= ' ' && character <= '~', Tag.isValidTagName("A" + character),
+                    "ASCII character " + (int) character);
+        }
     }
 
 }

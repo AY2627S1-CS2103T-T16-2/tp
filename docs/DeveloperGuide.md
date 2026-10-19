@@ -627,7 +627,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name consists of one or more ASCII alphanumeric segments separated by single hyphens; hyphens cannot be leading, trailing, or consecutive.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. JSON retains the same string representation without migration. `Tag.equals` and `hashCode` remain case-sensitive; only list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `find` remains name-only. Existing command-prefix boundaries are unchanged, and tag quotes are literal rather than an escape mechanism.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -825,18 +825,30 @@ add r/student n/Dana Lee p/91234564 t/inactive t/math
 1. Enter `list` again.<br>
    Expected: all four contacts return in their original order; none were deleted.
 
-### Adding and editing hyphenated tags
+### Adding, editing, and filtering tags with spaces and punctuation
+
+Tags support spaces and printable ASCII punctuation so tutors can use natural spaced labels. Existing tags remain valid without changing the JSON format. Once users save these broader tag names, reverting to the previous single-hyphen restriction would reject valid saved contacts; any future narrowing requires an explicit compatibility or migration plan. Internal spaces remain significant and quotes remain literal in tags.
+
+Internal spacing is deliberately not normalized: `Sec 4` (one space) and `Sec  4` (two spaces) represent distinct tag strings. Case-insensitive list filtering does not collapse spaces, so a filter for one does not match the other. Command parsing trims surrounding whitespace only. Preserve this distinction in validation, persistence, and filtering tests; changing it would alter tag identity and matching behaviour.
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
 
-1. Enter `add r/student n/Alex Lim p/91234567 t/Sec-4 t/referred-by-Mrs-Lim`.<br>
+1. Enter `add r/student n/Alex Lim p/91234567 t/Sec 4 t/Math--Science`.<br>
    Expected: Alex Lim is added with both tags, preserving their spelling and capitalization.
-1. Enter `edit 1 t/A1-B2 t/Math`.<br>
-   Expected: The existing tags are replaced with `A1-B2` and `Math`.
-1. Enter `edit 1 t/Math--Science`.<br>
-   Expected: The edit is rejected with the tag constraint message; the existing tags remain unchanged.
+1. Enter `edit 1 t/Sec 4 t/Math/Science t/C++`.<br>
+   Expected: The existing tags are replaced with `Sec 4`, `Math/Science`, and `C++`.
+1. Enter `list r/student t/SEC 4 t/math/science`.<br>
+   Expected: Alex Lim appears and the result reports `1 person(s) listed!`.
+1. Enter `list t/Sec  4` (two spaces between `Sec` and `4`), then `list t/C+`.<br>
+   Expected: Both commands report `0 person(s) listed!`; spacing and punctuation must match exactly.
+1. Enter `list t/`.<br>
+   Expected: The command is rejected with the tag constraint message; contacts are unchanged.
 1. Close and relaunch the application.<br>
-   Expected: Alex Lim still has the tags `A1-B2` and `Math`, confirming that the hyphenated tag persisted across the restart.
+   Expected: Alex Lim still has the tags `Sec 4`, `Math/Science`, and `C++`. Enter `list r/student t/sec 4 t/c++` and verify that Alex appears.
+1. Enter `list`, then `edit 1 t/first t/second`.<br>
+   Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
+1. Enter `edit 1 t/`.<br>
+   Expected: All of Alex's tags are cleared, as before.
 
 ### Saving data
 

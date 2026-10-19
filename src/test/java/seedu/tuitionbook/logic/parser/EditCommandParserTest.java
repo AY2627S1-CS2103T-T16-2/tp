@@ -130,6 +130,14 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_flexibleTags_preservesPrefixBoundariesAndLiteralQuotes() {
+        EditPersonDescriptor separateTags = new EditPersonDescriptorBuilder().withTags("first", "second").build();
+        assertParseSuccess(parser, "1 t/first t/second", new EditCommand(INDEX_FIRST_PERSON, separateTags));
+        EditPersonDescriptor quotedTag = new EditPersonDescriptorBuilder().withTags("\"quoted\"").build();
+        assertParseSuccess(parser, "1 t/\"quoted\"", new EditCommand(INDEX_FIRST_PERSON, quotedTag));
+    }
+
+    @Test
     public void parse_longMultiSegmentTag_success() {
         String longMultiSegmentTag = "A-".repeat(5000) + "B";
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags(longMultiSegmentTag).build();
@@ -139,8 +147,33 @@ public class EditCommandParserTest {
     }
 
     @Test
-    public void parse_consecutiveHyphenTag_failure() {
-        assertParseFailure(parser, "1 " + PREFIX_TAG + "Math--Science", Tag.MESSAGE_CONSTRAINTS);
+    public void parse_tagWithAddressPrefix_delimitsAddressEvenInsideQuotes() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withTags("meet at").withAddress("c room").build();
+        assertParseSuccess(parser, "1 t/meet at a/c room", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+        EditPersonDescriptor quoted = new EditPersonDescriptorBuilder()
+                .withTags("\"meet at").withAddress("c room\"").build();
+        assertParseSuccess(parser, "1 t/\"meet at a/c room\"", new EditCommand(INDEX_FIRST_PERSON, quoted));
+    }
+
+    @Test
+    public void parse_tagWithPhonePrefix_delimitsPhone() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withTags("call").withPhone("92345678").build();
+        assertParseSuccess(parser, "1 t/call p/92345678", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+        assertParseFailure(parser, "1 t/\"call p/92345678\"", Phone.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_nonAsciiTag_reportsTagConstraints() {
+        for (String tag : new String[] {"caf\u00e9", "\u6570\u5b66", "\ud83d\ude00", "Sec\u00a04"}) {
+            assertParseFailure(parser, "1 t/" + tag, Tag.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
+    public void parse_internalTabTag_failure() {
+        assertParseFailure(parser, "1 " + PREFIX_TAG + "Ma\tth", Tag.MESSAGE_CONSTRAINTS);
     }
 
     @Test

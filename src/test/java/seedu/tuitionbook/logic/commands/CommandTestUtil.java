@@ -58,7 +58,7 @@ public class CommandTestUtil {
     public static final String EMPTY_EMAIL_DESC = " " + PREFIX_EMAIL; // empty e/ is rejected; omit it for no email
     public static final String EMPTY_ADDRESS_DESC = " " + PREFIX_ADDRESS; // empty a/ rejected; omit it for no address
     public static final String INVALID_ROLE_DESC = " " + PREFIX_ROLE + "teacher";
-    public static final String INVALID_TAG_DESC = " " + PREFIX_TAG + "hubby*"; // '*' not allowed in tags
+    public static final String INVALID_TAG_DESC = " " + PREFIX_TAG + "hub\tby"; // internal tab is not allowed
 
     public static final String PREAMBLE_WHITESPACE = "\t  \r  \n";
     public static final String PREAMBLE_NON_EMPTY = "NonEmptyPreamble";
