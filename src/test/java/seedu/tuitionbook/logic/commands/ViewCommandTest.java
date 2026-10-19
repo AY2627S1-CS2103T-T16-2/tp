@@ -30,7 +30,27 @@ public class ViewCommandTest {
     private static final Index SECOND_INDEX = Index.fromOneBased(2);
 
     @Test
-    public void execute_linkedStudent_showsGuardianOutsideFilteredList() throws CommandException {
+    public void execute_linkedStudent_showsGuardianNameOutsideFilteredList() throws CommandException {
+        Person guardian = new PersonBuilder().withName("Grace Tan").withPhone("91234567")
+                .withRole(Role.GUARDIAN).withTags("family").build();
+        Person student = new PersonBuilder().withName("Sam Tan").withPhone("81234567")
+                .withRole(Role.STUDENT).withGuardian(guardian).withoutEmail().withoutAddress()
+                .withTags("math", "friends").build();
+        Model model = modelWith(guardian, student);
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT));
+
+        String expected = "Name: Sam Tan\n"
+                + "Role: STUDENT\n"
+                + "Phone: 81234567\n"
+                + "Email: -\n"
+                + "Address: -\n"
+                + "Tags: friends, math\n\n"
+                + "Guardian: Grace Tan (91234567)";
+        assertViewWithoutMutation(model, FIRST_INDEX, expected);
+    }
+
+    @Test
+    public void execute_verboseLinkedStudent_showsGuardianDetailsOutsideFilteredList() throws CommandException {
         Person guardian = new PersonBuilder().withName("Grace Tan").withPhone("91234567")
                 .withRole(Role.GUARDIAN).withTags("family").build();
         Person student = new PersonBuilder().withName("Sam Tan").withPhone("81234567")
@@ -52,7 +72,7 @@ public class ViewCommandTest {
                 + "Email: amy@gmail.com\n"
                 + "Address: 123, Jurong West Ave 6, #08-111\n"
                 + "Tags: family";
-        assertViewWithoutMutation(model, FIRST_INDEX, expected);
+        assertViewWithoutMutation(model, FIRST_INDEX, true, expected);
     }
 
     @Test
@@ -105,9 +125,43 @@ public class ViewCommandTest {
                 + "Address: 123, Jurong West Ave 6, #08-111\n"
                 + "Tags: -\n\n"
                 + "Linked students:\n"
-                + "- Zoe Tan\n"
-                + "- Amy Tan";
+                + "- Zoe Tan (81234567)\n"
+                + "- Amy Tan (82345678)";
         assertViewWithoutMutation(model, FIRST_INDEX, expected);
+    }
+
+    @Test
+    public void execute_verboseGuardianWithMultipleStudents_showsDetailsInTuitionBookOrder()
+            throws CommandException {
+        Person guardian = new PersonBuilder().withName("Grace Tan").withRole(Role.GUARDIAN).build();
+        Person firstStudent = new PersonBuilder().withName("Zoe Tan").withPhone("81234567")
+                .withRole(Role.STUDENT).withGuardian(guardian).withoutEmail().withoutAddress()
+                .withTags("science").build();
+        Person secondStudent = new PersonBuilder().withName("Amy Tan").withPhone("82345678")
+                .withRole(Role.STUDENT).withGuardian(guardian).build();
+        Model model = modelWith(firstStudent, guardian, secondStudent);
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN));
+
+        String expected = "Name: Grace Tan\n"
+                + "Role: GUARDIAN\n"
+                + "Phone: 85355255\n"
+                + "Email: amy@gmail.com\n"
+                + "Address: 123, Jurong West Ave 6, #08-111\n"
+                + "Tags: -\n\n"
+                + "Linked students:\n\n"
+                + "Name: Zoe Tan\n"
+                + "Role: STUDENT\n"
+                + "Phone: 81234567\n"
+                + "Email: -\n"
+                + "Address: -\n"
+                + "Tags: science\n\n"
+                + "Name: Amy Tan\n"
+                + "Role: STUDENT\n"
+                + "Phone: 82345678\n"
+                + "Email: amy@gmail.com\n"
+                + "Address: 123, Jurong West Ave 6, #08-111\n"
+                + "Tags: -";
+        assertViewWithoutMutation(model, FIRST_INDEX, true, expected);
     }
 
     @Test
@@ -135,7 +189,8 @@ public class ViewCommandTest {
                 .withGuardian(secondGuardian).build();
         Model model = modelWith(firstGuardian, secondGuardian, student);
 
-        String details = new ViewCommand(Index.fromOneBased(3)).execute(model).getDetailsToShow().orElseThrow();
+        String details = new ViewCommand(Index.fromOneBased(3), true)
+                .execute(model).getDetailsToShow().orElseThrow();
         assertTrue(details.contains("Guardian details:\nName: Grace Tan\nRole: GUARDIAN\nPhone: 92345678"));
         assertFalse(details.contains("Phone: 91234567"));
     }
@@ -158,8 +213,10 @@ public class ViewCommandTest {
         ViewCommand firstCommand = new ViewCommand(FIRST_INDEX);
         assertEquals(firstCommand, new ViewCommand(FIRST_INDEX));
         assertFalse(firstCommand.equals(new ViewCommand(SECOND_INDEX)));
+        assertFalse(firstCommand.equals(new ViewCommand(FIRST_INDEX, true)));
         assertFalse(firstCommand.equals(null));
-        assertEquals(ViewCommand.class.getCanonicalName() + "{targetIndex=" + FIRST_INDEX + "}",
+        assertEquals(ViewCommand.class.getCanonicalName() + "{targetIndex=" + FIRST_INDEX
+                        + ", shouldShowFullLinkedDetails=false}",
                 firstCommand.toString());
     }
 
@@ -172,10 +229,15 @@ public class ViewCommandTest {
     }
 
     private static void assertViewWithoutMutation(Model model, Index index, String expected) throws CommandException {
+        assertViewWithoutMutation(model, index, false, expected);
+    }
+
+    private static void assertViewWithoutMutation(Model model, Index index, boolean shouldShowFullLinkedDetails,
+            String expected) throws CommandException {
         TuitionBook tuitionBookBefore = new TuitionBook(model.getTuitionBook());
         List<Person> displayedPersonsBefore = new ArrayList<>(model.getFilteredPersonList());
 
-        CommandResult result = new ViewCommand(index).execute(model);
+        CommandResult result = new ViewCommand(index, shouldShowFullLinkedDetails).execute(model);
 
         Person selectedPerson = displayedPersonsBefore.get(index.getZeroBased());
         assertEquals(String.format(ViewCommand.MESSAGE_SUCCESS, selectedPerson.getName()), result.getFeedbackToUser());

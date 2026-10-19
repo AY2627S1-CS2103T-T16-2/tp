@@ -14,6 +14,7 @@ The format is based on Keep a Changelog.
 - Added a scrollable in-app summary of every implemented command and its syntax.
 - Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
 - Added the `unlink` command to remove a student's guardian link without deleting either contact.
+- Added linked student names to guardian cards and guardian names and contact numbers to student cards, with compact overflow handling for long relationship summaries.
 - Added `reload` to reread the configured contact file and retry recovery from blocked saving without restarting.
 
 ### Changed
@@ -26,6 +27,7 @@ The format is based on Keep a Changelog.
 - Changed `find` to use Unicode-aware, case-insensitive literal substring matching anywhere in contact names while preserving name-only OR search behavior.
 - Required `clear confirm` before clearing all contacts and rejected every other argument to `clear`.
 - Restored contacts and the active filter when a contact-changing command cannot save its changes.
+- Changed `view` to show linked contact names and contact numbers by default and accept `v/` for their full contact details.
 
 ### Fixed
 

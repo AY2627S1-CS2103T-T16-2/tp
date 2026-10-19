@@ -116,6 +116,8 @@ public class TuitionBookParserTest {
     public void parseCommand_view() throws Exception {
         assertEquals(new ViewCommand(INDEX_FIRST_PERSON),
                 parser.parseCommand(ViewCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased()));
+        assertEquals(new ViewCommand(INDEX_FIRST_PERSON, true),
+                parser.parseCommand(ViewCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased() + " v/"));
         assertThrows(ParseException.class, () -> parser.parseCommand(ViewCommand.COMMAND_WORD));
     }
 
