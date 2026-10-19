@@ -60,6 +60,9 @@ public class HelpWindow extends UiPart<Stage> {
             help
               Open or focus this Help window.
 
+            reload
+              Replace contacts from the data file and clear the filter. Retry a blocked load.
+
             exit
               Exit TuitionBook.
             """.strip();

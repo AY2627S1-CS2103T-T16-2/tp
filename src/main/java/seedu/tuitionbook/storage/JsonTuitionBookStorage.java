@@ -21,7 +21,8 @@ import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 public class JsonTuitionBookStorage {
 
     public static final String MESSAGE_WRITE_BLOCKED = "Saving is disabled because the existing data file at %s "
-            + "could not be loaded. Correct the data file and restart or reload TuitionBook before saving.";
+            + "could not be loaded. Correct or move the data file, then run reload or restart TuitionBook"
+            + " before saving.";
 
     private static final Logger logger = LogsCenter.getLogger(JsonTuitionBookStorage.class);
 
