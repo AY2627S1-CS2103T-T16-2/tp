@@ -170,23 +170,33 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_clearWithTrailingArguments_rejectsWithoutChangingContactsOrFilter() {
-        Person visibleStudent = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT).build();
-        Person hiddenGuardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
-        model.addPerson(visibleStudent);
-        model.addPerson(hiddenGuardian);
+    public void execute_clearArguments_preserveDataUntilConfirmation() throws Exception {
+        logic.execute("add r/student n/Sam Student p/90000002");
+        logic.execute("add r/guardian n/Grace Guardian p/90000001");
+        Person visibleStudent = model.getTuitionBook().getPersonList().get(0);
+        Person hiddenGuardian = model.getTuitionBook().getPersonList().get(1);
+        Path dataFile = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(dataFile);
         model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
 
-        List<Person> expectedPersons = List.copyOf(logic.getPersonList());
-        List<Person> expectedFilteredPersons = List.copyOf(logic.getFilteredPersonList());
+        List<Person> expectedPersons = List.of(visibleStudent, hiddenGuardian);
+        List<Person> expectedFilteredPersons = List.of(visibleStudent);
         Predicate<Person> expectedFilter = model.getFilteredPersonListPredicate();
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
 
-        assertThrows(ParseException.class, expectedMessage, () -> logic.execute("clear confirm extra"));
+        for (String command : List.of("clear", "clear CONFIRM", "clear confirm extra")) {
+            assertThrows(ParseException.class, expectedMessage, () -> logic.execute(command));
 
-        assertEquals(expectedPersons, logic.getPersonList());
-        assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());
-        assertSame(expectedFilter, model.getFilteredPersonListPredicate());
+            assertEquals(expectedPersons, logic.getPersonList());
+            assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());
+            assertSame(expectedFilter, model.getFilteredPersonListPredicate());
+            assertArrayEquals(originalBytes, Files.readAllBytes(dataFile));
+        }
+
+        assertEquals(ClearCommand.MESSAGE_SUCCESS, logic.execute("clear confirm").getFeedbackToUser());
+        assertTrue(logic.getPersonList().isEmpty());
+        assertTrue(logic.getFilteredPersonList().isEmpty());
+        assertTrue(new JsonTuitionBookStorage(dataFile).readTuitionBook().orElseThrow().getPersonList().isEmpty());
     }
 
     @Test
