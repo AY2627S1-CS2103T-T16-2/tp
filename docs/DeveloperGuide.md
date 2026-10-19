@@ -649,7 +649,7 @@ so that it cannot be overwritten, and tells the user to correct or move the orig
 * **Current contact list**: The contacts currently displayed after applying any active filter; indexes in index-based commands refer to this list.
 * **Contact ID**: A unique, persistent identifier assigned by TuitionBook to a contact.
 * **Data file**: The local text file that stores TuitionBook contacts and their recorded guardian links between application sessions.
-* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a role filter; applying a new filter replaces the previous one.
+* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a combined role-and-tag filter; applying a new filter replaces the previous one. The role is optional, and all supplied tags must match exactly, ignoring case.
 * **Guardian**: A contact with the `guardian` role. A guardian contact may have zero or more recorded student links; these links record information in TuitionBook and do not establish or determine real-world responsibility.
 * **Guardian link**: A recorded association from a student to a guardian contact. A student has at most one guardian link, while a guardian can be linked to multiple students.
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
