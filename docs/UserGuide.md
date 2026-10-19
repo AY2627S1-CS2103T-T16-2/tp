@@ -128,9 +128,8 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
-* Each `TAG` must contain one or more ASCII alphanumeric segments separated by single hyphens (`-`). Hyphens cannot
-  be leading, trailing, or consecutive. Spaces, underscores, slashes, and other punctuation are not accepted. Tag
-  spelling and capitalization are preserved.
+* Each `TAG` must be non-blank and may contain ASCII letters, digits, spaces, and printable punctuation, such as `Sec 4`, `Math--Science`, `C++`, or `Mrs. Lim's`. Leading, trailing, and repeated hyphens are allowed. Non-ASCII characters and internal control characters (such as tabs or newlines) are not accepted. Surrounding whitespace is trimmed; internal spaces, punctuation, spelling, and capitalization are preserved.
+* Tags do not need quotes for spaces. Quotes in a tag are literal characters, not quoting syntax. A space followed by a field prefix recognized by the command still starts that field: `t/Math/Science` is one tag, but `t/Math t/Science` is two. Avoid embedding recognized prefixes after spaces in a tag; use a separator such as `-` instead. Only names support quoting to protect embedded prefixes.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
 * After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so
   that the new contact is visible.
@@ -160,6 +159,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 
 * `ROLE` is `student` or `guardian`, case-insensitively.
 * Each `TAG` follows the same tag-name rules as [adding a contact](#adding-a-contact-add). Tag matching is exact but case-insensitive; all specified tags must be present.
+* Spaces and punctuation are significant: `list t/SEC 4 t/math--science` requires both complete tags. `Sec  4` (two spaces) is different from `Sec 4`; `active!` does not match `inactive!` or `active`. In `list`, a space followed by `r/` or `t/` starts a new filter argument.
 * A filtered `list` replaces any active name, role, or tag filter. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
 * Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
@@ -223,7 +223,7 @@ changes the complete name without interpreting `a/` as an address prefix.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between
   digits. These formatting characters are preserved.
 * A supplied `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
-* `TAG` follows the same alphanumeric-segment and internal-hyphen rules described for [`add`](#adding-a-contact-add).
+* `TAG` follows the same space-and-punctuation rules and field-prefix boundaries described for [`add`](#adding-a-contact-add).
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * After a successful edit, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
