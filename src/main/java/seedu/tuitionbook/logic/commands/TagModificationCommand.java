@@ -7,6 +7,7 @@ import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.commons.util.ToStringBuilder;
@@ -81,6 +82,16 @@ abstract class TagModificationCommand extends Command {
      */
     protected String formatFeedback(Person original, boolean changed) {
         return String.format(changed ? successMessage : noChangeMessage, original.getName());
+    }
+
+    /** Formats requested tags absent from the original contact, sorted and escaped for display. */
+    protected String formatTagsAbsentFrom(Person original) {
+        return tags.stream()
+                .filter(tag -> !original.getTags().contains(tag))
+                .map(tag -> tag.tagName)
+                .sorted()
+                .map(name -> "\"" + name.replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
+                .collect(Collectors.joining(", "));
     }
 
     /**

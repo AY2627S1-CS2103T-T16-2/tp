@@ -131,7 +131,8 @@ public class LogicManagerTest {
         Person original = logic.getPersonList().get(1);
         logic.execute("find Sam");
 
-        logic.execute("tag 1 t/Science t/Math t/Science");
+        assertEquals("Added tags to Sam Student: \"Science\".",
+                logic.execute("tag 1 t/Science t/Math t/Science").getFeedbackToUser());
         Person expected = new PersonBuilder(original).withTags("Math", "Sec 4", "Science").build();
         assertEquals(expected, logic.getPersonList().get(1));
         assertEquals(2, logic.getFilteredPersonList().size());
@@ -153,6 +154,33 @@ public class LogicManagerTest {
         logic.execute("untag 2 t/Only");
         logic.execute("reload");
         assertEquals(new PersonBuilder(original).withTags().build(), logic.getPersonList().get(1));
+    }
+
+    @Test
+    public void execute_quotedTagAndUntag_preserveContactAndPersistDecodedTags() throws Exception {
+        logic.execute("add r/guardian n/Grace Guardian p/90000001");
+        logic.execute("add r/student n/Sam Student p/90000002 e/sam@example.com a/123 Road t/Math");
+        logic.execute("link 2 1");
+        Person original = logic.getPersonList().get(1);
+        String arguments = " t/\"study t/weekly r/student\" t/\"\\\"Sec 4\\\"\" t/\"C:\\\\Math\\\\\"";
+        logic.execute("find Sam");
+
+        logic.execute("tag 1" + arguments);
+        Person expected = new PersonBuilder(original)
+                .withTags("Math", "study t/weekly r/student", "\"Sec 4\"", "C:\\Math\\").build();
+        assertEquals(expected, logic.getPersonList().get(1));
+        assertEquals(2, logic.getFilteredPersonList().size());
+        logic.execute("reload");
+        assertEquals(expected, logic.getPersonList().get(1));
+        assertEquals(original.getId(), logic.getPersonList().get(1).getId());
+        logic.execute("list" + arguments);
+        assertEquals(List.of(expected), logic.getFilteredPersonList());
+
+        logic.execute("untag 1" + arguments);
+        assertEquals(2, logic.getFilteredPersonList().size());
+        logic.execute("reload");
+        assertEquals(original, logic.getPersonList().get(1));
+        assertEquals(original.getId(), logic.getPersonList().get(1).getId());
     }
 
     @Test
@@ -180,7 +208,7 @@ public class LogicManagerTest {
     @Test
     public void execute_tagAndUntagSaveFailure_restoreContactsRelationshipsAndFilter() throws Exception {
         logic.execute("add r/guardian n/Grace Guardian p/90000001");
-        logic.execute("add r/student n/Sam Student p/90000002 t/Math");
+        logic.execute("add r/student n/Sam Student p/90000002 t/\"study t/weekly\"");
         logic.execute("link 2 1");
         Path file = temporaryFolder.resolve("tuitionBook.json");
         byte[] originalBytes = Files.readAllBytes(file);
@@ -192,7 +220,7 @@ public class LogicManagerTest {
             CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(file, failure);
             Logic failingLogic = new LogicManager(model, new StorageManager(fileStorage,
                     new JsonUserPrefsStorage(temporaryFolder.resolve("FailedTagsPrefs.json"))));
-            for (String command : List.of("tag 1 t/Science", "untag 1 t/Math")) {
+            for (String command : List.of("tag 1 t/\"call p/next week\"", "untag 1 t/\"study t/weekly\"")) {
                 assertThrows(CommandException.class, () -> failingLogic.execute(command));
                 assertEquals(original, model.getTuitionBook());
                 assertEquals(original.getPersonList().stream().map(Person::getId).toList(),
@@ -212,7 +240,10 @@ public class LogicManagerTest {
         Path file = temporaryFolder.resolve("tuitionBook.json");
         byte[] originalBytes = Files.readAllBytes(file);
         for (String command : List.of("tag 1 t/Science t/", "untag 1 t/Math t/",
-                "tag 1 t/Science t/bad\ttag", "untag 1 t/Math t/caf\u00e9")) {
+                "tag 1 t/Science t/bad\ttag", "untag 1 t/Math t/caf\u00e9",
+                "tag 1 t/Science t/\"unfinished", "untag 1 t/Math t/\"unfinished",
+                "tag 1 t/Science t/\"extra\" text", "untag 1 t/Math t/\"extra\" text",
+                "tag 1 t/Science t/\"   \"", "untag 1 t/Math t/\"\"")) {
             assertThrows(ParseException.class, () -> logic.execute(command));
             assertEquals(List.of(original), logic.getPersonList());
             assertArrayEquals(originalBytes, Files.readAllBytes(file));

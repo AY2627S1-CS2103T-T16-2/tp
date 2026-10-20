@@ -38,7 +38,7 @@ public class TagModificationCommandTest {
         CommandResult result = command.execute(model);
 
         Person expected = new PersonBuilder(student).withTags("Math", "Science", "math").build();
-        assertEquals(String.format(TagCommand.MESSAGE_SUCCESS, student.getName()), result.getFeedbackToUser());
+        assertEquals("Added tags to Sam Student: \"Science\", \"math\".", result.getFeedbackToUser());
         assertEquals(List.of(guardian, expected), model.getFilteredPersonList());
         assertEquals(student.getId(), model.getFilteredPersonList().get(1).getId());
         assertTrue(command.requiresSave());
@@ -115,6 +115,16 @@ public class TagModificationCommandTest {
     }
 
     @Test
+    public void execute_addedTagPunctuation_isUnambiguousInFeedback() throws Exception {
+        Person person = new PersonBuilder().withName("Sam Student").withTags("Existing").build();
+        Model model = modelWith(person);
+        TagCommand command = new TagCommand(INDEX_FIRST_PERSON, tags("Existing", "c\\d", "a\"b", "Math, Science"));
+
+        assertEquals("Added tags to Sam Student: \"Math, Science\", \"a\\\"b\", \"c\\\\d\".",
+                command.execute(model).getFeedbackToUser());
+    }
+
+    @Test
     public void execute_reusedCommands_resetSaveDecisionAndAllowRemovingLastTag() throws Exception {
         Model model = modelWith(new PersonBuilder().withTags().build());
         TagCommand tag = new TagCommand(INDEX_FIRST_PERSON, tags("Math"));
@@ -122,9 +132,12 @@ public class TagModificationCommandTest {
         assertTrue(tag.canMutate());
         assertTrue(untag.canMutate());
         assertFalse(tag.requiresSave());
-        tag.execute(model);
+        assertEquals(String.format(TagCommand.MESSAGE_SUCCESS,
+                model.getFilteredPersonList().getFirst().getName(), "\"Math\""),
+                tag.execute(model).getFeedbackToUser());
         assertTrue(tag.requiresSave());
-        tag.execute(model);
+        assertEquals(String.format(TagCommand.MESSAGE_NO_CHANGE,
+                model.getFilteredPersonList().getFirst().getName()), tag.execute(model).getFeedbackToUser());
         assertFalse(tag.requiresSave());
         untag.execute(model);
         assertTrue(untag.requiresSave());

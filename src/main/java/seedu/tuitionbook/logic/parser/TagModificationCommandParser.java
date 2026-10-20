@@ -28,7 +28,7 @@ final class TagModificationCommandParser {
      */
     static <T extends Command> T parse(String args, String usage, BiFunction<Index, Set<Tag>, T> factory)
             throws ParseException {
-        ArgumentMultimap arguments = ArgumentTokenizer.tokenize(args, PREFIX_TAG);
+        ArgumentMultimap arguments = ArgumentTokenizer.tokenizeWithQuotedValues(args, Set.of(PREFIX_TAG));
         Index index;
         try {
             index = ParserUtil.parseIndex(arguments.getPreamble());
