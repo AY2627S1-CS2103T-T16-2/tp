@@ -19,6 +19,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Reconciled the v1.4 scope decisions with implemented commands, documented level/subject/status tag workflows and single-instance/manual-editing cautions, and removed unsupported future undo and archiving promises.
 - Moved the User Guide command summary before Quick start and corrected its sidebar link.
 - Replaced the nested Help menu with a one-click top-level Help control while retaining the `help` command, <kbd>F1</kbd> shortcut, and `Copy URL` action.
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.

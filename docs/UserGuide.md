@@ -6,7 +6,7 @@
 
 # TuitionBook User Guide
 
-TuitionBook is a **desktop application for managing tutoring contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, TuitionBook can help you manage students and guardians faster than traditional GUI applications.
+TuitionBook helps **private one-to-one home tutors** manage students, guardians and their contact details in one place. Link students to guardians to find the right person to call, keep home addresses for visits, and use tags to organise contacts by level, subject or status. Typed commands are the primary way to work with the desktop app; your contacts are stored locally.
 
 TuitionBook is intended for English-language users and supports any `en-*` locale. Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -160,6 +160,21 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
 * If a name, phone number, email address, relationship summary, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX v/` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
 
+### Organising levels, subjects and status with tags
+
+Choose a consistent tag convention, for example `Sec4` for level, `AMath` for subject, and `Active` or `Inactive` for status. These are labels you choose, not dedicated fields or enforced categories. Tag filters ignore letter case but preserve internal spacing and punctuation.
+
+To try this workflow in a fresh, empty contact list:
+
+1. Enter `add r/student n/Alex Tan p/91234561 t/Active t/Sec4 t/AMath`.
+1. Enter `list r/student t/Sec4 t/AMath` to show students with both the level and subject tags.
+1. Enter `edit 1 t/Inactive t/Sec4 t/AMath` when Alex stops tuition. **Retype every tag you want to keep**: supplying `t/` values replaces the entire tag set. Include any additional tags on your real contact too.
+1. Enter `list r/student t/Active`. Alex is excluded because the `Active` tag was replaced, not because `Inactive` automatically hides contacts.
+1. Enter `list r/student t/Inactive`, then `edit 1 t/Active t/Sec4 t/AMath` to label Alex active again.
+1. Enter `list` to show every contact regardless of status tags.
+
+`Inactive` does not archive a contact or prevent editing, linking or deletion. Status labels do not change guardian relationships. There are no dedicated archive/restore or add-tag/remove-tag commands.
+
 ### Viewing a contact: `view`
 
 Replaces the contact list with a contact's details and their recorded relationship. The next command other than `view` restores the contact list.
@@ -298,10 +313,14 @@ Format: `exit`
 
 ### Saving the data
 
+**Run only one copy of TuitionBook against the same data file at a time.** There is no single-instance guard: another copy can overwrite the first copy's saves. Close the app before copying or replacing its data file.
+
 TuitionBook attempts to save contact data after commands that change contacts or guardian links. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores the contacts and active filter to their state before the command. You do not need to save manually.
 If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and run `reload` or restart the app.
 
 ### Editing the data file
+
+**Close TuitionBook before editing or replacing its data file.** Make a backup first, edit the file, then reopen the app. An open instance keeps its own copy in memory and can overwrite external edits on the next save. `reload` is available for the recovery workflow described above, but it replaces contacts rather than merging changes.
 
 TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder from which it is launched. Contact data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file. On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path. If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged.
 
@@ -326,16 +345,12 @@ Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e
 The 100-character name limit and 200-character address limit also apply to values edited directly in the data file. A file containing a longer value is invalid and follows the recovery behavior above: TuitionBook moves it unchanged to an unused sibling backup and allows new data to be saved; if that backup cannot be created, TuitionBook leaves the original file in place and blocks saves.
 </box>
 
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous TuitionBook home folder.
+**A**: Close TuitionBook on both computers and back up their data files. Copy the application JAR and your contact data to the other computer, placing the JSON file at `data/tuitionbook.json` relative to the JAR. Replacing an existing file replaces those contacts; files are not merged. Open TuitionBook after copying.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -348,6 +363,6 @@ _Details coming soon ..._
 3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
-6. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Removed data is gone immediately; keep a copy of the data file if you may need it. An undo feature is planned `[coming in a future version]`.
+6. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Keep a separate backup of the data file before bulk changes so you can recover removed contacts.
 7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
 8. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.

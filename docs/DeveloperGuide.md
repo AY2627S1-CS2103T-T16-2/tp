@@ -188,7 +188,9 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 `AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValue` for `PREFIX_NAME`. The tokenizer visits prefix positions in order and ignores positions inside a quoted name, then removes the enclosing quotes before normal name validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields and commands retain their existing quote and prefix behaviour. The model and JSON store the plain name; no storage migration is needed. Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
 
-### \[Proposed\] Undo/redo feature
+### \[Historical proposal\] Undo/redo feature
+
+Undo/redo is descoped from the final release under [scope decision 4.1](#decision-4-1-undo-and-confirmation). The following inherited design is retained only as a hypothetical implementation discussion: its classes, commands and model methods are not implemented, and it is not a release commitment.
 
 #### Proposed Implementation
 
@@ -271,11 +273,6 @@ The following activity diagram summarizes what happens when a user executes a ne
 
 _{more aspects and alternatives to be added}_
 
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Documentation, logging, testing, dev-ops**
@@ -303,7 +300,7 @@ _{Explain here how the data archiving feature will be implemented}_
 * prefers contact information to be stored locally and restored automatically between application sessions
 * uses English and an `en-*` operating-system locale
 
-**Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage student and guardian contacts, organise contacts with roles and tags, and retrieve the correct contact details quickly, instead of using a generic contact list or manually cross-referencing separate records. Guardian links and home addresses are optional. Tutors can label academic levels and subjects using generic tags, for example `t/Sec4 t/AMath` when adding or editing a contact. Dedicated level/subject fields and filtering by those fields are descoped from the final release; they remain possible future enhancements, not promised features. Tag filtering is separately scheduled for v1.4 in [#133](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/133).
+**Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage student and guardian contacts, organise contacts with roles and tags, and retrieve the correct contact details quickly, instead of using a generic contact list or manually cross-referencing separate records. Guardian links and home addresses are optional. Tutors can label academic levels and subjects using generic tags, for example `t/Sec4 t/AMath` when adding or editing a contact. Dedicated level/subject fields and filtering by those fields are descoped from the final release; they remain possible future enhancements, not promised features. Level and subject grouping is supported through `list r/student t/Sec4 t/AMath`, which requires both tags. See the [tag workflow](UserGuide.md#organising-levels-subjects-and-status-with-tags).
 
 <!-- Codex assisted ooixs with the language-scope and user-story status clarifications for PR #131. -->
 TuitionBook is intended for English-language users and supports `en-*` operating-system locales. Its interface, documentation, and messages are in English; this does not require contact information to contain only English text. Contact fields accept UTF-8 text subject to their documented validation rules. In particular, names accept Unicode letters, numbers, and combining marks, with the accepted capitalization, punctuation, and Unicode representation preserved after surrounding whitespace is trimmed. Duplicate-contact checks treat canonically equivalent Unicode names as equal, as documented in the [User Guide](UserGuide.md#adding-a-contact-add).
@@ -318,12 +315,11 @@ Priority represents importance to the target user and does not indicate whether 
 
 `Scope` is a planning classification, not a claim about the current implementation state. `MVP` identifies requirements in the agreed minimum TuitionBook product, while `Beyond MVP` identifies requirements outside that minimum, including implemented, scheduled, deferred, and descoped stories. The table retains these stories as a record of user needs; inclusion does not promise delivery.
 
-As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP needs include filtering contacts by role, preserving an unreadable data file as a backup, and recording academic levels and subjects through generic tags. Tags provide flexible labels without dedicated academic fields or validation. For v1.4, [#127](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/127) adds case-insensitive literal substring matching anywhere in contact names; other fields remain excluded from `find`. Other stories have distinct planning statuses:
+The MVP was delivered in v1.3. The v1.4 implementation also supports unlinking, tag filtering with an optional role, name-substring search, an offline command summary, `clear confirm`, quoted names, and reloading the contact file. These features are implemented in this source revision; the versioned release and its changelog identify what has been published. `find` searches names only, while `list [r/ROLE] [t/TAG]...` requires all supplied tags and the optional role to match; neither combines role and name filtering.
 
-* **Scheduled**: selected work is tracked through the issue tracker's milestones (`v1.4`, `v1.5`). Unlinking a guardian ([#125](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/125)), tag filtering ([#133](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/133)), a static in-app command summary ([#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93)), and explicit confirmation for clearing all contacts ([#141](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/141)) are scheduled for v1.4, not available in v1.3. The agreed tag-filtering scope is `list [r/ROLE] [t/TAG]...`: exact, case-insensitive tag matching, requiring all supplied tags and the optional role to match. This supports role-plus-tag filtering; it does not implement role-plus-name filtering. The agreed clear behaviour requires `clear confirm` before deleting all contacts, rejects other trailing arguments, and makes clear in its message that contacts hidden by the current filter are also affected. This is a specific safeguard for clearing data, not a commitment to confirmation prompts for every deletion.
-* **Tag-based organisation**: [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/134) records a workflow using generic tags to distinguish active and inactive students. These labels are already supported in v1.3; `Inactive` has no special behaviour and does not automatically hide or archive a contact. Filtering by status tags depends on the scheduled tag-filtering feature. Editing tags replaces the complete tag set, so tutors must retain any level, subject, or other tags they still need when changing a status label. Dedicated inactive/archive state and restore operations remain descoped.
-* **Descoped**: the decisions recorded in [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/134) exclude dedicated level/subject fields and filtering by those fields, dedicated inactive/archive functionality, sorting, area search, notes, clipboard support, import/export, and undo from the final release. This does not exclude organising contacts through generic tags or the in-app command summary scheduled in #93. Descoped features are not release commitments; any later reconsideration requires a new scope decision.
-* **Deferred**: other unimplemented Beyond-MVP stories without a scheduled issue remain unscheduled backlog ideas, with no promised release or delivery date.
+* **Tag-based organisation**: academic level, subject and active/inactive status are supported through generic tags and tag filtering. There are no dedicated academic fields or inactive/archive states. See the scope decisions below for the workflow and its limitations.
+* **Descoped**: dedicated level/subject fields, dedicated inactive/archive functionality, sorting, area search, notes, contact-to-clipboard commands, import/export commands and undo are excluded from the final release. Copying the User Guide URL remains supported. These decisions do not exclude generic tags or the implemented in-app command summary.
+* **Deferred**: other unimplemented Beyond-MVP stories remain backlog ideas without a promised release or delivery date. Their priority and presence in the table do not imply implementation.
 
 | Priority | Scope | As a … | I want to … | So that I can… |
 |----------|-------|--------|-------------|----------------|
@@ -365,6 +361,44 @@ As of release v1.3, all MVP requirements are implemented. Supported Beyond-MVP n
 | `*` | Beyond MVP | private tutor | import contact data | restore or migrate contacts without re-entering them individually |
 | `*` | Beyond MVP | private tutor | have TuitionBook preserve an unreadable data file | avoid losing the original data while resolving a loading problem |
 | `*` | Beyond MVP | private tutor | receive a precise explanation when contact data cannot be loaded | understand what must be corrected |
+
+### Scope decisions for v1.4
+
+This record reconciles [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/134) with the implemented commands. The US identifiers refer to the original backlog, not row numbers in the table above. These are product decisions and documented limitations, not guarantees about how a future bug report will be evaluated.
+
+#### Decision 4.1: Undo and confirmation
+
+US20 undo/redo is excluded from the final release. There is no command history that can restore a successful deletion or clear operation; users should back up the data file before bulk changes. General confirmation prompts are also excluded. The later [#141](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/141) decision adds a specific safeguard: `clear confirm` is required, and the message explicitly includes contacts hidden by filters. `delete INDEX` remains immediate. Save-failure rollback is implemented and restores contacts and the active filter after a failed save; it is distinct from user-invoked undo and does not reverse a successful command.
+
+#### Help and notes
+
+The earlier US12 descope was reversed by [#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93): Help now includes an offline command summary, with browser access to the full UG and Copy URL as a fallback. It is a static syntax summary, not a context-sensitive help system.
+
+US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Quoting for names under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) has landed, but does not add a notes field or general escaping. Unquoted name collisions and literal tag quotes retain the documented parser behaviour.
+
+#### Academic grouping and inactive contacts
+
+US18/US19 needs are supported through generic tags: `t/Sec4 t/AMath` records a level and subject, and `list r/student t/Sec4 t/AMath` selects students with both labels. Dedicated academic fields and validation remain excluded. This updates the value proposition clarified in [#131](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/131).
+
+`Active` and `Inactive` are ordinary organisational tags. They do not hide contacts, archive records, disable commands, or change guardian relationships. Tutors explicitly select `list r/student t/Active` when needed. Editing tags replaces the full set, so changing a status requires retyping all tags to retain, for example `edit 1 t/Inactive t/Sec4 t/AMath`. Dedicated archive/restore and incremental add-tag/remove-tag commands are deferred; they are not promised future features.
+
+#### Tag identity and compatibility
+
+[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Command parsing trims surrounding whitespace only. Internal spaces remain significant (`Sec 4` and `Sec  4` differ), quotes remain literal, and filtering compares complete tags case-insensitively. Recognised prefixes after spaces can still delimit another field; the UG documents this limitation and examples for add/edit.
+
+Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Once broader tags are saved, narrowing validation or normalising existing tag identities requires an explicit compatibility or migration plan.
+
+#### Single-instance operation and manual file editing
+
+Run only one TuitionBook instance against a data file. The application does not lock the file against another instance or an external editor; each save writes the current in-memory contacts and can overwrite another writer's changes. Atomic saving protects replacement of an individual file, not coordination between independent writers.
+
+A lock-file guard was considered and deferred from v1.x because cross-platform locking and stale-lock recovery add risks in the final iteration. The supported manual-editing workflow is to close TuitionBook, back up and edit the file, then reopen it. The implemented `reload` command remains an explicit recovery option: it replaces in-memory contacts rather than merging concurrent changes. Single-instance enforcement is a deferred improvement, not an implemented safeguard or promised release feature.
+
+#### Startup and unnecessary writes
+
+US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/109): a missing data file starts with an empty contact list, and a valid file containing an empty contact list stays empty. The application does not insert sample contacts on startup.
+
+Avoiding every unnecessary write remains a code-quality follow-up under [#142](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/142). In the current implementation, re-linking an already-linked pair still requests a save, whereas unlinking an already-unlinked student skips saving. This internal distinction does not change the relationship result; save failures still follow the normal error path. Neither is a new user-facing feature commitment.
 
 ### Use cases
 
