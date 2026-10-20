@@ -42,6 +42,12 @@ public class HelpWindow extends UiPart<Stage> {
             edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...
               Edit one or more details of a displayed contact.
 
+            tag INDEX t/TAG [t/TAG]...
+              Add tags to a displayed contact, keeping its existing tags.
+
+            untag INDEX t/TAG [t/TAG]...
+              Remove specified tags from a displayed contact, keeping its other tags.
+
             link STUDENT_INDEX GUARDIAN_INDEX
               Link a displayed student to a displayed guardian.
 
