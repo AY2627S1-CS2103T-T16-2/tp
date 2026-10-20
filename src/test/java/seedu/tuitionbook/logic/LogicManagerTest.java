@@ -283,21 +283,27 @@ public class LogicManagerTest {
             "edit 1 t/Science t/Math t/Math", "edit 1 n/  Sam Student  p/90000002 t/Math t/Science"};
         Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
                 .withoutEmail().withoutAddress().withTags("Math", "Science").build();
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
         model.addPerson(student);
+        model.addPerson(guardian);
         CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
                 temporaryFolder.resolve("NoOpEdit.json"), DUMMY_AD_EXCEPTION);
         logic = new LogicManager(model, new StorageManager(fileStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("NoOpEditPrefs.json"))));
 
         for (String command : commands) {
+            model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+            assertEquals(List.of(student), logic.getFilteredPersonList(), command);
             logic.execute(command);
             assertEquals(0, fileStorage.getSaveCallCount(), command);
-            assertEquals(List.of(student), logic.getPersonList(), command);
+            assertEquals(List.of(student, guardian), logic.getPersonList(), command);
+            assertEquals(List.of(student, guardian), logic.getFilteredPersonList(), command);
         }
     }
 
     @Test
-    public void execute_emptyTagEditAndEmptyClear_skipSave() throws Exception {
+    public void execute_emptyTagEdit_skipsSave() throws Exception {
         Person student = new PersonBuilder().withTags().build();
         model.addPerson(student);
         CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
@@ -307,8 +313,22 @@ public class LogicManagerTest {
 
         logic.execute("edit 1 t/");
         assertEquals(0, fileStorage.getSaveCallCount());
+        assertEquals(List.of(student), logic.getPersonList());
+        assertTrue(logic.getPersonList().getFirst().getTags().isEmpty());
+    }
+
+    @Test
+    public void execute_clearThenEmptyClear_savesOnlyFirstClear() throws Exception {
+        model.addPerson(new PersonBuilder().build());
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("EmptyClear.json"), null);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("EmptyClearPrefs.json"))));
+
         logic.execute("clear confirm");
         assertEquals(1, fileStorage.getSaveCallCount());
+        assertTrue(logic.getPersonList().isEmpty());
+        assertTrue(fileStorage.readTuitionBook().orElseThrow().getPersonList().isEmpty());
         logic.execute("clear confirm");
         assertEquals(1, fileStorage.getSaveCallCount());
         assertTrue(fileStorage.readTuitionBook().orElseThrow().getPersonList().isEmpty());
