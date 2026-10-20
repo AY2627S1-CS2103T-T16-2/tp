@@ -105,27 +105,41 @@ public class AddCommandParserTest {
     }
 
     @Test
-    public void parse_tagWithAddressPrefix_delimitsAddressEvenInsideQuotes() {
+    public void parse_tagWithAddressPrefix_quotedTagProtectsPrefix() {
         String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
         Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail()
                 .withAddress("c room").withTags("meet at").build();
         assertParseSuccess(parser, mandatoryFields + " t/meet at a/c room", new AddCommand(expected));
-        Person quoted = new PersonBuilder(expected).withAddress("c room\"").withTags("\"meet at").build();
+        Person quoted = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withoutAddress()
+                .withTags("meet at a/c room").build();
         assertParseSuccess(parser, mandatoryFields + " t/\"meet at a/c room\"", new AddCommand(quoted));
     }
 
     @Test
-    public void parse_tagWithPhonePrefix_rejectsDuplicatePhone() {
+    public void parse_tagWithPhonePrefix_quotedTagProtectsPrefix() {
         assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " t/call p/92345678",
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_PHONE));
+        Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withoutAddress()
+                .withTags("call p/92345678").build();
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB
+                + " t/\"call p/92345678\"", new AddCommand(expected));
     }
 
     @Test
-    public void parse_tagWithQuotes_preservesLiteralQuotes() {
+    public void parse_tagWithQuotes_removesEnclosingQuotes() {
         Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withoutAddress()
-                .withTags("\"Sec 4\"").build();
+                .withTags("Sec 4").build();
         assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " t/\"Sec 4\"",
                 new AddCommand(expected));
+    }
+
+    @Test
+    public void parse_tagsWithEnclosingAndLiteralQuotes_preservesOnlyLiteralQuotes() {
+        Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail().withoutAddress()
+                .withTags("Sec 4", "Math \"advanced\" class", "Science\"").build();
+
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB
+                + " t/\"Sec 4\" t/Math \"advanced\" class t/Science\"", new AddCommand(expected));
     }
 
     @Test

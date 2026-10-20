@@ -130,10 +130,10 @@ public class EditCommandParserTest {
     }
 
     @Test
-    public void parse_flexibleTags_preservesPrefixBoundariesAndLiteralQuotes() {
+    public void parse_flexibleTags_preservesPrefixBoundariesAndRemovesQuotes() {
         EditPersonDescriptor separateTags = new EditPersonDescriptorBuilder().withTags("first", "second").build();
         assertParseSuccess(parser, "1 t/first t/second", new EditCommand(INDEX_FIRST_PERSON, separateTags));
-        EditPersonDescriptor quotedTag = new EditPersonDescriptorBuilder().withTags("\"quoted\"").build();
+        EditPersonDescriptor quotedTag = new EditPersonDescriptorBuilder().withTags("quoted").build();
         assertParseSuccess(parser, "1 t/\"quoted\"", new EditCommand(INDEX_FIRST_PERSON, quotedTag));
     }
 
@@ -147,12 +147,12 @@ public class EditCommandParserTest {
     }
 
     @Test
-    public void parse_tagWithAddressPrefix_delimitsAddressEvenInsideQuotes() {
+    public void parse_tagWithAddressPrefix_quotedTagProtectsPrefix() {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
                 .withTags("meet at").withAddress("c room").build();
         assertParseSuccess(parser, "1 t/meet at a/c room", new EditCommand(INDEX_FIRST_PERSON, descriptor));
         EditPersonDescriptor quoted = new EditPersonDescriptorBuilder()
-                .withTags("\"meet at").withAddress("c room\"").build();
+                .withTags("meet at a/c room").build();
         assertParseSuccess(parser, "1 t/\"meet at a/c room\"", new EditCommand(INDEX_FIRST_PERSON, quoted));
     }
 
@@ -161,7 +161,8 @@ public class EditCommandParserTest {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
                 .withTags("call").withPhone("92345678").build();
         assertParseSuccess(parser, "1 t/call p/92345678", new EditCommand(INDEX_FIRST_PERSON, descriptor));
-        assertParseFailure(parser, "1 t/\"call p/92345678\"", Phone.MESSAGE_CONSTRAINTS);
+        EditPersonDescriptor quoted = new EditPersonDescriptorBuilder().withTags("call p/92345678").build();
+        assertParseSuccess(parser, "1 t/\"call p/92345678\"", new EditCommand(INDEX_FIRST_PERSON, quoted));
     }
 
     @Test
