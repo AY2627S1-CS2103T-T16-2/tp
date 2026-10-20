@@ -195,6 +195,34 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_editQuotedTags_preservesOtherFieldsAndPersistsCompleteTags() throws Exception {
+        logic.execute("add r/student n/Sam Student p/91234567 e/sam@example.com a/123 Main Street t/Old");
+        logic.execute("add r/guardian n/Grace Guardian p/98765432");
+        logic.execute("link 1 2");
+        Person originalStudent = logic.getPersonList().get(0);
+        Person originalGuardian = logic.getPersonList().get(1);
+        Person expectedStudent = new PersonBuilder(originalStudent)
+                .withTags("meet at a/c room", "call p/next week").build();
+
+        logic.execute("edit 1 t/\"meet at a/c room\" t/\"call p/next week\"");
+
+        assertEquals(List.of(expectedStudent, originalGuardian), logic.getPersonList());
+        Person savedStudent = new JsonTuitionBookStorage(temporaryFolder.resolve("tuitionBook.json"))
+                .readTuitionBook().orElseThrow().getPersonList().get(0);
+        assertEquals(Set.of(new Tag("meet at a/c room"), new Tag("call p/next week")), savedStudent.getTags());
+        assertEquals(originalStudent.getPhone(), savedStudent.getPhone());
+        assertEquals(originalStudent.getAddress(), savedStudent.getAddress());
+        assertEquals(originalStudent.getId(), savedStudent.getId());
+        assertEquals(expectedStudent, savedStudent);
+
+        logic.execute("reload");
+
+        assertEquals(List.of(expectedStudent, originalGuardian), logic.getPersonList());
+        assertEquals(originalStudent.getId(), logic.getPersonList().get(0).getId());
+        assertEquals(originalGuardian.getId(), logic.getPersonList().get(1).getId());
+    }
+
+    @Test
     public void execute_invalidQuotedNames_leavesModelAndSavedDataUnchanged() throws Exception {
         logic.execute("add r/student n/Original p/91234567");
         logic.execute("add r/guardian n/Hidden Guardian p/90000001");
