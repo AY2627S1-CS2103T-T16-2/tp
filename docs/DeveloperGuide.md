@@ -852,7 +852,21 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 ### Saving data
 
+`LogicManager` snapshots contacts and the active filter before commands that can mutate data. After execution, a command's save request is honoured only if the complete contact list differs from the snapshot. Comparison includes field values, tags, guardian links, contact order, and persistent IDs (which `Person.equals` excludes). Filter changes alone do not trigger saving. Actual changes retain the existing save-failure rollback; `reload` does not request saving.
+
+**Known performance limitation:** Change detection may inspect all `n` contacts even when a command targets only one contact, giving up to O(n) contact comparisons; comparing changed field values and tags has additional costs. Creating the rollback snapshot also requires O(n) contact references. This may add latency for large contact lists, but no benchmark has established a user-visible slowdown or a maximum practical list size. Tracking only affected contacts is a possible future optimisation; it would need to cover indirect changes, such as clearing students' links when deleting a guardian, and preserve save-failure rollback. The current implementation retains the full-list comparison for correctness and simplicity.
+
 Run each scenario below independently in a fresh, disposable folder. An ordinary save failure rolls back the attempted change but does not set the storage write block: restore write access and repeat the failed command. A failed load whose backup also fails does set the write block: correct or move the file and use `reload` (or restart) before retrying contact-changing commands. If backing up an unreadable file succeeds, saving is already enabled and no reload is required. Reload reads the file; it does not save or replay a failed command.
+
+1. Repeating commands without changing contact data
+
+   1. In a fresh, disposable folder, enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002 t/Math`, then `link 2 1`.
+   1. Configure the data file or its folder so saving fails, then enter `edit 2 t/Science`.<br>
+      Expected: A save error is reported and Sam's tag remains `Math`. This establishes the save-failure precondition; permission controls differ by operating system.
+   1. Enter `link 2 1`, `edit 2 n/Sam Student`, and `edit 2 t/Math`.<br>
+      Expected: Each command completes without a save error and contacts remain unchanged. The link command reports that the relationship already exists.
+   1. Restore write access, then enter `edit 2 t/Science`, `unlink 2`, and `unlink 2` again.<br>
+      Expected: The tag change and first unlink persist; the second unlink reports no linked guardian. Restart and verify that Sam has tag `Science` and no guardian link.
 
 1. Reloading corrected data without restarting
 
