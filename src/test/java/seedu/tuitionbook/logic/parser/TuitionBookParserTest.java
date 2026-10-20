@@ -8,6 +8,7 @@ import static seedu.tuitionbook.testutil.Assert.assertThrows;
 import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -22,13 +23,16 @@ import seedu.tuitionbook.logic.commands.FindCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.LinkCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
+import seedu.tuitionbook.logic.commands.TagCommand;
 import seedu.tuitionbook.logic.commands.UnlinkCommand;
+import seedu.tuitionbook.logic.commands.UntagCommand;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.person.NameContainsKeywordsPredicate;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.PersonHasRolePredicate;
 import seedu.tuitionbook.model.person.Role;
+import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.testutil.EditPersonDescriptorBuilder;
 import seedu.tuitionbook.testutil.PersonBuilder;
 import seedu.tuitionbook.testutil.PersonUtil;
@@ -104,6 +108,14 @@ public class TuitionBookParserTest {
     public void parseCommand_link() throws Exception {
         assertEquals(new LinkCommand(INDEX_FIRST_PERSON, seedu.tuitionbook.testutil.TypicalIndexes.INDEX_SECOND_PERSON),
                 parser.parseCommand(LinkCommand.COMMAND_WORD + " 1 2"));
+    }
+
+    @Test
+    public void parseCommand_tagAndUntag() throws Exception {
+        assertEquals(new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("Math"))),
+                parser.parseCommand("tag 1 t/Math"));
+        assertEquals(new UntagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("Math"))),
+                parser.parseCommand("untag 1 t/Math"));
     }
 
     @Test

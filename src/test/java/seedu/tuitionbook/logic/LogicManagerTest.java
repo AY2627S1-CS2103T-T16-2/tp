@@ -40,7 +40,9 @@ import seedu.tuitionbook.logic.commands.CommandResult;
 import seedu.tuitionbook.logic.commands.ExitCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
+import seedu.tuitionbook.logic.commands.TagCommand;
 import seedu.tuitionbook.logic.commands.UnlinkCommand;
+import seedu.tuitionbook.logic.commands.UntagCommand;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
@@ -119,6 +121,102 @@ public class LogicManagerTest {
                 logic.execute("list t/" + longTag + " t/c++".repeat(200)).getFeedbackToUser());
         logic.execute("edit 1 t/" + longTag);
         assertEquals(Set.of(new Tag(longTag)), model.getTuitionBook().getPersonList().getFirst().getTags());
+    }
+
+    @Test
+    public void execute_tagAndUntag_persistIncrementalChangesAndKeepReplacementEditing() throws Exception {
+        logic.execute("add r/guardian n/Grace Guardian p/90000001");
+        logic.execute("add r/student n/Sam Student p/90000002 e/sam@example.com a/123 Road t/Math t/Sec 4");
+        logic.execute("link 2 1");
+        Person original = logic.getPersonList().get(1);
+        logic.execute("find Sam");
+
+        logic.execute("tag 1 t/Science t/Math t/Science");
+        Person expected = new PersonBuilder(original).withTags("Math", "Sec 4", "Science").build();
+        assertEquals(expected, logic.getPersonList().get(1));
+        assertEquals(2, logic.getFilteredPersonList().size());
+        logic.execute("reload");
+        assertEquals(expected, logic.getPersonList().get(1));
+        assertEquals(original.getId(), logic.getPersonList().get(1).getId());
+
+        logic.execute("list r/student");
+        assertEquals(String.format(UntagCommand.MESSAGE_SUCCESS, original.getName())
+                + " Tags not present: \"absent\".", logic.execute("untag 1 t/Math t/absent").getFeedbackToUser());
+        expected = new PersonBuilder(original).withTags("Sec 4", "Science").build();
+        logic.execute("reload");
+        assertEquals(expected, logic.getPersonList().get(1));
+        assertEquals(original.getId(), logic.getPersonList().get(1).getId());
+
+        logic.execute("edit 2 t/Only");
+        logic.execute("reload");
+        assertEquals(Set.of(new Tag("Only")), logic.getPersonList().get(1).getTags());
+        logic.execute("untag 2 t/Only");
+        logic.execute("reload");
+        assertEquals(new PersonBuilder(original).withTags().build(), logic.getPersonList().get(1));
+    }
+
+    @Test
+    public void execute_tagAndUntagNoChanges_doNotSaveOrClearFilter() throws Exception {
+        Person student = new PersonBuilder().withTags("Math").build();
+        model.addPerson(student);
+        model.addPerson(new PersonBuilder().withName("Hidden Guardian").withRole(Role.GUARDIAN).build());
+        Predicate<Person> filter = person -> person.getRole() == Role.STUDENT;
+        model.updateFilteredPersonList(filter);
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("NoOpTags.json"), DUMMY_AD_EXCEPTION);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("NoOpTagsPrefs.json"))));
+
+        assertEquals(String.format(TagCommand.MESSAGE_NO_CHANGE, student.getName()),
+                logic.execute("tag 1 t/Math t/Math").getFeedbackToUser());
+        assertEquals(String.format(UntagCommand.MESSAGE_NO_CHANGE, student.getName())
+                + " Tags not present: \"absent\", \"math\".",
+                logic.execute("untag 1 t/math t/absent").getFeedbackToUser());
+        assertEquals(0, fileStorage.getSaveCallCount());
+        assertEquals(List.of(student), logic.getFilteredPersonList());
+        assertSame(filter, model.getFilteredPersonListPredicate());
+    }
+
+    @Test
+    public void execute_tagAndUntagSaveFailure_restoreContactsRelationshipsAndFilter() throws Exception {
+        logic.execute("add r/guardian n/Grace Guardian p/90000001");
+        logic.execute("add r/student n/Sam Student p/90000002 t/Math");
+        logic.execute("link 2 1");
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(file);
+        TuitionBook original = new TuitionBook(model.getTuitionBook());
+        Predicate<Person> filter = person -> person.getRole() == Role.STUDENT;
+        model.updateFilteredPersonList(filter);
+
+        for (IOException failure : List.of(DUMMY_IO_EXCEPTION, DUMMY_AD_EXCEPTION)) {
+            CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(file, failure);
+            Logic failingLogic = new LogicManager(model, new StorageManager(fileStorage,
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("FailedTagsPrefs.json"))));
+            for (String command : List.of("tag 1 t/Science", "untag 1 t/Math")) {
+                assertThrows(CommandException.class, () -> failingLogic.execute(command));
+                assertEquals(original, model.getTuitionBook());
+                assertEquals(original.getPersonList().stream().map(Person::getId).toList(),
+                        failingLogic.getPersonList().stream().map(Person::getId).toList());
+                assertSame(filter, model.getFilteredPersonListPredicate());
+                assertEquals(List.of(original.getPersonList().get(1)), failingLogic.getFilteredPersonList());
+                assertArrayEquals(originalBytes, Files.readAllBytes(file));
+            }
+            assertEquals(2, fileStorage.getSaveCallCount());
+        }
+    }
+
+    @Test
+    public void execute_invalidIncrementalTagInput_doesNotPartiallyModifyOrSave() throws Exception {
+        logic.execute("add r/student n/Sam Student p/90000002 t/Math");
+        Person original = logic.getPersonList().getFirst();
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(file);
+        for (String command : List.of("tag 1 t/Science t/", "untag 1 t/Math t/",
+                "tag 1 t/Science t/bad\ttag", "untag 1 t/Math t/caf\u00e9")) {
+            assertThrows(ParseException.class, () -> logic.execute(command));
+            assertEquals(List.of(original), logic.getPersonList());
+            assertArrayEquals(originalBytes, Files.readAllBytes(file));
+        }
     }
 
     @Test

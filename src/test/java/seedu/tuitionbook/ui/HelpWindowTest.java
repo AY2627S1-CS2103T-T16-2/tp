@@ -38,6 +38,8 @@ public class HelpWindowTest {
             "edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...",
             "link STUDENT_INDEX GUARDIAN_INDEX",
             "unlink STUDENT_INDEX",
+            "tag INDEX t/TAG [t/TAG]...",
+            "untag INDEX t/TAG [t/TAG]...",
             "find KEYWORD [MORE_KEYWORDS]...",
             "delete INDEX",
             "clear confirm",
