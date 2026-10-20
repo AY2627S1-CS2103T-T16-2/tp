@@ -103,6 +103,7 @@ public class ArgumentTokenizer {
             }
             decoded.append(value.charAt(i));
         }
+        // Trim after decoding so quoting and escapes cannot preserve surrounding whitespace.
         return decoded.toString().trim();
     }
 
