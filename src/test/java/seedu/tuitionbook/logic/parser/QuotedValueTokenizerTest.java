@@ -100,6 +100,43 @@ public class QuotedValueTokenizerTest {
     }
 
     @Test
+    public void tokenize_escapedQuotes_protectsEmbeddedPrefixesAndResumesAfterClosingQuote() throws Exception {
+        ArgumentMultimap result = tokenize(
+                " t/  \" \\\"meet at a/c room\\\" t/weekly \"  p/91234567 t/\"\\\"Sec 4\\\"\"");
+        assertEquals(List.of("\"meet at a/c room\" t/weekly", "\"Sec 4\""),
+                result.getAllValues(PREFIX_TAG));
+        assertEquals("91234567", result.getValue(PREFIX_PHONE).orElseThrow());
+        assertFalse(result.getValue(PREFIX_ADDRESS).isPresent());
+    }
+
+    @Test
+    public void tokenize_backslashes_decodesOnlySupportedEscapesInsideQuotedValues() throws Exception {
+        ArgumentMultimap result = tokenize(
+                " t/\"C:\\\\Math\\\\\" t/\"C:\\Math\\Science\" t/C:\\\\Math\\\"notes");
+        assertEquals(List.of("C:\\Math\\", "C:\\Math\\Science", "C:\\\\Math\\\"notes"),
+                result.getAllValues(PREFIX_TAG));
+    }
+
+    @Test
+    public void tokenize_escapedNameQuotes_decodesBeforeDomainValidation() throws Exception {
+        assertEquals("Rina \"alias\"", tokenize(" n/\"Rina \\\"alias\\\"\"")
+                .getValue(PREFIX_NAME).orElseThrow());
+    }
+
+    @Test
+    public void tokenize_escapedClosingQuoteWithoutRealClosingQuote_throwsHelpfulError() {
+        for (String input : List.of(" t/\"Math\\\"", " t/\"Math\\", " n/\"Rina\\\"")) {
+            assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE, () -> tokenize(input));
+        }
+    }
+
+    @Test
+    public void tokenize_textAfterEscapedQuotedValue_throwsHelpfulError() {
+        assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE, () ->
+                tokenize(" t/\"\\\"Math\\\"\" extra"));
+    }
+
+    @Test
     public void tokenize_textAfterQuote_throwsHelpfulError() {
         for (String suffix : List.of(" extra", "p/91234567", " \"Kaur\"", " x/unknown")) {
             assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE, () ->
