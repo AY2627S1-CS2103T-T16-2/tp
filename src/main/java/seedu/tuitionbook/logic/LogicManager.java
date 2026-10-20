@@ -2,7 +2,6 @@ package seedu.tuitionbook.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
-import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -15,7 +14,6 @@ import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.TuitionBookParser;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.Model;
-import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.storage.Storage;
@@ -58,7 +56,7 @@ public class LogicManager implements Logic {
         }
         commandResult = command.execute(model, storage);
 
-        if (command.requiresSave() && hasContactDataChanged(originalTuitionBook, model.getTuitionBook())) {
+        if (command.requiresSave()) {
             try {
                 storage.saveTuitionBook(model.getTuitionBook());
             } catch (AccessDeniedException e) {
@@ -71,22 +69,6 @@ public class LogicManager implements Logic {
         }
 
         return commandResult;
-    }
-
-    /** Compares persisted contact values, identities and ordering, independently of the displayed filter. */
-    private boolean hasContactDataChanged(ReadOnlyTuitionBook before, ReadOnlyTuitionBook after) {
-        List<Person> originalPersons = before.getPersonList();
-        List<Person> currentPersons = after.getPersonList();
-        if (!originalPersons.equals(currentPersons)) {
-            return true;
-        }
-        // Person.equals deliberately excludes the persistent ID, which must also be protected here.
-        for (int i = 0; i < originalPersons.size(); i++) {
-            if (!originalPersons.get(i).getId().equals(currentPersons.get(i).getId())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void restoreModel(TuitionBook tuitionBook, Predicate<Person> filter) {

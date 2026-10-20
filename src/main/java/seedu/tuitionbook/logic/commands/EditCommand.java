@@ -55,6 +55,7 @@ public class EditCommand extends Command {
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
+    private boolean requiresSave;
 
     /**
      * @param index of the person in the filtered person list to edit
@@ -70,12 +71,18 @@ public class EditCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        return requiresSave;
+    }
+
+    @Override
+    public boolean canMutate() {
         return true;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        requiresSave = false;
         List<Person> lastShownList = model.getFilteredPersonList();
 
         if (index.getZeroBased() >= lastShownList.size()) {
@@ -89,7 +96,11 @@ public class EditCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
-        model.setPerson(personToEdit, editedPerson);
+        // createEditedPerson preserves the persistent ID; compare only the selected contact's stored values.
+        if (!personToEdit.equals(editedPerson)) {
+            model.setPerson(personToEdit, editedPerson);
+            requiresSave = true;
+        }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }

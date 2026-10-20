@@ -32,6 +32,7 @@ public class LinkCommand extends Command {
 
     private final Index studentIndex;
     private final Index guardianIndex;
+    private boolean requiresSave;
 
     /**
      * @param studentIndex The index of the student to link
@@ -44,12 +45,18 @@ public class LinkCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        return requiresSave;
+    }
+
+    @Override
+    public boolean canMutate() {
         return true;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        requiresSave = false;
         List<Person> persons = model.getFilteredPersonList();
         int displayedPersonCount = persons.size();
         if (studentIndex.getZeroBased() >= displayedPersonCount) {
@@ -80,6 +87,7 @@ public class LinkCommand extends Command {
                 .map(person -> person.getName().toString())
                 .orElse(null);
         model.setPerson(student, student.withGuardianId(guardian.getId()));
+        requiresSave = true;
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
 
         if (previousGuardianName != null) {

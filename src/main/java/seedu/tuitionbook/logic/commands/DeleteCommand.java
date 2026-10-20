@@ -31,6 +31,7 @@ public class DeleteCommand extends Command {
             "\n%1$d student(s) are no longer linked to a guardian:\n%2$s";
 
     private final Index targetIndex;
+    private boolean requiresSave;
 
     public DeleteCommand(Index targetIndex) {
         this.targetIndex = targetIndex;
@@ -38,12 +39,18 @@ public class DeleteCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        return requiresSave;
+    }
+
+    @Override
+    public boolean canMutate() {
         return true;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        requiresSave = false;
         List<Person> lastShownList = model.getFilteredPersonList();
 
         if (targetIndex.getZeroBased() >= lastShownList.size()) {
@@ -57,6 +64,7 @@ public class DeleteCommand extends Command {
                 .toList();
 
         model.deletePerson(personToDelete);
+        requiresSave = true;
 
         String successMessage = String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(personToDelete));
         if (!affectedStudents.isEmpty()) {
