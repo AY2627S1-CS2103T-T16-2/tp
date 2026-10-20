@@ -3,6 +3,7 @@ package seedu.tuitionbook.logic;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -25,6 +26,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -311,6 +313,36 @@ public class LogicManagerTest {
         logic.execute("clear confirm");
         assertEquals(1, fileStorage.getSaveCallCount());
         assertTrue(fileStorage.readTuitionBook().orElseThrow().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_identityOnlyReplacement_savesNewPersistentId() throws Exception {
+        UUID originalId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        UUID replacementId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        Person original = new PersonBuilder().withName("Sam Student").withId(originalId).build();
+        // Normal edits preserve IDs. Simulate an identity-only replacement at the model boundary to
+        // verify that the save guard also protects persistent data excluded from Person.equals.
+        Model replacementModel = new ModelManager() {
+            @Override
+            public void setPerson(Person target, Person editedPerson) {
+                super.setPerson(target, new PersonBuilder(editedPerson).withId(replacementId).build());
+            }
+        };
+        replacementModel.addPerson(original);
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("IdentityReplacement.json"), null);
+        Logic replacementLogic = new LogicManager(replacementModel, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("IdentityReplacementPrefs.json"))));
+
+        replacementLogic.execute("edit 1 n/Sam Student");
+
+        Person replacement = replacementLogic.getPersonList().getFirst();
+        assertEquals(original, replacement);
+        assertNotEquals(original.getId(), replacement.getId());
+        assertEquals(1, fileStorage.getSaveCallCount());
+        Person reloaded = fileStorage.readTuitionBook().orElseThrow().getPersonList().getFirst();
+        assertEquals(original, reloaded);
+        assertEquals(replacementId, reloaded.getId());
     }
 
     @Test
