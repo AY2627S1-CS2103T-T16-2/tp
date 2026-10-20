@@ -114,13 +114,17 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `ROLE` must be either `student` or `guardian`, case-insensitively.
 * `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
 * `NAME` can contain at most 100 characters.
-* In `add` and `edit`, wrap the entire name in straight double quotes when it contains a field prefix: `n/"Rina a/p Kaur"`. The quotes are not stored and do not count towards the name length. Ordinary names still work without quotes. After the closing quote, end the command or enter a space followed by another field prefix. Missing closing quotes and extra text after the closing quote are rejected. Nested quotes and backslash escaping are not supported.
+* In `add` and `edit`, wrap the entire name in straight double quotes when it contains a field prefix: `n/"Rina a/p Kaur"`. The quotes are not stored and do not count towards the name length. Ordinary names still work without quotes.
 * **Unquoted names still use normal field parsing:** `n/Rina a/p Kaur` is interpreted as name `Rina` and address `p Kaur`, not as the full name. Use `n/"Rina a/p Kaur"` to preserve it.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
 * Each `TAG` must be non-blank and may contain ASCII letters, digits, spaces, and printable punctuation, such as `Sec 4`, `Math--Science`, `C++`, or `Mrs. Lim's`. Leading, trailing, and repeated hyphens are allowed. Non-ASCII characters and internal control characters (such as tabs or newlines) are not accepted. Surrounding whitespace is trimmed; internal spaces, punctuation, spelling, and capitalization are preserved.
 * **Use consistent spacing in tags.** `Sec 4` (one internal space) and `Sec  4` (two internal spaces) are different tags, even though they may look similar. `list t/Sec 4` will not match a contact whose only tag is `Sec  4`. This is intentional: only surrounding whitespace is trimmed, and repeated internal spaces are not collapsed. Use the same internal spacing when adding, editing, and filtering tags.
-* Tags do not need quotes for spaces. Quotes in a tag are literal characters, not quoting syntax: `t/"Sec 4"` stores the quotes and does not match `list t/Sec 4`. A space followed by a field prefix recognized by the command still starts that field, even inside tag quotes: `t/Math/Science` is one tag, but `t/Math t/Science` is two. This also applies to `add` and `edit`; see [Known issues](#known-issues) for how embedded prefixes can change other fields. Avoid embedding recognized prefixes after spaces in a tag; use a separator such as `-` instead. Only names support quoting to protect embedded prefixes.
+* Tags do not need quotes merely to contain spaces. Wrap the entire tag in straight double quotes when it contains text that resembles a field prefix recognised by the command: `t/"meet at a/c room"`. The quotes are not stored. Without the quotes, `a/c room` is parsed as an address in `add` and `edit`. In `list`, quoting similarly protects embedded `r/` and `t/` text.
+* For a quoted name or tag, after the closing quote, end the command or enter a space followed by another field prefix. Missing closing quotes and extra text after the closing quote are rejected.
+* Inside a quoted value, use `\"` for a literal double quote and `\\` for a literal backslash. For example, `t/"\"Sec 4\""` stores the tag `"Sec 4"` including its literal quotes, while `t/"Sec 4"` stores `Sec 4`. Use `t/"C:\\Math\\"` for a tag ending in a backslash. A backslash before any other character is preserved (for example, `\M` stays `\M`); sequences such as `\n` do not insert newlines.
+* Unquoted values keep their quotes and backslashes literally, unless the first non-whitespace character is `"`, which starts quoted syntax.
+* Decoded values still follow normal field validation: double quotes and backslashes are allowed in tags but not names.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
 * After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so that the new contact is visible.
 
@@ -148,6 +152,8 @@ Format: `list [r/ROLE] [t/TAG]...`
 * `ROLE` is `student` or `guardian`, case-insensitively.
 * Each `TAG` follows the same tag-name rules as [adding a contact](#adding-a-contact-add). Tag matching is exact but case-insensitive; all specified tags must be present.
 * Spaces and punctuation are significant: `list t/SEC 4 t/math--science` requires both complete tags. `Sec  4` (two spaces) is different from `Sec 4`; `active!` does not match `inactive!` or `active`. In `list`, a space followed by `r/` or `t/` starts a new filter argument.
+* To search for a tag containing `r/` or `t/` after a space, quote the complete tag, for example `list t/"study r/student t/weekly"`.
+* Escaping works the same way in `add`, `edit`, and `list`: `list t/"\"Sec 4\""` matches the literal tag `"Sec 4"`, including one loaded from an existing JSON file.
 * A filtered `list` replaces any active name, role, or tag filter. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
 * Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
@@ -203,7 +209,7 @@ Names support the same optional double quotes as `add`. For example, `edit 1 n/"
 * `NAME` can contain at most 100 characters.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between digits. These formatting characters are preserved.
 * A supplied `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
-* `TAG` follows the same space-and-punctuation rules and field-prefix boundaries described for [`add`](#adding-a-contact-add).
+* `TAG` follows the same space-and-punctuation and optional quoting rules described for [`add`](#adding-a-contact-add).
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * After a successful edit, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
@@ -340,8 +346,6 @@ _Details coming soon ..._
 --------------------------------------------------------------------------------------------------------------------
 
 ## Known issues
-
-**Field prefixes inside tags can change other fields in `add` and `edit`.** For example, `edit 1 t/meet at a/c room` sets the tag to `meet at` and the address to `c room`. Using `t/"meet at a/c room"` does not protect the value: the tag becomes `"meet at` and the address becomes `c room"`. Similarly, `edit 1 t/call p/92345678` changes the phone number. Repeating an already supplied phone or address prefix rejects the command instead. Avoid a space immediately before a recognised prefix within a tag, for example use `t/meet at-a/c room`, and check the resulting contact details. This limitation applies even when tag values contain quotes.
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **Unquoted name text resembling a parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Wrap the entire name in straight double quotes: `n/"Rina a/p Kaur"`. Slashes without a recognised prefix, as in `Muhammad s/o Ali`, also work without quotes.

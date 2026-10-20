@@ -10,7 +10,8 @@ The format is based on Keep a Changelog.
 
 ### Added
 
-- Added optional double-quoted names to `add` and `edit`, allowing names such as `n/"Rina a/p Kaur"` without interpreting embedded field prefixes. Unquoted field parsing remains unchanged.
+- Added `\"` and `\\` escapes inside quoted values, allowing literal quotes and backslashes in tags to be entered and filtered consistently through `add`, `edit`, and `list`, including tags loaded from existing JSON files.
+- Added optional double-quoted names and tags, allowing values such as `n/"Rina a/p Kaur"` and `t/"call p/next week"` without interpreting embedded field prefixes in `add`, `edit`, and `list`. Unquoted field parsing remains unchanged.
 - Added a scrollable in-app summary of every implemented command and its syntax.
 - Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
 - Added the `unlink` command to remove a student's guardian link without deleting either contact.

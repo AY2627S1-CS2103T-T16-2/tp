@@ -6,6 +6,7 @@ import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
@@ -24,7 +25,8 @@ public class ListCommandParser implements Parser<ListCommand> {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public ListCommand parse(String args) throws ParseException {
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_ROLE, PREFIX_TAG);
+        ArgumentMultimap argMultimap =
+                ArgumentTokenizer.tokenizeWithQuotedValues(args, Set.of(PREFIX_TAG), PREFIX_ROLE);
 
         if (!argMultimap.getPreamble().isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, ListCommand.MESSAGE_USAGE));
