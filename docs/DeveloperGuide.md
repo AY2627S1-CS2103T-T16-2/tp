@@ -184,9 +184,9 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
-### Quoted-name parsing
+### Quoted name and tag parsing
 
-`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValue` for `PREFIX_NAME`. The tokenizer visits prefix positions in order and ignores positions inside a quoted name, then removes the enclosing quotes before normal name validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields and commands retain their existing quote and prefix behaviour. The model and JSON store the plain name; no storage migration is needed. Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
+`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValues` for `PREFIX_NAME` and `PREFIX_TAG`; `ListCommandParser` opts in for `PREFIX_TAG`. The tokenizer automatically recognises those quoted prefixes, visits prefix positions in order, and ignores positions inside a quoted value. It then removes the enclosing quotes before normal name or tag validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields retain their existing quote and prefix behaviour. The model and JSON store the plain name or tag, so no storage migration is needed. Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -627,7 +627,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. JSON retains the same string representation without migration. `Tag.equals` and `hashCode` remain case-sensitive; only list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `find` remains name-only. Existing command-prefix boundaries are unchanged, and tag quotes are literal rather than an escape mechanism.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON retains the plain tag string without migration. `Tag.equals` and `hashCode` remain case-sensitive; only list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `find` remains name-only.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -640,7 +640,7 @@ Given below are instructions to test the app manually.
 **Note:** These instructions only provide a starting point for testers to work on; testers are expected to do more *exploratory* testing.
 </box>
 
-### Quoted names in add and edit
+### Quoted names and tags
 
 Use a fresh, disposable folder with an empty contact list.
 
@@ -654,9 +654,13 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `edit 1 n/"Rina a/p Kaur`.<br>
    Expected: An error explains the missing closing double quote; the contact is unchanged.
 1. Enter `edit 1 n/"Rina" extra`.<br>
-   Expected: An error explains that a quoted name must be followed by another field or the end of the command; the contact is unchanged.
+   Expected: An error explains that a quoted value must be followed by another field or the end of the command; the contact is unchanged.
 1. Enter `add r/student n/Rina a/p Kaur p/90000001`.<br>
    Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`. This is the documented limitation; quotation marks are required to enter that full name.
+1. Enter `edit 1 t/"meet at a/c room" t/"call p/next week"`.<br>
+   Expected: Both complete tags are stored without quotation marks; the contact's address and phone number are unchanged.
+1. Enter `list t/"meet at a/c room"`.<br>
+   Expected: Rina appears because the quoted filter is parsed as one complete tag.
 
 ### Clearing all contacts
 
@@ -827,7 +831,7 @@ add r/student n/Dana Lee p/91234564 t/inactive t/math
 
 ### Adding, editing, and filtering tags with spaces and punctuation
 
-Tags support spaces and printable ASCII punctuation so tutors can use natural spaced labels. Existing tags remain valid without changing the JSON format. Once users save these broader tag names, reverting to the previous single-hyphen restriction would reject valid saved contacts; any future narrowing requires an explicit compatibility or migration plan. Internal spaces remain significant and quotes remain literal in tags.
+Tags support spaces and printable ASCII punctuation so tutors can use natural spaced labels. Existing tags remain valid without changing the JSON format. Once users save these broader tag names, reverting to the previous single-hyphen restriction would reject valid saved contacts; any future narrowing requires an explicit compatibility or migration plan. Internal spaces remain significant. Optional enclosing quotes are command syntax and are not stored.
 
 Internal spacing is deliberately not normalized: `Sec 4` (one space) and `Sec  4` (two spaces) represent distinct tag strings. Case-insensitive list filtering does not collapse spaces, so a filter for one does not match the other. Command parsing trims surrounding whitespace only. Preserve this distinction in validation, persistence, and filtering tests; changing it would alter tag identity and matching behaviour.
 
