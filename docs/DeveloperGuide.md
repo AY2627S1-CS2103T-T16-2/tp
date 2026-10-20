@@ -164,6 +164,16 @@ Classes used by multiple components are in the `seedu.tuitionbook.commons` packa
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Incremental tag changes
+
+`tag INDEX t/TAG [t/TAG]...` adds tags by set union; `untag INDEX t/TAG [t/TAG]...` removes them by set difference. `add` continues to accept an initial tag set and `edit` continues to replace the whole set. Stored tag identity is case-sensitive, unlike the case-insensitive `list` filter. Duplicate arguments are deduplicated, existing tags are ignored on addition, and absent tags are ignored on removal.
+
+`TagCommandParser` and `UntagCommandParser` delegate index and tag validation to `TagModificationCommandParser`. It recognises only `PREFIX_TAG` using the current `ArgumentTokenizer.tokenize` and validates every tag before constructing a command. This implementation does not depend on the unmerged quoted-tag API in [PR #163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163). Quotes and backslashes remain literal in these commands for now. Integrating quoted values after that PR merges requires updating this shared tokenization entry point and adding quoted-tag command tests.
+
+`TagCommand` and `UntagCommand` share execution through `TagModificationCommand`. It resolves the displayed index and modifies a disposable copy of the selected contact's tags. A changed set produces one replacement `Person` retaining its ID, role, relationship, and all other fields, then restores the full list. A no-change result preserves the filter and requests no save. `canMutate()` remains true before execution so `LogicManager` captures the rollback snapshot, while `requiresSave()` is reset each execution and becomes true only after an actual tag change. Existing storage and save-failure rollback apply without a schema change.
+
+`UntagCommand` compares requested tags with the original contact's tag set to report every absent tag, both when other tags are removed and when nothing changes. Feedback sorts missing names and encloses them in double quotes, escaping literal quotes and backslashes for unambiguous display. This formatting does not change tag matching or command parsing. The missing set is recomputed on each execution rather than retained as command state.
+
 ### Viewing contact relationships
 
 `ViewCommandParser` parses `view INDEX [v/]` with the same positive-index rule as other index-based commands. The optional empty `v/` prefix selects full details for linked contacts; the parser rejects duplicate prefixes and values after `v/`.
@@ -802,6 +812,24 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: The result area displays `Student Alex Yeoh has no linked guardian.` The list remains filtered to Alex Yeoh; neither contact changes.
 1. Close and relaunch the application, then enter `view 1`.<br>
    Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after restart.
+
+### Adding and removing individual tags
+
+Use an empty contact list in disposable storage.
+
+1. Enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002 t/Math t/Sec 4`, and `link 2 1`.
+1. Enter `find Sam`, then `tag 1 t/Science t/Math`.<br>
+   Expected: Sam has `Math`, `Sec 4`, and `Science`. Grace and Sam are both displayed; Sam's ID, phone, and guardian link are unchanged.
+1. Enter `list r/student`, then `untag 1 t/Math t/absent`.<br>
+   Expected: Sam has only `Sec 4` and `Science`; feedback includes `Tags not present: "absent".` and the full list returns.
+1. Enter `find Sam`, then `tag 1 t/Science` and `untag 1 t/science`.<br>
+   Expected: Both commands report no change, only Sam stays displayed, and no save is attempted. The differently cased `science` does not remove `Science`; `untag` feedback includes `Tags not present: "science".`
+1. Enter `tag 1 t/New t/` and `untag 1 t/Science t/`.<br>
+   Expected: Both commands report tag constraint errors; no tags are added or removed.
+1. Restart, then enter `view 2`.<br>
+   Expected: Sam still has `Sec 4` and `Science` and remains linked to Grace.
+1. Enter `edit 2 t/Only`, then `untag 2 t/Only`.<br>
+   Expected: `edit` replaces the entire tag set with `Only`; `untag` then leaves no tags.
 
 ### Filtering contacts by tags
 

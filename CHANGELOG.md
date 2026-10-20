@@ -10,6 +10,7 @@ The format is based on Keep a Changelog.
 
 ### Added
 
+- Added `tag` and `untag` to add or remove selected tags without retyping the contact's entire tag set; `untag` reports requested tags that were not present. `add` still supplies initial tags and `edit` still replaces all tags.
 - Added optional double-quoted names to `add` and `edit`, allowing names such as `n/"Rina a/p Kaur"` without interpreting embedded field prefixes. Unquoted field parsing remains unchanged.
 - Added a scrollable in-app summary of every implemented command and its syntax.
 - Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
