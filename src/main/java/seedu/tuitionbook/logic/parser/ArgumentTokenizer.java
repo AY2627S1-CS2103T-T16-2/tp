@@ -2,8 +2,10 @@ package seedu.tuitionbook.logic.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 
@@ -18,9 +20,9 @@ import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 public class ArgumentTokenizer {
 
     public static final String MESSAGE_UNCLOSED_QUOTE =
-            "Missing closing double quote in name. Use n/\"Rina a/p Kaur\".";
+            "Missing closing double quote. Enclose the complete name or tag value in straight double quotes.";
     public static final String MESSAGE_TEXT_AFTER_QUOTE =
-            "After a quoted name, enter a space followed by another field prefix, or end the command.";
+            "After a quoted value, enter a space followed by another field prefix, or end the command.";
 
     /**
      * Tokenizes an arguments string and returns an {@code ArgumentMultimap} object that maps prefixes to their
@@ -36,20 +38,25 @@ public class ArgumentTokenizer {
     }
 
     /**
-     * Tokenizes with optional double quotes around the value of {@code quotedPrefix}.
-     * Only that field interprets quotes; existing prefix boundaries and other fields are unchanged.
+     * Tokenizes with optional double quotes around values of {@code quotedPrefixes}.
+     * Only those fields interpret quotes; existing prefix boundaries and other fields are unchanged.
      * Quotes are syntax, not part of the returned value. No escaping or nested quotes are supported.
      *
      * @param argsString Arguments string containing an optional preamble and prefixed field values.
-     * @param quotedPrefix Prefix whose values may be enclosed in double quotes.
-     * @param prefixes Prefixes to recognize, including {@code quotedPrefix} when it should be tokenized.
+     * @param quotedPrefixes Prefixes whose values may be enclosed in double quotes. These prefixes are recognized
+     *                       automatically and do not need to be repeated in {@code prefixes}.
+     * @param prefixes Additional prefixes to recognize.
      * @return ArgumentMultimap mapping recognized prefixes to their values, with enclosing quotes removed
-     *         from quoted values of {@code quotedPrefix}.
+     *         from quoted values of {@code quotedPrefixes}.
      * @throws ParseException if a quoted value is unclosed or has trailing text.
      */
-    public static ArgumentMultimap tokenizeWithQuotedValue(String argsString, Prefix quotedPrefix,
+    public static ArgumentMultimap tokenizeWithQuotedValues(String argsString, Collection<Prefix> quotedPrefixes,
             Prefix... prefixes) throws ParseException {
-        List<PrefixPosition> candidates = findAllPrefixPositions(argsString, prefixes);
+        List<Prefix> recognizedPrefixes = Stream.concat(quotedPrefixes.stream(), Arrays.stream(prefixes))
+                .distinct()
+                .toList();
+        List<PrefixPosition> candidates = findAllPrefixPositions(argsString,
+                recognizedPrefixes.toArray(Prefix[]::new));
         candidates.sort((first, second) -> Integer.compare(first.getStartPosition(), second.getStartPosition()));
         List<PrefixPosition> positions = new ArrayList<>();
         int quotedEnd = -1;
@@ -58,8 +65,8 @@ public class ArgumentTokenizer {
                 continue;
             }
             positions.add(candidate);
-            if (candidate.getPrefix().equals(quotedPrefix)) {
-                int valueStart = candidate.getStartPosition() + quotedPrefix.getPrefix().length();
+            if (quotedPrefixes.contains(candidate.getPrefix())) {
+                int valueStart = candidate.getStartPosition() + candidate.getPrefix().getPrefix().length();
                 while (valueStart < argsString.length() && argsString.charAt(valueStart) <= ' ') {
                     valueStart++;
                 }
@@ -75,9 +82,9 @@ public class ArgumentTokenizer {
         ArgumentMultimap rawArguments = extractArguments(argsString, positions);
         ArgumentMultimap result = new ArgumentMultimap();
         result.put(new Prefix(""), rawArguments.getPreamble());
-        for (Prefix prefix : Arrays.stream(prefixes).distinct().toList()) {
+        for (Prefix prefix : recognizedPrefixes) {
             for (String value : rawArguments.getAllValues(prefix)) {
-                result.put(prefix, prefix.equals(quotedPrefix) ? unwrapQuotedValue(value) : value);
+                result.put(prefix, quotedPrefixes.contains(prefix) ? unwrapQuotedValue(value) : value);
             }
         }
         return result;

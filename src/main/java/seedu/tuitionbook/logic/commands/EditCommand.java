@@ -44,7 +44,8 @@ public class EditCommand extends Command {
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_TAG + "TAG]...\n"
-            + "For names containing field prefixes, use double quotes: n/\"Rina a/p Kaur\".\n"
+            + "Use double quotes around a name or tag containing field prefixes, for example "
+            + "n/\"Rina a/p Kaur\" or t/\"call p/next week\".\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 
-public class QuotedNameTokenizerTest {
+public class QuotedValueTokenizerTest {
     @Test
     public void tokenize_quotedName_protectsPrefixesAndResumesAfterQuote() throws Exception {
         for (String input : List.of(
@@ -31,6 +31,17 @@ public class QuotedNameTokenizerTest {
         assertEquals("Rina s/o Kaur", result.getValue(PREFIX_NAME).orElseThrow());
         assertEquals("123 Road", result.getValue(PREFIX_ADDRESS).orElseThrow());
         assertEquals(List.of("Math", "Science"), result.getAllValues(PREFIX_TAG));
+    }
+
+    @Test
+    public void tokenize_quotedTags_protectsPrefixesAndSupportsMultipleValues() throws Exception {
+        ArgumentMultimap result = tokenize(
+                " n/Person t/\"meet at a/c room\" t/\"call p/92345678\" p/91234567");
+
+        assertEquals("Person", result.getValue(PREFIX_NAME).orElseThrow());
+        assertEquals("91234567", result.getValue(PREFIX_PHONE).orElseThrow());
+        assertFalse(result.getValue(PREFIX_ADDRESS).isPresent());
+        assertEquals(List.of("meet at a/c room", "call p/92345678"), result.getAllValues(PREFIX_TAG));
     }
 
     @Test
@@ -60,8 +71,32 @@ public class QuotedNameTokenizerTest {
 
     @Test
     public void tokenize_unclosedQuote_throwsHelpfulError() {
-        assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE, () ->
-                tokenize(" n/\"Rina a/p Kaur p/91234567"));
+        for (String input : List.of(" n/\"Rina a/p Kaur p/91234567", " t/\"meet at a/c room")) {
+            assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE, () -> tokenize(input));
+        }
+    }
+
+    @Test
+    public void tokenize_singleOpeningQuoteWithSurroundingSpaces_throwsHelpfulError() {
+        for (Prefix prefix : List.of(PREFIX_NAME, PREFIX_TAG)) {
+            for (String leading : List.of("", "   ")) {
+                for (String trailing : List.of("", "   ")) {
+                    for (String value : List.of("\"", "\"Math")) {
+                        String input = " " + prefix.getPrefix() + leading + value + trailing;
+                        assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE, () ->
+                                tokenize(input));
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void tokenize_quotedValueWithSurroundingSpaces_ignoresSurroundingSpaces() throws Exception {
+        for (Prefix prefix : List.of(PREFIX_NAME, PREFIX_TAG)) {
+            ArgumentMultimap result = tokenize(" " + prefix.getPrefix() + "   \"  Math  Class  \"   ");
+            assertEquals(List.of("Math  Class"), result.getAllValues(prefix));
+        }
     }
 
     @Test
@@ -69,11 +104,13 @@ public class QuotedNameTokenizerTest {
         for (String suffix : List.of(" extra", "p/91234567", " \"Kaur\"", " x/unknown")) {
             assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE, () ->
                     tokenize(" n/\"Rina\"" + suffix));
+            assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE, () ->
+                    tokenize(" t/\"Sec 4\"" + suffix));
         }
     }
 
     private ArgumentMultimap tokenize(String input) throws ParseException {
-        return ArgumentTokenizer.tokenizeWithQuotedValue(input, PREFIX_NAME,
-                PREFIX_NAME, PREFIX_PHONE, PREFIX_ADDRESS, PREFIX_TAG);
+        return ArgumentTokenizer.tokenizeWithQuotedValues(input, List.of(PREFIX_NAME, PREFIX_TAG),
+                PREFIX_PHONE, PREFIX_ADDRESS);
     }
 }
