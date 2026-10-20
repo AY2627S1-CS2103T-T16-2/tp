@@ -86,11 +86,13 @@ public class ListCommandParserTest {
     }
 
     @Test
-    public void parse_flexibleTags_preservesPrefixBoundariesAndLiteralQuotes() {
+    public void parse_flexibleTags_quotedTagProtectsPrefixAndRemovesQuotes() {
         assertParseSuccess(parser, " t/first r/student t/second",
                 new ListCommand(new PersonMatchesListFilterPredicate(Role.STUDENT, List.of("first", "second"))));
         assertParseSuccess(parser, " t/\"quoted\"",
-                new ListCommand(new PersonMatchesListFilterPredicate(null, List.of("\"quoted\""))));
+                new ListCommand(new PersonMatchesListFilterPredicate(null, List.of("quoted"))));
+        assertParseSuccess(parser, " t/\"study r/student t/weekly\"",
+                new ListCommand(new PersonMatchesListFilterPredicate(null, List.of("study r/student t/weekly"))));
     }
 
     @Test

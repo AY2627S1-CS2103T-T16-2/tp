@@ -293,6 +293,71 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_editQuotedTags_preservesOtherFieldsAndPersistsCompleteTags() throws Exception {
+        logic.execute("add r/student n/Sam Student p/91234567 e/sam@example.com a/123 Main Street t/Old");
+        logic.execute("add r/guardian n/Grace Guardian p/98765432");
+        logic.execute("link 1 2");
+        Person originalStudent = logic.getPersonList().get(0);
+        Person originalGuardian = logic.getPersonList().get(1);
+        Person expectedStudent = new PersonBuilder(originalStudent)
+                .withTags("meet at a/c room", "call p/next week").build();
+
+        logic.execute("edit 1 t/\"meet at a/c room\" t/\"call p/next week\"");
+
+        assertEquals(List.of(expectedStudent, originalGuardian), logic.getPersonList());
+        Person savedStudent = new JsonTuitionBookStorage(temporaryFolder.resolve("tuitionBook.json"))
+                .readTuitionBook().orElseThrow().getPersonList().get(0);
+        assertEquals(Set.of(new Tag("meet at a/c room"), new Tag("call p/next week")), savedStudent.getTags());
+        assertEquals(originalStudent.getPhone(), savedStudent.getPhone());
+        assertEquals(originalStudent.getAddress(), savedStudent.getAddress());
+        assertEquals(originalStudent.getId(), savedStudent.getId());
+        assertEquals(expectedStudent, savedStudent);
+
+        logic.execute("reload");
+
+        assertEquals(List.of(expectedStudent, originalGuardian), logic.getPersonList());
+        assertEquals(originalStudent.getId(), logic.getPersonList().get(0).getId());
+        assertEquals(originalGuardian.getId(), logic.getPersonList().get(1).getId());
+    }
+
+    @Test
+    public void execute_escapedTagQuotes_addEditFilterAndReloadPreserveLiteralValues() throws Exception {
+        logic.execute("add r/student n/Sam Student p/91234567 t/\"\\\"Sec 4\\\"\""
+                + " t/\"meet \\\"at a/c room\\\"\" t/\"C:\\\\Math\\\\\"");
+        Person added = logic.getPersonList().getFirst();
+        assertEquals(Set.of(new Tag("\"Sec 4\""), new Tag("meet \"at a/c room\""), new Tag("C:\\Math\\")),
+                added.getTags());
+        logic.execute("list t/\"\\\"Sec 4\\\"\"");
+        assertEquals(List.of(added), logic.getFilteredPersonList());
+
+        logic.execute("edit 1 t/\"\\\"Sec 4\\\"\" t/\"call \\\"p/next week\\\"\"");
+        Person edited = logic.getPersonList().getFirst();
+        assertEquals(Set.of(new Tag("\"Sec 4\""), new Tag("call \"p/next week\"")), edited.getTags());
+        assertEquals(added.getPhone(), edited.getPhone());
+        logic.execute("reload");
+        logic.execute("list t/\"\\\"Sec 4\\\"\" t/\"call \\\"p/next week\\\"\"");
+        assertEquals(List.of(edited), logic.getFilteredPersonList());
+        assertEquals(added.getId(), logic.getFilteredPersonList().getFirst().getId());
+    }
+
+    @Test
+    public void execute_filterLiteralQuotedTagLoadedFromJson_matchesWithoutChangingStoredValue() throws Exception {
+        Person original = new PersonBuilder().withTags("\"Sec 4\"").build();
+        TuitionBook saved = new TuitionBook();
+        saved.addPerson(original);
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        new JsonTuitionBookStorage(file).saveTuitionBook(saved);
+        byte[] originalBytes = Files.readAllBytes(file);
+
+        logic.execute("reload");
+        logic.execute("list t/\"\\\"Sec 4\\\"\"");
+
+        assertEquals(List.of(original), logic.getFilteredPersonList());
+        assertEquals(Set.of(new Tag("\"Sec 4\"")), logic.getFilteredPersonList().getFirst().getTags());
+        assertArrayEquals(originalBytes, Files.readAllBytes(file));
+    }
+
+    @Test
     public void execute_invalidQuotedNames_leavesModelAndSavedDataUnchanged() throws Exception {
         logic.execute("add r/student n/Original p/91234567");
         logic.execute("add r/guardian n/Hidden Guardian p/90000001");
@@ -302,7 +367,7 @@ public class LogicManagerTest {
         byte[] originalBytes = Files.readAllBytes(dataFile);
         model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
         assertEquals(List.of(original), model.getFilteredPersonList());
-        for (String name : List.of("\"Rina a/p Kaur", "\"Rina\" extra", "\"@invalid\"",
+        for (String name : List.of("\"Rina a/p Kaur", "\"Rina\" extra", "\"@invalid\"", "\"Rina \\\"alias\\\"\"",
                 "\"\"", "\"" + "A".repeat(Name.MAX_LENGTH + 1) + "\"",
                 "\"Rina\" n/Other", "\"Rina\"p/98765432")) {
             for (String command : List.of("add r/student p/98765432 n/", "edit 1 n/")) {
