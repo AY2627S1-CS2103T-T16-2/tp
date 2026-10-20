@@ -31,6 +31,7 @@ public class AddCommand extends Command {
             + "[" + PREFIX_TAG + "TAG]...\n"
             + "Use double quotes around a name or tag containing field prefixes, for example "
             + "n/\"Rina a/p Kaur\" or t/\"call p/next week\".\n"
+            + "Inside quoted tags, use \\\" for a literal quote and \\\\ for a literal backslash.\n"
             + "Example: " + COMMAND_WORD + " "
             + PREFIX_ROLE + "student "
             + PREFIX_NAME + "John Doe "

@@ -40,7 +40,8 @@ public class ArgumentTokenizer {
     /**
      * Tokenizes with optional double quotes around values of {@code quotedPrefixes}.
      * Only those fields interpret quotes; existing prefix boundaries and other fields are unchanged.
-     * Quotes are syntax, not part of the returned value. No escaping or nested quotes are supported.
+     * Enclosing quotes are syntax. Within them, backslash escapes a double quote or another backslash;
+     * other backslashes remain literal. Unquoted values are not decoded.
      *
      * @param argsString Arguments string containing an optional preamble and prefixed field values.
      * @param quotedPrefixes Prefixes whose values may be enclosed in double quotes. These prefixes are recognized
@@ -71,10 +72,7 @@ public class ArgumentTokenizer {
                     valueStart++;
                 }
                 if (valueStart < argsString.length() && argsString.charAt(valueStart) == '"') {
-                    quotedEnd = argsString.indexOf('"', valueStart + 1);
-                    if (quotedEnd == -1) {
-                        throw new ParseException(MESSAGE_UNCLOSED_QUOTE);
-                    }
+                    quotedEnd = findClosingQuote(argsString, valueStart);
                 }
             }
         }
@@ -94,11 +92,35 @@ public class ArgumentTokenizer {
         if (!value.startsWith("\"")) {
             return value;
         }
-        int closingQuote = value.indexOf('"', 1);
+        int closingQuote = findClosingQuote(value, 0);
         if (closingQuote != value.length() - 1) {
             throw new ParseException(MESSAGE_TEXT_AFTER_QUOTE);
         }
-        return value.substring(1, closingQuote).trim();
+        StringBuilder decoded = new StringBuilder();
+        for (int i = 1; i < closingQuote; i++) {
+            if (startsEscape(value, i)) {
+                i++;
+            }
+            decoded.append(value.charAt(i));
+        }
+        return decoded.toString().trim();
+    }
+
+    /** Finds the first unescaped closing quote using the same escape rules as value decoding. */
+    private static int findClosingQuote(String input, int openingQuote) throws ParseException {
+        for (int i = openingQuote + 1; i < input.length(); i++) {
+            if (startsEscape(input, i)) {
+                i++;
+            } else if (input.charAt(i) == '"') {
+                return i;
+            }
+        }
+        throw new ParseException(MESSAGE_UNCLOSED_QUOTE);
+    }
+
+    private static boolean startsEscape(String input, int index) {
+        return input.charAt(index) == '\\' && index + 1 < input.length()
+                && (input.charAt(index + 1) == '"' || input.charAt(index + 1) == '\\');
     }
 
     /**
