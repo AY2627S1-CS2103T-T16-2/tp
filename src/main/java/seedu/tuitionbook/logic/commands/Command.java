@@ -33,7 +33,8 @@ public abstract class Command {
     public abstract CommandResult execute(Model model) throws CommandException;
 
     /**
-     * Returns whether this command requires the contact data to be saved after successful execution.
+     * Returns whether this command requests saving after successful execution.
+     * Logic saves only if the contact data actually changed; read-only and reload commands do not request saving.
      */
     public abstract boolean requiresSave();
 
