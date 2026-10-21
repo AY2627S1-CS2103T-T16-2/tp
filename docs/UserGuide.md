@@ -29,6 +29,8 @@ Action     | Format, Examples
 **Help**   | `help`
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
 **List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/ACTIVE t/math`
+**Tag**    | `tag INDEX t/TAG [t/TAG]...`<br> e.g., `tag 1 t/Math t/Sec 4`
+**Untag**  | `untag INDEX t/TAG [t/TAG]...`<br> e.g., `untag 1 t/Math`
 **Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
 **View**   | `view INDEX [v/]`<br> e.g., `view 1 v/`
 
@@ -153,7 +155,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Each `TAG` follows the same tag-name rules as [adding a contact](#adding-a-contact-add). Tag matching is exact but case-insensitive; all specified tags must be present.
 * Spaces and punctuation are significant: `list t/SEC 4 t/math--science` requires both complete tags. `Sec  4` (two spaces) is different from `Sec 4`; `active!` does not match `inactive!` or `active`. In `list`, a space followed by `r/` or `t/` starts a new filter argument.
 * To search for a tag containing `r/` or `t/` after a space, quote the complete tag, for example `list t/"study r/student t/weekly"`.
-* Escaping works the same way in `add`, `edit`, and `list`: `list t/"\"Sec 4\""` matches the literal tag `"Sec 4"`, including one loaded from an existing JSON file.
+* Escaping works the same way in `add`, `edit`, `list`, `tag`, and `untag`: `list t/"\"Sec 4\""` matches the literal tag `"Sec 4"`, including one loaded from an existing JSON file.
 * A filtered `list` replaces any active name, role, or tag filter. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
 * Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
@@ -217,6 +219,38 @@ Names support the same optional double quotes as `add`. For example, `edit 1 n/"
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
+
+### Adding tags to a contact: `tag`
+
+Adds one or more tags while keeping the contact's existing tags.
+
+Format: `tag INDEX t/TAG [t/TAG]...`
+
+* `INDEX` is a positive index in the currently displayed list, including after `find` or a filtered `list`. Both students and guardians can be tagged.
+* Supply at least one non-blank tag. Tags follow the same character and spacing rules as `add`. Repeating a tag in the command has the same effect as supplying it once.
+* Tag identity is case-sensitive: `Math` and `math` are separate stored tags, although `list` matches tags case-insensitively.
+* Existing tags are retained. Success feedback lists only newly added tags, in sorted order and enclosed in double quotes; literal quotes and backslashes are escaped for clarity. Already-present tags are omitted from this list. If every requested tag is already present, the command reports this without saving or changing the displayed filter.
+* When tags change, TuitionBook saves the contact and restores the full contact list. If saving fails, it restores the original contacts and filter.
+* Only `t/` is recognised as a field prefix by `tag` and `untag`. A space followed by `t/` starts another tag unless it is inside a quoted value. Use the same quoting and escape rules as `add`, `edit`, and `list`: `tag 1 t/"study t/weekly"` adds one tag containing `t/weekly`; `untag 1 t/"study t/weekly"` removes it. Enclosing quotes are not stored, and surrounding whitespace is trimmed even inside quotes.
+* Inside quoted tags, use `\"` for a literal double quote and `\\` for a literal backslash. For example, `tag 1 t/"\"Sec 4\""` adds the literal tag `"Sec 4"`, and `untag 1 t/"\"Sec 4\""` removes it. Missing closing quotes, extra text after the closing quote, and blank decoded tags are rejected before any tags change.
+
+Example: If contact 1 is Sam Student and has `Math` and `Sec 4`, `tag 1 t/Science t/Math` adds `Science` while keeping both existing tags and reports `Added tags to Sam Student: "Science".` Continue using `add` to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
+
+### Removing tags from a contact: `untag`
+
+Removes only the specified tags while keeping the contact's other tags.
+
+Format: `untag INDEX t/TAG [t/TAG]...`
+
+* The index, tag validation, case sensitivity, prefix boundaries, saving, and filter rules are the same as for `tag`.
+* Tag names must match exactly, including case and internal spacing. `untag 1 t/math` does not remove `Math`.
+* Absent tags are skipped and listed in the feedback under `Tags not present:`. Names are shown in sorted order, enclosed in double quotes; literal quotes and backslashes are escaped in this display so tag boundaries are clear. If none of the requested tags is present, the command reports this without saving or changing the filter.
+* A mixture of present and absent tags removes the present tags. Removing the final tag leaves the contact with no tags.
+* A missing tag argument or an empty `t/` is rejected; use `edit INDEX t/` to clear the entire tag set.
+
+Example: If contact 1 has `Math`, `Science`, and `Sec 4`, `untag 1 t/Math t/Science` leaves only `Sec 4`.
+
+If contact 1 is Sam Student and has only `Math`, `untag 1 t/Math t/Science` removes `Math` and reports `Removed tags from Sam Student. Tags not present: "Science".`
 
 ### Linking a student to a guardian: `link`
 
