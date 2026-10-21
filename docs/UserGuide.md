@@ -91,7 +91,7 @@ Action     | Format, Examples
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable. An `INDEX` has no prefix and must come immediately after the command word, as in `edit 2 n/James Lee`.
 
 * The `help` and `exit` commands ignore extraneous parameters.<br>
-  For example, `help 123` is interpreted as `help`. Other commands reject unexpected text: `reload 123` and `clear confirm extra` report errors instead of running.
+  For example, `help 123` is interpreted as `help`. `reload` accepts no arguments, and `clear` requires exactly `confirm`; `reload 123` and `clear confirm extra` report errors instead of running.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
