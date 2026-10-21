@@ -33,7 +33,9 @@ public abstract class Command {
     public abstract CommandResult execute(Model model) throws CommandException;
 
     /**
-     * Returns whether this command requires the contact data to be saved after successful execution.
+     * Returns whether the latest execution changed contact data that must be saved.
+     * Mutating commands start with false, reset this decision at the start of each execution, and set it to true
+     * only after a successful change. Read-only and reload commands always return false.
      */
     public abstract boolean requiresSave();
 
@@ -42,6 +44,9 @@ public abstract class Command {
      *
      * <p>This is distinct from {@link #requiresSave()}, which is evaluated after execution and can be false when a
      * command completes without making a change.</p>
+     *
+     * <p>Commands with an execution-dependent save decision must override this method to return true regardless
+     * of the latest save decision, so LogicManager captures a rollback snapshot before execution.</p>
      */
     public boolean canMutate() {
         return requiresSave();
