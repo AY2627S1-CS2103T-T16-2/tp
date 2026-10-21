@@ -4,7 +4,7 @@
   pageNav: 3
 ---
 
-# AB-3 Developer Guide
+# TuitionBook Developer Guide
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -14,6 +14,10 @@ TuitionBook is scoped to English-language users and any `en-*` locale (for examp
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Acknowledgements**
+
+* This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
+* Libraries used: [JavaFX](https://openjfx.io/), [Jackson](https://github.com/FasterXML/jackson), [JUnit5](https://github.com/junit-team/junit5).
+* Some code and documentation changes were made with the assistance of AI tools, as permitted by the course.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -180,7 +184,7 @@ This section describes some noteworthy details on how certain features are imple
 
 `ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked guardian or student from the result. The command does not change the model or its active filter.
 
-Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in address-book order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags are sorted alphabetically.
+Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in contact-list order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags are sorted alphabetically.
 
 `ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active filter remain in the model while the detail view is visible.
 
@@ -285,15 +289,14 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
 
-_{more aspects and alternatives to be added}_
-
 --------------------------------------------------------------------------------------------------------------------
 
-## **Documentation, logging, testing, dev-ops**
+## **Documentation, logging, testing, configuration, dev-ops**
 
 * [Documentation guide](Documentation.md)
 * [Testing guide](Testing.md)
 * [Logging guide](Logging.md)
+* [Configuration guide](Configuration.md)
 * [DevOps guide](DevOps.md)
 
 --------------------------------------------------------------------------------------------------------------------
@@ -651,8 +654,8 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 ### Non-Functional Requirements
 
 1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
-2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, linking, or unlinking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
-3.  All documented add, edit, delete, list, find, filter, view, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
+2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, tagging, untagging, linking, or unlinking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
+3.  All documented add, edit, delete, list, find, filter, view, tag, untag, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and active filter to their state before that operation.
@@ -736,22 +739,20 @@ Use a fresh, disposable folder with an empty contact list.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
+   1. Open a terminal and run `java -jar` followed by the quoted path to the JAR, as described in the UG's [Quick start](UserGuide.md#quick-start).<br>
       Expected: The GUI opens with an empty contact list and an information dialog explaining that no data file was found. The window size may not be optimal.
 
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   1. Relaunch the app using the same terminal command.<br>
        Expected: The most recent window size and location are retained.
-
-1. _{ more test cases … }_
 
 ### Getting help
 
 1. Click the top-level `Help` control once.<br>
-   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`, `list`, `view`, `edit`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, and `exit`. The Help window becomes active, so focus leaves the main TuitionBook window.
+   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`, `list`, `view`, `edit`, `tag`, `untag`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, `reload`, and `exit`, followed by a note on quoted values. The Help window becomes active, so focus leaves the main TuitionBook window.
 1. Minimize the Help window, focus the command box, and press <kbd>F1</kbd>.<br>
    Expected: The same Help window is restored and focused; no second Help window appears.
 1. Close the Help window. In the main TuitionBook window, focus the command box and enter `help`. The Help window becomes active. Return to the main TuitionBook window, focus its command box, and enter `help` again.<br>
@@ -777,7 +778,15 @@ Use a fresh, disposable folder with an empty contact list.
    1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
       Expected: Similar to previous.
 
-1. _{ more test cases … }_
+1. Deleting a guardian with linked students
+
+   1. Prerequisites: In a fresh, disposable folder, enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002`, and `link 2 1`.
+
+   1. Test case: `delete 1`<br>
+      Expected: Grace Guardian is deleted. Sam Student remains and his card shows `Guardian: -`; the status message reports the deletion and the affected student.
+
+   1. Restart the application.<br>
+      Expected: Sam Student remains unlinked; the deleted guardian does not reappear.
 
 ### Displaying contact relationships in the list
 
@@ -844,7 +853,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `find grace`.<br>
    Expected: Only Grace Tan is shown; Bob Lim is not matched through the guardian link.
 1. Enter `find bob`, then `list`.<br>
-   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all five contacts in their original order. None of the contacts or the guardian link has changed.
+   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all four contacts in their original order. None of the contacts or the guardian link has changed.
 1. Enter `find`, then enter `find` followed only by spaces.<br>
    Expected: Each command reports an invalid-command format message containing the updated `find` usage, including `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
 

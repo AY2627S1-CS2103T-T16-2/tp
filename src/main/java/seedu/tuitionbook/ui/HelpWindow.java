@@ -55,7 +55,7 @@ public class HelpWindow extends UiPart<Stage> {
               Remove a displayed student's guardian link.
 
             find KEYWORD [MORE_KEYWORDS]...
-              Find contacts whose names contain any full keyword.
+              Find contacts whose names contain any keyword as a substring.
 
             delete INDEX
               Delete a displayed contact.

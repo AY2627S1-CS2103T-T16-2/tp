@@ -10,6 +10,8 @@ TuitionBook helps **private one-to-one home tutors** manage students, guardians 
 
 TuitionBook is intended for English-language users and supports any `en-*` locale. Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
+**Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to install and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
+
 <!-- * Table of Contents -->
 <page-nav-print />
 
@@ -85,11 +87,11 @@ Action     | Format, Examples
 * Items followed by `...` can appear zero or more times.<br>
   For example, `[t/TAG]...` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
-  For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
+* Parameters with a prefix, such as `n/NAME` and `p/PHONE`, can be in any order.<br>
+  For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable. An `INDEX` has no prefix and must come immediately after the command word, as in `edit 2 n/James Lee`.
 
-* Extraneous parameters for commands that take no parameters, such as `help` and `exit`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* The `help` and `exit` commands ignore extraneous parameters.<br>
+  For example, `help 123` is interpreted as `help`. Other commands reject unexpected text: `reload 123` and `clear confirm extra` report errors instead of running.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -384,6 +386,19 @@ Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e
 
 The 100-character name limit and 200-character address limit also apply to values edited directly in the data file. A file containing a longer value is invalid and follows the recovery behavior above: TuitionBook moves it unchanged to an unused sibling backup and allows new data to be saved; if that backup cannot be created, TuitionBook leaves the original file in place and blocks saves.
 </box>
+
+--------------------------------------------------------------------------------------------------------------------
+
+## Glossary
+
+* **Contact**: A record representing either a student or a guardian, with a name, phone number, and optional email address, home address, and tags.
+* **Role**: Whether a contact is a `student` or a `guardian`. Entered in any casing; shown as a `STUDENT` or `GUARDIAN` badge on the contact card.
+* **Guardian link**: A recorded association from a student to a guardian. A student has at most one guardian link; a guardian can be linked to multiple students.
+* **Index**: A contact's position in the currently displayed list, starting from 1. Index-based commands such as `edit`, `delete`, and `view` use this displayed position, which changes when a filter is active.
+* **Filter**: A condition that restricts the displayed list, set by `find` (name) or `list` (role and/or tags). Applying a new filter replaces the previous one; bare `list` clears it.
+* **Tag**: An optional label you choose for a contact, such as `Sec4` or `AMath`, used for organising and filtering. Tags are not dedicated fields and are not validated against any category list.
+* **Home folder**: The folder containing the TuitionBook JAR. Data, preferences, and logs are stored relative to this folder.
+* **Data file**: The local JSON file (`data/tuitionbook.json`) that stores your contacts and guardian links between sessions.
 
 --------------------------------------------------------------------------------------------------------------------
 
