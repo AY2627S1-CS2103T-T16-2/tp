@@ -163,3 +163,7 @@ tasks.named('checkstyleMain') {
 tasks.named('checkstyleTest') {
     dependsOn tasks.named('generateVersionSource')
 }
+
+tasks.named('run', JavaExec) {
+    enableAssertions = true
+}
