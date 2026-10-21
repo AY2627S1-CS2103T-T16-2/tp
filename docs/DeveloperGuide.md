@@ -6,6 +6,16 @@
 
 # TuitionBook Developer Guide
 
+This guide is for developers maintaining TuitionBook and testers checking its behaviour. It explains the component boundaries, implemented features, scope decisions and manual test scenarios. It assumes familiarity with Java, object-oriented programming and basic UML diagrams. For everyday contact-management tasks, use the [User Guide](UserGuide.md).
+
+**Reading paths:**
+
+* New contributor: start with [Setting up](#setting-up-getting-started), then read [Architecture](#architecture) and the relevant [Implementation](#implementation) section.
+* Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
+* Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
+
+**Version:** This guide describes the v1.4 source. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
+
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
 <!-- * Table of Contents -->
@@ -33,7 +43,7 @@ Refer to the guide [_Setting up and getting started_](SettingUp.md).
 
 <puml src="diagrams/ArchitectureDiagram.puml" width="280" />
 
-The ***Architecture Diagram*** given above explains the high-level design of the App.
+The architecture diagram above shows the main components. The following sections explain their responsibilities and the direction of calls between them.
 
 The following provides a quick overview of the main components and their interactions.
 
@@ -102,7 +112,7 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 How the `Logic` component works:
 
-1. When `Logic` is called upon to execute a command, the command is passed to an `TuitionBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
+1. When `Logic` is called upon to execute a command, the command is passed to a `TuitionBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
@@ -204,6 +214,8 @@ Literal quotes already present in JSON are retained: CLI escaping is decoded bef
 
 Undo/redo is descoped from the final release under [scope decision 4.1](#decision-4-1-undo-and-confirmation). The following inherited design is retained only as a hypothetical implementation discussion: its classes, commands and model methods are not implemented, and it is not a release commitment.
 
+<panel header="Historical design details (not implemented)">
+
 #### Proposed Implementation
 
 The proposed undo/redo mechanism is facilitated by `VersionedTuitionBook`. It extends `TuitionBook` with an undo/redo history, stored internally as an `tuitionBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
@@ -275,13 +287,16 @@ The following activity diagram summarizes what happens when a user executes a ne
 
 **Aspect: How undo & redo execute:**
 
-* **Alternative 1 (current choice):** Saves the entire TuitionBook.
+* **Alternative 1 (choice in the historical proposal):** Saves the entire TuitionBook.
   * Pros: Easy to implement.
   * Cons: May have performance issues in terms of memory usage.
 
 * **Alternative 2:** Individual command knows how to undo/redo by itself.
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
+
+
+</panel>
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -678,7 +693,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 
 ## **Appendix: Instructions for manual testing**
 
-Given below are instructions to test the app manually.
+Use these scenarios to check visible behaviour and persistence. Start with [Launch and shutdown](#launch-and-shutdown), then choose the feature you changed. Use a fresh, disposable folder for each independent scenario and synthetic contacts only; do not run destructive tests against real contact data. Unless stated otherwise, enter commands in the main command box and press Enter. Record the JAR version, operating system, steps and actual result when reporting a failure.
 
 <box type="info" seamless>
 
