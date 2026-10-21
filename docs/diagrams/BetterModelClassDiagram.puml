@@ -9,15 +9,19 @@ Class "<<enumeration>>\nRole" as Role
 TuitionBook *-right-> "1" UniquePersonList
 TuitionBook *-right-> "1" UniqueTagList
 UniqueTagList -[hidden]down- UniquePersonList
-UniqueTagList -[hidden]down- UniquePersonList
 
 UniqueTagList -right-> "*" Tag
-UniquePersonList -right-> Person
+UniquePersonList -right-> "*" Person
 
 Person -up-> "*" Tag
 Person --> "0..1 guardian" Person
+note on link
+  The guardian link is stored as the
+  guardian's UUID id (guardianId),
+  not as a direct Person reference.
+end note
 
-Person *--> "1" Role
+Person --> "1" Role
 Person *--> "1" Name
 Person *--> "1" Phone
 Person *--> "0..1" Email
