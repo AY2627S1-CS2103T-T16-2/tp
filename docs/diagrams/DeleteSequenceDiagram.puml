@@ -117,7 +117,7 @@ activate DeleteCommand
 DeleteCommand --> LogicManager : true
 deactivate DeleteCommand
 
-opt [command requires saving]
+opt command requires saving
     LogicManager -> Model : getTuitionBook()
     activate Model
     Model --> LogicManager : tuitionBook
