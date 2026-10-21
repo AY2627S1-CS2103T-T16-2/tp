@@ -25,6 +25,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ import seedu.tuitionbook.logic.commands.ClearCommand;
 import seedu.tuitionbook.logic.commands.CommandResult;
 import seedu.tuitionbook.logic.commands.ExitCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
+import seedu.tuitionbook.logic.commands.LinkCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.logic.commands.TagCommand;
 import seedu.tuitionbook.logic.commands.UnlinkCommand;
@@ -443,6 +445,135 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_alreadyLinkedPair_skipsSaveAndPreservesContactsAndFilter() throws Exception {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withGuardian(guardian).build();
+        Person hidden = new PersonBuilder().withName("Hidden Student").withPhone("90000003").build();
+        model.addPerson(guardian);
+        model.addPerson(student);
+        model.addPerson(hidden);
+        Predicate<Person> filter = person -> !person.getId().equals(hidden.getId());
+        model.updateFilteredPersonList(filter);
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("NoOpLink.json"), DUMMY_AD_EXCEPTION);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("NoOpLinkPrefs.json"))));
+
+        CommandResult result = logic.execute("link 2 1");
+
+        assertEquals(String.format(LinkCommand.MESSAGE_ALREADY_LINKED, student.getName(), guardian.getName()),
+                result.getFeedbackToUser());
+        assertEquals(0, fileStorage.getSaveCallCount());
+        assertEquals(List.of(guardian, student, hidden), logic.getPersonList());
+        assertEquals(List.of(guardian, student), logic.getFilteredPersonList());
+        assertSame(filter, model.getFilteredPersonListPredicate());
+    }
+
+    @Test
+    public void execute_unchangedEdits_skipSaveEvenWhenStorageIsUnwritable() throws Exception {
+        String[] commands = {"edit 1 n/Sam Student", "edit 1 p/90000002", "edit 1 e/", "edit 1 a/",
+            "edit 1 t/Science t/Math t/Math", "edit 1 n/  Sam Student  p/90000002 t/Math t/Science"};
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withoutEmail().withoutAddress().withTags("Math", "Science").build();
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        model.addPerson(student);
+        model.addPerson(guardian);
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("NoOpEdit.json"), DUMMY_AD_EXCEPTION);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("NoOpEditPrefs.json"))));
+
+        for (String command : commands) {
+            model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+            assertEquals(List.of(student), logic.getFilteredPersonList(), command);
+            logic.execute(command);
+            assertEquals(0, fileStorage.getSaveCallCount(), command);
+            assertEquals(List.of(student, guardian), logic.getPersonList(), command);
+            assertEquals(List.of(student, guardian), logic.getFilteredPersonList(), command);
+        }
+    }
+
+    @Test
+    public void execute_emptyTagEdit_skipsSave() throws Exception {
+        Person student = new PersonBuilder().withTags().build();
+        model.addPerson(student);
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("EmptyChanges.json"), null);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("EmptyChangesPrefs.json"))));
+
+        logic.execute("edit 1 t/");
+        assertEquals(0, fileStorage.getSaveCallCount());
+        assertEquals(List.of(student), logic.getPersonList());
+        assertTrue(logic.getPersonList().getFirst().getTags().isEmpty());
+    }
+
+    @Test
+    public void execute_clearThenEmptyClear_savesOnlyFirstClear() throws Exception {
+        model.addPerson(new PersonBuilder().build());
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("EmptyClear.json"), null);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("EmptyClearPrefs.json"))));
+
+        logic.execute("clear confirm");
+        assertEquals(1, fileStorage.getSaveCallCount());
+        assertTrue(logic.getPersonList().isEmpty());
+        assertTrue(fileStorage.readTuitionBook().orElseThrow().getPersonList().isEmpty());
+        logic.execute("clear confirm");
+        assertEquals(1, fileStorage.getSaveCallCount());
+        assertTrue(fileStorage.readTuitionBook().orElseThrow().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_changedEdit_preservesPersistentIdAndSaves() throws Exception {
+        UUID originalId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        Person original = new PersonBuilder().withName("Sam Student").withId(originalId).build();
+        Model replacementModel = new ModelManager();
+        replacementModel.addPerson(original);
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("IdentityReplacement.json"), null);
+        Logic replacementLogic = new LogicManager(replacementModel, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("IdentityReplacementPrefs.json"))));
+
+        replacementLogic.execute("edit 1 n/Renamed Student");
+
+        Person replacement = replacementLogic.getPersonList().getFirst();
+        Person expected = new PersonBuilder(original).withName("Renamed Student").build();
+        assertEquals(expected, replacement);
+        assertEquals(originalId, replacement.getId());
+        assertEquals(1, fileStorage.getSaveCallCount());
+        Person reloaded = fileStorage.readTuitionBook().orElseThrow().getPersonList().getFirst();
+        assertEquals(expected, reloaded);
+        assertEquals(originalId, reloaded.getId());
+    }
+
+    @Test
+    public void execute_changedContacts_savesEachChangeAndReloadsCorrectly() throws Exception {
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
+                temporaryFolder.resolve("ChangedContacts.json"), null);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("ChangedContactsPrefs.json"))));
+        String[] commands = {"add r/guardian n/Grace Guardian p/90000001",
+            "add r/student n/Sam Student p/90000002 t/Math", "link 2 1", "edit 2 n/sam Student",
+            "edit 2 p/+65 9000-0002", "edit 2 e/sam@example.com", "edit 2 a/1 Main Street",
+            "edit 2 t/Math t/Science", "edit 2 t/Science", "edit 2 t/", "edit 2 e/ a/",
+            "add r/guardian n/Other Guardian p/90000003", "link 2 3", "unlink 2", "delete 3", "clear confirm"};
+
+        for (int i = 0; i < commands.length; i++) {
+            logic.execute(commands[i]);
+            assertEquals(i + 1, fileStorage.getSaveCallCount(), commands[i]);
+            ReadOnlyTuitionBook reloaded = fileStorage.readTuitionBook().orElseThrow();
+            assertEquals(model.getTuitionBook().getPersonList(), reloaded.getPersonList(), commands[i]);
+            assertEquals(model.getTuitionBook().getPersonList().stream().map(Person::getId).toList(),
+                    reloaded.getPersonList().stream().map(Person::getId).toList(), commands[i]);
+        }
+    }
+
+    @Test
     public void execute_unlinkAlreadyUnlinkedStudent_skipsSaveAndPreservesContactsAndFilter() throws Exception {
         Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
                 .withRole(Role.GUARDIAN).build();
@@ -653,6 +784,9 @@ public class LogicManagerTest {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
             Person student = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT)
                     .withGuardian(guardian).build();
+            if (command.startsWith("link")) {
+                student = student.clearGuardian();
+            }
             fallbackModel.addPerson(student);
             fallbackModel.addPerson(guardian);
             Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);

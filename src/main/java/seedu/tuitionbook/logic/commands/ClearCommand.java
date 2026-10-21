@@ -19,16 +19,25 @@ public class ClearCommand extends Command {
     public static final String MESSAGE_SUCCESS =
             "All contacts have been cleared, including contacts hidden by the current filter.";
 
+    private boolean requiresSave;
 
     @Override
     public boolean requiresSave() {
+        return requiresSave;
+    }
+
+    @Override
+    public boolean canMutate() {
         return true;
     }
 
     @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
+        requiresSave = false;
+        boolean hasContacts = !model.getTuitionBook().getPersonList().isEmpty();
         model.setTuitionBook(new TuitionBook());
+        requiresSave = hasContacts;
         return new CommandResult(MESSAGE_SUCCESS);
     }
 }
