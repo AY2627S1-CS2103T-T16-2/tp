@@ -44,7 +44,7 @@ Person *---> "1" Phone
 Person *---> "0..1" Email
 Person *---> "0..1" Address
 Person *---> "*" Tag
-Person --> "0..1 guardian" Person
+Person "*" --> "0..1 guardian" Person
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I

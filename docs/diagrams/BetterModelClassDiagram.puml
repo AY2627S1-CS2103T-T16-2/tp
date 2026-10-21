@@ -14,7 +14,7 @@ UniqueTagList -right-> "*" Tag
 UniquePersonList -right-> "*" Person
 
 Person -up-> "*" Tag
-Person --> "0..1 guardian" Person
+Person "*" --> "0..1 guardian" Person
 
 Person ---> "1" Role
 Person *---> "1" Name
