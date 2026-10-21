@@ -10,7 +10,9 @@ The format is based on Keep a Changelog.
 
 ### Added
 
-- Added optional double-quoted names to `add` and `edit`, allowing names such as `n/"Rina a/p Kaur"` without interpreting embedded field prefixes. Unquoted field parsing remains unchanged.
+- Added `tag` and `untag` to add or remove selected tags without retyping the contact's entire tag set; `tag` lists only newly added tags in its success feedback, and `untag` reports requested tags that were not present. `add` still supplies initial tags and `edit` still replaces all tags.
+- Added optional double-quoted names and tags, allowing values such as `n/"Rina a/p Kaur"` and `t/"call p/next week"` without interpreting embedded field prefixes in `add`, `edit`, and `list`. Unquoted field parsing remains unchanged.
+- Added `\"` and `\\` escapes inside quoted values, allowing literal quotes and backslashes in tags to be entered, filtered, and removed consistently through `add`, `edit`, `list`, `tag`, and `untag`, including tags loaded from existing JSON files.
 - Added a scrollable in-app summary of every implemented command and its syntax.
 - Added an `Open User Guide` action that uses the system default browser and shows copy-link fallback guidance when opening fails.
 - Added the `unlink` command to remove a student's guardian link without deleting either contact.
@@ -19,7 +21,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
-- Reconciled the v1.4 scope decisions with implemented commands, documented level/subject/status tag workflows and single-instance/manual-editing cautions, and removed unsupported future undo and archiving promises.
+- Reconciled the v1.4 scope decisions with implemented commands, including quoted-tag escapes, incremental tag changes and saves only after actual contact changes, documented level/subject/status tag workflows and single-instance/manual-editing cautions, and removed unsupported future undo and archiving promises.
 - Moved the User Guide command summary before Quick start and corrected its sidebar link.
 - Replaced the nested Help menu with a one-click top-level Help control while retaining the `help` command, <kbd>F1</kbd> shortcut, and `Copy URL` action.
 - Clarified that `link` indexes refer to the currently displayed, filtered contact list.
@@ -32,6 +34,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Save contact data only when commands report an actual change through `requiresSave()`, avoiding a full-list comparison, unnecessary writes, and misleading permission errors for repeated links, unchanged field or tag edits, unlinking unlinked students, and clearing an empty contact list. Save decisions reset on every command execution, while rollback snapshots remain in place.
 - Treat inaccessible JSON files as loading errors rather than missing files, preventing reload from clearing contacts when file existence cannot be determined.
 
 ## [v1.3] - 2026-10-14

@@ -19,7 +19,9 @@ import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.LinkCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
 import seedu.tuitionbook.logic.commands.ReloadCommand;
+import seedu.tuitionbook.logic.commands.TagCommand;
 import seedu.tuitionbook.logic.commands.UnlinkCommand;
+import seedu.tuitionbook.logic.commands.UntagCommand;
 import seedu.tuitionbook.logic.commands.ViewCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 
@@ -65,6 +67,8 @@ public class TuitionBookParser {
             }
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
+            case TagCommand.COMMAND_WORD -> new TagCommandParser().parse(arguments);
+            case UntagCommand.COMMAND_WORD -> new UntagCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case ClearCommand.COMMAND_WORD -> new ClearCommandParser().parse(arguments);
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);

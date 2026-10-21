@@ -42,6 +42,12 @@ public class HelpWindow extends UiPart<Stage> {
             edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...
               Edit one or more details of a displayed contact.
 
+            tag INDEX t/TAG [t/TAG]...
+              Add tags to a displayed contact, keeping its existing tags.
+
+            untag INDEX t/TAG [t/TAG]...
+              Remove specified tags from a displayed contact, keeping its other tags.
+
             link STUDENT_INDEX GUARDIAN_INDEX
               Link a displayed student to a displayed guardian.
 
@@ -65,6 +71,11 @@ public class HelpWindow extends UiPart<Stage> {
 
             exit
               Exit TuitionBook.
+
+            Quoted values (add/edit names and tags; list/tag/untag tags)
+              Use double quotes around values containing field prefixes, e.g. t/"call p/next week".
+              Inside quoted tags, use \\" for a literal quote and \\\\ for a literal backslash.
+              Surrounding whitespace is trimmed, including inside quotes.
             """.strip();
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);

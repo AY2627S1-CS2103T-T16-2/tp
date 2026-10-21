@@ -164,6 +164,16 @@ Classes used by multiple components are in the `seedu.tuitionbook.commons` packa
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Incremental tag changes
+
+`tag INDEX t/TAG [t/TAG]...` adds tags by set union; `untag INDEX t/TAG [t/TAG]...` removes them by set difference. `add` continues to accept an initial tag set and `edit` continues to replace the whole set. Stored tag identity is case-sensitive, unlike the case-insensitive `list` filter. Duplicate arguments are deduplicated, existing tags are ignored on addition, and absent tags are ignored on removal.
+
+`TagCommandParser` and `UntagCommandParser` delegate index and tag validation to `TagModificationCommandParser`. It uses `ArgumentTokenizer.tokenizeWithQuotedValues` with only `PREFIX_TAG`, protecting embedded `t/` text inside quoted tags and decoding the same quote and backslash escapes as `add`, `edit`, and `list`. Other field prefixes remain literal tag text. Every decoded tag is validated before constructing a command, so malformed quotes and invalid or blank tags reject the entire operation. See [Quoted name and tag parsing](#quoted-name-and-tag-parsing) for the shared quoting rules.
+
+`TagCommand` and `UntagCommand` share execution through `TagModificationCommand`. It resolves the displayed index and modifies a disposable copy of the selected contact's tags. A changed set produces one replacement `Person` retaining its ID, role, relationship, and all other fields, then restores the full list. A no-change result preserves the filter and requests no save. `canMutate()` remains true before execution so `LogicManager` captures the rollback snapshot, while `requiresSave()` is reset each execution and becomes true only after an actual tag change. Existing storage and save-failure rollback apply without a schema change.
+
+`TagCommand` compares requested tags with the original contact's tag set to report only newly added tags in its success message. `UntagCommand` uses the same comparison to report every absent tag, both when other tags are removed and when nothing changes. Shared feedback formatting sorts names and encloses them in double quotes, escaping literal quotes and backslashes for unambiguous display. This formatting does not change tag matching or command parsing. The difference is recomputed on each execution rather than retained as command state.
+
 ### Viewing contact relationships
 
 `ViewCommandParser` parses `view INDEX [v/]` with the same positive-index rule as other index-based commands. The optional empty `v/` prefix selects full details for linked contacts; the parser rejects duplicate prefixes and values after `v/`.
@@ -184,9 +194,13 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
-### Quoted-name parsing
+### Quoted name and tag parsing
 
-`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValue` for `PREFIX_NAME`. The tokenizer visits prefix positions in order and ignores positions inside a quoted name, then removes the enclosing quotes before normal name validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields and commands retain their existing quote and prefix behaviour. The model and JSON store the plain name; no storage migration is needed. Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
+`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValues` for `PREFIX_NAME` and `PREFIX_TAG`; `ListCommandParser` and the shared `TagModificationCommandParser` for `tag` and `untag` opt in for `PREFIX_TAG`. The tokenizer automatically recognises those quoted prefixes, visits prefix positions in order, and ignores positions inside a quoted value. It then removes the enclosing quotes before normal name or tag validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields retain their existing quote and prefix behaviour. The model and JSON store the plain name or tag, so no storage migration is needed. Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
+
+Inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Other backslash sequences and all unquoted values are preserved. The closing-quote scan and decoding use the same escape predicate, so an escaped quote cannot end a value or expose embedded prefixes. An escaped final quote without a subsequent closing quote is rejected. Surrounding whitespace is trimmed as before, and decoded values pass through the existing domain validators; escaping does not widen name validation.
+
+Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`. This also covers data from intermediate development builds that treated enclosing quotes literally; no automatic stripping or migration of existing tags occurs.
 
 ### \[Historical proposal\] Undo/redo feature
 
@@ -315,7 +329,7 @@ Priority represents importance to the target user and does not indicate whether 
 
 `Scope` is a planning classification, not a claim about the current implementation state. `MVP` identifies requirements in the agreed minimum TuitionBook product, while `Beyond MVP` identifies requirements outside that minimum, including implemented, scheduled, deferred, and descoped stories. The table retains these stories as a record of user needs; inclusion does not promise delivery.
 
-The MVP was delivered in v1.3. The v1.4 implementation also supports unlinking, tag filtering with an optional role, name-substring search, an offline command summary, `clear confirm`, quoted names, and reloading the contact file. These features are implemented in this source revision; the versioned release and its changelog identify what has been published. `find` searches names only, while `list [r/ROLE] [t/TAG]...` requires all supplied tags and the optional role to match; neither combines role and name filtering.
+The MVP was delivered in v1.3. The v1.4 implementation also supports unlinking, tag filtering with an optional role, name-substring search, an offline command summary, `clear confirm`, quoted names and tags with supported escapes, incremental `tag`/`untag` commands, and reloading the contact file. These features are implemented in this source revision; the versioned release and its changelog identify what has been published. `find` searches names only, while `list [r/ROLE] [t/TAG]...` requires all supplied tags and the optional role to match; neither combines role and name filtering.
 
 * **Tag-based organisation**: academic level, subject and active/inactive status are supported through generic tags and tag filtering. There are no dedicated academic fields or inactive/archive states. See the scope decisions below for the workflow and its limitations.
 * **Descoped**: dedicated level/subject fields, dedicated inactive/archive functionality, sorting, area search, notes, contact-to-clipboard commands, import/export commands and undo are excluded from the final release. Copying the User Guide URL remains supported. These decisions do not exclude generic tags or the implemented in-app command summary.
@@ -374,17 +388,17 @@ US20 undo/redo is excluded from the final release. There is no command history t
 
 The earlier US12 descope was reversed by [#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93): Help now includes an offline command summary, with browser access to the full UG and Copy URL as a fallback. It is a static syntax summary, not a context-sensitive help system.
 
-US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Quoting for names under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) has landed, but does not add a notes field or general escaping. Unquoted name collisions and literal tag quotes retain the documented parser behaviour.
+US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Name quoting under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) was extended to tags by [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163). Quoted names and tags support `\"` for a literal double quote and `\\` for a literal backslash. This protects embedded prefixes in those quoted fields; it does not add notes or quoting for every field. See [Quoted name and tag parsing](#quoted-name-and-tag-parsing).
 
 #### Academic grouping and inactive contacts
 
 US18/US19 needs are supported through generic tags: `t/Sec4 t/AMath` records a level and subject, and `list r/student t/Sec4 t/AMath` selects students with both labels. Dedicated academic fields and validation remain excluded. This updates the value proposition clarified in [#131](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/131).
 
-`Active` and `Inactive` are ordinary organisational tags. They do not hide contacts, archive records, disable commands, or change guardian relationships. Tutors explicitly select `list r/student t/Active` when needed. Editing tags replaces the full set, so changing a status requires retyping all tags to retain, for example `edit 1 t/Inactive t/Sec4 t/AMath`. Dedicated archive/restore and incremental add-tag/remove-tag commands are deferred; they are not promised future features.
+`Active` and `Inactive` are ordinary organisational tags. They do not hide contacts, archive records, disable commands, or change guardian relationships. Tutors explicitly select `list r/student t/Active` when needed. Editing tags replaces the full set, so an `edit` changing status must retain every other desired tag, for example `edit 1 t/Inactive t/Sec4 t/AMath`. The later [#164](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/164) decision, implemented in [#166](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/166), adds `tag` and `untag` for incremental changes without retyping unrelated tags. These commands match stored tags case-sensitively and do not enforce mutually exclusive status labels. Dedicated archive/restore functionality remains excluded from the final release.
 
 #### Tag identity and compatibility
 
-[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Command parsing trims surrounding whitespace only. Internal spaces remain significant (`Sec 4` and `Sec  4` differ), quotes remain literal, and filtering compares complete tags case-insensitively. Recognised prefixes after spaces can still delimit another field; the UG documents this limitation and examples for add/edit.
+[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Parsing trims surrounding whitespace, including inside quoted values, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Unquoted prefix collisions retain their existing interpretation. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag`, and `untag`; see the UG for examples.
 
 Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Once broader tags are saved, narrowing validation or normalising existing tag identities requires an explicit compatibility or migration plan.
 
@@ -398,7 +412,7 @@ A lock-file guard was considered and deferred from v1.x because cross-platform l
 
 US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/109): a missing data file starts with an empty contact list, and a valid file containing an empty contact list stays empty. The application does not insert sample contacts on startup.
 
-Avoiding every unnecessary write remains a code-quality follow-up under [#142](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/142). In the current implementation, re-linking an already-linked pair still requests a save, whereas unlinking an already-unlinked student skips saving. This internal distinction does not change the relationship result; save failures still follow the normal error path. Neither is a new user-facing feature commitment.
+[#165](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/165) resolves unnecessary save attempts for repeated links, unchanged edits and clearing an empty contact list. Together with `unlink` and the incremental tag commands, contact-changing commands report their actual mutation through `requiresSave()`. Commands that leave contact data unchanged do not attempt a save; filter changes alone do not require saving. An unchanged `edit` still restores the full list, while an unchanged `link`, `unlink`, `tag` or `untag` preserves the filter. Rollback snapshots remain in place for commands that can mutate data, and actual changes retain normal save-failure rollback. Snapshot creation still copies O(n) contact references; no constant-time execution or measured speedup is claimed. See [Saving data](#saving-data) for the contract and manual checks.
 
 ### Use cases
 
@@ -661,7 +675,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. JSON retains the same string representation without migration. `Tag.equals` and `hashCode` remain case-sensitive; only list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `find` remains name-only. Existing command-prefix boundaries are unchanged, and tag quotes are literal rather than an escape mechanism.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON retains the plain tag string without migration. `Tag.equals` and `hashCode` remain case-sensitive; only list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `find` remains name-only.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -674,7 +688,7 @@ Given below are instructions to test the app manually.
 **Note:** These instructions only provide a starting point for testers to work on; testers are expected to do more *exploratory* testing.
 </box>
 
-### Quoted names in add and edit
+### Quoted names and tags
 
 Use a fresh, disposable folder with an empty contact list.
 
@@ -688,9 +702,19 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `edit 1 n/"Rina a/p Kaur`.<br>
    Expected: An error explains the missing closing double quote; the contact is unchanged.
 1. Enter `edit 1 n/"Rina" extra`.<br>
-   Expected: An error explains that a quoted name must be followed by another field or the end of the command; the contact is unchanged.
+   Expected: An error explains that a quoted value must be followed by another field or the end of the command; the contact is unchanged.
 1. Enter `add r/student n/Rina a/p Kaur p/90000001`.<br>
    Expected: Existing unquoted parsing applies: name `Rina`, address `p Kaur`. This is the documented limitation; quotation marks are required to enter that full name.
+1. Enter `edit 1 t/"meet at a/c room" t/"call p/next week"`.<br>
+   Expected: Both complete tags are stored without quotation marks; the contact's address and phone number are unchanged.
+1. Enter `list t/"meet at a/c room"`.<br>
+   Expected: Rina appears because the quoted filter is parsed as one complete tag.
+1. Enter `edit 1 t/"\"Sec 4\"" t/"C:\\Math\\"`, then `list t/"\"Sec 4\""`.<br>
+   Expected: Rina has tags `"Sec 4"` (including the literal quotation marks) and `C:\Math\`; the filter matches Rina.
+1. Exit and restart, then enter `list t/"\"Sec 4\"" t/"C:\\Math\\"`.<br>
+   Expected: Rina still matches both complete tags; escaping has not added backslashes to the stored quotation marks or doubled the stored backslashes.
+1. Enter `edit 1 t/"Math\"`.<br>
+   Expected: The missing-closing-quote error appears because the final quote is escaped; the contact is unchanged.
 
 ### Clearing all contacts
 
@@ -837,6 +861,30 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Close and relaunch the application, then enter `view 1`.<br>
    Expected: Alex Yeoh's details report `No guardian linked.`, confirming that the removed link remains absent after restart.
 
+### Adding and removing individual tags
+
+Use an empty contact list in disposable storage.
+
+1. Enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002 t/Math t/Sec 4`, and `link 2 1`.
+1. Enter `find Sam`, then `tag 1 t/Science t/Math`.<br>
+   Expected: Feedback is `Added tags to Sam Student: "Science".` Sam has `Math`, `Sec 4`, and `Science`. Grace and Sam are both displayed; Sam's ID, phone, and guardian link are unchanged.
+1. Enter `list r/student`, then `untag 1 t/Math t/absent`.<br>
+   Expected: Sam has only `Sec 4` and `Science`; feedback includes `Tags not present: "absent".` and the full list returns.
+1. Enter `find Sam`, then `tag 1 t/Science` and `untag 1 t/science`.<br>
+   Expected: Both commands report no change, only Sam stays displayed, and no save is attempted. The differently cased `science` does not remove `Science`; `untag` feedback includes `Tags not present: "science".`
+1. Enter `tag 1 t/New t/` and `untag 1 t/Science t/`.<br>
+   Expected: Both commands report tag constraint errors; no tags are added or removed.
+1. Restart, then enter `view 2`.<br>
+   Expected: Sam still has `Sec 4` and `Science` and remains linked to Grace.
+1. Enter `edit 2 t/Only`, then `untag 2 t/Only`.<br>
+   Expected: `edit` replaces the entire tag set with `Only`; `untag` then leaves no tags.
+1. Enter `tag 2 t/"study t/weekly" t/"\"Sec 4\"" t/"C:\\Math\\"`, then restart.<br>
+   Expected: Sam has exactly three tags: `study t/weekly`, `"Sec 4"` (including literal quotes), and `C:\Math\` (including the final backslash). His other details and guardian link are unchanged.
+1. Enter `list t/"study t/weekly"`, then `untag 1 t/"study t/weekly" t/"\"Sec 4\"" t/"C:\\Math\\"`, then restart.<br>
+   Expected: The filtered list initially contains only Sam. Removing the tags restores the full list, and Sam has no tags after restart.
+1. Enter `tag 2 t/New t/"unfinished` and `untag 2 t/Math t/"extra" text`.<br>
+   Expected: The first command reports a missing closing quote; the second reports extra text after a quoted value. Neither changes any contacts or tags.
+
 ### Filtering contacts by tags
 
 Use a fresh, disposable folder with an empty contact list. Enter these commands in order:
@@ -861,7 +909,7 @@ add r/student n/Dana Lee p/91234564 t/inactive t/math
 
 ### Adding, editing, and filtering tags with spaces and punctuation
 
-Tags support spaces and printable ASCII punctuation so tutors can use natural spaced labels. Existing tags remain valid without changing the JSON format. Once users save these broader tag names, reverting to the previous single-hyphen restriction would reject valid saved contacts; any future narrowing requires an explicit compatibility or migration plan. Internal spaces remain significant and quotes remain literal in tags.
+Tags support spaces and printable ASCII punctuation so tutors can use natural spaced labels. Existing tags remain valid without changing the JSON format. Once users save these broader tag names, reverting to the previous single-hyphen restriction would reject valid saved contacts; any future narrowing requires an explicit compatibility or migration plan. Internal spaces remain significant. Optional enclosing quotes are command syntax and are not stored.
 
 Internal spacing is deliberately not normalized: `Sec 4` (one space) and `Sec  4` (two spaces) represent distinct tag strings. Case-insensitive list filtering does not collapse spaces, so a filter for one does not match the other. Command parsing trims surrounding whitespace only. Preserve this distinction in validation, persistence, and filtering tests; changing it would alter tag identity and matching behaviour.
 
@@ -886,7 +934,23 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 ### Saving data
 
+`LogicManager` uses `canMutate()` to snapshot contacts and the active filter before commands that can change data. After successful execution, it saves only when `requiresSave()` returns true; it does not compare the complete contact list. Each contact-changing command starts with a false save decision, resets it at the start of every execution, and sets it only after changing contact data. These commands override `canMutate()` to remain true independently of their latest save decision. Reusing a command after an earlier change therefore cannot cause a stale save request on a later no-change or rejected execution. Read-only commands and `reload` always return false from `requiresSave()`.
+
+`link` requests saving only after creating or replacing a relationship; `unlink` only after removing one. `edit` compares the selected contact's stored values with its proposed replacement and requests saving only when they differ; the replacement preserves the persistent ID. An unchanged edit still restores the full displayed list, as documented in the UG. `clear` checks whether the complete book contains any contacts, including hidden contacts. Successful additions and deletions always request saving. Filter changes alone do not trigger saving. Actual changes retain the existing save-failure rollback.
+
+**Performance:** The save decision no longer scans all contacts: it uses the command's mutation outcome, an emptiness check for `clear`, or a comparison of the selected contact for `edit`. Comparing that contact's fields and tags still depends on their sizes. Creating the rollback snapshot still copies O(n) contact references; this change does not make overall command execution constant-time. No benchmark has established a user-visible speedup.
+
 Run each scenario below independently in a fresh, disposable folder. An ordinary save failure rolls back the attempted change but does not set the storage write block: restore write access and repeat the failed command. A failed load whose backup also fails does set the write block: correct or move the file and use `reload` (or restart) before retrying contact-changing commands. If backing up an unreadable file succeeds, saving is already enabled and no reload is required. Reload reads the file; it does not save or replay a failed command.
+
+1. Repeating commands without changing contact data
+
+   1. In a fresh, disposable folder, enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002 t/Math`, then `link 2 1`.
+   1. Configure the data file or its folder so saving fails, then enter `edit 2 t/Science`.<br>
+      Expected: A save error is reported and Sam's tag remains `Math`. This establishes the save-failure precondition; permission controls differ by operating system.
+   1. Enter `link 2 1`, `edit 2 n/Sam Student`, and `edit 2 t/Math`.<br>
+      Expected: Each command completes without a save error and contacts remain unchanged. The link command reports that the relationship already exists.
+   1. Restore write access, then enter `edit 2 t/Science`, `unlink 2`, and `unlink 2` again.<br>
+      Expected: The tag change and first unlink persist; the second unlink reports no linked guardian. Restart and verify that Sam has tag `Science` and no guardian link.
 
 1. Reloading corrected data without restarting
 

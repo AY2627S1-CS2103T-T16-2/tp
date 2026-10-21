@@ -44,7 +44,9 @@ public class EditCommand extends Command {
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_TAG + "TAG]...\n"
-            + "For names containing field prefixes, use double quotes: n/\"Rina a/p Kaur\".\n"
+            + "Use double quotes around a name or tag containing field prefixes, for example "
+            + "n/\"Rina a/p Kaur\" or t/\"call p/next week\".\n"
+            + "Inside quoted tags, use \\\" for a literal quote and \\\\ for a literal backslash.\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";
@@ -55,6 +57,7 @@ public class EditCommand extends Command {
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
+    private boolean requiresSave;
 
     /**
      * @param index of the person in the filtered person list to edit
@@ -70,12 +73,18 @@ public class EditCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        return requiresSave;
+    }
+
+    @Override
+    public boolean canMutate() {
         return true;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        requiresSave = false;
         List<Person> lastShownList = model.getFilteredPersonList();
 
         if (index.getZeroBased() >= lastShownList.size()) {
@@ -89,7 +98,11 @@ public class EditCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
-        model.setPerson(personToEdit, editedPerson);
+        // createEditedPerson preserves the persistent ID; compare only the selected contact's stored values.
+        if (!personToEdit.equals(editedPerson)) {
+            model.setPerson(personToEdit, editedPerson);
+            requiresSave = true;
+        }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }

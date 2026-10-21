@@ -29,7 +29,9 @@ public class AddCommand extends Command {
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_TAG + "TAG]...\n"
-            + "For names containing field prefixes, use double quotes: n/\"Rina a/p Kaur\".\n"
+            + "Use double quotes around a name or tag containing field prefixes, for example "
+            + "n/\"Rina a/p Kaur\" or t/\"call p/next week\".\n"
+            + "Inside quoted tags, use \\\" for a literal quote and \\\\ for a literal backslash.\n"
             + "Example: " + COMMAND_WORD + " "
             + PREFIX_ROLE + "student "
             + PREFIX_NAME + "John Doe "
@@ -45,6 +47,7 @@ public class AddCommand extends Command {
             + "Add the contact first, then link the student to a guardian using the guardian-linking command.";
 
     private final Person toAdd;
+    private boolean requiresSave;
 
     /**
      * Creates an AddCommand to add the specified {@code Person}
@@ -56,18 +59,25 @@ public class AddCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        return requiresSave;
+    }
+
+    @Override
+    public boolean canMutate() {
         return true;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        requiresSave = false;
 
         if (model.hasPerson(toAdd)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
         model.addPerson(toAdd);
+        requiresSave = true;
         return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
     }
 
