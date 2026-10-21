@@ -104,7 +104,7 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 
 How the `Logic` component works:
 
-1. When `Logic` is called upon to execute a command, the command is passed to an `TuitionBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
+1. When `Logic` is called upon to execute a command, the command is passed to a `TuitionBookParser` object, which creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the arguments. It creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly instead.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
@@ -113,11 +113,14 @@ How the `Logic` component works:
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
-<puml src="diagrams/ParserClasses.puml" width="600"/>
+<puml src="diagrams/ParserClasses.puml" alt="Representative parser classes and their dependencies"/>
 
 How the parsing works:
-* When called upon to parse a user command, the `TuitionBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `TuitionBookParser` returns that object as a `Command` object.
-* All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
+* `TuitionBookParser` creates a command-specific parser for `add`, `edit`, `tag`, `untag`, `delete`, `clear`, `find`, `list`, `link`, `unlink`, and `view`. Each implements `Parser<T extends Command>` for its command type. The diagram shows `AddCommandParser` and `TagCommandParser` as representative examples; the remaining command-specific parsers are omitted.
+* `AddCommandParser` uses `ArgumentTokenizer`, `ArgumentMultimap`, the `Prefix` constants in `CliSyntax`, and `ParserUtil` to parse arguments and construct an `AddCommand`. `EditCommandParser`, `ListCommandParser`, and `ViewCommandParser` also use these utilities. Other parsers use only the helpers they need; for example, `DeleteCommandParser`, `LinkCommandParser`, and `UnlinkCommandParser` use `ParserUtil` to parse indexes.
+* `TagCommandParser` and `UntagCommandParser` delegate argument parsing to the package-private `TagModificationCommandParser` helper, passing their respective command constructor references. The helper uses the same tokenization and validation utilities and invokes the supplied constructor after parsing. It does not implement `Parser`.
+* `ArgumentTokenizer` creates an `ArgumentMultimap`, which stores argument values keyed by `Prefix`. `CliSyntax` defines the recognized prefix constants; `ParserUtil` parses values and indexes without depending on `Prefix`.
+* `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser. In all cases it returns the resulting object as a `Command`.
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/model/Model.java)
