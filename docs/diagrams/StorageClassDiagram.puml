@@ -3,21 +3,74 @@
 skinparam arrowThickness 1.1
 skinparam arrowColor STORAGE_COLOR
 skinparam classBackgroundColor STORAGE_COLOR
+skinparam classAttributeIconSize 0
+show members
 
 package Storage as StoragePackage {
 
-Class "<<interface>>\nStorage" as Storage
-Class StorageManager
+Class "<<interface>>\nStorage" as Storage {
+    +readUserPrefs(): Optional<UserPrefs>
+    +saveUserPrefs(userPrefs: ReadOnlyUserPrefs): void
+    +readTuitionBook(): Optional<ReadOnlyTuitionBook>
+    +readTuitionBookWithResult(): Optional<TuitionBookLoadResult>
+    +saveTuitionBook(tuitionBook: ReadOnlyTuitionBook): void
+}
+Class StorageManager {
+    -tuitionBookStorage: JsonTuitionBookStorage
+    -userPrefsStorage: JsonUserPrefsStorage
+    +StorageManager(...)
+    +readUserPrefs(): Optional<UserPrefs>
+    +saveUserPrefs(userPrefs: ReadOnlyUserPrefs): void
+    +readTuitionBookWithResult(): Optional<TuitionBookLoadResult>
+    +saveTuitionBook(tuitionBook: ReadOnlyTuitionBook): void
+}
 
 package "UserPrefs Storage" #F4F6F6{
-Class JsonUserPrefsStorage
+Class JsonUserPrefsStorage {
+    -filePath: Path
+    +JsonUserPrefsStorage(filePath: Path)
+    +readUserPrefs(): Optional<UserPrefs>
+    +saveUserPrefs(userPrefs: ReadOnlyUserPrefs): void
+}
 }
 
 package "TuitionBook Storage" #F4F6F6{
-Class JsonTuitionBookStorage
-Class JsonSerializableTuitionBook
-Class JsonAdaptedPerson
-Class JsonAdaptedTag
+Class JsonTuitionBookStorage {
+    -filePath: Path
+    -isWriteBlocked: boolean
+    +JsonTuitionBookStorage(filePath: Path)
+    +readTuitionBookWithResult(): Optional<TuitionBookLoadResult>
+    +saveTuitionBook(tuitionBook: ReadOnlyTuitionBook): void
+    -preserveMalformedFile(): Optional<Path>
+    -getAvailableBackupPath(): Path
+    #moveFile(source: Path, target: Path): void
+    #replaceFile(source: Path, target: Path): void
+}
+Class JsonSerializableTuitionBook {
+    -persons: List<JsonAdaptedPerson>
+    +JsonSerializableTuitionBook(source: ReadOnlyTuitionBook)
+    ~toModelTypeWithResult(): TuitionBookLoadResult
+    -resolveGuardianLink(...): Person
+}
+Class JsonAdaptedPerson {
+    -id: String
+    -role: String
+    -guardianId: String [0..1]
+    -name: String
+    -phone: String
+    -email: String [0..1]
+    -address: String [0..1]
+    -tags: List<JsonAdaptedTag>
+    +JsonAdaptedPerson(source: Person)
+    +toModelType(): Person
+    ~toModelTypeWithResult(): PersonLoadResult
+}
+Class JsonAdaptedTag {
+    -tagName: String
+    +JsonAdaptedTag(source: Tag)
+    +getTagName(): String
+    +toModelType(): Tag
+}
 }
 
 }
@@ -32,5 +85,14 @@ StorageManager -down-> "1" JsonTuitionBookStorage
 JsonTuitionBookStorage ..> JsonSerializableTuitionBook
 JsonSerializableTuitionBook --> "*" JsonAdaptedPerson
 JsonAdaptedPerson --> "*" JsonAdaptedTag
+
+note right of JsonTuitionBookStorage
+  Saves through a temporary file and atomically
+  replaces the configured data file.
+
+  On a failed load, moves the configured file to
+  an unused sibling .backup[.n] path. If the move
+  fails, blocks writes to protect the original.
+end note
 
 @enduml
