@@ -3,21 +3,53 @@
 skinparam arrowThickness 1.1
 skinparam arrowColor STORAGE_COLOR
 skinparam classBackgroundColor STORAGE_COLOR
+skinparam classAttributeIconSize 0
+show members
 
-package Storage as StoragePackage {
+package "Storage (seedu.tuitionbook.storage)" as StoragePackage {
 
-Class "<<interface>>\nStorage" as Storage
+Class "<<interface>>\nStorage" as Storage {
+    +readUserPrefs(): Optional<UserPrefs>
+    +saveUserPrefs(userPrefs: ReadOnlyUserPrefs): void
+    +readTuitionBook(): Optional<ReadOnlyTuitionBook>
+    +readTuitionBookWithResult(): Optional<TuitionBookLoadResult>
+    +saveTuitionBook(tuitionBook: ReadOnlyTuitionBook): void
+}
 Class StorageManager
 
-package "UserPrefs Storage" #F4F6F6{
-Class JsonUserPrefsStorage
+Class JsonUserPrefsStorage {
+    -filePath: Path
 }
 
-package "TuitionBook Storage" #F4F6F6{
-Class JsonTuitionBookStorage
-Class JsonSerializableTuitionBook
-Class JsonAdaptedPerson
-Class JsonAdaptedTag
+Class JsonTuitionBookStorage {
+    -filePath: Path
+    -isWriteBlocked: boolean
+    -preserveMalformedFile(): Optional<Path>
+    #replaceFile(source: Path, target: Path): void
+}
+Class JsonSerializableTuitionBook {
+    ~toModelTypeWithResult(): TuitionBookLoadResult
+}
+Class JsonAdaptedPerson {
+    -id: String
+    -role: String
+    -guardianId: String [0..1]
+    -name: String
+    -phone: String
+    -email: String [0..1]
+    -address: String [0..1]
+    ~toModelTypeWithResult(): PersonLoadResult
+}
+Class JsonAdaptedTag {
+    -tagName: String
+}
+Class "TuitionBookLoadResult\n<<record>>" as TuitionBookLoadResult {
+    -tuitionBook: ReadOnlyTuitionBook
+    -repairedGuardianLinkCount: int
+}
+Class "JsonAdaptedPerson.PersonLoadResult\n<<record>>" as PersonLoadResult {
+    -person: Person
+    -hasRepairedGuardianLink: boolean
 }
 
 }
@@ -26,11 +58,22 @@ Class HiddenOutside #FFFFFF
 HiddenOutside ..> Storage
 
 StorageManager .up.|> Storage
-StorageManager -down-> "1" JsonUserPrefsStorage
-StorageManager -down-> "1" JsonTuitionBookStorage
+StorageManager -down-> "1" JsonUserPrefsStorage : userPrefsStorage
+StorageManager -down-> "1" JsonTuitionBookStorage : tuitionBookStorage
 
-JsonTuitionBookStorage ..> JsonSerializableTuitionBook
-JsonSerializableTuitionBook --> "*" JsonAdaptedPerson
-JsonAdaptedPerson --> "*" JsonAdaptedTag
+JsonTuitionBookStorage ..> JsonSerializableTuitionBook : creates
+JsonSerializableTuitionBook ..> TuitionBookLoadResult : creates
+JsonAdaptedPerson ..> PersonLoadResult : creates
+JsonSerializableTuitionBook --> "0..*" JsonAdaptedPerson : persons
+JsonAdaptedPerson --> "0..*" JsonAdaptedTag : tags
+
+note right of JsonTuitionBookStorage
+  Saves through a temporary file and atomically
+  replaces the configured data file.
+
+  On a failed load, moves the configured file to
+  an unused sibling .backup[.n] path. If the move
+  fails, blocks writes to protect the original.
+end note
 
 @enduml
