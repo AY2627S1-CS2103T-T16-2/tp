@@ -40,7 +40,7 @@
       "src": "DeveloperGuide.md",
       "title": "Developer Guide",
       "headings": {
-        "ab-3-developer-guide": "AB-3 Developer Guide",
+        "tuitionbook-developer-guide": "TuitionBook Developer Guide",
         "acknowledgements": "Acknowledgements",
         "setting-up-getting-started": "Setting up, getting started",
         "design": "Design",
@@ -56,7 +56,7 @@
         "contact-field-validation": "Contact field validation",
         "quoted-name-and-tag-parsing": "Quoted name and tag parsing",
         "historical-proposal-undo-redo-feature": "[Historical proposal] Undo/redo feature",
-        "documentation-logging-testing-dev-ops": "Documentation, logging, testing, dev-ops",
+        "documentation-logging-testing-configuration-dev-ops": "Documentation, logging, testing, configuration, dev-ops",
         "appendix-requirements": "Appendix: Requirements",
         "product-scope": "Product scope",
         "user-stories": "User stories",
@@ -85,7 +85,8 @@
       "src": "Documentation.md",
       "title": "Documentation guide",
       "headings": {
-        "documentation-guide": "Documentation Guide"
+        "documentation-guide": "Documentation Guide",
+        "keeping-the-guides-current": "Keeping the guides current"
       },
       "headingKeywords": {}
     },
@@ -130,18 +131,21 @@
         "listing-contacts-list": "Listing contacts: list",
         "organising-levels-subjects-and-status-with-tags": "Organising levels, subjects and status with tags",
         "viewing-a-contact-view": "Viewing a contact: view",
-        "editing-a-person-edit": "Editing a person: edit",
+        "editing-a-contact-edit": "Editing a contact: edit",
         "adding-tags-to-a-contact-tag": "Adding tags to a contact: tag",
         "removing-tags-from-a-contact-untag": "Removing tags from a contact: untag",
         "linking-a-student-to-a-guardian-link": "Linking a student to a guardian: link",
         "removing-a-guardian-link-unlink": "Removing a guardian link: unlink",
-        "locating-persons-by-name-find": "Locating persons by name: find",
-        "deleting-a-person-delete": "Deleting a person: delete",
+        "finding-contacts-by-name-find": "Finding contacts by name: find",
+        "deleting-a-contact-delete": "Deleting a contact: delete",
         "clearing-all-entries-clear-confirm": "Clearing all entries: clear confirm",
         "reloading-contacts-reload": "Reloading contacts: reload",
         "exiting-the-program-exit": "Exiting the program: exit",
         "saving-the-data": "Saving the data",
         "editing-the-data-file": "Editing the data file",
+        "glossary": "Glossary",
+        "troubleshooting": "Troubleshooting",
+        "reporting-a-problem-or-unclear-instruction": "Reporting a problem or unclear instruction",
         "faq": "FAQ",
         "known-issues": "Known issues"
       },
