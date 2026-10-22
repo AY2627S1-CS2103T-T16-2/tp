@@ -14,6 +14,7 @@ Class UserPrefs
 
 Class UniquePersonList
 Class Person
+Class "<<enumeration>>\nRole" as Role
 Class Address
 Class Email
 Class Name
@@ -37,18 +38,28 @@ UserPrefs .up.|> ReadOnlyUserPrefs
 
 TuitionBook *--> "1" UniquePersonList
 UniquePersonList --> "~* all" Person
-Person *--> Name
-Person *--> Phone
-Person *--> Email
-Person *--> Address
-Person *--> "*" Tag
+Person ---> "1" Role
+Person *---> "1" Name
+Person *---> "1" Phone
+Person *---> "0..1" Email
+Person *---> "0..1" Address
+Person *---> "*" Tag
+Person "*" --> "0..1 guardian" Person
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I
 
+Role -[hidden]right-> Name
 Name -[hidden]right-> Phone
 Phone -[hidden]right-> Address
 Address -[hidden]right-> Email
 
 ModelManager --> "~* filtered" Person
+
+legend bottom
+  Every Person has an internal UUID id. A student's guardian link is
+  stored as the guardian's id in its guardianId field. Only a student
+  may link a guardian, the target must have the guardian role, and
+  one guardian may be linked by many students.
+end legend
 @enduml
