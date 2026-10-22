@@ -4,57 +4,74 @@ skinparam arrowThickness 1.1
 skinparam arrowColor UI_COLOR_T4
 skinparam classBackgroundColor UI_COLOR
 
-package UI <<Rectangle>>{
-Class "<<interface>>\nUi" as Ui
-Class "{abstract}\nUiPart" as UiPart
-Class UiManager
-Class MainWindow
-Class HelpWindow
-Class ResultDisplay
-Class PersonListPanel
-Class PersonCard
-Class StatusBarFooter
-Class CommandBox
-}
-
-package Model <<Rectangle>> {
-Class HiddenModel #FFFFFF
+package UI <<Rectangle>> {
+    class "<<interface>>\nUi" as Ui
+    class "{abstract}\nUiPart<T>" as UiPart
+    class UiManager
+    class MainWindow
+    class CommandBox
+    class ResultDisplay
+    class PersonListPanel
+    class PersonCard
+    class DetailDisplay
+    class StatusBarFooter
+    class HelpWindow
+    class DesktopAdapter
+    class "<<record>>\nStartupNotice" as StartupNotice
 }
 
 package Logic <<Rectangle>> {
-Class HiddenLogic #FFFFFF
+    class "<<interface>>\nLogic" as Logic #3333C4
 }
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> Ui
+package Model <<Rectangle>> {
+    class Person #9D0012
+}
 
+class MainApp #555555
+
+MainApp --> "1" Ui : starts
 UiManager .left.|> Ui
-UiManager -down-> "1" MainWindow
-MainWindow *-down->  "1" CommandBox
-MainWindow *-down-> "1" ResultDisplay
-MainWindow *-down-> "1" PersonListPanel
-MainWindow *-down-> "1" StatusBarFooter
-MainWindow --> "0..1" HelpWindow
-
-PersonListPanel -down-> "*" PersonCard
+UiManager -down-> "0..1" MainWindow
+UiManager --> "0..1" StartupNotice : displays at startup
+UiManager -right-> "1" Logic
 
 MainWindow -left-|> UiPart
-
-ResultDisplay --|> UiPart
 CommandBox --|> UiPart
+ResultDisplay --|> UiPart
 PersonListPanel --|> UiPart
 PersonCard --|> UiPart
+DetailDisplay --|> UiPart
 StatusBarFooter --|> UiPart
 HelpWindow --|> UiPart
 
-PersonCard ..> Model
-UiManager -right-> Logic
-MainWindow -left-> Logic
+MainWindow *-down-> "1" HelpWindow
+MainWindow *-down-> "0..1" PersonListPanel
+MainWindow *-down-> "0..1" DetailDisplay
+MainWindow *-down-> "0..1" ResultDisplay
+MainWindow ..> CommandBox : <<create>>
+MainWindow ..> StatusBarFooter : <<create>>
+MainWindow -left-> "1" Logic : commands and lists
+
+PersonListPanel ..> PersonCard : <<create>> via ListCell
+PersonListPanel ..> Person : filtered and complete lists
+PersonCard --> "1" Person : displays
+HelpWindow --> "1" DesktopAdapter : opens User Guide
 
 PersonListPanel -[hidden]left- HelpWindow
 HelpWindow -[hidden]left- CommandBox
 CommandBox -[hidden]left- ResultDisplay
-ResultDisplay -[hidden]left- StatusBarFooter
+ResultDisplay -[hidden]left- DetailDisplay
+DetailDisplay -[hidden]left- StatusBarFooter
 
-MainWindow -[hidden]-|> UiPart
+legend bottom
+  MainWindow installs CommandBox and StatusBarFooter roots in FXML placeholders;
+  it retains the other four parts as fields. PersonListPanel and DetailDisplay
+  share a placeholder and alternate visibility based on CommandResult details.
+  CommandBox invokes a CommandExecutor bound to MainWindow::executeCommand.
+  PersonListPanel's nested PersonListViewCell creates cards for nonempty cells;
+  the complete list supplies linked contact summaries across active filters.
+  HelpWindow opens the User Guide through DesktopAdapter's Browser callback
+  on a background Executor, or copies its URL to the clipboard.
+endlegend
 @enduml
