@@ -31,6 +31,9 @@
   * [Command Summary]({{ baseUrl }}/UserGuide.html#command-summary)
   * [Quick Start]({{ baseUrl }}/UserGuide.html#quick-start)
   * [Features]({{ baseUrl }}/UserGuide.html#features)
+  * [Troubleshooting]({{ baseUrl }}/UserGuide.html#troubleshooting)
+  * [Glossary]({{ baseUrl }}/UserGuide.html#glossary)
+  * [Known issues]({{ baseUrl }}/UserGuide.html#known-issues)
   * [FAQ]({{ baseUrl }}/UserGuide.html#faq)
 * [Developer Guide]({{ baseUrl }}/DeveloperGuide.html) :expanded:
   * [Acknowledgements]({{ baseUrl }}/DeveloperGuide.html#acknowledgements)

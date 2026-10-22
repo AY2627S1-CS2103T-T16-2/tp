@@ -4,7 +4,17 @@
   pageNav: 3
 ---
 
-# AB-3 Developer Guide
+# TuitionBook Developer Guide
+
+This guide is for developers maintaining TuitionBook and testers checking its behaviour. It explains the component boundaries, implemented features, scope decisions and manual test scenarios. It assumes familiarity with Java, object-oriented programming and basic UML diagrams. For everyday contact-management tasks, use the [User Guide](UserGuide.md).
+
+**Reading paths:**
+
+* New contributor: start with [Setting up](#setting-up-getting-started), then read [Architecture](#architecture) and the relevant [Implementation](#implementation) section.
+* Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
+* Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
+
+**Version:** This guide describes the v1.4 source. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -14,6 +24,10 @@ TuitionBook is scoped to English-language users and any `en-*` locale (for examp
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Acknowledgements**
+
+* This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
+* Libraries used: [JavaFX](https://openjfx.io/), [Jackson](https://github.com/FasterXML/jackson), [JUnit5](https://github.com/junit-team/junit5).
+* Some code and documentation changes were made with the assistance of AI tools, as permitted by the course.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -29,7 +43,7 @@ Refer to the guide [_Setting up and getting started_](SettingUp.md).
 
 <puml src="diagrams/ArchitectureDiagram.puml" width="280" />
 
-The ***Architecture Diagram*** given above explains the high-level design of the App.
+The architecture diagram above shows the main components. The following sections explain their responsibilities and the direction of calls between them.
 
 The following provides a quick overview of the main components and their interactions.
 
@@ -92,22 +106,16 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below follows a successful `execute("delete 1")` call through parsing, model updates and storage. The notes explain omitted lookups and rollback after a save failure.
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
-
 
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `TuitionBookParser` object, which creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the arguments. It creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly instead.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
-   Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. Before executing a command that can mutate contacts, `LogicManager` copies the contact data and retains the active filter for rollback. It calls `execute(model, storage)`; for `DeleteCommand`, the inherited method delegates to `execute(model)`.
+1. `DeleteCommand` resolves the displayed index against the filtered list, identifies affected students from the complete contact list, and passes the resolved `Person` to `Model.deletePerson`. Deleting a guardian clears the affected students' guardian links. The diagram omits the lookup and model-internal interactions described in its notes.
 1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. If saving fails, `LogicManager` restores the contacts and active filter that existed before the command, then reports a command error.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
@@ -183,7 +191,7 @@ This section describes some noteworthy details on how certain features are imple
 
 `ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked guardian or student from the result. The command does not change the model or its active filter.
 
-Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in address-book order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags are sorted alphabetically.
+Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in contact-list order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags are sorted alphabetically.
 
 `ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active filter remain in the model while the detail view is visible.
 
@@ -208,6 +216,8 @@ Literal quotes already present in JSON are retained: CLI escaping is decoded bef
 ### \[Historical proposal\] Undo/redo feature
 
 Undo/redo is descoped from the final release under [scope decision 4.1](#decision-4-1-undo-and-confirmation). The following inherited design is retained only as a hypothetical implementation discussion: its classes, commands and model methods are not implemented, and it is not a release commitment.
+
+<panel header="Historical design details (not implemented)">
 
 #### Proposed Implementation
 
@@ -280,7 +290,7 @@ The following activity diagram summarizes what happens when a user executes a ne
 
 **Aspect: How undo & redo execute:**
 
-* **Alternative 1 (current choice):** Saves the entire TuitionBook.
+* **Alternative 1 (choice in the historical proposal):** Saves the entire TuitionBook.
   * Pros: Easy to implement.
   * Cons: May have performance issues in terms of memory usage.
 
@@ -288,15 +298,17 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
 
-_{more aspects and alternatives to be added}_
+
+</panel>
 
 --------------------------------------------------------------------------------------------------------------------
 
-## **Documentation, logging, testing, dev-ops**
+## **Documentation, logging, testing, configuration, dev-ops**
 
 * [Documentation guide](Documentation.md)
 * [Testing guide](Testing.md)
 * [Logging guide](Logging.md)
+* [Configuration guide](Configuration.md)
 * [DevOps guide](DevOps.md)
 
 --------------------------------------------------------------------------------------------------------------------
@@ -654,8 +666,8 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 ### Non-Functional Requirements
 
 1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
-2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, linking, or unlinking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
-3.  All documented add, edit, delete, list, find, filter, view, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
+2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, tagging, untagging, linking, or unlinking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
+3.  All documented add, edit, delete, list, find, filter, view, tag, untag, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and active filter to their state before that operation.
@@ -684,7 +696,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 
 ## **Appendix: Instructions for manual testing**
 
-Given below are instructions to test the app manually.
+Use these scenarios to check visible behaviour and persistence. Start with [Launch and shutdown](#launch-and-shutdown), then choose the feature you changed. Use a fresh, disposable folder for each independent scenario and synthetic contacts only; do not run destructive tests against real contact data. Unless stated otherwise, enter commands in the main command box and press Enter. Record the JAR version, operating system, steps and actual result when reporting a failure.
 
 <box type="info" seamless>
 
@@ -739,22 +751,20 @@ Use a fresh, disposable folder with an empty contact list.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
+   1. Open a terminal and run `java -jar` followed by the quoted path to the JAR, as described in the UG's [Quick start](UserGuide.md#quick-start).<br>
       Expected: The GUI opens with an empty contact list and an information dialog explaining that no data file was found. The window size may not be optimal.
 
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   1. Relaunch the app using the same terminal command.<br>
        Expected: The most recent window size and location are retained.
-
-1. _{ more test cases … }_
 
 ### Getting help
 
 1. Click the top-level `Help` control once.<br>
-   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`, `list`, `view`, `edit`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, and `exit`. The Help window becomes active, so focus leaves the main TuitionBook window.
+   Expected: The Help window opens immediately without a dropdown. It contains a scrollable summary covering `add`, `list`, `view`, `edit`, `tag`, `untag`, `link`, `unlink`, `find`, `delete`, `clear`, `help`, `reload`, and `exit`, followed by a note on quoted values. The Help window becomes active, so focus leaves the main TuitionBook window.
 1. Minimize the Help window, focus the command box, and press <kbd>F1</kbd>.<br>
    Expected: The same Help window is restored and focused; no second Help window appears.
 1. Close the Help window. In the main TuitionBook window, focus the command box and enter `help`. The Help window becomes active. Return to the main TuitionBook window, focus its command box, and enter `help` again.<br>
@@ -780,7 +790,15 @@ Use a fresh, disposable folder with an empty contact list.
    1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
       Expected: Similar to previous.
 
-1. _{ more test cases … }_
+1. Deleting a guardian with linked students
+
+   1. Prerequisites: In a fresh, disposable folder, enter `add r/guardian n/Grace Guardian p/90000001`, `add r/student n/Sam Student p/90000002`, and `link 2 1`.
+
+   1. Test case: `delete 1`<br>
+      Expected: Grace Guardian is deleted. Sam Student remains and his card shows `Guardian: -`; the status message reports the deletion and the affected student.
+
+   1. Restart the application.<br>
+      Expected: Sam Student remains unlinked; the deleted guardian does not reappear.
 
 ### Displaying contact relationships in the list
 
@@ -847,7 +865,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `find grace`.<br>
    Expected: Only Grace Tan is shown; Bob Lim is not matched through the guardian link.
 1. Enter `find bob`, then `list`.<br>
-   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all five contacts in their original order. None of the contacts or the guardian link has changed.
+   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all four contacts in their original order. None of the contacts or the guardian link has changed.
 1. Enter `find`, then enter `find` followed only by spaces.<br>
    Expected: Each command reports an invalid-command format message containing the updated `find` usage, including `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
 

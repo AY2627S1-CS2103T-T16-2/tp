@@ -8,7 +8,11 @@
 
 TuitionBook helps **private one-to-one home tutors** manage students, guardians and their contact details in one place. Link students to guardians to find the right person to call, keep home addresses for visits, and use tags to organise contacts by level, subject or status. Typed commands are the primary way to work with the desktop app; your contacts are stored locally.
 
-TuitionBook is intended for English-language users and supports any `en-*` locale. Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
+This guide helps English-speaking tutors set up TuitionBook, record contacts and find the right person to call. You do not need programming knowledge. The interface is in English; contact names can contain letters from other languages, subject to the rules under each command.
+
+**Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
+
+**Version:** This guide describes the v1.4 source. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -38,35 +42,29 @@ Action     | Format, Examples
 
 ## Quick start
 
-1. Ensure that Java `25` or later is installed on your computer.<br>
-   **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
+Before you begin, install Java `25` or later and choose a folder where you can create files. TuitionBook saves its data beside the application JAR. To try the sample contacts without mixing them with real contacts, use a new, empty folder. Run only one copy of TuitionBook against that folder.
 
-1. Download the latest `.jar` file from the project's [GitHub Releases](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) page.
-
-1. Copy the file to the folder you want to use as the _home folder_ for your TuitionBook.
-
-1. Open a terminal. Replace the example JAR path below with the actual location of your downloaded JAR. You may run the command from any folder.
+1. Check Java by opening a terminal (Terminal on macOS/Linux, or PowerShell on Windows) and entering `java -version`.<br>
+   **Expected:** The version starts with `25` or a later number. If Java is missing or older, follow the [Java installation guide](https://se-education.org/guides/tutorials/javaInstallation.html) before continuing. **Mac users:** Follow the [macOS Java instructions](https://se-education.org/guides/tutorials/javaInstallationMac.html).
+1. Download the `.jar` file for the version you want from [GitHub Releases](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases), then copy it into your chosen folder.
+1. In the terminal, run one of the commands below. Replace the example path with the actual path and filename of your downloaded JAR; keep the surrounding quotes.
 
    * **macOS/Linux:** `java -jar "/path/to/tuitionbook.jar"`
    * **Windows:** `java -jar "C:\path\to\tuitionbook.jar"`
 
-   A GUI similar to the one below should appear in a few seconds. If no data file exists, TuitionBook starts with an empty contact list and shows an information dialog. Dismiss the dialog to use the app.<br>
-   ![Ui](images/Ui.png)
+   **Expected:** The TuitionBook window opens. In a fresh folder, the contact list is empty and a dialog explains that no data file was found. Dismiss the dialog. If the window does not open, see [Troubleshooting](#troubleshooting).
+1. Click the command box labelled `Enter command here...`, type `add r/student n/John Doe p/98765432`, and press <kbd>Enter</kbd>.<br>
+   **Expected:** John Doe appears as a student with a displayed index. The result area confirms the addition. A guardian link, email and home address are optional.
+1. Enter `find John` in the same command box.<br>
+   **Expected:** John Doe appears in the results. In this fresh sample list, the result area reports `1 person(s) listed!`.
+1. Enter `list`.<br>
+   **Expected:** All your contacts appear again. The index beside each contact is the number to use in commands such as `view 1`.
+1. Enter `help` to see the command summary. Close the Help window when you are done, then enter `exit` in the main window.<br>
+   **Expected:** TuitionBook closes. Successful contact changes have already been saved; there is no separate Save command.
+1. Run the same terminal launch command again.<br>
+   **Expected:** John Doe is still present. You can now use the [Features](#features) reference or the [status-tag workflow](#organising-levels-subjects-and-status-with-tags).
 
-1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
-   Some example commands you can try:
-
-   * `list` : Lists all contacts.
-
-   * `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student contact named `John Doe` to TuitionBook.
-
-   * `delete 1` : Deletes the 1st contact shown in the current list.
-
-   * `clear confirm` : Deletes all contacts, including contacts hidden by the current filter.
-
-   * `exit` : Exits the app.
-
-1. Refer to the [Features](#features) section below for details of each command.
+The command box is where you enter instructions; the result area reports success or errors; the contact list shows the contacts selected by your current filter. The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -85,11 +83,11 @@ Action     | Format, Examples
 * Items followed by `...` can appear zero or more times.<br>
   For example, `[t/TAG]...` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
-  For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
+* Parameters with a prefix, such as `n/NAME` and `p/PHONE`, can be in any order.<br>
+  For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable. Positional parameters have no prefix and must appear in the order shown: `edit 2 n/James Lee` puts its index first; `link 1 2` puts the student index before the guardian index.
 
-* Extraneous parameters for commands that take no parameters, such as `help` and `exit`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* The `help` and `exit` commands ignore extraneous parameters.<br>
+  For example, `help 123` is interpreted as `help`. `reload` accepts no arguments, and `clear` requires exactly `confirm`; `reload 123` and `clear confirm extra` report errors instead of running.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -201,7 +199,7 @@ To try the examples below from an empty contact list, enter these commands first
 1. `add r/guardian n/Bernice Yu p/99272758`
 1. `link 1 2`
 
-Examples using the contacts created above:
+Examples using the contacts created above (enter `list` first if you have applied a filter):
 
 * `view 1` replaces the contact list with Alex Yeoh's details and `Bernice Yu (99272758)` as his linked guardian.
 * `view 1 v/` also shows Bernice Yu's full contact details.
@@ -209,9 +207,11 @@ Examples using the contacts created above:
 * `view 2 v/` also shows Alex Yeoh's full contact details.
 * `list r/student` followed by `view 1 v/` still shows Bernice Yu's details, although guardians are hidden from the list.
 
-### Editing a person: `edit`
+<span id="editing-a-person-edit"></span>
 
-Edits an existing person in TuitionBook.
+### Editing a contact: `edit`
+
+Edits an existing contact in TuitionBook.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
@@ -294,9 +294,11 @@ Format: `unlink STUDENT_INDEX`
 
 Example: `unlink 1` removes the guardian link of the student at index 1.
 
-### Locating persons by name: `find`
+<span id="locating-persons-by-name-find"></span>
 
-Finds persons whose names contain any of the given literal substrings.
+### Finding contacts by name: `find`
+
+Finds contacts whose names contain any of the text you enter. Each piece of text can match part of a name (a substring).
 
 Format: `find KEYWORD [MORE_KEYWORDS]...`
 
@@ -309,12 +311,18 @@ Format: `find KEYWORD [MORE_KEYWORDS]...`
 Examples:
 * `find gr`, `find rac`, `find ace`, and `find GRACE` each return `Grace Tan`.
 * `find rac bob` returns contacts whose names contain either `rac` or `bob`, such as `Grace Tan` and `Bob Lim`.
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
-  ![result for 'find alex david'](images/findAlexDavidResult.png)
+* If your list contains `Alex Yeoh` and `David Li`, `find alex david` shows both. Any other contacts with `alex` or `david` anywhere in their names also appear. If no names match, the list is empty; use `list` to show every contact again.
 
-### Deleting a person: `delete`
+<span id="deleting-a-person-delete"></span>
 
-Deletes the specified person from TuitionBook.
+### Deleting a contact: `delete`
+
+Deletes the specified contact from TuitionBook.
+
+<box type="warning" seamless>
+
+Deletion is immediate and cannot be undone. Check the contact name and its current displayed index before running the command. Keep a backup if you may need to restore the contact.
+</box>
 
 Format: `delete INDEX`
 
@@ -333,6 +341,11 @@ Examples:
 Clears all entries from TuitionBook, including contacts hidden by the current filter.
 
 Format: `clear confirm`
+
+<box type="warning" seamless>
+
+This deletes every contact, including contacts hidden by a filter. There is no undo. Close the app and copy its data file to a safe location before reopening it if you need a backup.
+</box>
 
 * The confirmation keyword must be the exact lowercase word `confirm`.
 * `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
@@ -387,6 +400,45 @@ The 100-character name limit and 200-character address limit also apply to value
 
 --------------------------------------------------------------------------------------------------------------------
 
+## Glossary
+
+* **JAR**: The `.jar` application file you download and run with Java.
+* **Terminal**: The window where you enter the Java launch command. Once TuitionBook opens, enter contact-management commands in its command box instead.
+* **Prefix**: A marker such as `n/` or `t/` that identifies the value following it.
+* **Contact**: A record representing either a student or a guardian, with a name, phone number, and optional email address, home address, and tags.
+* **Role**: Whether a contact is a `student` or a `guardian`. Entered in any casing; shown as a `STUDENT` or `GUARDIAN` badge on the contact card.
+* **Guardian link**: A recorded association from a student to a guardian. A student has at most one guardian link; a guardian can be linked to multiple students.
+* **Index**: A contact's position in the currently displayed list, starting from 1. Index-based commands such as `edit`, `delete`, and `view` use this displayed position, which changes when a filter is active.
+* **Filter**: A condition that restricts the displayed list, set by `find` (name) or `list` (role and/or tags). Applying a new filter replaces the previous one; bare `list` clears it.
+* **Tag**: An optional label you choose for a contact, such as `Sec4` or `AMath`, used for organising and filtering. Tags are not dedicated fields and are not validated against any category list.
+* **Home folder**: The folder containing the TuitionBook JAR. Data, preferences, and logs are stored relative to this folder.
+* **Data file**: The local JSON file (`data/tuitionbook.json`) that stores your contacts and guardian links between sessions.
+
+--------------------------------------------------------------------------------------------------------------------
+
+## Troubleshooting
+
+Find the symptom below and try the suggested action. Error messages appear in the result area above the contact list. These checks do not require editing your contact data unless explicitly stated.
+
+| Symptom or message | Likely cause | What to do |
+|---|---|---|
+| The terminal cannot find `java`, or reports an unsupported Java version | Java is missing, too old, or a different installation is being used | Run `java -version` in that terminal and follow the Java installation links in [Quick start](#quick-start). |
+| `Unable to access jarfile` | The path or filename in the launch command is wrong | Check the downloaded file's location and name. Put the full path in straight double quotes. |
+| `Unknown command.` | A misspelled command or wrong letter case | Use the lowercase command word from the [Command summary](#command-summary), without the backticks shown in this guide. |
+| `Invalid command format!` | A required value is missing or a positional argument is misplaced | Read the usage shown with the error. Supply the required index first, then the relevant prefixed fields. For `link`, supply the student index followed by the guardian index. |
+| `The contact index provided is invalid.` | That index is not in the currently displayed list | Enter `list`, find the intended contact's current index, and retry. Filters can change the displayed indexes. |
+| No contacts appear after `find` or a filtered `list` | No contacts match the current filter | Enter `list` to show all contacts. `find` searches names only; tag filters must match the complete tag, including internal spaces. |
+| A name or tag is split at text such as `a/` or `t/` | The text was interpreted as a field prefix | Quote the complete value, for example `n/"Rina a/p Kaur"` or `t/"study t/weekly"`. See [Adding a contact](#adding-a-contact-add). |
+| A contact-changing command reports a save error | TuitionBook cannot write to its data location | Check write access and available disk space. The attempted change was rolled back. Correct the storage problem, then re-enter the command; it is not retried automatically. |
+| Startup reports an unreadable file or blocked saving | The data could not be loaded, and a backup may also have failed | Follow the reported backup path and [data recovery instructions](#editing-the-data-file). Preserve the original and any new contacts before replacing files. Use `reload` or restart after correcting the file. |
+| The Help window opens but the online guide does not | A browser could not open, or the page cannot be reached | Use the offline summary in Help. Try `Copy URL` in a browser when an internet connection is available. |
+
+### Reporting a problem or unclear instruction
+
+Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file.
+
+--------------------------------------------------------------------------------------------------------------------
+
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
@@ -396,7 +448,7 @@ The 100-character name limit and 200-character address limit also apply to value
 
 ## Known issues
 
-1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
+1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. Close TuitionBook, rename `preferences.json` in the JAR folder to `preferences.json.old`, then reopen the app. This resets window preferences without changing `data/tuitionbook.json`.
 2. **Unquoted name text resembling a parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Wrap the entire name in straight double quotes: `n/"Rina a/p Kaur"`. Slashes without a recognised prefix, as in `Muhammad s/o Ali`, also work without quotes.
 3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
