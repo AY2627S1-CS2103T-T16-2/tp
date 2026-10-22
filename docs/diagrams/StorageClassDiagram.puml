@@ -9,74 +9,28 @@ show members
 package "Storage (seedu.tuitionbook.storage)" as StoragePackage {
 
 Class "<<interface>>\nStorage" as Storage {
-    +getUserPrefsFilePath(): Path
     +readUserPrefs(): Optional<UserPrefs>
     +saveUserPrefs(userPrefs: ReadOnlyUserPrefs): void
-    +getTuitionBookFilePath(): Path
     +readTuitionBook(): Optional<ReadOnlyTuitionBook>
     +readTuitionBookWithResult(): Optional<TuitionBookLoadResult>
     +saveTuitionBook(tuitionBook: ReadOnlyTuitionBook): void
 }
-Class StorageManager {
-    -logger: Logger {static}
-    -tuitionBookStorage: JsonTuitionBookStorage
-    -userPrefsStorage: JsonUserPrefsStorage
-    +StorageManager(...)
-    +getUserPrefsFilePath(): Path
-    +readUserPrefs(): Optional<UserPrefs>
-    +saveUserPrefs(userPrefs: ReadOnlyUserPrefs): void
-    +getTuitionBookFilePath(): Path
-    +readTuitionBook(): Optional<ReadOnlyTuitionBook>
-    +readTuitionBookWithResult(): Optional<TuitionBookLoadResult>
-    +saveTuitionBook(tuitionBook: ReadOnlyTuitionBook): void
-}
+Class StorageManager
 
 Class JsonUserPrefsStorage {
     -filePath: Path
-    +JsonUserPrefsStorage(filePath: Path)
-    +getUserPrefsFilePath(): Path
-    +readUserPrefs(): Optional<UserPrefs>
-    +readUserPrefs(prefsFilePath: Path): Optional<UserPrefs>
-    +saveUserPrefs(userPrefs: ReadOnlyUserPrefs): void
 }
 
 Class JsonTuitionBookStorage {
-    +MESSAGE_WRITE_BLOCKED: String {static}
-    -logger: Logger {static}
     -filePath: Path
     -isWriteBlocked: boolean
-    +JsonTuitionBookStorage(filePath: Path)
-    +getTuitionBookFilePath(): Path
-    +readTuitionBook(): Optional<ReadOnlyTuitionBook>
-    +readTuitionBook(filePath: Path): Optional<ReadOnlyTuitionBook>
-    +readTuitionBookWithResult(): Optional<TuitionBookLoadResult>
-    +readTuitionBookWithResult(filePath: Path): Optional<TuitionBookLoadResult>
-    +saveTuitionBook(tuitionBook: ReadOnlyTuitionBook): void
-    +saveTuitionBook(tuitionBook: ReadOnlyTuitionBook, filePath: Path): void
     -preserveMalformedFile(): Optional<Path>
-    -getAvailableBackupPath(): Path
-    #moveFile(source: Path, target: Path): void
-    #writeJsonFile(tuitionBook: JsonSerializableTuitionBook, filePath: Path): void
     #replaceFile(source: Path, target: Path): void
-    -isConfiguredFilePath(filePath: Path): boolean
 }
 Class JsonSerializableTuitionBook {
-    +MESSAGE_DUPLICATE_PERSON: String {static}
-    +MESSAGE_DUPLICATE_ID: String {static}
-    +MESSAGE_NULL_PERSON: String {static}
-    -logger: Logger {static}
-    -persons: List<JsonAdaptedPerson>
-    +JsonSerializableTuitionBook(persons: List<JsonAdaptedPerson>)
-    +JsonSerializableTuitionBook(source: ReadOnlyTuitionBook)
-    +toModelType(): TuitionBook
     ~toModelTypeWithResult(): TuitionBookLoadResult
-    -resolveGuardianLink(...): Person
 }
 Class JsonAdaptedPerson {
-    +MISSING_FIELD_MESSAGE_FORMAT: String {static}
-    +INVALID_ID_MESSAGE: String {static}
-    +NULL_TAG_MESSAGE: String {static}
-    -logger: Logger {static}
     -id: String
     -role: String
     -guardianId: String [0..1]
@@ -84,36 +38,18 @@ Class JsonAdaptedPerson {
     -phone: String
     -email: String [0..1]
     -address: String [0..1]
-    -tags: List<JsonAdaptedTag>
-    +JsonAdaptedPerson(...)
-    +JsonAdaptedPerson(name: String, phone: String, email: String, address: String, tags: List<JsonAdaptedTag>)
-    +JsonAdaptedPerson(source: Person)
-    +toModelType(): Person
     ~toModelTypeWithResult(): PersonLoadResult
-    -isLegacyPerson(): boolean
-    -parseGuardianId(): UUID
-    -parseId(value: String, fieldName: String): UUID
 }
 Class JsonAdaptedTag {
     -tagName: String
-    +JsonAdaptedTag(tagName: String)
-    +JsonAdaptedTag(source: Tag)
-    +getTagName(): String
-    +toModelType(): Tag
 }
 Class "TuitionBookLoadResult\n<<record>>" as TuitionBookLoadResult {
     -tuitionBook: ReadOnlyTuitionBook
     -repairedGuardianLinkCount: int
-    +TuitionBookLoadResult(...)
-    +tuitionBook(): ReadOnlyTuitionBook
-    +repairedGuardianLinkCount(): int
 }
 Class "JsonAdaptedPerson.PersonLoadResult\n<<record>>" as PersonLoadResult {
     -person: Person
     -hasRepairedGuardianLink: boolean
-    ~PersonLoadResult(...)
-    +person(): Person
-    +hasRepairedGuardianLink(): boolean
 }
 
 }
@@ -121,18 +57,11 @@ Class "JsonAdaptedPerson.PersonLoadResult\n<<record>>" as PersonLoadResult {
 Class HiddenOutside #FFFFFF
 HiddenOutside ..> Storage
 
-Class JsonUtil {
-    +readJsonFile(...): Optional<T> {static}
-    +saveJsonFile(...): void {static}
-}
-
 StorageManager .up.|> Storage
 StorageManager -down-> "1" JsonUserPrefsStorage : userPrefsStorage
 StorageManager -down-> "1" JsonTuitionBookStorage : tuitionBookStorage
 
 JsonTuitionBookStorage ..> JsonSerializableTuitionBook : creates
-JsonTuitionBookStorage ..> JsonUtil : calls
-JsonUserPrefsStorage ..> JsonUtil : calls
 JsonSerializableTuitionBook ..> TuitionBookLoadResult : creates
 JsonAdaptedPerson ..> PersonLoadResult : creates
 JsonSerializableTuitionBook --> "0..*" JsonAdaptedPerson : persons
