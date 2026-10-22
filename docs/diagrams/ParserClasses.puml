@@ -4,35 +4,65 @@ skinparam arrowThickness 1.1
 skinparam arrowColor LOGIC_COLOR_T4
 skinparam classBackgroundColor LOGIC_COLOR
 
-Class "{abstract}\nCommand" as Command
-Class XYZCommand
-
-package "Parser classes"{
-Class "<<interface>>\nParser" as Parser
-Class TuitionBookParser
-Class XYZCommandParser
-Class CliSyntax
-Class ParserUtil
-Class ArgumentMultimap
-Class ArgumentTokenizer
-Class Prefix
+package "Commands (partial)" {
+abstract class Command
+class AddCommand
+abstract class TagModificationCommand
+class TagCommand
 }
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> TuitionBookParser
+package "Parser classes (partial)" {
+interface "Parser<T>" as Parser
+class TuitionBookParser
+class AddCommandParser
+class TagCommandParser
+class TagModificationCommandParser
+class CliSyntax
+class ParserUtil
+class ArgumentMultimap
+class ArgumentTokenizer
+class Prefix
+}
 
-TuitionBookParser .down.> XYZCommandParser: <<create>>
+TuitionBookParser .down.> AddCommandParser : <<create>>
+TuitionBookParser .down.> TagCommandParser : <<create>>
+TuitionBookParser ..> Command : returns
 
-XYZCommandParser ..> XYZCommand : <<create>>
-TuitionBookParser ..> Command : <<use>>
-XYZCommandParser .up.|> Parser
-XYZCommandParser ..> ArgumentMultimap
-XYZCommandParser ..> ArgumentTokenizer
-ArgumentTokenizer .left.> ArgumentMultimap
-XYZCommandParser ..> CliSyntax
-CliSyntax ..> Prefix
-XYZCommandParser ..> ParserUtil
-ParserUtil .down.> Prefix
-ArgumentTokenizer .down.> Prefix
-XYZCommand -up-|> Command
+AddCommandParser .up.|> Parser
+TagCommandParser .up.|> Parser
+
+AddCommandParser ..> AddCommand : <<create>>
+TagCommandParser ..> TagCommand : constructor reference
+AddCommand -up-|> Command
+TagModificationCommand -up-|> Command
+TagCommand -up-|> TagModificationCommand
+
+TagCommandParser ..> TagModificationCommandParser : calls parse
+
+AddCommandParser ..> ArgumentMultimap
+AddCommandParser ..> ArgumentTokenizer
+AddCommandParser ..> CliSyntax
+AddCommandParser ..> ParserUtil
+TagModificationCommandParser ..> ArgumentMultimap
+TagModificationCommandParser ..> ArgumentTokenizer
+TagModificationCommandParser ..> CliSyntax
+TagModificationCommandParser ..> ParserUtil
+
+ArgumentTokenizer ..> ArgumentMultimap : <<create>>
+ArgumentTokenizer ..> Prefix
+ArgumentMultimap --> "*" Prefix : keys
+CliSyntax --> "*" Prefix : constants
+
+note bottom of TagModificationCommandParser
+  Package-private helper; does not implement Parser.
+  Invokes the supplied command constructor after parsing.
+  UntagCommandParser also delegates to this helper
+  with the UntagCommand constructor (not shown).
+end note
+
+note top of TuitionBookParser
+  Other command parsers omitted.
+  Creates HelpCommand, ExitCommand and
+  ReloadCommand directly (not shown).
+end note
 @enduml

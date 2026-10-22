@@ -199,7 +199,7 @@ To try the examples below from an empty contact list, enter these commands first
 1. `add r/guardian n/Bernice Yu p/99272758`
 1. `link 1 2`
 
-Examples using the contacts created above:
+Examples using the contacts created above (enter `list` first if you have applied a filter):
 
 * `view 1` replaces the contact list with Alex Yeoh's details and `Bernice Yu (99272758)` as his linked guardian.
 * `view 1 v/` also shows Bernice Yu's full contact details.
