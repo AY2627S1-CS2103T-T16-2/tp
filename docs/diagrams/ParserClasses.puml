@@ -7,6 +7,7 @@ skinparam classBackgroundColor LOGIC_COLOR
 package "Commands (partial)" {
 abstract class Command
 class AddCommand
+abstract class TagModificationCommand
 class TagCommand
 }
 
@@ -33,7 +34,8 @@ TagCommandParser .up.|> Parser
 AddCommandParser ..> AddCommand : <<create>>
 TagCommandParser ..> TagCommand : constructor reference
 AddCommand -up-|> Command
-TagCommand -up-|> Command
+TagModificationCommand -up-|> Command
+TagCommand -up-|> TagModificationCommand
 
 TagCommandParser ..> TagModificationCommandParser : calls parse
 
