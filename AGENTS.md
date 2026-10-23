@@ -16,6 +16,11 @@
   Keep DG Acknowledgements accurate for reused or externally inspired ideas, code
   and documentation, with source links and the extent of reuse. Apply the course's
   stated exceptions for course materials, normal AB3 evolution and within-team reuse.
+* If an issue contains "Adapted from AY2627S1-CS2103T-T16-1 issue ###", give the work
+  for it the proper inline acknowledgement: cite that issue's URL in a comment near the
+  adapted code or test (e.g. `// Scenario adapted from
+  https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/###`), and keep the issue
+  listed in the DG Acknowledgements.
 * Use synthetic test data and disposable storage; protect real contacts and secrets.
 * Keep released JAR behaviour and published UG/DG claims consistent; label future work.
 * Run proportionate checks and disclose failures, skipped checks and uncertainty.
