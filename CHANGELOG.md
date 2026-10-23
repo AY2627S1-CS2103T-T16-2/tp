@@ -6,6 +6,12 @@ The format is based on Keep a Changelog.
 
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 
+## [Unreleased]
+
+### Changed
+
+- Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
+
 ## [v1.4] - 2026-10-22
 
 ### Added
