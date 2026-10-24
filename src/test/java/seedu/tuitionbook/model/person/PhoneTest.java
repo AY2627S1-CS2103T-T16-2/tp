@@ -53,14 +53,33 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("++6591234567")); // repeated leading plus signs
         assertFalse(Phone.isValidPhone("+ 65 91234567")); // separator immediately after plus sign
         assertFalse(Phone.isValidPhone("-91234567")); // leading hyphen
+        assertFalse(Phone.isValidPhone("/91234567")); // leading slash
         assertFalse(Phone.isValidPhone("91234567-")); // trailing hyphen
+        assertFalse(Phone.isValidPhone("91234567/")); // trailing slash
+        assertFalse(Phone.isValidPhone("91234567  ")); // trailing spaces
         assertFalse(Phone.isValidPhone("9123--4567")); // repeated separators
-        assertFalse(Phone.isValidPhone("9123  4567")); // repeated spaces
+        assertFalse(Phone.isValidPhone("9123//4567")); // repeated slashes
+        assertFalse(Phone.isValidPhone("9123 /4567")); // mixed separators
+        assertFalse(Phone.isValidPhone("9123/ 4567")); // mixed separators
         assertFalse(Phone.isValidPhone("(65 9123-4567")); // unmatched opening parenthesis
+        assertFalse(Phone.isValidPhone("9123 (4567")); // unmatched digit-group parenthesis at end
         assertFalse(Phone.isValidPhone("65) 9123-4567")); // unmatched closing parenthesis
         assertFalse(Phone.isValidPhone("65 () 9123-4567")); // empty parenthesized group
         assertFalse(Phone.isValidPhone("65 (91-23) 4567")); // separator inside parentheses
+        assertFalse(Phone.isValidPhone("91234567(HP)")); // annotation is not separated by a space
+        assertFalse(Phone.isValidPhone("91234567 (HP")); // unmatched annotation parenthesis
+        assertFalse(Phone.isValidPhone("91234567 ((HP))")); // nested annotation parentheses
+        assertFalse(Phone.isValidPhone("91234567 (HP!)")); // punctuation in annotation
+        assertFalse(Phone.isValidPhone("91234567 (home{)")); // non-ASCII-letter punctuation in annotation
+        assertFalse(Phone.isValidPhone("91234567 (caf\u00e9)")); // annotation letters must be ASCII
+        assertFalse(Phone.isValidPhone("91234567 ( home)")); // leading annotation space
+        assertFalse(Phone.isValidPhone("91234567 (home )")); // trailing annotation space
+        assertFalse(Phone.isValidPhone("91234567 (home  phone)")); // repeated annotation spaces
+        assertFalse(Phone.isValidPhone("91234567 (123 456)")); // annotation has no letter
+        assertFalse(Phone.isValidPhone("91234567 (HP) (home)")); // multiple annotations
+        assertFalse(Phone.isValidPhone("91234567 (HP)  ")); // trailing spaces after annotation
         assertFalse(Phone.isValidPhone("91234567 x")); // extension has no digits
+        assertFalse(Phone.isValidPhone("91234567 x12a")); // extension is not numeric
         assertFalse(Phone.isValidPhone("91234567 ext.")); // extension has no digits
         assertFalse(Phone.isValidPhone("91234567 ext 12 x34")); // multiple extensions
         assertFalse(Phone.isValidPhone("91234567 extension 12")); // unsupported extension marker
@@ -70,14 +89,22 @@ public class PhoneTest {
         assertTrue(Phone.isValidPhone("93121534"));
         assertTrue(Phone.isValidPhone("+651234"));
         assertTrue(Phone.isValidPhone("9123 4567"));
+        assertTrue(Phone.isValidPhone("9123  4567"));
         assertTrue(Phone.isValidPhone("9123-4567"));
+        assertTrue(Phone.isValidPhone("9123/4567"));
         assertTrue(Phone.isValidPhone("+65 9123-4567"));
         assertTrue(Phone.isValidPhone("+65 (9123) 4567"));
         assertTrue(Phone.isValidPhone("(65) 9123-4567"));
+        assertTrue(Phone.isValidPhone("91234567 (HP)"));
+        assertTrue(Phone.isValidPhone("91234567 (home)"));
+        assertTrue(Phone.isValidPhone("91234567 (Home 2)"));
+        assertTrue(Phone.isValidPhone("91234567 (HP)x123"));
         assertTrue(Phone.isValidPhone("91234567x123"));
         assertTrue(Phone.isValidPhone("91234567 x123"));
+        assertTrue(Phone.isValidPhone("91234567   x123"));
         assertTrue(Phone.isValidPhone("91234567 ext 123"));
         assertTrue(Phone.isValidPhone("91234567 EXT. 123"));
+        assertTrue(Phone.isValidPhone("+65 (9123) 4567 (HP) ext. 89"));
         assertTrue(Phone.isValidPhone("124293842033123")); // long phone numbers
     }
 

@@ -37,6 +37,14 @@ public class PersonTest {
     }
 
     @Test
+    public void isSamePerson_phoneAnnotationAndFormattingDiffer_returnsTrue() {
+        Person annotatedPhone = new PersonBuilder().withPhone("9123 4567 (home)").build();
+        Person slashedPhone = new PersonBuilder(annotatedPhone).withPhone("9123/4567").build();
+
+        assertTrue(annotatedPhone.isSamePerson(slashedPhone));
+    }
+
+    @Test
     public void asObservableList_modifyList_throwsUnsupportedOperationException() {
         Person person = new PersonBuilder().build();
         assertThrows(UnsupportedOperationException.class, () -> person.getTags().remove(0));
@@ -77,6 +85,8 @@ public class PersonTest {
         assertTrue(ALICE.isSamePerson(editedAlice));
         editedAlice = new PersonBuilder(ALICE).withPhone("9435-1253").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
+        editedAlice = new PersonBuilder(ALICE).withPhone("9435/1253 (home)").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
 
         // phone differs only in formatting while retaining a leading plus -> returns true
         editedAlice = new PersonBuilder(ALICE).withPhone("+9435 1253").build();
@@ -89,7 +99,7 @@ public class PersonTest {
 
         // equivalent extension markers retain the same extension digits -> returns true
         Person phoneWithXExtension = new PersonBuilder(ALICE).withPhone("9435-1253 x42").build();
-        Person phoneWithExtExtension = new PersonBuilder(ALICE).withPhone("(9435) 1253 ext. 42").build();
+        Person phoneWithExtExtension = new PersonBuilder(ALICE).withPhone("(9435) 1253 (HP) ext. 42").build();
         assertTrue(phoneWithXExtension.isSamePerson(phoneWithExtExtension));
 
         // different extension digits -> returns false

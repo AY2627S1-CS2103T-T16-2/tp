@@ -48,15 +48,16 @@ public class Email {
                 || !isAsciiAlphanumeric(localPart.charAt(localPart.length() - 1))) {
             return false;
         }
-        for (int i = 0; i < localPart.length(); i++) {
-            char currentCharacter = localPart.charAt(i);
+        boolean previousCharacterWasPeriod = false;
+        for (char currentCharacter : localPart.toCharArray()) {
             if (!isAsciiAlphanumeric(currentCharacter)
                     && LOCAL_PART_SPECIAL_CHARACTERS.indexOf(currentCharacter) < 0) {
                 return false;
             }
-            if (currentCharacter == '.' && i > 0 && localPart.charAt(i - 1) == '.') {
+            if (currentCharacter == '.' && previousCharacterWasPeriod) {
                 return false;
             }
+            previousCharacterWasPeriod = currentCharacter == '.';
         }
         return true;
     }

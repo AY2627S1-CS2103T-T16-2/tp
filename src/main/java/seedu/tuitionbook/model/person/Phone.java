@@ -3,8 +3,6 @@ package seedu.tuitionbook.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
 
-import java.util.Locale;
-
 /**
  * Represents a Person's phone number in TuitionBook.
  * Guarantees: immutable; is valid as declared in {@link #isValidPhone(String)}
@@ -12,10 +10,12 @@ import java.util.Locale;
 public class Phone {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Phone numbers must contain at least 3 main-number digits and may start with '+'. Write digit groups "
-                    + "plain or in balanced parentheses, separated by one space or hyphen. An optional numeric "
-                    + "extension may immediately follow the main number or follow one space, using x123, ext 123, "
-                    + "or ext. 123 (case-insensitive).";
+            "Phone numbers must contain at least 3 ASCII digits in the main number and may start with '+'. Main "
+                    + "groups must be plain digits or digits in balanced parentheses, separated by one or more "
+                    + "spaces, one hyphen, or one slash. After at least one space, you may add one parenthesized "
+                    + "annotation containing ASCII letters, digits, and single internal spaces, with at least one "
+                    + "letter. An optional numeric extension may follow the main number or annotation, directly "
+                    + "or after spaces, using x123, ext 123, or ext. 123 (case-insensitive).";
     private static final int MINIMUM_DIGIT_COUNT = 3;
     public final String value;
 
@@ -35,94 +35,220 @@ public class Phone {
      */
     public static boolean isValidPhone(String test) {
         requireNonNull(test);
-
-        int extensionMarkerIndex = findExtensionMarker(test);
-        String mainNumber = test;
-        if (extensionMarkerIndex >= 0) {
-            String extension = test.substring(extensionMarkerIndex);
-            if (!isValidExtension(extension)) {
-                return false;
-            }
-            int mainNumberEnd = extensionMarkerIndex;
-            if (mainNumberEnd > 0 && test.charAt(mainNumberEnd - 1) == ' ') {
-                mainNumberEnd--;
-            }
-            mainNumber = test.substring(0, mainNumberEnd);
-        }
-
-        return isValidMainNumber(mainNumber);
+        return parsePhone(test) != null;
     }
 
-    private static boolean isValidMainNumber(String mainNumber) {
-        int currentIndex = mainNumber.startsWith("+") ? 1 : 0;
-        int digitCount = 0;
+    private static ParsedPhone parsePhone(String phone) {
+        return new PhoneParser(phone).parse();
+    }
 
-        while (currentIndex < mainNumber.length()) {
-            if (mainNumber.charAt(currentIndex) == '(') {
-                currentIndex++;
-                int groupStart = currentIndex;
-                while (currentIndex < mainNumber.length() && isAsciiDigit(mainNumber.charAt(currentIndex))) {
-                    currentIndex++;
-                    digitCount++;
+    private record ParsedPhone(boolean hasLeadingPlus, String mainDigits, String annotation,
+                               String extensionDigits) {
+        private String toIdentityString() {
+            StringBuilder identity = new StringBuilder();
+            if (hasLeadingPlus) {
+                identity.append('+');
+            }
+            identity.append(mainDigits);
+            if (extensionDigits != null) {
+                identity.append('x').append(extensionDigits);
+            }
+            return identity.toString();
+        }
+    }
+
+    /** Parses a phone number once into the components shared by validation and identity comparison. */
+    private static final class PhoneParser {
+        private final String phone;
+        private final StringBuilder mainDigits = new StringBuilder();
+        private int currentIndex;
+        private boolean hasLeadingPlus;
+        private String annotation;
+        private String extensionDigits;
+
+        private PhoneParser(String phone) {
+            this.phone = phone;
+        }
+
+        private ParsedPhone parse() {
+            hasLeadingPlus = consume('+');
+            if (!parseNumberGroup()) {
+                return null;
+            }
+
+            while (currentIndex < phone.length()) {
+                if (parseExtension()) {
+                    return buildParsedPhone();
                 }
-                if (currentIndex == groupStart || currentIndex >= mainNumber.length()
-                        || mainNumber.charAt(currentIndex) != ')') {
+
+                char separator = phone.charAt(currentIndex);
+                if (separator == ' ') {
+                    consumeSpaces();
+                    if (currentIndex == phone.length()) {
+                        return null;
+                    }
+                    if (parseExtension()) {
+                        return buildParsedPhone();
+                    }
+                    if (phone.charAt(currentIndex) == '(' && !isParenthesizedDigitGroup()) {
+                        if (!parseAnnotation()) {
+                            return null;
+                        }
+                        return parseAfterAnnotation();
+                    }
+                    if (!parseNumberGroup()) {
+                        return null;
+                    }
+                } else if (separator == '-' || separator == '/') {
+                    currentIndex++;
+                    if (!parseNumberGroup()) {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            }
+
+            return buildParsedPhone();
+        }
+
+        private ParsedPhone parseAfterAnnotation() {
+            if (currentIndex == phone.length()) {
+                return buildParsedPhone();
+            }
+            if (phone.charAt(currentIndex) == ' ') {
+                consumeSpaces();
+                if (currentIndex == phone.length()) {
+                    return null;
+                }
+            }
+            if (!parseExtension()) {
+                return null;
+            }
+            return buildParsedPhone();
+        }
+
+        private boolean parseNumberGroup() {
+            if (currentIndex == phone.length()) {
+                return false;
+            }
+            if (phone.charAt(currentIndex) == '(') {
+                if (!isParenthesizedDigitGroup()) {
                     return false;
                 }
                 currentIndex++;
+                while (isCurrentCharacterAsciiDigit()) {
+                    mainDigits.append(phone.charAt(currentIndex));
+                    currentIndex++;
+                }
+                currentIndex++;
+                return true;
+            }
+            if (!isCurrentCharacterAsciiDigit()) {
+                return false;
+            }
+            while (isCurrentCharacterAsciiDigit()) {
+                mainDigits.append(phone.charAt(currentIndex));
+                currentIndex++;
+            }
+            return true;
+        }
+
+        private boolean isParenthesizedDigitGroup() {
+            int digitIndex = currentIndex + 1;
+            int firstDigitIndex = digitIndex;
+            while (digitIndex < phone.length() && isAsciiDigit(phone.charAt(digitIndex))) {
+                digitIndex++;
+            }
+            return digitIndex > firstDigitIndex && digitIndex < phone.length() && phone.charAt(digitIndex) == ')';
+        }
+
+        private boolean parseAnnotation() {
+            int annotationStart = currentIndex + 1;
+            int annotationIndex = annotationStart;
+            boolean hasLetter = false;
+            boolean previousCharacterWasSpace = false;
+            while (annotationIndex < phone.length() && phone.charAt(annotationIndex) != ')') {
+                char character = phone.charAt(annotationIndex);
+                if (isAsciiLetter(character)) {
+                    hasLetter = true;
+                    previousCharacterWasSpace = false;
+                } else if (isAsciiDigit(character)) {
+                    previousCharacterWasSpace = false;
+                } else if (character == ' ' && annotationIndex > annotationStart
+                        && !previousCharacterWasSpace) {
+                    previousCharacterWasSpace = true;
+                } else {
+                    return false;
+                }
+                annotationIndex++;
+            }
+            if (annotationIndex == annotationStart || annotationIndex == phone.length()
+                    || previousCharacterWasSpace || !hasLetter) {
+                return false;
+            }
+            annotation = phone.substring(annotationStart, annotationIndex);
+            currentIndex = annotationIndex + 1;
+            return true;
+        }
+
+        private boolean parseExtension() {
+            int extensionStart;
+            if (startsWithIgnoreCase("x")) {
+                extensionStart = currentIndex + 1;
+            } else if (startsWithIgnoreCase("ext. ")) {
+                extensionStart = currentIndex + 5;
+            } else if (startsWithIgnoreCase("ext ")) {
+                extensionStart = currentIndex + 4;
             } else {
-                int groupStart = currentIndex;
-                while (currentIndex < mainNumber.length() && isAsciiDigit(mainNumber.charAt(currentIndex))) {
-                    currentIndex++;
-                    digitCount++;
-                }
-                if (currentIndex == groupStart) {
-                    return false;
-                }
-            }
-
-            if (currentIndex == mainNumber.length()) {
-                break;
-            }
-            char separator = mainNumber.charAt(currentIndex);
-            if (separator != ' ' && separator != '-') {
                 return false;
             }
-            currentIndex++;
-            if (currentIndex == mainNumber.length()) {
+
+            int extensionEnd = extensionStart;
+            while (extensionEnd < phone.length() && isAsciiDigit(phone.charAt(extensionEnd))) {
+                extensionEnd++;
+            }
+            if (extensionEnd == extensionStart || extensionEnd != phone.length()) {
                 return false;
             }
+            extensionDigits = phone.substring(extensionStart);
+            currentIndex = phone.length();
+            return true;
         }
 
-        return digitCount >= MINIMUM_DIGIT_COUNT;
-    }
-
-    private static int findExtensionMarker(String phone) {
-        for (int i = 0; i < phone.length(); i++) {
-            char currentCharacter = phone.charAt(i);
-            if ((currentCharacter >= 'A' && currentCharacter <= 'Z')
-                    || (currentCharacter >= 'a' && currentCharacter <= 'z')) {
-                return i;
+        private ParsedPhone buildParsedPhone() {
+            if (mainDigits.length() < MINIMUM_DIGIT_COUNT) {
+                return null;
             }
+            return new ParsedPhone(hasLeadingPlus, mainDigits.toString(), annotation, extensionDigits);
         }
-        return -1;
-    }
 
-    private static boolean isValidExtension(String extension) {
-        String lowercaseExtension = extension.toLowerCase(Locale.ROOT);
-        String extensionDigits;
-        if (lowercaseExtension.startsWith("x")) {
-            extensionDigits = extension.substring(1);
-        } else if (lowercaseExtension.startsWith("ext. ")) {
-            extensionDigits = extension.substring(5);
-        } else if (lowercaseExtension.startsWith("ext ")) {
-            extensionDigits = extension.substring(4);
-        } else {
+        private boolean consume(char expectedCharacter) {
+            if (currentIndex < phone.length() && phone.charAt(currentIndex) == expectedCharacter) {
+                currentIndex++;
+                return true;
+            }
             return false;
         }
 
-        return !extensionDigits.isEmpty()
-                && extensionDigits.chars().allMatch(character -> isAsciiDigit((char) character));
+        private void consumeSpaces() {
+            while (currentIndex < phone.length() && phone.charAt(currentIndex) == ' ') {
+                currentIndex++;
+            }
+        }
+
+        private boolean startsWithIgnoreCase(String expected) {
+            return phone.regionMatches(true, currentIndex, expected, 0, expected.length());
+        }
+
+        private boolean isCurrentCharacterAsciiDigit() {
+            return currentIndex < phone.length() && isAsciiDigit(phone.charAt(currentIndex));
+        }
+    }
+
+    private static boolean isAsciiLetter(char character) {
+        return (character >= 'A' && character <= 'Z')
+                || (character >= 'a' && character <= 'z');
     }
 
     private static boolean isAsciiDigit(char character) {
@@ -134,22 +260,9 @@ public class Phone {
      * extension marker while retaining the extension digits.
      */
     static String normalizeForIdentity(String phone) {
-        int extensionMarkerIndex = findExtensionMarker(phone);
-        int mainNumberEnd = extensionMarkerIndex >= 0 ? extensionMarkerIndex : phone.length();
-        StringBuilder normalizedPhone = new StringBuilder(phone.length());
-        for (int i = 0; i < mainNumberEnd; i++) {
-            char currentCharacter = phone.charAt(i);
-            if (currentCharacter == '+' || isAsciiDigit(currentCharacter)) {
-                normalizedPhone.append(currentCharacter);
-            }
-        }
-        if (extensionMarkerIndex >= 0) {
-            String extension = phone.substring(extensionMarkerIndex);
-            int extensionDigitsStart = extension.toLowerCase(Locale.ROOT).startsWith("x")
-                    ? 1 : extension.lastIndexOf(' ') + 1;
-            normalizedPhone.append('x').append(extension.substring(extensionDigitsStart));
-        }
-        return normalizedPhone.toString();
+        requireNonNull(phone);
+        ParsedPhone parsedPhone = requireNonNull(parsePhone(phone));
+        return parsedPhone.toIdentityString();
     }
 
     @Override

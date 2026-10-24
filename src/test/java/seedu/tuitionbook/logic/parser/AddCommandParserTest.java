@@ -208,7 +208,7 @@ public class AddCommandParserTest {
     @Test
     public void parse_widenedNameAndFormattedPhone_success() {
         String widenedName = "Anne-Marie O\u2019Connor";
-        String formattedPhone = "+65 (9123) 4567 ext. 89";
+        String formattedPhone = "+65 (9123) 4567 (HP) ext. 89";
         String practicalEmail = "o'connor@example.xn--bcher-kva";
         Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withName(widenedName)
                 .withPhone(formattedPhone).withEmail(practicalEmail).withoutAddress().withTags().build();
