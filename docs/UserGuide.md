@@ -132,7 +132,7 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 **Tip:** A person can have any number of tags, including zero.
 
-TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match. Name comparison is case-insensitive, ignores surrounding and repeated spaces, and treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Phone comparison removes spaces and hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a leading `+` are distinct.
+TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match. Name identity first trims surrounding ASCII spaces and collapses consecutive internal ASCII spaces. It then normalizes the name to Unicode NFC, lowercases and uppercases it using locale-independent rules, and normalizes it to NFC again. This makes canonically equivalent accents compare equally and handles the demonstrated sharp-S cases consistently: `Groß` matches `GROẞ`, and `Straße` matches `STRASSE`. This is a concrete comparison rule, not a guarantee that every linguistically equivalent Unicode spelling is identical. Phone comparison removes spaces and hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a leading `+` are distinct. The original name spelling, casing, and Unicode representation remain unchanged for display and storage.
 
 A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the guardian's email may also be reused. The student and guardian remain distinct contacts because their names differ.
 </box>
@@ -303,7 +303,7 @@ Finds contacts whose names contain any of the text you enter. Each piece of text
 Format: `find KEYWORD [MORE_KEYWORDS]...`
 
 * Each keyword matches anywhere within a name, including the start, middle, or end of a name component. For example, `rac` matches `Grace Tan`.
-* The search is Unicode-aware and case-insensitive; for example, `GRACE` matches `Grace Tan`, and `ışık` matches `Işık`.
+* The search converts both each stored name and each keyword to Unicode NFC, lowercases and uppercases them using locale-independent rules, and normalizes them to NFC again before literal substring matching. As a result, `GRACE` matches `Grace Tan`, composed and decomposed accents match, `STRASSE` matches `Straße`, and the demonstrated `Groß`/`GROẞ` forms match consistently. Search does not trim or collapse spaces in stored names and does not otherwise use duplicate-identity normalization. This rule does not make every linguistically equivalent Unicode spelling identical.
 * The search considers only contact names. Text found only in a phone number, email address, home address, tag, role, or linked contact's name does not match.
 * Keywords are treated as literal text, so punctuation is not interpreted as a search pattern.
 * Persons matching at least one keyword are returned (an `OR` search). A person is listed only once even if multiple keywords match their name.
