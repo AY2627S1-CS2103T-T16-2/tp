@@ -40,6 +40,8 @@ public class NameTest {
         assertFalse(Name.isValidName("^")); // only non-alphanumeric characters
         assertFalse(Name.isValidName("peter*")); // contains non-alphanumeric characters
         assertFalse(Name.isValidName("James&")); // contains an unsupported symbol
+        assertFalse(Name.isValidName("John@Doe")); // contains an unsupported at sign
+        assertFalse(Name.isValidName("John#Doe")); // contains an unsupported hash sign
         assertFalse(Name.isValidName(" Amy Bee")); // starts with whitespace
         assertFalse(Name.isValidName("\u0301Jose")); // starts with a combining mark
         assertFalse(Name.isValidName("/John")); // starts with a forward slash
@@ -48,7 +50,9 @@ public class NameTest {
         assertTrue(Name.isValidName("Amy Bee"));
         assertTrue(Name.isValidName("Muhammad s/o Ali")); // contains a forward-slash name particle
         assertTrue(Name.isValidName("Mary-Jane Tan"));
+        assertTrue(Name.isValidName("Anne-Marie Tan"));
         assertTrue(Name.isValidName("O'Connor"));
+        assertTrue(Name.isValidName("O\u2019Connor"));
         assertTrue(Name.isValidName("Dr. Lee"));
         assertTrue(Name.isValidName("José Tan"));
         assertTrue(Name.isValidName("Jose\u0301"));

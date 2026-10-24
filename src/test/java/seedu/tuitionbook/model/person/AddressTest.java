@@ -29,6 +29,15 @@ public class AddressTest {
         // Blank values do not represent Address objects; absence is represented without an Address object.
         assertFalse(Address.isValidAddress("")); // empty string
         assertFalse(Address.isValidAddress(" ")); // spaces only
+        assertFalse(Address.isValidAddress("\u2003")); // Unicode EM SPACE only
+        assertFalse(Address.isValidAddress("\u00a0\u2003\t")); // Unicode whitespace only
+        assertFalse(Address.isValidAddress("123 Main Street\nUnit 2")); // embedded line break
+        assertFalse(Address.isValidAddress("123 Main Street\u000BUnit 2")); // vertical tab
+        assertFalse(Address.isValidAddress("123 Main Street\fUnit 2")); // form feed
+        assertFalse(Address.isValidAddress("123 Main Street\r")); // trailing line break
+        assertFalse(Address.isValidAddress("123 Main Street\u0085Unit 2")); // Unicode next-line character
+        assertFalse(Address.isValidAddress("123 Main Street\u2028Unit 2")); // Unicode line separator
+        assertFalse(Address.isValidAddress("123 Main Street\u2029Unit 2")); // Unicode paragraph separator
 
         // valid addresses
         assertTrue(Address.isValidAddress("Blk 456, Den Road, #01-355"));

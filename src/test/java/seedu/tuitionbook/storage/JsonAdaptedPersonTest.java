@@ -125,6 +125,22 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_unicodeBlankAddress_throwsIllegalValueException() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, "\u2003", VALID_TAGS);
+
+        assertThrows(IllegalValueException.class, Address.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_addressWithEscapedLineBreak_throwsIllegalValueException() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, "123 Main Street\nUnit 2", VALID_TAGS);
+
+        assertThrows(IllegalValueException.class, Address.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
     public void toModelType_overLengthAddress_throwsIllegalValueException() {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL,
                 "A".repeat(Address.MAX_LENGTH + 1), VALID_TAGS);
