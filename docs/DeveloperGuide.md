@@ -198,11 +198,13 @@ Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)
 
 ### Contact field validation
 
-`Name` and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names and addresses support UTF-8 text subject to their field-specific validation rules. Names contain at most 100 Unicode code points and addresses contain at most 200 Unicode code points.
+`Name`, `Phone`, `Email`, and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names support Unicode letters, numbers and combining marks plus the documented punctuation, including straight and right curly apostrophes, and contain at most 100 Unicode code points. Phone validation scans digit groups, balanced digit-only parentheses, single spaces or hyphens, and an optional numeric `x`, `ext`, or `ext.` extension rather than accepting arbitrary punctuation. Email validation implements the documented ASCII local-part and domain-label subset, including apostrophes and internal consecutive hyphens used by punycode labels, while rejecting consecutive periods. Addresses contain at most 200 Unicode code points, require a non-whitespace Unicode code point, and reject LF, vertical tab, form feed, CR, NEL, line separator and paragraph separator characters so every stored address is single-line.
 
-Name comparison treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Contacts are duplicates only when both their normalized names and normalized phone numbers match.
+Name comparison treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Phone identity removes spaces, hyphens and parentheses, retains a leading `+`, and converts each supported extension marker to `x` while retaining its digits. Contacts are duplicates only when both their normalized names and normalized phone numbers match.
 
-`JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
+`JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit, Unicode-blank, or multi-line address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
+
+After tokenization and duplicate-prefix checks, `AddCommandParser` collects absent mandatory prefixes in the fixed order `r/ROLE`, `n/NAME`, `p/PHONE`. A structurally valid command with any absent prefixes reports all of them followed by `AddCommand.MESSAGE_USAGE`; malformed preambles and tokenizer failures retain their existing format or parsing errors. Empty supplied values remain field-validation errors, so the parser does not duplicate model validation.
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
@@ -687,7 +689,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Index**: A positive one-based position in the current contact list, used by index-based commands.
 * **Mainstream OS**: Windows, macOS, or a commonly used Linux distribution.
 * **Normalised name**: A UTF-8 name converted to its comparison form before duplicate checking: leading and trailing spaces are removed, each internal run of spaces is collapsed to one space, and names are compared case-insensitively while preserving display casing.
-* **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: spaces and hyphens are removed while a leading `+` is retained. Country-code equivalence is not applied in the MVP.
+* **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: spaces, hyphens and parentheses are removed, a leading `+` is retained, and `x`, `ext`, and `ext.` become `x` while retaining the extension digits. Country-code equivalence is not applied in the MVP.
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
@@ -703,6 +705,21 @@ Use these scenarios to check visible behaviour and persistence. Start with [Laun
 
 **Note:** These instructions only provide a starting point for testers to work on; testers are expected to do more *exploratory* testing.
 </box>
+
+### Contact validation and missing add fields
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Enter `add r/student n/John O’Connor p/+65 (9123) 4567 ext. 89 e/o'connor@example.xn--bcher-kva a/123 Main Street`.<br>
+   Expected: The contact is added with the entered punctuation and phone formatting preserved.
+1. Enter `add r/student n/JOHN O’CONNOR p/+65-9123-4567 x89`.<br>
+   Expected: TuitionBook reports that the contact already exists because phone formatting and the extension marker are normalized for identity comparison.
+1. Enter `add r/student n/John@Doe p/91234567`, then `add r/student n/John Doe p/(65 9123-4567`, then `add r/student n/John Doe p/91234567 e/peter..jack@example.com`.<br>
+   Expected: Each command reports the relevant name, phone, or email constraint; no contact is added.
+1. Enter `add r/student n/John Doe e/john@example.com a/123 Main Street`, then `add e/john@example.com a/123 Main Street`.<br>
+   Expected: The first error identifies `p/PHONE`. The second identifies `r/ROLE, n/NAME, p/PHONE` in that order. Each message includes the ordinary add example before the quoted-name and quoted-tag guidance.
+1. Close TuitionBook and keep a separate copy of the valid `data/tuitionbook.json`. In one disposable copy, replace the stored address with the JSON string `"\u2003"`; in another copy, replace it with `"Line 1\nLine 2"`. Launch TuitionBook against each edited file separately.<br>
+   Expected: Each file follows the existing invalid-data recovery path instead of loading the invalid address. A successful backup preserves the original bytes and permits new saving; a failed backup leaves the original in place and blocks saving.
 
 ### Quoted names and tags
 

@@ -11,14 +11,8 @@ public class Address {
 
     public static final int MAX_LENGTH = 200;
 
-    public static final String MESSAGE_CONSTRAINTS = "Addresses can take any non-blank value and must be at most "
+    public static final String MESSAGE_CONSTRAINTS = "Addresses must be non-blank, single-line, and at most "
             + MAX_LENGTH + " characters, counted as Unicode code points.";
-
-    /*
-     * The first character of the address must not be a whitespace,
-     * otherwise " " (a blank string) becomes a valid input.
-     */
-    public static final String VALIDATION_REGEX = "[^\\s].*";
 
     public final String value;
 
@@ -37,7 +31,28 @@ public class Address {
      * Returns true if a given string is a valid address.
      */
     public static boolean isValidAddress(String test) {
-        return test.matches(VALIDATION_REGEX) && test.codePointCount(0, test.length()) <= MAX_LENGTH;
+        requireNonNull(test);
+        if (test.codePointCount(0, test.length()) > MAX_LENGTH) {
+            return false;
+        }
+
+        boolean hasNonWhitespaceCharacter = false;
+        for (int offset = 0; offset < test.length();) {
+            int codePoint = test.codePointAt(offset);
+            if (isLineBreak(codePoint)) {
+                return false;
+            }
+            if (!Character.isWhitespace(codePoint) && !Character.isSpaceChar(codePoint)) {
+                hasNonWhitespaceCharacter = true;
+            }
+            offset += Character.charCount(codePoint);
+        }
+        return hasNonWhitespaceCharacter;
+    }
+
+    private static boolean isLineBreak(int codePoint) {
+        return codePoint == '\n' || codePoint == '\u000B' || codePoint == '\f' || codePoint == '\r'
+                || codePoint == '\u0085' || codePoint == '\u2028' || codePoint == '\u2029';
     }
 
     @Override

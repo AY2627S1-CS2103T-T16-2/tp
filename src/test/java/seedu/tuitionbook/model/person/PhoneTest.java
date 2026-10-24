@@ -56,6 +56,14 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("91234567-")); // trailing hyphen
         assertFalse(Phone.isValidPhone("9123--4567")); // repeated separators
         assertFalse(Phone.isValidPhone("9123  4567")); // repeated spaces
+        assertFalse(Phone.isValidPhone("(65 9123-4567")); // unmatched opening parenthesis
+        assertFalse(Phone.isValidPhone("65) 9123-4567")); // unmatched closing parenthesis
+        assertFalse(Phone.isValidPhone("65 () 9123-4567")); // empty parenthesized group
+        assertFalse(Phone.isValidPhone("65 (91-23) 4567")); // separator inside parentheses
+        assertFalse(Phone.isValidPhone("91234567 x")); // extension has no digits
+        assertFalse(Phone.isValidPhone("91234567 ext.")); // extension has no digits
+        assertFalse(Phone.isValidPhone("91234567 ext 12 x34")); // multiple extensions
+        assertFalse(Phone.isValidPhone("91234567 extension 12")); // unsupported extension marker
 
         // valid phone numbers
         assertTrue(Phone.isValidPhone("911")); // exactly 3 numbers
@@ -64,6 +72,12 @@ public class PhoneTest {
         assertTrue(Phone.isValidPhone("9123 4567"));
         assertTrue(Phone.isValidPhone("9123-4567"));
         assertTrue(Phone.isValidPhone("+65 9123-4567"));
+        assertTrue(Phone.isValidPhone("+65 (9123) 4567"));
+        assertTrue(Phone.isValidPhone("(65) 9123-4567"));
+        assertTrue(Phone.isValidPhone("91234567x123"));
+        assertTrue(Phone.isValidPhone("91234567 x123"));
+        assertTrue(Phone.isValidPhone("91234567 ext 123"));
+        assertTrue(Phone.isValidPhone("91234567 EXT. 123"));
         assertTrue(Phone.isValidPhone("124293842033123")); // long phone numbers
     }
 

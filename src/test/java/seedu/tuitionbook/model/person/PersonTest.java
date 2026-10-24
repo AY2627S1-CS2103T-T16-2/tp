@@ -83,6 +83,19 @@ public class PersonTest {
         Person unformattedPlusPhoneAlice = new PersonBuilder(ALICE).withPhone("+94351253").build();
         assertTrue(editedAlice.isSamePerson(unformattedPlusPhoneAlice));
 
+        // phone differs only in parenthesized formatting -> returns true
+        editedAlice = new PersonBuilder(ALICE).withPhone("(9435) 1253").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // equivalent extension markers retain the same extension digits -> returns true
+        Person phoneWithXExtension = new PersonBuilder(ALICE).withPhone("9435-1253 x42").build();
+        Person phoneWithExtExtension = new PersonBuilder(ALICE).withPhone("(9435) 1253 ext. 42").build();
+        assertTrue(phoneWithXExtension.isSamePerson(phoneWithExtExtension));
+
+        // different extension digits -> returns false
+        Person phoneWithDifferentExtension = new PersonBuilder(ALICE).withPhone("94351253 ext 43").build();
+        assertFalse(phoneWithXExtension.isSamePerson(phoneWithDifferentExtension));
+
         // phone differs by a leading plus -> returns false
         editedAlice = new PersonBuilder(ALICE).withPhone("+94351253").build();
         assertFalse(ALICE.isSamePerson(editedAlice));
