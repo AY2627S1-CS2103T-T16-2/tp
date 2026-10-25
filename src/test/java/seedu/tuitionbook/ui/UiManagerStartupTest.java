@@ -31,9 +31,9 @@ import javafx.stage.Window;
 import seedu.tuitionbook.logic.Logic;
 import seedu.tuitionbook.logic.LogicManager;
 import seedu.tuitionbook.model.ModelManager;
+import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
-import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.storage.StorageManager;
 
 /**
@@ -75,6 +75,33 @@ public class UiManagerStartupTest {
         assertStartupDialog(StartupNotice.loadFailedBackupFailed(), "Contact data could not be loaded",
                 "TuitionBook started with an empty contact list, but saving is disabled",
                 "Your data file could not be read and could not be moved to a backup. It remains at " + dataFilePath()
+                        + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, then restart "
+                        + "TuitionBook.",
+                "warning");
+    }
+
+    @Test
+    public void loadFailure_withGuidance_showsGuidanceInDialogAndResult() throws Exception {
+        Path backupPath = testFolder.resolve("contacts.json.backup.1");
+        String guidance = "Restore read permission before trying again.";
+        assertStartupDialog(StartupNotice.loadFailedBackedUp(backupPath, guidance),
+                "Contact data could not be loaded", "TuitionBook started with an empty contact list",
+                guidance + "\n\nYour data file could not be read, so it was moved unchanged to " + backupPath
+                        + ". Your original data is not lost. TuitionBook will save new contacts to " + dataFilePath()
+                        + ". To restore the original data, fix the JSON in the backup, rename it to " + dataFilePath()
+                        + " (replacing the new file), then restart TuitionBook. Contacts added after recovery "
+                        + "are in the new file and must be re-entered; the files cannot be merged automatically.",
+                "warning");
+    }
+
+    @Test
+    public void loadFailure_backupFailureWithGuidance_showsGuidanceInDialogAndResult() throws Exception {
+        String guidance = "Correct the file before trying again.";
+        assertStartupDialog(StartupNotice.loadFailedBackupFailed(guidance),
+                "Contact data could not be loaded",
+                "TuitionBook started with an empty contact list, but saving is disabled",
+                guidance + "\n\nYour data file could not be read and could not be moved to a backup. It remains at "
+                        + dataFilePath()
                         + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, then restart "
                         + "TuitionBook.",
                 "warning");
@@ -185,12 +212,17 @@ public class UiManagerStartupTest {
                     assertFalse(details.isEditable());
                     assertTrue(details.isWrapText());
                     assertTrue(dialogStage.isResizable());
-                    assertEquals(MainWindow.MIN_WIDTH, dialogStage.getMinWidth());
-                    assertEquals(MainWindow.MIN_HEIGHT / 4, dialogStage.getMinHeight());
+                    assertEquals(450, dialogStage.getMinWidth());
+                    assertEquals(150, dialogStage.getMinHeight());
                     assertEquals(Math.min(12, Math.max(4, notice.guardianLinkRepairs().size())),
                             details.getPrefRowCount());
                     for (GuardianLinkRepair repair : notice.guardianLinkRepairs()) {
                         assertTrue(details.getText().contains(repair.personName()));
+                        assertTrue(details.getText().contains(repair.personId().toString()));
+                        assertTrue(details.getText().contains(repair.reason().getDescription()));
+                        if (repair.guardianId() != null) {
+                            assertTrue(details.getText().contains(repair.guardianId()));
+                        }
                     }
                 } else {
                     assertEquals(content, pane.getContentText());
@@ -254,19 +286,21 @@ public class UiManagerStartupTest {
 
     private String getExpectedResultMessage(StartupNotice notice) {
         Path displayedDataFilePath = dataFilePath().toAbsolutePath().normalize();
+        String guidancePrefix = notice.loadFailureGuidance() == null
+                ? "" : notice.loadFailureGuidance() + "\n";
         if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
-            return "Data file was moved unchanged to "
+            return guidancePrefix + "Data file was moved unchanged to "
                     + notice.malformedFileBackupPath().toAbsolutePath().normalize() + ".\n"
                     + "New contacts save to " + displayedDataFilePath
                     + ". Fix the backup JSON and replace this file to restore it.\n"
                     + "Restart TuitionBook; contacts added after recovery must be re-entered.";
         }
-        return "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
+        return guidancePrefix + "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
                 + "Saving is disabled. Correct or move the file, then restart TuitionBook.";
     }
 
     private GuardianLinkRepair repair(String personName) {
-        return new GuardianLinkRepair(personName, UUID.randomUUID(), null,
+        return new GuardianLinkRepair(personName, UUID.randomUUID(), "missing-guardian-id",
                 GuardianLinkRepair.Reason.MISSING_GUARDIAN);
     }
 

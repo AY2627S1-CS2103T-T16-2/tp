@@ -704,7 +704,7 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
 1.  Private tutor submits a reload request.
 2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and clears the active filter.
-3.  TuitionBook enables saving and reports the number of loaded contacts.
+3.  TuitionBook enables saving and reports the number of loaded contacts. If guardian links are repaired, it lists each affected contact's name, UUID, guardian ID when present, and repair reason.
 
     Use case ends.
 
@@ -724,13 +724,13 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
 * 2c. TuitionBook cannot read the file but preserves it in a backup.
 
-    * 2c1. TuitionBook retains the current contacts and active filter, enables saving, and reports the backup path and that corrected data must be restored before reloading again.
+    * 2c1. TuitionBook retains the current contacts and active filter, enables saving, and reports the backup path, cause-specific guidance, and that corrected data must be restored before reloading again.
 
       Use case ends.
 
 * 2d. TuitionBook cannot read the file or preserve it in a backup.
 
-    * 2d1. TuitionBook retains the current contacts and active filter, leaves the original file in place, blocks saving, and explains that the original must be corrected or moved before reloading again.
+    * 2d1. TuitionBook retains the current contacts and active filter, leaves the original file in place, blocks saving, and reports cause-specific guidance while explaining that the original must be corrected or moved before reloading again.
 
       Use case ends.
 
@@ -1179,6 +1179,9 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
       Expected: the list contains Reloaded Alex, the filter is cleared, and the result reports one loaded contact. Reload does not rewrite the file.
 
+   1. Replace the file with valid JSON containing a student whose `guardianId` refers to a missing contact, then enter `reload`.<br>
+      Expected: the student remains loaded, the result identifies the affected contact by name and UUID, includes the invalid guardian ID and explains that the referenced contact is missing. The file remains unchanged until a later successful save.
+
    1. Enter `reload extra`.<br>
       Expected: invalid command format; contacts remain unchanged.
 
@@ -1263,7 +1266,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. In a fresh, disposable folder, create a valid `data/tuitionbook.json` containing a student whose `guardianId` refers to a missing contact.
 
    1. Launch TuitionBook.<br>
-      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link. The scrollable details area identifies the student by name and ID and explains that the referenced guardian is missing.
+      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link. The scrollable details area identifies the student by name and UUID, shows the invalid `guardianId`, and explains that the referenced guardian is missing.
 
    1. Close TuitionBook and repeat in another disposable folder with two or more students whose `guardianId` values are malformed, missing, self-referential, or refer to students.<br>
       Expected: All valid contacts remain visible, all invalid links are removed, and the scrollable warning lists every affected contact in JSON order with its repair reason.

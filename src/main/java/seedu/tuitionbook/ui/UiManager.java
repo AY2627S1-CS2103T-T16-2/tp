@@ -26,6 +26,8 @@ public class UiManager implements Ui {
 
     private static final Logger logger = LogsCenter.getLogger(UiManager.class);
     private static final String ICON_APPLICATION = "/images/address_book_32.png";
+    private static final double REPAIR_DIALOG_MIN_WIDTH = 450;
+    private static final double REPAIR_DIALOG_MIN_HEIGHT = 150;
 
     private Logic logic;
     private Path dataFilePath;
@@ -75,7 +77,8 @@ public class UiManager implements Ui {
             case MISSING_DATA_FILE -> showAlertDialogAndWait(AlertType.INFORMATION, "No data file found",
                     "TuitionBook started with an empty contact list",
                     "No contact data was found at " + displayedDataFilePath + ". Add contacts to get started.");
-            case LOAD_FAILED_BACKED_UP -> showLoadFailureNotice("TuitionBook started with an empty contact list",
+            case LOAD_FAILED_BACKED_UP -> showLoadFailureNotice(notice.loadFailureGuidance(),
+                    "TuitionBook started with an empty contact list",
                     "Your data file could not be read, so it was moved unchanged to "
                             + displayedPath(notice.malformedFileBackupPath())
                             + ". Your original data is not lost. TuitionBook will save new contacts to "
@@ -88,7 +91,7 @@ public class UiManager implements Ui {
                             + "New contacts save to " + displayedDataFilePath
                             + ". Fix the backup JSON and replace this file to restore it.\n"
                             + "Restart TuitionBook; contacts added after recovery must be re-entered.");
-            case LOAD_FAILED_BACKUP_FAILED -> showLoadFailureNotice(
+            case LOAD_FAILED_BACKUP_FAILED -> showLoadFailureNotice(notice.loadFailureGuidance(),
                     "TuitionBook started with an empty contact list, but saving is disabled",
                     "Your data file could not be read and could not be moved to a backup. It remains at "
                             + displayedDataFilePath
@@ -125,8 +128,8 @@ public class UiManager implements Ui {
         alert.setResizable(true);
         alert.setOnShown(event -> {
             Stage dialogStage = (Stage) alert.getDialogPane().getScene().getWindow();
-            dialogStage.setMinWidth(MainWindow.MIN_WIDTH);
-            dialogStage.setMinHeight(MainWindow.MIN_HEIGHT / 4);
+            dialogStage.setMinWidth(REPAIR_DIALOG_MIN_WIDTH);
+            dialogStage.setMinHeight(REPAIR_DIALOG_MIN_HEIGHT);
         });
         alert.showAndWait();
     }
@@ -152,9 +155,11 @@ public class UiManager implements Ui {
         return path.toAbsolutePath().normalize();
     }
 
-    private void showLoadFailureNotice(String header, String dialogMessage, String resultMessage) {
-        mainWindow.showStartupMessage(resultMessage);
-        showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded", header, dialogMessage);
+    private void showLoadFailureNotice(String guidance, String header, String dialogMessage, String resultMessage) {
+        String fullDialogMessage = guidance == null ? dialogMessage : guidance + "\n\n" + dialogMessage;
+        String fullResultMessage = guidance == null ? resultMessage : guidance + "\n" + resultMessage;
+        mainWindow.showStartupMessage(fullResultMessage);
+        showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded", header, fullDialogMessage);
     }
 
     void showAlertDialogAndWait(Alert.AlertType type, String title, String headerText, String contentText) {

@@ -1034,6 +1034,10 @@ public class LogicManagerTest {
         CommandResult result = logic.execute("reload");
 
         assertTrue(result.getFeedbackToUser().contains("Removed 1 invalid guardian link(s) in memory."));
+        assertTrue(result.getFeedbackToUser().contains(student.getName().fullName));
+        assertTrue(result.getFeedbackToUser().contains(student.getId().toString()));
+        assertTrue(result.getFeedbackToUser().contains(student.getGuardianId().orElseThrow().toString()));
+        assertTrue(result.getFeedbackToUser().contains("the referenced contact does not exist"));
         assertEquals(List.of(student.clearGuardian(), AMY), model.getFilteredPersonList());
         assertEquals(student.getId(), model.getFilteredPersonList().getFirst().getId());
         assertTrue(model.getFilteredPersonList().getFirst().getGuardianId().isEmpty());

@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
@@ -34,19 +35,25 @@ public class ReloadCommand extends Command {
             result = storage.readTuitionBookWithResult()
                     .orElseGet(() -> new TuitionBookLoadResult(new TuitionBook(), List.of()));
         } catch (DataLoadingException exception) {
+            String guidance = exception.getUserFacingGuidance();
             String recovery = exception.getMalformedFileBackupPath()
                     .map(path -> " Unreadable file preserved at " + path
                             + ". Saving is enabled. Restore corrected data before reloading again.")
                     .orElse(" Saving remains blocked. Correct or move the original file, then run reload again.");
             throw new CommandException("Could not reload contacts. Current contacts and filter are unchanged."
-                    + recovery, exception);
+                    + " " + guidance + recovery, exception);
         }
         model.setTuitionBook(result.tuitionBook());
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         String message = String.format(MESSAGE_SUCCESS, model.getFilteredPersonList().size());
         if (result.repairedGuardianLinkCount() > 0) {
             message += " Removed " + result.repairedGuardianLinkCount()
-                    + " invalid guardian link(s) in memory. Review the data before saving.";
+                    + " invalid guardian link(s) in memory. Review the data before saving.\n"
+                    + result.guardianLinkRepairs().stream()
+                            .map(repair -> "- " + repair.personName() + " [" + repair.personId() + "] — "
+                                    + repair.reason().getDescription()
+                                    + (repair.guardianId() == null ? "" : " (guardianId: " + repair.guardianId() + ")"))
+                            .collect(Collectors.joining("\n"));
         }
         return new CommandResult(message);
     }
