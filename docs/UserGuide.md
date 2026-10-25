@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the v1.4 source. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
+**Version:** This guide describes the v1.5 release-candidate source. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added after that release may not be available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -161,6 +161,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Before linking a student to a guardian after applying a filter, enter `list` to restore the full list so that both contacts can be selected.
 * Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
 * Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
+* Tags on contact cards use locale-independent, case-insensitive alphabetical order; original spelling breaks ties when tags differ only in case.
 * Student cards display a `Guardian:` line with the linked guardian's name and contact number, or `-` when no guardian is linked.
 * Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
@@ -191,7 +192,7 @@ Format: `view INDEX [v/]`
 * Without `v/`, each linked contact appears as `NAME (CONTACT_NUMBER)`. A student view shows its linked guardian, while a guardian view lists its linked students in contact-list order.
 * Add `v/` to show the linked guardian's or linked students' full contact details, including their role, phone, email, address, and tags.
 * If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when the current filter hides them.
-* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change contact data or the active filter.
+* Missing optional email, address, or tags are shown as `-`. Tags appear in locale-independent, case-insensitive alphabetical order; tags that differ only in case use their original spelling as a deterministic tie-breaker. In `view` output, each tag is enclosed in brackets; literal backslashes and square brackets inside a tag are escaped with a backslash. `view` does not change contact data or the active filter.
 
 To try the examples below from an empty contact list, enter these commands first:
 
