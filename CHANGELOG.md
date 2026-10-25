@@ -12,6 +12,10 @@ The format is based on Keep a Changelog.
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 
+### Fixed
+
+- Split the dense delete sequence diagram into focused parsing and execution diagrams that remain readable at normal browser zoom.
+
 ## [v1.4] - 2026-10-22
 
 ### Added

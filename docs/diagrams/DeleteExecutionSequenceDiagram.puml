@@ -1,0 +1,98 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+title Executing and saving DeleteCommand
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant "s:Storage" as Storage STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("delete 1")
+activate LogicManager
+
+ref over LogicManager, DeleteCommand
+Parse input and create d
+(see the previous diagram)
+end ref
+
+LogicManager -> DeleteCommand : canMutate()
+activate DeleteCommand
+DeleteCommand --> LogicManager : true
+deactivate DeleteCommand
+
+note right of LogicManager
+Copy the TuitionBook and retain
+the active filter for rollback.
+end note
+
+LogicManager -> DeleteCommand : execute(m, s)
+activate DeleteCommand
+
+DeleteCommand -> Model : getFilteredPersonList()
+activate Model
+Model --> DeleteCommand : lastShownList
+deactivate Model
+
+note over DeleteCommand
+Resolve displayed index 1 to personToDelete.
+Affected-student lookup is omitted.
+end note
+
+DeleteCommand -> Model : deletePerson(personToDelete)
+activate Model
+
+note over Model
+If the person is a guardian,
+clear its students' links.
+end note
+
+Model --> DeleteCommand
+deactivate Model
+
+create CommandResult
+DeleteCommand -> CommandResult : CommandResult(successMessage)
+activate CommandResult
+CommandResult --> DeleteCommand
+deactivate CommandResult
+
+DeleteCommand --> LogicManager : r
+deactivate DeleteCommand
+
+LogicManager -> DeleteCommand : requiresSave()
+activate DeleteCommand
+DeleteCommand --> LogicManager : true
+deactivate DeleteCommand
+
+opt command requires saving
+    LogicManager -> Model : getTuitionBook()
+    activate Model
+    Model --> LogicManager : tuitionBook
+    deactivate Model
+
+    LogicManager -> Storage : saveTuitionBook(tuitionBook)
+    activate Storage
+    Storage --> LogicManager
+    deactivate Storage
+end
+
+note right of LogicManager
+If saving fails, restore the saved
+contacts and filter, then throw a
+CommandException. Calls are omitted.
+end note
+
+[<-- LogicManager : r
+deactivate LogicManager
+
+@enduml
