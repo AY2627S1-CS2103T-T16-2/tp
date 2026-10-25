@@ -37,6 +37,9 @@ import seedu.tuitionbook.storage.StorageManager;
  */
 public class UiManagerStartupTest {
 
+    private static final String PERMISSION_GUIDANCE = "TuitionBook did not have permission to read the data file. "
+            + "Restore read permission on the preserved file before trying again.";
+
     @TempDir
     public Path testFolder;
 
@@ -67,12 +70,36 @@ public class UiManagerStartupTest {
     }
 
     @Test
+    public void permissionLoadFailure_showsPermissionRecoveryAction() throws Exception {
+        Path backupPath = testFolder.resolve("contacts.json.backup");
+        assertStartupDialog(StartupNotice.loadFailedBackedUp(backupPath, PERMISSION_GUIDANCE),
+                "Contact data could not be loaded", "TuitionBook started with an empty contact list",
+                PERMISSION_GUIDANCE + " The data file was moved unchanged to " + backupPath
+                        + ". Your original data is not lost. TuitionBook will save new contacts to " + dataFilePath()
+                        + ". After resolving the reported problem, rename the preserved file to " + dataFilePath()
+                        + " (replacing the new file), then restart TuitionBook. Contacts added after recovery are in "
+                        + "the new file and must be re-entered; the files cannot be merged automatically.",
+                "warning");
+    }
+
+    @Test
     public void loadFailure_backupFailureShowsWarningWithBlockedSavingAction() throws Exception {
         assertStartupDialog(StartupNotice.loadFailedBackupFailed(), "Contact data could not be loaded",
                 "TuitionBook started with an empty contact list, but saving is disabled",
                 "Your data file could not be read and could not be moved to a backup. It remains at " + dataFilePath()
                         + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, then restart "
                         + "TuitionBook.",
+                "warning");
+    }
+
+    @Test
+    public void permissionLoadFailure_backupFailureShowsPermissionRecoveryAction() throws Exception {
+        assertStartupDialog(StartupNotice.loadFailedBackupFailed(PERMISSION_GUIDANCE),
+                "Contact data could not be loaded",
+                "TuitionBook started with an empty contact list, but saving is disabled",
+                PERMISSION_GUIDANCE + " It could not be moved to a backup and remains at " + dataFilePath()
+                        + ". To protect it, TuitionBook cannot save contacts. Resolve the reported problem or move "
+                        + "the file, then restart TuitionBook.",
                 "warning");
     }
 
@@ -224,11 +251,23 @@ public class UiManagerStartupTest {
     private String getExpectedResultMessage(StartupNotice notice) {
         Path displayedDataFilePath = dataFilePath().toAbsolutePath().normalize();
         if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
+            if (notice.loadFailureGuidance() != null) {
+                return notice.loadFailureGuidance() + "\nData file was moved unchanged to "
+                        + notice.malformedFileBackupPath().toAbsolutePath().normalize() + ".\nNew contacts save to "
+                        + displayedDataFilePath
+                        + ". Resolve the reported problem and replace this file to restore the preserved contacts.\n"
+                        + "Restart TuitionBook; contacts added after recovery must be re-entered.";
+            }
             return "Data file was moved unchanged to "
                     + notice.malformedFileBackupPath().toAbsolutePath().normalize() + ".\n"
                     + "New contacts save to " + displayedDataFilePath
                     + ". Fix the backup JSON and replace this file to restore it.\n"
                     + "Restart TuitionBook; contacts added after recovery must be re-entered.";
+        }
+        if (notice.loadFailureGuidance() != null) {
+            return notice.loadFailureGuidance() + "\nThe file could not be backed up and remains at "
+                    + displayedDataFilePath + ".\nSaving is disabled. Resolve the reported problem or move the file, "
+                    + "then restart TuitionBook.";
         }
         return "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
                 + "Saving is disabled. Correct or move the file, then restart TuitionBook.";
