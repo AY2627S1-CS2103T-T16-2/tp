@@ -12,6 +12,11 @@ The format is based on Keep a Changelog.
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 
+### Fixed
+
+- Focused the command box after startup and after dismissing a startup notice so typing is immediately available without accidentally activating Help.
+- Allowed contact cards to grow and shrink with wrapped tag rows, preventing tags from obscuring contact details or neighbouring cards at narrow widths.
+
 ## [v1.4] - 2026-10-22
 
 ### Added

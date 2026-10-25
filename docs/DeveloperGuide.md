@@ -755,6 +755,15 @@ Use a fresh, disposable folder with an empty contact list.
    1. Open a terminal and run `java -jar` followed by the quoted path to the JAR, as described in the UG's [Quick start](UserGuide.md#quick-start).<br>
       Expected: The GUI opens with an empty contact list and an information dialog explaining that no data file was found. The window size may not be optimal.
 
+   1. Dismiss the dialog and immediately type `list` without clicking the main window.<br>
+      Expected: Typing appears in the command box and Enter runs the command.
+
+   1. Relaunch, dismiss the dialog, and press <kbd>Space</kbd>.<br>
+      Expected: Help does not open. The command box retains focus.
+
+   1. Press <kbd>F1</kbd>.<br>
+      Expected: The Help window opens.
+
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
@@ -775,6 +784,21 @@ Use a fresh, disposable folder with an empty contact list.
 1. Click `Copy URL`, paste into a text editor, and confirm that the copied value is `https://ay2627s1-cs2103t-t16-2.github.io/tp/UserGuide.html`.
 1. With the Help window open, activate the main TuitionBook window and select its `File` → `Exit`.<br>
    Expected: Both the main window and Help window close.
+1. Relaunch, dismiss any startup notice, then use <kbd>Shift</kbd>+<kbd>Tab</kbd> until the top-level `Help` control is focused and press <kbd>Space</kbd>.<br>
+   Expected: Keyboard traversal can still reach and activate Help.
+
+### Displaying wrapped tags
+
+Use a fresh, disposable folder and start the application with an empty contact list. If the environment supports it, repeat this scenario at 1280×720 with 150% display scaling.
+
+1. Enter `add r/student n/Six Tags p/90000001 t/"Active Tuition Student" t/"Secondary Four Level" t/"Additional Mathematics" t/"English Language Study" t/"Physics Practical Prep" t/"Chemistry Practical Prep"`.
+1. Enter `add r/student n/One Tag p/90000002 t/Active`, then `add r/student n/No Tags p/90000003`.
+1. Resize the application to its minimum width.<br>
+   Expected: Six Tags' labels wrap above the phone line without obscuring any contact detail or the next card. Its card grows to fit the extra rows, while One Tag and No Tags remain compact. Tags remain alphabetically sorted.
+1. Resize the application wide, then back to its minimum width.<br>
+   Expected: The Six Tags card shrinks and grows with the number of tag rows. No tags or contact details overlap at either width.
+1. Add one tag whose value is wider than the card, resize to the minimum width, and hover over the shortened tag.<br>
+   Expected: The tag ends with an ellipsis and its tooltip shows the complete value.
 
 ### Deleting a person
 
