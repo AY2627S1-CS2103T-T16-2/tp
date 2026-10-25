@@ -197,7 +197,10 @@ public class MainWindow extends UiPart<Stage> {
             commandResult.getDetailsToShow().ifPresentOrElse(this::showDetails, () -> {
                 showPersonList();
                 commandResult.getPersonIdToScrollTo().ifPresent(personId ->
-                        Platform.runLater(() -> personListPanel.scrollToPerson(personId)));
+                        Platform.runLater(() -> {
+                            personListPanel.scrollToPerson(personId);
+                            Platform.runLater(() -> personListPanel.scrollToPerson(personId));
+                        }));
             });
 
             if (commandResult.isShowHelp()) {
