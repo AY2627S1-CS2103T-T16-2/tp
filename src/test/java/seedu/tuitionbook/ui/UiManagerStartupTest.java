@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntConsumer;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -173,15 +174,17 @@ public class UiManagerStartupTest {
         AtomicReference<Integer> systemExitStatus = new AtomicReference<>();
         CountDownLatch inspected = new CountDownLatch(1);
         CountDownLatch shutdownRequested = new CountDownLatch(1);
+        Runnable platformExit = () -> platformExitRequested.set(true);
+        IntConsumer systemExit = exitStatus -> {
+            systemExitStatus.set(exitStatus);
+            shutdownRequested.countDown();
+        };
 
         try {
             Platform.runLater(() -> {
                 try {
-                    UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty(),
-                            () -> platformExitRequested.set(true), exitStatus -> {
-                                systemExitStatus.set(exitStatus);
-                                shutdownRequested.countDown();
-                            });
+                    UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty(), platformExit,
+                            systemExit);
                     uiManager.showFatalErrorDialogAndShutdown(owner, "Fatal error during initializing",
                             startupFailure);
                 } catch (Throwable throwable) {
