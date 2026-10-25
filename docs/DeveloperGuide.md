@@ -164,6 +164,8 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`JsonUtil` configures the shared Jackson mapper to require the input to end after one JSON value and to reject duplicate property names at any object depth. This prevents trailing or conflicting content from being accepted and then discarded by a later save. For the configured contact file, either parsing failure enters the existing malformed-file recovery path, which moves the original file unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
+
 `ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
 
 ### Common classes
@@ -1037,6 +1039,14 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
 
    1. Compare `data/tuitionbook.json.backup` with the saved copy.<br>
       Expected: The backup file is identical to the saved copy; TuitionBook did not modify its malformed contents.
+
+1. Preserving ambiguous JSON input
+
+   1. Place the JAR file in a fresh, disposable folder. Create `data/tuitionbook.json` containing exactly `{"persons":[]} {"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}` and launch TuitionBook.<br>
+      Expected: TuitionBook rejects the trailing second JSON value, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
+
+   1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}`.<br>
+      Expected: TuitionBook rejects the duplicate `persons` property, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
 
 1. Warning about a repaired guardian link
 

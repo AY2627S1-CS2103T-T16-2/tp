@@ -12,6 +12,10 @@ The format is based on Keep a Changelog.
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 
+### Fixed
+
+- Reject JSON files containing trailing content or duplicate property names so that ambiguous data is preserved through the existing malformed-file recovery workflow instead of being silently discarded on the next save.
+
 ## [v1.4] - 2026-10-22
 
 ### Added

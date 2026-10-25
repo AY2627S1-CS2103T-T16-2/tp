@@ -124,6 +124,23 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readTuitionBook_trailingJson_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("""
+                {"persons":[]}
+                {"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}
+                """);
+    }
+
+    @Test
+    public void readTuitionBook_duplicateJsonKey_movesDataToBackupAndAllowsSaving() throws Exception {
+        // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/341
+        // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/317
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("""
+                {"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}
+                """);
+    }
+
+    @Test
     public void readTuitionBook_invalidPersonTuitionBook_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readTuitionBook("invalidPersonTuitionBook.json"));
     }
