@@ -67,13 +67,17 @@ public class MainApp extends Application {
     public void init() throws Exception {
         logger.info("=============================[ Initializing TuitionBook ]===========================");
         super.init();
+        initializeApplication(ApplicationPaths.getApplicationHome(), USER_PREFS_FILE_PATH,
+                LEGACY_TUITION_BOOK_FILE_PATH, TUITION_BOOK_FILE_PATH);
+    }
 
-        JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(
-                USER_PREFS_FILE_PATH, ApplicationPaths.getApplicationHome());
+    /** Initializes storage, model, logic, and UI state without starting JavaFX. Package-private for testing. */
+    void initializeApplication(Path applicationHome, Path prefsPath, Path legacyPath, Path dataPath)
+            throws IOException {
+        JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(prefsPath, applicationHome);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
-        migrateLegacyTuitionBookFile();
-        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(
-                TUITION_BOOK_FILE_PATH, ApplicationPaths.getApplicationHome());
+        migrateLegacyTuitionBookFile(applicationHome, legacyPath, dataPath);
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(dataPath, applicationHome);
         storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
 
         StartupState startupState = loadStartupState(storage, userPrefs);
@@ -85,16 +89,11 @@ public class MainApp extends Application {
     }
 
     /**
-     * Moves the data file used before TuitionBook was renamed, unless a data file already exists at the current path.
+     * Moves an existing legacy file to the current path while enforcing application-home containment, unless a data
+     * file already exists at the current path.
      *
      * @throws IOException if the legacy data file cannot be moved to the current path.
      */
-    private void migrateLegacyTuitionBookFile() throws IOException {
-        migrateLegacyTuitionBookFile(ApplicationPaths.getApplicationHome(),
-                LEGACY_TUITION_BOOK_FILE_PATH, TUITION_BOOK_FILE_PATH);
-    }
-
-    /** Moves an existing legacy file to the current path while enforcing application-home containment. */
     static void migrateLegacyTuitionBookFile(Path applicationHome, Path legacyPath, Path currentPath)
             throws IOException {
         ApplicationPathGuard pathGuard = new ApplicationPathGuard(applicationHome);

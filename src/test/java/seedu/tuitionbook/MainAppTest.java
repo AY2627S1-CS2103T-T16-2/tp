@@ -47,6 +47,28 @@ public class MainAppTest {
     }
 
     @Test
+    public void initializeApplication_safeDisposablePaths_initializesWithoutStartingJavaFx() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("initialization-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path prefsFile = applicationHome.resolve("preferences.json");
+        Path legacyFile = dataDirectory.resolve("addressbook.json");
+        Path currentFile = dataDirectory.resolve("tuitionbook.json");
+        byte[] legacyBytes = "{\"persons\":[]}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        Files.write(legacyFile, legacyBytes);
+        MainApp app = new MainApp();
+
+        app.initializeApplication(applicationHome, prefsFile, legacyFile, currentFile);
+
+        assertTrue(Files.exists(prefsFile));
+        assertFalse(Files.exists(legacyFile));
+        org.junit.jupiter.api.Assertions.assertArrayEquals(legacyBytes, Files.readAllBytes(currentFile));
+        assertEquals(currentFile, app.storage.getTuitionBookFilePath());
+        assertTrue(app.model.getTuitionBook().getPersonList().isEmpty());
+        org.junit.jupiter.api.Assertions.assertNotNull(app.logic);
+        org.junit.jupiter.api.Assertions.assertNotNull(app.ui);
+    }
+
+    @Test
     public void migrateLegacyTuitionBookFile_externalDataSymlink_rejectedWithoutMovingFile() throws Exception {
         Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
         Path outsideData = Files.createDirectory(testFolder.resolve("outside-data"));
@@ -64,6 +86,36 @@ public class MainAppTest {
     }
 
     @Test
+    public void migrateLegacyTuitionBookFile_existingLegacyFile_movesBytesToCurrentPath() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("migration-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path legacyFile = dataDirectory.resolve("addressbook.json");
+        Path currentFile = dataDirectory.resolve("tuitionbook.json");
+        byte[] legacyBytes = {0, 1, 2, 3, -1};
+        Files.write(legacyFile, legacyBytes);
+
+        MainApp.migrateLegacyTuitionBookFile(applicationHome, legacyFile, currentFile);
+
+        assertFalse(Files.exists(legacyFile));
+        org.junit.jupiter.api.Assertions.assertArrayEquals(legacyBytes, Files.readAllBytes(currentFile));
+    }
+
+    @Test
+    public void migrateLegacyTuitionBookFile_currentFileExists_leavesBothFilesUnchanged() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("existing-current-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path legacyFile = dataDirectory.resolve("addressbook.json");
+        Path currentFile = dataDirectory.resolve("tuitionbook.json");
+        Files.writeString(legacyFile, "legacy contents");
+        Files.writeString(currentFile, "current contents");
+
+        MainApp.migrateLegacyTuitionBookFile(applicationHome, legacyFile, currentFile);
+
+        assertEquals("legacy contents", Files.readString(legacyFile));
+        assertEquals("current contents", Files.readString(currentFile));
+    }
+
+    @Test
     public void verifyStartupPaths_externalDataSymlink_rejectedBeforeJavaFxLaunch() throws Exception {
         Path applicationHome = Files.createDirectory(testFolder.resolve("preflight-home"));
         Path outsideData = Files.createDirectory(testFolder.resolve("preflight-outside"));
@@ -77,6 +129,50 @@ public class MainAppTest {
 
         assertTrue(exception.getMessage().contains("resolves outside the application folder"));
         assertTrue(Files.isSymbolicLink(dataLink));
+    }
+
+    @Test
+    public void verifyStartupPaths_missingContainedPaths_acceptedWithoutCreatingFiles() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("missing-paths-home"));
+        Path prefsFile = applicationHome.resolve("preferences.json");
+        Path legacyFile = applicationHome.resolve("data/addressbook.json");
+        Path currentFile = applicationHome.resolve("data/tuitionbook.json");
+
+        assertDoesNotThrow(() -> MainApp.verifyStartupPaths(
+                applicationHome, prefsFile, legacyFile, currentFile));
+
+        assertFalse(Files.exists(prefsFile));
+        assertFalse(Files.exists(legacyFile));
+        assertFalse(Files.exists(currentFile));
+    }
+
+    @Test
+    public void verifyStartupPaths_defaultApplicationPaths_accepted() {
+        assertDoesNotThrow(() -> MainApp.verifyStartupPaths());
+    }
+
+    @Test
+    public void verifyStartupPaths_eachManagedPathUnsafe_rejectsAllThreePositions() throws Exception {
+        for (int unsafePathIndex = 0; unsafePathIndex < 3; unsafePathIndex++) {
+            Path applicationHome = Files.createDirectory(testFolder.resolve("preflight-home-" + unsafePathIndex));
+            Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+            Path outsideFile = testFolder.resolve("preflight-outside-" + unsafePathIndex);
+            Files.writeString(outsideFile, "outside contents");
+            Path[] managedPaths = {
+                applicationHome.resolve("preferences.json"),
+                dataDirectory.resolve("addressbook.json"),
+                dataDirectory.resolve("tuitionbook.json")
+            };
+            SymlinkTestUtil.createSymbolicLink(managedPaths[unsafePathIndex], outsideFile);
+
+            IOException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                    IOException.class, () -> MainApp.verifyStartupPaths(applicationHome,
+                            managedPaths[0], managedPaths[1], managedPaths[2]));
+
+            assertTrue(exception.getMessage().contains("resolves outside the application folder"));
+            assertEquals("outside contents", Files.readString(outsideFile));
+            assertTrue(Files.isSymbolicLink(managedPaths[unsafePathIndex]));
+        }
     }
 
     @Test

@@ -118,10 +118,23 @@ public class LogsCenter {
     /** Adds a rotating handler using the supplied filesystem-identity reader. */
     static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome,
             FileIdentityReader fileIdentityReader) {
+        return addFileHandler(targetLogger, logFile, applicationHome,
+                MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, fileIdentityReader);
+    }
+
+    /** Adds a rotating handler with explicit rotation limits. Package-private for deterministic tests. */
+    static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome,
+            int maxFileSizeInBytes, int maxFileCount) {
+        return addFileHandler(targetLogger, logFile, applicationHome,
+                maxFileSizeInBytes, maxFileCount, BasicFileAttributes::fileKey);
+    }
+
+    private static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome,
+            int maxFileSizeInBytes, int maxFileCount, FileIdentityReader fileIdentityReader) {
         try {
             verifyLogPaths(logFile, applicationHome);
             ContainedFileHandler containedFileHandler = new ContainedFileHandler(
-                    logFile, applicationHome, MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, fileIdentityReader);
+                    logFile, applicationHome, maxFileSizeInBytes, maxFileCount, fileIdentityReader);
             containedFileHandler.setFormatter(new SimpleFormatter());
             containedFileHandler.setLevel(Level.ALL);
             targetLogger.addHandler(containedFileHandler);
@@ -136,6 +149,21 @@ public class LogsCenter {
     @FunctionalInterface
     interface FileIdentityReader {
         Object read(BasicFileAttributes attributes);
+    }
+
+    @FunctionalInterface
+    interface CloseAction {
+        void close() throws IOException;
+    }
+
+    /** Runs one cleanup action and preserves an earlier failure when both actions fail. */
+    static IOException closeAndPreserveFirstFailure(CloseAction action, IOException earlierFailure) {
+        try {
+            action.close();
+            return earlierFailure;
+        } catch (IOException exception) {
+            return earlierFailure == null ? exception : earlierFailure;
+        }
     }
 
     private static void verifyLogPaths(Path logFile, Path applicationHome) throws IOException {
@@ -291,9 +319,6 @@ public class LogsCenter {
         }
 
         private void disable(Exception exception) {
-            if (isDisabled) {
-                return;
-            }
             isDisabled = true;
             IOException closeFailure = closeOpenResources();
             deleteLockFileIfUnchanged(closeFailure);
@@ -306,27 +331,21 @@ public class LogsCenter {
             IOException firstFailure = null;
             if (logOutput != null) {
                 try {
-                    logOutput.close();
-                } catch (IOException exception) {
-                    firstFailure = exception;
+                    firstFailure = closeAndPreserveFirstFailure(logOutput::close, firstFailure);
                 } finally {
                     logOutput = null;
                 }
             }
             if (fileLock != null) {
                 try {
-                    fileLock.release();
-                } catch (IOException exception) {
-                    firstFailure = firstFailure == null ? exception : firstFailure;
+                    firstFailure = closeAndPreserveFirstFailure(fileLock::release, firstFailure);
                 } finally {
                     fileLock = null;
                 }
             }
             if (lockChannel != null) {
                 try {
-                    lockChannel.close();
-                } catch (IOException exception) {
-                    firstFailure = firstFailure == null ? exception : firstFailure;
+                    firstFailure = closeAndPreserveFirstFailure(lockChannel::close, firstFailure);
                 } finally {
                     lockChannel = null;
                 }

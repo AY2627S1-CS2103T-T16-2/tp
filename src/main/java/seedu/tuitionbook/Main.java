@@ -1,5 +1,8 @@
 package seedu.tuitionbook;
 
+import java.io.PrintStream;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
@@ -26,16 +29,27 @@ public class Main {
     private static Logger logger = LogsCenter.getLogger(Main.class);
 
     public static void main(String[] args) {
-
         logger.warning("The warnings about a 'restricted method in java.lang.System' "
             + "and 'enabling native access' appearing below (if any) can be ignored.");
+        run(args, MainApp::verifyStartupPaths,
+                launchArgs -> Application.launch(MainApp.class, launchArgs), System::exit, System.err);
+    }
+
+    /** Runs startup preflight before launching JavaFX. Package-private for testing without exiting the JVM. */
+    static void run(String[] args, StartupPathVerifier verifier, Consumer<String[]> launcher,
+            IntConsumer exit, PrintStream errorStream) {
         try {
-            MainApp.verifyStartupPaths();
+            verifier.verify();
         } catch (StoragePathException exception) {
-            System.err.println("TuitionBook could not start. " + exception.getMessage());
-            System.exit(1);
+            errorStream.println("TuitionBook could not start. " + exception.getMessage());
+            exit.accept(1);
             return;
         }
-        Application.launch(MainApp.class, args);
+        launcher.accept(args);
+    }
+
+    @FunctionalInterface
+    interface StartupPathVerifier {
+        void verify() throws StoragePathException;
     }
 }

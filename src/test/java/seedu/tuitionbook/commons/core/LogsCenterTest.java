@@ -3,6 +3,8 @@ package seedu.tuitionbook.commons.core;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -56,6 +58,29 @@ public class LogsCenterTest {
         } finally {
             closeAndDetachHandlers(testLogger);
         }
+    }
+
+    @Test
+    public void closeAndPreserveFirstFailure_returnsFirstFailureAndRunsEveryAction() {
+        IOException firstFailure = new IOException("first failure");
+        IOException laterFailure = new IOException("later failure");
+        AtomicInteger closeAttempts = new AtomicInteger();
+
+        IOException recordedFirstFailure = LogsCenter.closeAndPreserveFirstFailure(() -> {
+            closeAttempts.incrementAndGet();
+            throw firstFailure;
+        }, null);
+        IOException stillRecordedFirstFailure = LogsCenter.closeAndPreserveFirstFailure(() -> {
+            closeAttempts.incrementAndGet();
+            throw laterFailure;
+        }, recordedFirstFailure);
+        IOException successfulCleanupResult = LogsCenter.closeAndPreserveFirstFailure(
+                closeAttempts::incrementAndGet, null);
+
+        assertSame(firstFailure, recordedFirstFailure);
+        assertSame(firstFailure, stillRecordedFirstFailure);
+        assertNull(successfulCleanupResult);
+        assertEquals(3, closeAttempts.get());
     }
 
     @Test
@@ -144,6 +169,35 @@ public class LogsCenterTest {
     }
 
     @Test
+    public void fileHandler_rotationPathChangedBeforeFlush_rejectsPathAndPreservesOutsideTarget() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("flush-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+        Path rotatedFile = applicationHome.resolve("tuitionbook.log.1");
+        Path outsideFile = testFolder.resolve("flush-outside.log");
+        Files.writeString(outsideFile, "outside contents");
+
+        try {
+            assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+            Handler fileHandler = getFileHandler(testLogger, null);
+            SymlinkTestUtil.createSymbolicLink(rotatedFile, outsideFile);
+
+            assertDoesNotThrow(fileHandler::flush);
+            assertDoesNotThrow(fileHandler::flush);
+            assertDoesNotThrow(() -> testLogger.info("disabled file handler ignores this message"));
+
+            assertTrue(Files.isSymbolicLink(rotatedFile));
+            assertEquals("outside contents", Files.readString(outsideFile));
+            assertFalse(Files.readString(applicationHome.resolve("tuitionbook.log.0"))
+                    .contains("disabled file handler ignores this message"));
+        } finally {
+            closeAndDetachHandlers(testLogger);
+        }
+    }
+
+    @Test
     public void fileHandler_lockPathChangedBeforePublish_rejectedLinkPreservedAndHandlerDisabled() throws Exception {
         Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
         testLogger.setUseParentHandlers(false);
@@ -218,17 +272,19 @@ public class LogsCenterTest {
         Path logFile = applicationHome.resolve("tuitionbook.log");
         Path lockFile = applicationHome.resolve("tuitionbook.log.0.lck");
 
-        assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+        assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome, 400, 5));
         Object lockFileKey = Files.readAttributes(
                 lockFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS).fileKey();
         try {
-            String largeMessage = "x".repeat(1024 * 1024);
-            for (int messageNumber = 0; messageNumber < 6; messageNumber++) {
-                testLogger.info(largeMessage);
+            for (int messageNumber = 0; messageNumber < 12; messageNumber++) {
+                testLogger.info("rotation message " + messageNumber + " " + "x".repeat(200));
             }
 
             assertTrue(Files.isRegularFile(applicationHome.resolve("tuitionbook.log.0")));
-            assertTrue(Files.isRegularFile(applicationHome.resolve("tuitionbook.log.1")));
+            for (int generation = 1; generation < 5; generation++) {
+                assertTrue(Files.isRegularFile(applicationHome.resolve("tuitionbook.log." + generation)));
+            }
+            assertFalse(Files.exists(applicationHome.resolve("tuitionbook.log.5")));
             assertTrue(Files.exists(lockFile));
         } finally {
             closeAndDetachHandlers(testLogger);
@@ -247,6 +303,65 @@ public class LogsCenterTest {
         }
         assertTrue(Files.readString(applicationHome.resolve("tuitionbook.log.0"))
                 .contains("logging continues after lock reacquisition"));
+    }
+
+    @Test
+    public void fileHandler_sameLogPathAlreadyLocked_reportsFailureWithoutDisruptingOwner() throws Exception {
+        Logger ownerLogger = Logger.getLogger("LogsCenterTest.owner." + UUID.randomUUID());
+        Logger contenderLogger = Logger.getLogger("LogsCenterTest.contender." + UUID.randomUUID());
+        ownerLogger.setUseParentHandlers(false);
+        contenderLogger.setUseParentHandlers(false);
+        ownerLogger.setLevel(Level.ALL);
+        contenderLogger.setLevel(Level.ALL);
+        RecordingHandler recordingHandler = new RecordingHandler();
+        contenderLogger.addHandler(recordingHandler);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("contention-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+
+        try {
+            assertTrue(LogsCenter.addFileHandler(ownerLogger, logFile, applicationHome));
+
+            assertFalse(LogsCenter.addFileHandler(contenderLogger, logFile, applicationHome));
+            ownerLogger.info("owner still holds and uses the lock");
+            getFileHandler(ownerLogger, null).flush();
+
+            assertTrue(recordingHandler.records.stream().anyMatch(record ->
+                    record.getLevel() == Level.WARNING && record.getThrown() != null));
+            assertTrue(Files.readString(applicationHome.resolve("tuitionbook.log.0"))
+                    .contains("owner still holds and uses the lock"));
+        } finally {
+            closeAndDetachHandlers(contenderLogger);
+            closeAndDetachHandlers(ownerLogger);
+        }
+    }
+
+    @Test
+    public void fileHandler_fileIdentityReaderFails_reportsFailureAndReleasesLock() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        RecordingHandler recordingHandler = new RecordingHandler();
+        testLogger.addHandler(recordingHandler);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("identity-failure-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+        LogsCenter.FileIdentityReader failingIdentity = attributes -> {
+            throw new IllegalStateException("simulated identity reader failure");
+        };
+
+        try {
+            assertFalse(LogsCenter.addFileHandler(testLogger, logFile, applicationHome, failingIdentity));
+            assertTrue(recordingHandler.records.stream().anyMatch(record ->
+                    record.getLevel() == Level.WARNING
+                            && record.getThrown() != null
+                            && record.getThrown().getCause() instanceof IllegalStateException));
+
+            assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+            testLogger.info("logging succeeds after identity-reader failure");
+        } finally {
+            closeAndDetachHandlers(testLogger);
+        }
+        assertTrue(Files.readString(applicationHome.resolve("tuitionbook.log.0"))
+                .contains("logging succeeds after identity-reader failure"));
     }
 
     @Test

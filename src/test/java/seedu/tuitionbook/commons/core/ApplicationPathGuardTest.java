@@ -26,6 +26,19 @@ public class ApplicationPathGuardTest {
     }
 
     @Test
+    public void verify_missingApplicationHome_rejectedWithCauseAndPath() {
+        Path missingHome = testFolder.resolve("missing-home");
+
+        StoragePathException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                StoragePathException.class, () -> new ApplicationPathGuard(missingHome)
+                        .verify(missingHome.resolve("data.json")));
+
+        org.junit.jupiter.api.Assertions.assertEquals(missingHome, exception.getRejectedPath());
+        org.junit.jupiter.api.Assertions.assertInstanceOf(java.nio.file.NoSuchFileException.class,
+                exception.getCause());
+    }
+
+    @Test
     public void verify_parentSymlinkOutsideHome_rejected() throws Exception {
         Path applicationHome = Files.createDirectory(testFolder.resolve("home"));
         Path outside = Files.createDirectory(testFolder.resolve("outside"));
