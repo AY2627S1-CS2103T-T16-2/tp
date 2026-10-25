@@ -88,6 +88,8 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
+`CommandBox` uses `CommandTextField`, a `TextField` subclass that converts pasted tabs and line separators to spaces before JavaFX filters them. This preserves word boundaries while keeping each command on one line. Pasted text is inserted into the field but is not executed until the user presses <kbd>Enter</kbd>.
+
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/ui/MainWindow.java).
 
 The `UI` component,
@@ -208,7 +210,9 @@ Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)
 
 `Name` and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names and addresses support UTF-8 text subject to their field-specific validation rules. Names contain at most 100 Unicode code points and addresses contain at most 200 Unicode code points.
 
-Name comparison treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Contacts are duplicates only when both their normalized names and normalized phone numbers match.
+`NameComparisonUtil#toUnicodeComparisonForm` centralizes the locale-independent transformation used for Unicode name comparison: NFC normalization, lowercase with `Locale.ROOT`, uppercase with `Locale.ROOT`, then NFC normalization again. Lowercasing before uppercasing makes both `Groß` and `GROẞ` become `GROSS`; it also makes `Straße` and `STRASSE` equal and preserves canonical equivalence between composed and decomposed accents. This standard-library sequence is not complete Unicode case folding and does not promise that every linguistically equivalent spelling compares equally.
+
+Duplicate identity and search apply that shared low-level form differently. `Person#normalizeNameForIdentity` first trims surrounding ASCII spaces and collapses consecutive internal ASCII spaces, then applies the Unicode comparison form; the normalized phone must also match. `NameContainsKeywordsPredicate` applies only the Unicode comparison form to the stored name and every original keyword before literal substring matching. Search neither trims nor collapses the stored name and does not call the complete identity normalizer. Both paths preserve the original name for display and storage.
 
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
@@ -341,7 +345,7 @@ The following activity diagram summarizes what happens when a user executes a ne
 **Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage student and guardian contacts, organise contacts with roles and tags, and retrieve the correct contact details quickly, instead of using a generic contact list or manually cross-referencing separate records. Guardian links and home addresses are optional. Tutors can label academic levels and subjects using generic tags, for example `t/Sec4 t/AMath` when adding or editing a contact. Dedicated level/subject fields and filtering by those fields are descoped from the final release; they remain possible future enhancements, not promised features. Level and subject grouping is supported through `list r/student t/Sec4 t/AMath`, which requires both tags. See the [tag workflow](UserGuide.md#organising-levels-subjects-and-status-with-tags).
 
 <!-- Codex assisted ooixs with the language-scope and user-story status clarifications for PR #131. -->
-TuitionBook is intended for English-language users and supports `en-*` operating-system locales. Its interface, documentation, and messages are in English; this does not require contact information to contain only English text. Contact fields accept UTF-8 text subject to their documented validation rules. In particular, names accept Unicode letters, numbers, and combining marks, with the accepted capitalization, punctuation, and Unicode representation preserved after surrounding whitespace is trimmed. Duplicate-contact checks treat canonically equivalent Unicode names as equal, as documented in the [User Guide](UserGuide.md#adding-a-contact-add).
+TuitionBook is intended for English-language users and supports `en-*` operating-system locales. Its interface, documentation, and messages are in English; this does not require contact information to contain only English text. Contact fields accept UTF-8 text subject to their documented validation rules. In particular, names accept Unicode letters, numbers, and combining marks, with the accepted capitalization, punctuation, and Unicode representation preserved after surrounding whitespace is trimmed. Duplicate-contact checks apply the documented locale-independent Unicode comparison form after identity-specific ASCII-space normalization; this covers canonically equivalent accents and the demonstrated sharp-S cases without claiming complete Unicode case folding. See the [User Guide](UserGuide.md#adding-a-contact-add).
 
 TuitionBook focuses on contact and relationship management; lesson scheduling, attendance, fees, academic-progress tracking, and messaging are outside its scope.
 
@@ -583,7 +587,7 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 **MSS**
 
 1.  User submits a find request with one or more name substrings.
-2.  TuitionBook displays each contact whose name contains at least one requested substring, using Unicode-aware, case-insensitive literal matching, and reports the number of matches. Other contact fields and linked contact names are not searched.
+2.  TuitionBook applies the documented locale-independent Unicode comparison form to each stored name and requested substring, then displays each contact whose transformed name contains at least one transformed substring using literal matching. Search does not apply duplicate identity's ASCII-space trimming or collapsing. Other contact fields and linked contact names are not searched.
 
     Use case ends.
 
@@ -694,7 +698,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
 * **Index**: A positive one-based position in the current contact list, used by index-based commands.
 * **Mainstream OS**: Windows, macOS, or a commonly used Linux distribution.
-* **Normalised name**: A UTF-8 name converted to its comparison form before duplicate checking: leading and trailing spaces are removed, each internal run of spaces is collapsed to one space, and names are compared case-insensitively while preserving display casing.
+* **Normalised name**: A UTF-8 name converted to its duplicate-identity form: leading and trailing ASCII spaces are removed, each internal run of ASCII spaces is collapsed to one, and the shared Unicode comparison form is applied while the original display value remains unchanged. Search uses only the Unicode comparison form, without this space normalization.
 * **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: spaces and hyphens are removed while a leading `+` is retained. Country-code equivalence is not applied in the MVP.
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
@@ -784,6 +788,19 @@ Use a fresh, disposable folder with an empty contact list.
 1. With the Help window open, activate the main TuitionBook window and select its `File` → `Exit`.<br>
    Expected: Both the main window and Help window close.
 
+### Pasting separators into the command box
+
+Use a fresh, disposable folder with an empty contact list. Use synthetic contact data only.
+
+1. Copy `Wei Ming` and `Tan` from two adjacent spreadsheet cells, then enter `add r/student n/`, paste the cells, type ` p/91234567`, and inspect the command box.<br>
+   Expected: The command box shows `add r/student n/Wei Ming Tan p/91234567`; the tab is displayed as a space and the command has not run yet.
+1. Press <kbd>Enter</kbd>.<br>
+   Expected: One student named `Wei Ming Tan` is added. The name is not saved as `Wei MingTan`.
+1. Repeat with pasted text containing a tab, line feed, carriage return, CRLF, vertical tab, form feed, NEL, Unicode line separator, and Unicode paragraph separator between two words.<br>
+   Expected: Each separator becomes a space, adjacent words remain separate, and no command runs until <kbd>Enter</kbd> is pressed.
+1. Select part of an existing command and paste text containing one of the separators.<br>
+   Expected: The selected text is replaced, the separator becomes a space, and the caret follows the inserted text.
+
 ### Deleting a person
 
 1. Deleting a person while all persons are being shown
@@ -849,6 +866,17 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, `view 1 v/details`, and `view 1 v/ v/`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
+### Unicode duplicate identity
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/student n/Groß p/91234567`.<br>
+   Expected: The contact is added and displayed exactly as `Groß`.
+1. Enter `add r/guardian n/GROẞ p/91234567`.<br>
+   Expected: The command is rejected as a duplicate because the Unicode name comparison form and normalized phone match. The stored `Groß` contact remains unchanged.
+1. Enter `add r/guardian n/GROẞ p/92345678`.<br>
+   Expected: The contact is added because its normalized phone differs, and both original name spellings are displayed unchanged.
+
 ### Finding contacts by name substring
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data. Enter these commands to create the contacts used below:
@@ -858,6 +886,9 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. `link 2 1`
 1. `add r/student n/A.B Tan p/91230003`
 1. `add r/student n/Işık p/91230004`
+1. `add r/student n/Straße Weiss p/91230005`
+1. `add r/student n/GROẞ Klein p/91230006`
+1. `add r/student n/José Tan p/91230007` (the `é` is entered as `e` followed by a combining acute accent)
 
 1. Enter `find gr`, `find rac`, `find ace`, and `find GRACE` one at a time.<br>
    Expected: Each command shows only Grace Tan and reports `1 person(s) listed!`.
@@ -867,6 +898,10 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: Grace Tan and Bob Lim are shown once each in their original order and the result reports `2 person(s) listed!`.
 1. Enter `find ışık`, then `find ışı`.<br>
    Expected: Each command shows only Işık and reports `1 person(s) listed!`; matching is Unicode-aware and case-insensitive, including for a partial name.
+1. Enter `find STRASSE`, then `find Groß`.<br>
+   Expected: The first command shows only Straße Weiss, and the second shows only GROẞ Klein. Their displayed spellings remain unchanged.
+1. Enter `find José` using a composed `é`.<br>
+   Expected: José Tan is shown even though the stored name uses a decomposed accent, and its stored spelling remains unchanged.
 1. Enter `find .`, then `find .*`.<br>
    Expected: The first command shows only A.B Tan. The second command shows no contacts because `.*` is matched literally rather than interpreted as a pattern.
 1. Enter `find 91230002`, `find student@example.com`, `find Road`, `find Math`, and `find student` one at a time.<br>
@@ -874,7 +909,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `find grace`.<br>
    Expected: Only Grace Tan is shown; Bob Lim is not matched through the guardian link.
 1. Enter `find bob`, then `list`.<br>
-   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all four contacts in their original order. None of the contacts or the guardian link has changed.
+   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all seven contacts in their original order. None of the contacts or the guardian link has changed.
 1. Enter `find`, then enter `find` followed only by spaces.<br>
    Expected: Each command reports an invalid-command format message containing the updated `find` usage, including `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
 
