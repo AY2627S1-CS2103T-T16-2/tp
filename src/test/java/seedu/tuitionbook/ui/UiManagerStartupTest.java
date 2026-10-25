@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -16,8 +17,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
+import javafx.event.Event;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.tuitionbook.logic.Logic;
@@ -101,17 +106,34 @@ public class UiManagerStartupTest {
     }
 
     @Test
-    public void cleanData_showsNoStartupDialog() throws Exception {
-        JavaFxTestUtil.runOnFxThread(() -> {
-            Stage owner = new Stage();
-            try {
-                new UiManager(logic(), dataFilePath(), Optional.empty()).start(owner);
-                assertTrue(owner.isShowing());
-                assertNull(findDialogPane());
-            } finally {
-                owner.close();
-            }
-        });
+    public void cleanData_focusesCommandFieldAndStartupKeysDoNotOpenHelp() throws Exception {
+        Stage owner = JavaFxTestUtil.callOnFxThread(Stage::new);
+        try {
+            JavaFxTestUtil.runOnFxThread(() ->
+                    new UiManager(logic(), dataFilePath(), Optional.empty()).start(owner));
+
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    owner.getScene().getFocusOwner() == commandTextField(owner)));
+            assertTrue(JavaFxTestUtil.callOnFxThread(owner::isShowing));
+            assertNull(JavaFxTestUtil.callOnFxThread(this::findDialogPane));
+
+            AtomicBoolean typingReachedCommandField = new AtomicBoolean();
+            JavaFxTestUtil.runOnFxThread(() -> {
+                TextField commandField = commandTextField(owner);
+                commandField.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+                    if (event.getCode() == KeyCode.A) {
+                        typingReachedCommandField.set(true);
+                    }
+                });
+                Event.fireEvent(owner.getScene().getFocusOwner(), keyEvent(KeyEvent.KEY_PRESSED, KeyCode.A, "a"));
+                Event.fireEvent(owner.getScene().getFocusOwner(), keyEvent(KeyEvent.KEY_PRESSED, KeyCode.SPACE, " "));
+                Event.fireEvent(owner.getScene().getFocusOwner(), keyEvent(KeyEvent.KEY_RELEASED, KeyCode.SPACE, " "));
+            });
+            assertTrue(typingReachedCommandField.get());
+            assertFalse(JavaFxTestUtil.callOnFxThread(() -> isHelpStageShowing(owner)));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(owner::close);
+        }
     }
 
     private void assertStartupDialog(StartupNotice notice, String title, String header, String content,
@@ -154,17 +176,39 @@ public class UiManagerStartupTest {
             } catch (Throwable throwable) {
                 failure.set(throwable);
             } finally {
-                if (owner.get() != null) {
-                    owner.get().close();
-                }
                 inspected.countDown();
             }
         });
 
         assertTrue(inspected.await(10, TimeUnit.SECONDS), "Startup dialog was not inspected in time");
-        if (failure.get() != null) {
-            throw new AssertionError(failure.get());
+        try {
+            if (failure.get() != null) {
+                throw new AssertionError(failure.get());
+            }
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                            owner.get().getScene().getFocusOwner() == commandTextField(owner.get())),
+                    "Command field was not selected as the scene focus owner after the startup dialog closed");
+        } finally {
+            if (owner.get() != null) {
+                JavaFxTestUtil.runOnFxThread(owner.get()::close);
+            }
         }
+    }
+
+    private TextField commandTextField(Stage owner) {
+        return (TextField) owner.getScene().lookup("#commandTextField");
+    }
+
+    private KeyEvent keyEvent(javafx.event.EventType<KeyEvent> type, KeyCode code, String character) {
+        return new KeyEvent(type, character, character, code, false, false, false, false);
+    }
+
+    private boolean isHelpStageShowing(Stage owner) {
+        return Window.getWindows().stream()
+                .filter(window -> window != owner)
+                .filter(Stage.class::isInstance)
+                .map(Stage.class::cast)
+                .anyMatch(stage -> stage.isShowing() && "Help".equals(stage.getTitle()));
     }
 
     private DialogPane findDialogPane() {

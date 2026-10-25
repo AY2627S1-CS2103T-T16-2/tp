@@ -103,6 +103,7 @@ Opens the Help window, which contains a scrollable summary of every command and 
 Format: `help`
 
 * You can also open or focus the same Help window by clicking the one-click `Help` control at the top of the main window, or by pressing <kbd>F1</kbd> even while the command box has focus.
+* When TuitionBook starts, the command box is ready for typing after any startup notice is dismissed. Pressing <kbd>Space</kbd> types in the command box instead of opening Help.
 * Use `Open User Guide` to open this User Guide in your system's default browser.
 * If TuitionBook cannot open a browser, the Help window displays fallback guidance and remains open. Use `Copy URL` to copy the User Guide address and open it manually.
 * An internet connection is needed to open the linked page itself.
@@ -170,6 +171,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Student cards display a `Guardian:` line with the linked guardian's name and contact number, or `-` when no guardian is linked.
 * Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
+* Tags wrap onto additional rows when needed, and the contact card grows so every phone, relationship, address, and email line remains visible. Cards with few or no tags remain compact.
 * If a name, phone number, email address, relationship summary, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX v/` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
 
 ### Organising levels, subjects and status with tags
