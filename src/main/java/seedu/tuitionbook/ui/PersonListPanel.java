@@ -1,5 +1,6 @@
 package seedu.tuitionbook.ui;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.HashMap;
@@ -54,6 +55,20 @@ public class PersonListPanel extends UiPart<Region> {
     private void rebuildPersonLookup(ObservableList<Person> allPersons) {
         personsById.clear();
         allPersons.forEach(person -> personsById.put(person.getId(), person));
+    }
+
+    /**
+     * Scrolls the identified displayed contact into the visible viewport.
+     * Does nothing if the contact is not in the displayed list.
+     */
+    void scrollToPerson(UUID personId) {
+        requireNonNull(personId);
+        for (int index = 0; index < personListView.getItems().size(); index++) {
+            if (personListView.getItems().get(index).getId().equals(personId)) {
+                personListView.scrollTo(index);
+                return;
+            }
+        }
     }
 
     /**

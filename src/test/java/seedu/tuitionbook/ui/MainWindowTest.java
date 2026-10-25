@@ -3,6 +3,7 @@ package seedu.tuitionbook.ui;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,6 +24,8 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.scene.control.Button;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -45,11 +49,14 @@ import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
+import seedu.tuitionbook.testutil.PersonBuilder;
 
 /**
  * Tests main window command interactions and view transitions.
  */
 public class MainWindowTest {
+    private static final List<Integer> VIEWPORT_CONTACT_COUNTS =
+            List.of(0, 1, 2, 5, 10, 20, 50, 100, 500, 1000);
 
     @TempDir
     public Path temporaryFolder;
@@ -93,6 +100,42 @@ public class MainWindowTest {
             assertListVisible(mainWindow, detailText, true, false);
             assertEquals("Invalid command", resultText.getText());
         });
+    }
+
+    @Test
+    public void addToLongList_scrollsToAddedPerson() throws Exception {
+        for (int existingContactCount : VIEWPORT_CONTACT_COUNTS) {
+            ScrollFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
+                Person addedPerson = new PersonBuilder().withName("Viewport Student").withPhone("99999999").build();
+                FakeLogic logic = new FakeLogic(addedPerson);
+                IntStream.range(0, existingContactCount)
+                        .mapToObj(index -> new PersonBuilder().withName("Existing Student " + index)
+                                .withPhone(String.format("8%07d", index)).build())
+                        .forEach(logic.people::add);
+                Stage stage = new Stage();
+                MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+                mainWindow.fillInnerParts();
+                stage.setWidth(400);
+                stage.setHeight(300);
+                mainWindow.show();
+
+                TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+                ListView<Person> personListView = getPersonListView(mainWindow);
+                personListView.scrollTo(0);
+                execute(commandBox, "add");
+                return new ScrollFixture(stage, personListView, addedPerson);
+            });
+
+            try {
+                assertTrue(JavaFxTestUtil.waitForFxCondition(
+                        () -> isPersonDisplayed(fixture.personListView(), fixture.addedPerson())),
+                        "Added contact should be visible for " + existingContactCount + " existing contacts");
+                assertNull(JavaFxTestUtil.callOnFxThread(
+                        () -> fixture.personListView().getSelectionModel().getSelectedItem()));
+            } finally {
+                JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+            }
+        }
     }
 
     @Test
@@ -319,13 +362,44 @@ public class MainWindowTest {
         assertEquals(detailVisible, detailText.getParent().isVisible());
     }
 
+    @SuppressWarnings("unchecked")
+    private static ListView<Person> getPersonListView(MainWindow mainWindow) {
+        return (ListView<Person>) mainWindow.getRoot().getScene().lookup("#personListView");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean isPersonDisplayed(ListView<Person> personListView, Person person) {
+        personListView.applyCss();
+        personListView.layout();
+        return personListView.lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(node -> (ListCell<Person>) node)
+                .anyMatch(cell -> person.equals(cell.getItem()));
+    }
+
+    private record ScrollFixture(Stage stage, ListView<Person> personListView, Person addedPerson) {
+    }
+
     private static final class FakeLogic implements Logic {
         private final ObservableList<Person> people = FXCollections.observableArrayList();
+        private final Person personToAdd;
         private GuiSettings guiSettings = new GuiSettings();
+
+        private FakeLogic() {
+            this(new PersonBuilder().withName("Added Student").withPhone("98888888").build());
+        }
+
+        private FakeLogic(Person personToAdd) {
+            this.personToAdd = personToAdd;
+        }
 
         @Override
         public CommandResult execute(String commandText) throws CommandException, ParseException {
             return switch (commandText) {
+                case "add" -> {
+                    people.add(personToAdd);
+                    yield new CommandResult("New person added", personToAdd.getId());
+                }
                 case "view 1" -> new CommandResult("Viewing contact: Alex Lim", "Name: Alex Lim");
                 case "list" -> new CommandResult("Listed all contacts");
                 default -> throw new ParseException("Invalid command");

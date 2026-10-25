@@ -78,7 +78,7 @@ public class AddCommand extends Command {
 
         model.addPerson(toAdd);
         requiresSave = true;
-        return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)), toAdd.getId());
     }
 
     @Override
