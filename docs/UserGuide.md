@@ -364,6 +364,8 @@ This deletes every contact, including contacts hidden by a filter. There is no u
 * The confirmation keyword must be the exact lowercase word `confirm`.
 * `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
 
+Diagnostic log files, when created, are stored separately from the contact data file. `clear confirm` does not remove these logs, which may contain information entered during earlier commands. If you no longer need old logs, close TuitionBook and delete them manually. Ordinary file deletion is not secure erasure, and TuitionBook does not provide a secure-erasure guarantee.
+
 ### Reloading contacts: `reload`
 
 Format: `reload`
@@ -455,7 +457,7 @@ Find the symptom below and try the suggested action. Error messages appear in th
 
 ### Reporting a problem or unclear instruction
 
-Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file.
+Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file. Review diagnostic logs before sharing them because they may contain information entered during earlier commands.
 
 --------------------------------------------------------------------------------------------------------------------
 

@@ -14,6 +14,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Clarified that `clear confirm` removes all contacts but not separately stored diagnostic logs, which may retain earlier command information and should be reviewed before sharing; no secure-erasure guarantee is made.
 - Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 - Documented save-failure rollback in the Delete use case, including restoration of the contact, guardian links, and active filter.

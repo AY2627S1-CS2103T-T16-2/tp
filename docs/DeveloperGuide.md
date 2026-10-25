@@ -352,6 +352,10 @@ The following activity diagram summarizes what happens when a user executes a ne
 * [Configuration guide](Configuration.md)
 * [DevOps guide](DevOps.md)
 
+### Diagnostic logging and contact clearing
+
+Contact storage and diagnostic logs are separate. `ClearCommand` replaces the contact book, including contacts hidden by the current filter, but does not remove historical log files. Because commands and their feedback are logged, those files may contain information entered during earlier commands. Developers and testers should review logs before sharing them and may remove unneeded old logs manually. This documentation-only clarification does not change log retention, rotation or deletion, and ordinary file deletion is not a secure-erasure guarantee.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Appendix: Requirements**
