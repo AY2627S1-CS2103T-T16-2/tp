@@ -16,6 +16,44 @@ import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 
 public class QuotedValueTokenizerTest {
     @Test
+    public void tokenize_unknownPrefixOutsideQuotes_rejectsRatherThanAbsorbsData() {
+        for (String prefix : List.of("ee/", "N/", "unknown/", "x/")) {
+            String expected = "Unrecognised field prefix: " + prefix
+                    + " Check the command's supported lowercase prefixes. "
+                    + "For literal prefix-like text, quote the complete name, address or tag value.";
+            assertThrows(ParseException.class, expected, () -> tokenize(" a/12 Road " + prefix + "value"));
+        }
+    }
+
+    @Test
+    public void tokenize_unknownPrefixesInsideQuotedValues_remainLiteral() throws Exception {
+        ArgumentMultimap result = tokenize(" n/\"Rina x/o Tan\" t/\"Advanced Math/Science ee/literal\"");
+        assertEquals("Rina x/o Tan", result.getValue(PREFIX_NAME).orElseThrow());
+        assertEquals(List.of("Advanced Math/Science ee/literal"), result.getAllValues(PREFIX_TAG));
+        assertEquals(List.of("Math/Science"), tokenize(" t/Math/Science").getAllValues(PREFIX_TAG));
+    }
+
+    @Test
+    public void tokenize_nonPrefixSlashesAndPunctuation_remainLiteral() throws Exception {
+        for (String value : List.of("Math/Science", "See https://example.com", "Use 1/2", "C++/Java",
+                "a-path/file", "Unit\u3000ee/literal")) {
+            assertEquals(value, tokenize(" a/" + value).getValue(PREFIX_ADDRESS).orElseThrow());
+        }
+        assertThrows(ParseException.class, String.format(ArgumentTokenizer.MESSAGE_UNKNOWN_PREFIX, "ee/"), () ->
+                tokenize("ee/unknown"));
+    }
+
+    @Test
+    public void tokenize_quotedAddress_protectsKnownAndUnknownPrefixesAndDecodesEscapes() throws Exception {
+        ArgumentMultimap result = ArgumentTokenizer.tokenizeWithQuotedValues(
+                " a/\"20 Main Road, c/o Rina a/p Kaur \\\"Unit A\\\" C:\\\\Road\\\\\" p/123",
+                List.of(PREFIX_ADDRESS), PREFIX_PHONE);
+        assertEquals("20 Main Road, c/o Rina a/p Kaur \"Unit A\" C:\\Road\\",
+                result.getValue(PREFIX_ADDRESS).orElseThrow());
+        assertEquals("123", result.getValue(PREFIX_PHONE).orElseThrow());
+    }
+
+    @Test
     public void tokenize_quotedName_protectsPrefixesAndResumesAfterQuote() throws Exception {
         for (String input : List.of(
                 " n/\"Rina a/p Kaur n/alias p/test\" p/91234567",
@@ -138,11 +176,19 @@ public class QuotedValueTokenizerTest {
 
     @Test
     public void tokenize_textAfterQuote_throwsHelpfulError() {
-        for (String suffix : List.of(" extra", "p/91234567", " \"Kaur\"", " x/unknown")) {
+        for (String suffix : List.of(" extra", "p/91234567", " \"Kaur\"")) {
             assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE, () ->
                     tokenize(" n/\"Rina\"" + suffix));
             assertThrows(ParseException.class, ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE, () ->
                     tokenize(" t/\"Sec 4\"" + suffix));
+        }
+    }
+
+    @Test
+    public void tokenize_unknownPrefixAfterQuotedValue_reportsUnknownPrefix() {
+        for (String input : List.of(" n/\"Rina\" x/unknown", " t/\"Sec 4\" x/unknown")) {
+            assertThrows(ParseException.class, String.format(ArgumentTokenizer.MESSAGE_UNKNOWN_PREFIX, "x/"), () ->
+                    tokenize(input));
         }
     }
 

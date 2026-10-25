@@ -149,7 +149,7 @@ course discourages timestamp changes that interfere with progress tracking.
 
 ## Code and test essentials
 
-* Follow the [Java standard][java] and existing component boundaries. Avoid duplicated
+* Follow the 2103t Java standards and existing component boundaries. Avoid duplicated
   logic, oversized methods and catch-and-ignore handling. Use project logging and
   exceptions appropriately; assertions must not be the only input validation.
 * Handle plausible input mistakes without crashing or corrupting data; give useful

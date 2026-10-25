@@ -32,6 +32,8 @@ import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.commons.core.index.Index;
@@ -77,8 +79,8 @@ public class EditCommandParserTest {
         // invalid arguments being parsed as preamble
         assertParseFailure(parser, "1 some random string", MESSAGE_INVALID_FORMAT);
 
-        // invalid prefix being parsed as preamble
-        assertParseFailure(parser, "1 i/ string", MESSAGE_INVALID_FORMAT);
+        // Invalid prefixes are diagnosed before interpreting the preamble as an index.
+        assertParseFailure(parser, "1 i/ string", String.format(ArgumentTokenizer.MESSAGE_UNKNOWN_PREFIX, "i/"));
     }
 
     @Test
@@ -135,6 +137,19 @@ public class EditCommandParserTest {
         assertParseSuccess(parser, "1 t/first t/second", new EditCommand(INDEX_FIRST_PERSON, separateTags));
         EditPersonDescriptor quotedTag = new EditPersonDescriptorBuilder().withTags("quoted").build();
         assertParseSuccess(parser, "1 t/\"quoted\"", new EditCommand(INDEX_FIRST_PERSON, quotedTag));
+    }
+
+    @Test
+    public void parse_quotedAddress_validatesAndRejectsMalformedQuotes() {
+        EditPersonDescriptor cleared = new EditPersonDescriptor();
+        cleared.clearAddress();
+        for (String input : List.of("1 a/", "1 a/\"\"", "1 a/\"   \"")) {
+            assertParseSuccess(parser, input, new EditCommand(INDEX_FIRST_PERSON, cleared));
+        }
+        assertParseFailure(parser, "1 a/\"" + "X".repeat(Address.MAX_LENGTH + 1) + "\"",
+                Address.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 a/\"12 Road ee/literal", ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE);
+        assertParseFailure(parser, "1 a/\"12 Road\" extra", ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE);
     }
 
     @Test
