@@ -10,9 +10,11 @@ import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -208,7 +210,7 @@ public class LogsCenterTest {
     }
 
     @Test
-    public void fileHandler_normalLoggingRotationAndClose_writesLogsAndRemovesOwnedLock() throws Exception {
+    public void fileHandler_normalLoggingRotationAndClose_cleansSafelyAndCanReopen() throws Exception {
         Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
         testLogger.setUseParentHandlers(false);
         testLogger.setLevel(Level.ALL);
@@ -217,6 +219,8 @@ public class LogsCenterTest {
         Path lockFile = applicationHome.resolve("tuitionbook.log.0.lck");
 
         assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+        Object lockFileKey = Files.readAttributes(
+                lockFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS).fileKey();
         try {
             String largeMessage = "x".repeat(1024 * 1024);
             for (int messageNumber = 0; messageNumber < 6; messageNumber++) {
@@ -229,7 +233,80 @@ public class LogsCenterTest {
         } finally {
             closeAndDetachHandlers(testLogger);
         }
+        if (lockFileKey == null) {
+            assertTrue(Files.isRegularFile(lockFile, LinkOption.NOFOLLOW_LINKS));
+        } else {
+            assertFalse(Files.exists(lockFile, LinkOption.NOFOLLOW_LINKS));
+        }
+
+        assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+        try {
+            testLogger.info("logging continues after lock reacquisition");
+        } finally {
+            closeAndDetachHandlers(testLogger);
+        }
+        assertTrue(Files.readString(applicationHome.resolve("tuitionbook.log.0"))
+                .contains("logging continues after lock reacquisition"));
+    }
+
+    @Test
+    public void fileHandler_unavailableFileIdentity_retainsInertLockAndCanReopen() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+        Path lockFile = applicationHome.resolve("tuitionbook.log.0.lck");
+        LogsCenter.FileIdentityReader unavailableIdentity = attributes -> null;
+
+        assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome, unavailableIdentity));
+        closeAndDetachHandlers(testLogger);
+        assertTrue(Files.isRegularFile(lockFile, LinkOption.NOFOLLOW_LINKS));
+
+        assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome, unavailableIdentity));
+        try {
+            testLogger.info("reopened with retained inert lock file");
+        } finally {
+            closeAndDetachHandlers(testLogger);
+        }
+        assertTrue(Files.isRegularFile(lockFile, LinkOption.NOFOLLOW_LINKS));
+        assertTrue(Files.readString(applicationHome.resolve("tuitionbook.log.0"))
+                .contains("reopened with retained inert lock file"));
+    }
+
+    @Test
+    public void fileHandler_availableUnchangedIdentity_removesLockFile() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+        Path lockFile = applicationHome.resolve("tuitionbook.log.0.lck");
+
+        assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome,
+                attributes -> "stable identity"));
+        closeAndDetachHandlers(testLogger);
+
         assertFalse(Files.exists(lockFile, LinkOption.NOFOLLOW_LINKS));
+    }
+
+    @Test
+    public void fileHandler_changedIdentityBeforeClose_preservesLockFile() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+        Path lockFile = applicationHome.resolve("tuitionbook.log.0.lck");
+        AtomicInteger identityReads = new AtomicInteger();
+        LogsCenter.FileIdentityReader changedIdentity = attributes ->
+                identityReads.getAndIncrement() == 0 ? "original identity" : "replacement identity";
+
+        assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome, changedIdentity));
+        closeAndDetachHandlers(testLogger);
+
+        assertEquals(2, identityReads.get());
+        assertTrue(Files.isRegularFile(lockFile, LinkOption.NOFOLLOW_LINKS));
     }
 
     private static Handler getFileHandler(Logger logger, Handler otherHandler) {

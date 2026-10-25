@@ -112,10 +112,16 @@ public class LogsCenter {
 
     /** Adds a rotating handler only when its log, rotation, and lock paths are contained in the application home. */
     static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome) {
+        return addFileHandler(targetLogger, logFile, applicationHome, BasicFileAttributes::fileKey);
+    }
+
+    /** Adds a rotating handler using the supplied filesystem-identity reader. */
+    static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome,
+            FileIdentityReader fileIdentityReader) {
         try {
             verifyLogPaths(logFile, applicationHome);
             ContainedFileHandler containedFileHandler = new ContainedFileHandler(
-                    logFile, applicationHome, MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT);
+                    logFile, applicationHome, MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, fileIdentityReader);
             containedFileHandler.setFormatter(new SimpleFormatter());
             containedFileHandler.setLevel(Level.ALL);
             targetLogger.addHandler(containedFileHandler);
@@ -125,6 +131,11 @@ public class LogsCenter {
                     + "; console logging will continue.", e);
             return false;
         }
+    }
+
+    @FunctionalInterface
+    interface FileIdentityReader {
+        Object read(BasicFileAttributes attributes);
     }
 
     private static void verifyLogPaths(Path logFile, Path applicationHome) throws IOException {
@@ -156,6 +167,7 @@ public class LogsCenter {
         private final Path lockFile;
         private final int maxFileSizeInBytes;
         private final int maxFileCount;
+        private final FileIdentityReader fileIdentityReader;
         private boolean canDeleteLockFile;
         private Object lockFileKey;
 
@@ -167,19 +179,20 @@ public class LogsCenter {
         private boolean isClosed;
 
         private ContainedFileHandler(Path logFile, Path applicationHome, int maxFileSizeInBytes,
-                int maxFileCount) throws IOException {
+                int maxFileCount, FileIdentityReader fileIdentityReader) throws IOException {
             this.logFile = logFile.toAbsolutePath().normalize();
             this.applicationHome = applicationHome.toAbsolutePath().normalize();
             this.activeLogFile = getGenerationPath(0);
             this.lockFile = activeLogFile.resolveSibling(activeLogFile.getFileName() + ".lck");
             this.maxFileSizeInBytes = maxFileSizeInBytes;
             this.maxFileCount = maxFileCount;
+            this.fileIdentityReader = fileIdentityReader;
 
             try {
                 lockChannel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                 BasicFileAttributes lockAttributes = Files.readAttributes(
                         lockFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-                lockFileKey = lockAttributes.fileKey();
+                lockFileKey = fileIdentityReader.read(lockAttributes);
                 fileLock = tryAcquireLock(lockChannel);
                 canDeleteLockFile = !lockAttributes.isSymbolicLink();
                 openLogOutput(true);
@@ -321,7 +334,10 @@ public class LogsCenter {
             return firstFailure;
         }
 
-        /** Deletes only the unchanged regular lock file exclusively acquired by this handler. */
+        /**
+         * Deletes only the unchanged regular lock file exclusively acquired by this handler. Providers that do not
+         * expose a stable file identity retain an inert lock pathname after its channel and OS lock are released.
+         */
         private void deleteLockFileIfUnchanged(IOException earlierFailure) {
             if (!canDeleteLockFile) {
                 reportCleanupFailure(earlierFailure);
@@ -331,8 +347,9 @@ public class LogsCenter {
                 new ApplicationPathGuard(applicationHome).verify(lockFile);
                 BasicFileAttributes attributes = Files.readAttributes(
                         lockFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                Object currentLockFileKey = fileIdentityReader.read(attributes);
                 if (!attributes.isSymbolicLink() && lockFileKey != null
-                        && lockFileKey.equals(attributes.fileKey())) {
+                        && lockFileKey.equals(currentLockFileKey)) {
                     Files.delete(lockFile);
                 }
             } catch (IOException | SecurityException exception) {
