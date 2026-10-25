@@ -34,6 +34,10 @@ The format is based on Keep a Changelog.
 
 - Reject unknown space-separated ASCII-letter prefixes in `add`, `edit`, `list`, `tag` and `untag` rather than silently absorbing mistyped prefixes into field values; intentional literal text must be quoted (#193). Stored values, field validation, tag identity and whitespace trimming are unchanged.
 
+### Fixed
+
+- Split the dense delete sequence diagram into focused parsing and execution diagrams that remain readable at normal browser zoom.
+
 ## [v1.4] - 2026-10-22
 
 ### Added
