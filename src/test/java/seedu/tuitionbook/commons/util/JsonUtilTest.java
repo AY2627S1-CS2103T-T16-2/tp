@@ -1,10 +1,12 @@
 package seedu.tuitionbook.commons.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
@@ -59,7 +61,44 @@ public class JsonUtilTest {
         assertEquals(serializableTestClass.getMapOfIntegerToString(), SerializableTestClass.getHashMapTestValues());
     }
 
-    //TODO: @Test jsonUtil_readJsonStringToObjectInstance_correctObject()
+    @Test
+    public void deserializeObjectFromJsonFile_shortJsonWithoutBom_noExceptionThrown() throws IOException {
+        Path filePath = temporaryFolder.resolve("short.json");
+        Files.writeString(filePath, "{}");
+
+        assertNotNull(JsonUtil.deserializeObjectFromJsonFile(filePath, SerializableTestClass.class));
+    }
+
+    @Test
+    public void deserializeObjectFromJsonFile_nearBomPrefixes_throwsIoException() throws IOException {
+        Path differentSecondByte = temporaryFolder.resolve("different-second-byte.json");
+        Path differentThirdByte = temporaryFolder.resolve("different-third-byte.json");
+        Files.write(differentSecondByte, new byte[]{(byte) 0xEF, 0, 0});
+        Files.write(differentThirdByte, new byte[]{(byte) 0xEF, (byte) 0xBB, 0});
+
+        assertThrows(IOException.class, () ->
+                JsonUtil.deserializeObjectFromJsonFile(differentSecondByte, SerializableTestClass.class));
+        assertThrows(IOException.class, () ->
+                JsonUtil.deserializeObjectFromJsonFile(differentThirdByte, SerializableTestClass.class));
+    }
+
+    @Test
+    public void fromJsonString_validJson_returnsObject() throws IOException {
+        SerializableTestClass result = JsonUtil.fromJsonString(
+                SerializableTestClass.JSON_STRING_REPRESENTATION, SerializableTestClass.class);
+
+        assertEquals(SerializableTestClass.getNameTestValue(), result.getName());
+        assertEquals(SerializableTestClass.getListTestValues(), result.getListOfLocalDateTimes());
+        assertEquals(SerializableTestClass.getHashMapTestValues(), result.getMapOfIntegerToString());
+    }
+
+    @Test
+    public void fromJsonString_trailingJson_throwsIoException() {
+        String jsonWithTrailingObject = SerializableTestClass.JSON_STRING_REPRESENTATION + " {}";
+
+        assertThrows(IOException.class, () ->
+                JsonUtil.fromJsonString(jsonWithTrailingObject, SerializableTestClass.class));
+    }
 
     //TODO: @Test jsonUtil_writeThenReadObjectToJson_correctObject()
 }
