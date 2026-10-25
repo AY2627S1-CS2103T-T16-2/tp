@@ -1,6 +1,7 @@
 package seedu.tuitionbook.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -69,6 +70,13 @@ public class CommandTextFieldTest {
                 assertEquals(expectedText, field.getText());
                 assertEquals(expectedText.length(), field.getCaretPosition());
             }
+
+            CommandTextField field = new CommandTextField();
+            field.setText("add Wei Ming");
+            field.positionCaret(field.getLength());
+            field.replaceSelection("\r");
+
+            assertEquals("add Wei Ming ", field.getText());
         });
     }
 
@@ -82,6 +90,21 @@ public class CommandTextFieldTest {
 
             assertEquals("add Wei Ming Tan -p 91234567", field.getText());
             assertEquals("add Wei Ming Tan".length(), field.getCaretPosition());
+        });
+    }
+
+    @Test
+    public void replaceText_emptyTextPreservesContentAndCaret() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            CommandTextField field = new CommandTextField();
+            field.setText("add Wei Ming");
+            field.positionCaret(field.getLength());
+
+            field.replaceText(field.getLength(), field.getLength(), "");
+
+            assertEquals("add Wei Ming", field.getText());
+            assertEquals(field.getLength(), field.getCaretPosition());
+            assertThrows(NullPointerException.class, () -> field.replaceText(0, 0, null));
         });
     }
 
