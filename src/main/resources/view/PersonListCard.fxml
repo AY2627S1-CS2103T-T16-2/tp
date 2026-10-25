@@ -3,65 +3,57 @@
 <?import java.lang.Double?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.FlowPane?>
-<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<HBox id="cardPane" fx:id="cardPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-  <GridPane HBox.hgrow="ALWAYS">
-    <columnConstraints>
-      <ColumnConstraints hgrow="SOMETIMES" minWidth="10" prefWidth="150" />
-    </columnConstraints>
-    <VBox alignment="CENTER_LEFT" GridPane.columnIndex="0">
-      <padding>
-        <Insets top="5" right="5" bottom="5" left="15" />
-      </padding>
-      <HBox spacing="8" alignment="CENTER_LEFT">
-        <Label fx:id="id" styleClass="cell_big_label">
-          <minWidth>
-            <!-- Ensures that the label text is never truncated -->
-            <Region fx:constant="USE_PREF_SIZE" />
-          </minWidth>
-        </Label>
-        <Label fx:id="name" text="\$first" styleClass="cell_big_label" minWidth="0.0" HBox.hgrow="ALWAYS">
-          <maxWidth>
-            <Double fx:constant="MAX_VALUE" />
-          </maxWidth>
-        </Label>
-        <Label fx:id="role" styleClass="role_badge">
-          <minWidth>
-            <Region fx:constant="USE_PREF_SIZE" />
-          </minWidth>
-        </Label>
-      </HBox>
-      <FlowPane fx:id="tags" minWidth="0.0">
-        <maxWidth>
-          <Double fx:constant="MAX_VALUE" />
-        </maxWidth>
-      </FlowPane>
-      <Label fx:id="phone" styleClass="cell_small_label" text="\$phone">
-        <maxWidth>
-          <Double fx:constant="MAX_VALUE" />
-        </maxWidth>
-      </Label>
-      <Label fx:id="relationship" styleClass="cell_small_label" minWidth="0.0">
-        <maxWidth>
-          <Double fx:constant="MAX_VALUE" />
-        </maxWidth>
-      </Label>
-      <Label fx:id="address" styleClass="cell_small_label" text="\$address">
-        <maxWidth>
-          <Double fx:constant="MAX_VALUE" />
-        </maxWidth>
-      </Label>
-      <Label fx:id="email" styleClass="cell_small_label" text="\$email">
-        <maxWidth>
-          <Double fx:constant="MAX_VALUE" />
-        </maxWidth>
-      </Label>
-    </VBox>
-  </GridPane>
-</HBox>
+<VBox id="cardPane" fx:id="cardPane" alignment="CENTER_LEFT"
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <padding>
+    <Insets top="5" right="5" bottom="5" left="15" />
+  </padding>
+  <HBox spacing="8" alignment="CENTER_LEFT">
+    <Label fx:id="id" styleClass="cell_big_label">
+      <minWidth>
+        <!-- Ensures that the label text is never truncated -->
+        <Region fx:constant="USE_PREF_SIZE" />
+      </minWidth>
+    </Label>
+    <Label fx:id="name" text="\$first" styleClass="cell_big_label" minWidth="0.0" HBox.hgrow="ALWAYS">
+      <maxWidth>
+        <Double fx:constant="MAX_VALUE" />
+      </maxWidth>
+    </Label>
+    <Label fx:id="role" styleClass="role_badge">
+      <minWidth>
+        <Region fx:constant="USE_PREF_SIZE" />
+      </minWidth>
+    </Label>
+  </HBox>
+  <FlowPane fx:id="tags" minWidth="0.0">
+    <maxWidth>
+      <Double fx:constant="MAX_VALUE" />
+    </maxWidth>
+  </FlowPane>
+  <Label fx:id="phone" styleClass="cell_small_label" text="\$phone">
+    <maxWidth>
+      <Double fx:constant="MAX_VALUE" />
+    </maxWidth>
+  </Label>
+  <Label fx:id="relationship" styleClass="cell_small_label" minWidth="0.0">
+    <maxWidth>
+      <Double fx:constant="MAX_VALUE" />
+    </maxWidth>
+  </Label>
+  <Label fx:id="address" styleClass="cell_small_label" text="\$address">
+    <maxWidth>
+      <Double fx:constant="MAX_VALUE" />
+    </maxWidth>
+  </Label>
+  <Label fx:id="email" styleClass="cell_small_label" text="\$email">
+    <maxWidth>
+      <Double fx:constant="MAX_VALUE" />
+    </maxWidth>
+  </Label>
+</VBox>

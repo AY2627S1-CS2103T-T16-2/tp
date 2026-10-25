@@ -119,6 +119,33 @@ public class NameContainsKeywordsPredicateTest {
     }
 
     @Test
+    public void test_canonicallyEquivalentAccentsInEitherDirection_returnsTrue() {
+        Person decomposedJose = new PersonBuilder().withName("Jose\u0301 Tan").build();
+        Person composedJose = new PersonBuilder().withName("Jos\u00e9 Tan").build();
+
+        assertTrue(new NameContainsKeywordsPredicate(List.of("\u00e9")).test(decomposedJose));
+        assertTrue(new NameContainsKeywordsPredicate(List.of("e\u0301")).test(composedJose));
+    }
+
+    @Test
+    public void test_sharpSCaseVariants_returnsTrue() {
+        Person street = new PersonBuilder().withName("Straße").build();
+        Person capitalSharpS = new PersonBuilder().withName("GROẞ").build();
+
+        assertTrue(new NameContainsKeywordsPredicate(List.of("STRASSE")).test(street));
+        assertTrue(new NameContainsKeywordsPredicate(List.of("Groß")).test(capitalSharpS));
+        assertTrue(new NameContainsKeywordsPredicate(List.of("GROẞ")).test(
+                new PersonBuilder().withName("Groß").build()));
+    }
+
+    @Test
+    public void test_repeatedSpacesAreNotCollapsed_returnsFalse() {
+        Person person = new PersonBuilder().withName("Amy  Bee").build();
+
+        assertFalse(new NameContainsKeywordsPredicate(List.of("y b")).test(person));
+    }
+
+    @Test
     public void test_regexLikePunctuation_isTreatedLiterally() {
         Person person = new PersonBuilder().withName("A.B Tan").build();
 

@@ -54,6 +54,7 @@ public class UiManager implements Ui {
             mainWindow.show(); //This should be called before creating other UI parts
             mainWindow.fillInnerParts();
             startupNotice.ifPresent(this::showStartupNotice);
+            Platform.runLater(mainWindow::focusCommandBox);
 
         } catch (Throwable e) {
             logger.severe(StringUtil.getDetails(e));

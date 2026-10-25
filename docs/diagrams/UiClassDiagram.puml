@@ -10,6 +10,7 @@ package UI <<Rectangle>> {
     class UiManager
     class MainWindow
     class CommandBox
+    class CommandTextField
     class ResultDisplay
     class PersonListPanel
     class PersonCard
@@ -50,6 +51,7 @@ MainWindow *-down-> "0..1" PersonListPanel
 MainWindow *-down-> "0..1" DetailDisplay
 MainWindow *-down-> "0..1" ResultDisplay
 MainWindow ..> CommandBox : <<create>>
+CommandBox ..> CommandTextField : <<uses in FXML>>
 MainWindow ..> StatusBarFooter : <<create>>
 MainWindow -left-> "1" Logic : commands and lists
 
@@ -68,6 +70,7 @@ legend bottom
   MainWindow installs CommandBox and StatusBarFooter roots in FXML placeholders;
   it retains the other four parts as fields. PersonListPanel and DetailDisplay
   share a placeholder and alternate visibility based on CommandResult details.
+  CommandTextField normalizes pasted separators before JavaFX filters them.
   CommandBox invokes a CommandExecutor bound to MainWindow::executeCommand.
   PersonListPanel's nested PersonListViewCell creates cards for nonempty cells;
   the complete list supplies linked contact summaries across active filters.
