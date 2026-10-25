@@ -8,15 +8,23 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Support quoted addresses in `add` and `edit`, protecting complete addresses containing prefix-like text and using the same quote/backslash escapes as names and tags (#201).
+
 ### Changed
 
 - Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
+- Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
 
 ### Fixed
 
+- Made duplicate name identity consistently compare `Groß` with `GROẞ`, while preserving the existing normalized-name-and-phone identity rules and original display spelling.
+- Made literal name-substring search use the same locale-independent Unicode comparison form for stored names and keywords, so composed/decomposed accents and the demonstrated sharp-S cases match consistently without applying duplicate identity's space normalization.
+- Reject unknown space-separated ASCII-letter prefixes in `add`, `edit`, `list`, `tag` and `untag` rather than silently absorbing mistyped prefixes into field values; intentional literal text must be quoted (#193). Stored values, field validation, tag identity and whitespace trimming are unchanged.
 - Reject extra arguments to `help` and `exit`, consistently with `reload`, rather than opening Help or exiting unexpectedly.
-- Report line-break code points and correction guidance before command parsing, and diagnose non-breaking/full-width spaces in command words and indexes without silently rewriting contact data.
+- Report raw line-break code points and correction guidance when input reaches the parser without command-box conversion, and diagnose non-breaking/full-width spaces in command words and indexes without normalising those characters in field values.
 - Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.
 
 ## [v1.4] - 2026-10-22

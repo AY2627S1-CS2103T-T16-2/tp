@@ -24,6 +24,8 @@ public class JsonSerializableTuitionBookTest {
     private static final Path TYPICAL_PERSONS_FILE = TEST_DATA_FOLDER.resolve("typicalPersonsTuitionBook.json");
     private static final Path INVALID_PERSON_FILE = TEST_DATA_FOLDER.resolve("invalidPersonTuitionBook.json");
     private static final Path DUPLICATE_PERSON_FILE = TEST_DATA_FOLDER.resolve("duplicatePersonTuitionBook.json");
+    private static final Path CASE_EQUIVALENT_DUPLICATE_PERSON_FILE =
+            TEST_DATA_FOLDER.resolve("caseEquivalentDuplicatePersonTuitionBook.json");
 
     @Test
     public void toModelType_typicalPersonsFile_success() throws Exception {
@@ -45,6 +47,15 @@ public class JsonSerializableTuitionBookTest {
     public void toModelType_duplicatePersons_throwsIllegalValueException() throws Exception {
         JsonSerializableTuitionBook dataFromFile = JsonUtil.readJsonFile(DUPLICATE_PERSON_FILE,
                 JsonSerializableTuitionBook.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableTuitionBook.MESSAGE_DUPLICATE_PERSON,
+                dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_caseEquivalentUnicodeDuplicatePersons_throwsIllegalValueException() throws Exception {
+        JsonSerializableTuitionBook dataFromFile = JsonUtil.readJsonFile(CASE_EQUIVALENT_DUPLICATE_PERSON_FILE,
+                JsonSerializableTuitionBook.class).get();
+
         assertThrows(IllegalValueException.class, JsonSerializableTuitionBook.MESSAGE_DUPLICATE_PERSON,
                 dataFromFile::toModelType);
     }

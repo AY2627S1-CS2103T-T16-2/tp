@@ -34,6 +34,8 @@ public class HelpWindow extends UiPart<Stage> {
               Command words ignore case: LIST and LiSt work like list.
               Field prefixes (n/, t/, etc.) and the clear confirmation word confirm stay lowercase.
               Enter one command on one line. Use normal spaces (U+0020) for command syntax.
+              Pasted tabs and line separators become spaces; press Enter to run the command.
+              Raw line breaks reaching the parser are rejected, including inside quotes.
               help, exit and reload take no arguments.
 
             add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...
@@ -78,9 +80,14 @@ public class HelpWindow extends UiPart<Stage> {
             exit
               Exit TuitionBook.
 
-            Quoted values (add/edit names and tags; list/tag/untag tags)
+            Field prefixes (add/edit/list/tag/untag)
+              After a normal space, ASCII letters followed by / are field syntax, e.g. ee/.
+              Unknown prefixes are rejected. Quote complete literal names, addresses or tags.
+
+            Quoted values (add/edit names, addresses and tags; list/tag/untag tags)
               Use double quotes around values containing field prefixes, e.g. t/"call p/next week".
-              Inside quoted tags, use \\" for a literal quote and \\\\ for a literal backslash.
+              For a complete address, use a/"20 Main Road, c/o Rina a/p Kaur".
+              Inside quoted values, use \\" for a literal quote and \\\\ for a literal backslash.
               Surrounding whitespace is trimmed, including inside quotes.
             """.strip();
 

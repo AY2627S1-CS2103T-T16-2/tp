@@ -41,19 +41,29 @@ public class TagModificationCommandParserTest {
             assertParseFailure(tagParser, input, ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE);
             assertParseFailure(untagParser, input, ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE);
         }
-        for (String input : List.of("1 t/\"Math\" extra", "1 t/\"Math\"t/Science",
-                "1 t/\"Math\" p/90000001")) {
+        for (String input : List.of("1 t/\"Math\" extra", "1 t/\"Math\"t/Science")) {
             assertParseFailure(tagParser, input, ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE);
             assertParseFailure(untagParser, input, ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE);
         }
     }
 
     @Test
-    public void parse_onlyTagPrefixRecognised_preservesOtherUnquotedPrefixes() {
-        String input = " 1 t/meet at a/c room p/next week n/alias r/student t/weekly";
+    public void parse_onlyTagPrefixRecognised_preservesOtherPrefixesInsideQuotes() {
+        String input = " 1 t/\"meet at a/c room p/next week n/alias r/student\" t/weekly";
         Set<Tag> tags = Set.of(new Tag("meet at a/c room p/next week n/alias r/student"), new Tag("weekly"));
         assertParseSuccess(tagParser, input, new TagCommand(INDEX_FIRST_PERSON, tags));
         assertParseSuccess(untagParser, input, new UntagCommand(INDEX_FIRST_PERSON, tags));
+    }
+
+    @Test
+    public void parse_otherPrefixesOutsideQuotedTags_rejectsRatherThanAbsorbsText() {
+        for (String prefix : List.of("a/", "p/", "n/", "r/", "tt/")) {
+            String expected = String.format(ArgumentTokenizer.MESSAGE_UNKNOWN_PREFIX, prefix);
+            assertParseFailure(tagParser, "1 t/Math " + prefix + "value", expected);
+            assertParseFailure(untagParser, "1 t/Math " + prefix + "value", expected);
+            assertParseFailure(tagParser, "1 t/\"Math\" " + prefix + "value", expected);
+            assertParseFailure(untagParser, "1 t/\"Math\" " + prefix + "value", expected);
+        }
     }
 
     @Test

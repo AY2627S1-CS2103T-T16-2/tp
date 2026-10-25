@@ -210,7 +210,8 @@ public class TuitionBookParserTest {
                     + "Found line break U+%04X; remove it or replace it with a normal space (U+0020).",
                     (int) separator);
             for (String input : List.of(separator + "list", "list" + separator, "li" + separator + "st",
-                    "list " + separator + "help", "add r/student n/Amy p/123 a/12" + separator + "Road")) {
+                    "list " + separator + "help", "add r/student n/Amy p/123 a/12" + separator + "Road",
+                    "edit 1 n/\"Amy" + separator + " Tan\"")) {
                 assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
             }
         }

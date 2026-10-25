@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the unreleased development source for v1.5; its command-input changes are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -90,11 +90,17 @@ The command box is where you enter instructions; the result area reports success
 
 * `help`, `exit`, and `reload` take no arguments. For example, `help 123`, `exit extra`, and `reload 123` report errors instead of running. `clear` requires exactly `confirm`; `CLEAR confirm` works, but `clear CONFIRM` and `clear confirm extra` do not.
 
-* Enter one command on a single line. Line breaks, including Unicode line/paragraph separators, are rejected with their character code (such as `U+2028`), even at the beginning or end of a command or inside a quoted value. Replace the line break with a normal space or remove it before retrying. Quoting does not allow multiline values.
+* Enter one command at a time and press <kbd>Enter</kbd> to run it. The command box is single-line; pasted tabs and line separators, including Unicode line/paragraph separators, become normal spaces before command parsing, even inside quoted values. Adjacent words remain separate, and pasting does not run a command automatically. Check the resulting text before pressing <kbd>Enter</kbd>.
+
+* If a raw line break reaches the parser without this command-box conversion, it is rejected with its character code (such as `U+2028`), including at the input edges or inside quotes. Remove it or replace it with a normal space before retrying. Quoting does not allow stored multiline values.
 
 * Use normal spaces (`U+0020`) for command syntax. Non-breaking spaces (`U+00A0`) and full-width spaces (`U+3000`) in a command word, an index, or after a no-argument command are rejected with correction guidance, not silently converted. This check does not rewrite field values; their own validation rules still apply.
 
 * When copying commands from a PDF or website, check for missing spaces, unusual spaces and line breaks before submitting them. If the source already removed a separator, TuitionBook cannot reconstruct the intended text.
+
+* In `add`, `edit`, `list`, `tag` and `untag`, a token beginning after a normal space (`U+0020`) with one or more ASCII letters immediately followed by `/` is field syntax. It must be a supported lowercase prefix for that command. Unknown prefixes such as `ee/` are rejected before the command runs, not silently saved as another field's text or automatically corrected. This is a defined syntax rule, not a detector for every possible typo.
+
+* Quote the complete name, address or tag when that text contains a literal prefix-like token: `n/"Muhammad s/o Ali"`, `a/"20 Main Road, c/o Rina a/p Kaur"` or `t/"Advanced Math/Science"`. Supported prefixes inside quotes also remain literal. Slashes that do not start such a space-separated token, as in `t/Math/Science`, still work without quotes. Quoting does not bypass field validation.
 </box>
 
 ### Viewing help: `help`
@@ -120,17 +126,18 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `ROLE` must be either `student` or `guardian`, case-insensitively.
 * `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining marks, spaces, periods (`.`), straight apostrophes (`'`), forward slashes (`/`), and hyphens (`-`). Surrounding whitespace is ignored, while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
 * `NAME` can contain at most 100 characters.
-* In `add` and `edit`, wrap the entire name in straight double quotes when it contains a field prefix: `n/"Rina a/p Kaur"`. The quotes are not stored and do not count towards the name length. Ordinary names still work without quotes.
+* In `add` and `edit`, wrap the entire name in straight double quotes when it contains a field prefix or prefix-like token: `n/"Rina a/p Kaur"` or `n/"Muhammad s/o Ali"`. The quotes are not stored and do not count towards the name length. Ordinary names still work without quotes.
 * **Unquoted names still use normal field parsing:** `n/Rina a/p Kaur` is interpreted as name `Rina` and address `p Kaur`, not as the full name. Use `n/"Rina a/p Kaur"` to preserve it.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between digits. These formatting characters are preserved.
 * `EMAIL` and `ADDRESS` are optional. If supplied, `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
+* Addresses support the same complete-value quoting and escapes as names and tags: `a/"20 Main Road, c/o Rina a/p Kaur"` stores the complete address without its enclosing quotes. To store literal quotes around an address, use `a/"\"Block A\""`. Existing addresses in the data file are not stripped of quotes or migrated.
 * Each `TAG` must be non-blank and may contain ASCII letters, digits, spaces, and printable punctuation, such as `Sec 4`, `Math--Science`, `C++`, or `Mrs. Lim's`. Leading, trailing, and repeated hyphens are allowed. Non-ASCII characters and internal control characters (such as tabs or newlines) are not accepted. Surrounding whitespace is trimmed; internal spaces, punctuation, spelling, and capitalization are preserved.
 * **Use consistent spacing in tags.** `Sec 4` (one internal space) and `Sec  4` (two internal spaces) are different tags, even though they may look similar. `list t/Sec 4` will not match a contact whose only tag is `Sec  4`. This is intentional: only surrounding whitespace is trimmed, and repeated internal spaces are not collapsed. Use the same internal spacing when adding, editing, and filtering tags.
-* Tags do not need quotes merely to contain spaces. Wrap the entire tag in straight double quotes when it contains text that resembles a field prefix recognised by the command: `t/"meet at a/c room"`. The quotes are not stored. Without the quotes, `a/c room` is parsed as an address in `add` and `edit`. In `list`, quoting similarly protects embedded `r/` and `t/` text.
-* For a quoted name or tag, after the closing quote, end the command or enter a space followed by another field prefix. Missing closing quotes and extra text after the closing quote are rejected.
+* Tags do not need quotes merely to contain spaces. Wrap the entire tag in straight double quotes when it contains a space-separated prefix-like token: `t/"meet at a/c room"` or `t/"Advanced Math/Science"`. Without quotes, supported prefixes start another field and unsupported ones report an error. This rule also applies to `list`, `tag` and `untag`; the enclosing quotes are not stored.
+* For a quoted name, address or tag, after the closing quote, end the command or enter a space followed by another supported field prefix. Missing closing quotes, unknown prefixes and extra text after the closing quote are rejected.
 * Inside a quoted value, use `\"` for a literal double quote and `\\` for a literal backslash. For example, `t/"\"Sec 4\""` stores the tag `"Sec 4"` including its literal quotes, while `t/"Sec 4"` stores `Sec 4`. Use `t/"C:\\Math\\"` for a tag ending in a backslash. A backslash before any other character is preserved (for example, `\M` stays `\M`); sequences such as `\n` do not insert newlines.
 * Unquoted values keep their quotes and backslashes literally, unless the first non-whitespace character is `"`, which starts quoted syntax.
-* Decoded values still follow normal field validation: double quotes and backslashes are allowed in tags but not names.
+* Decoded values still follow normal field validation: double quotes and backslashes are allowed in addresses and tags but not names.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
 * After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so that the new contact is visible.
 
@@ -138,7 +145,7 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 **Tip:** A person can have any number of tags, including zero.
 
-TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match. Name comparison is case-insensitive, ignores surrounding and repeated spaces, and treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Phone comparison removes spaces and hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a leading `+` are distinct.
+TuitionBook treats two contacts as duplicates only when both their normalized names and normalized phone numbers match. Name identity first trims surrounding ASCII spaces and collapses consecutive internal ASCII spaces. It then normalizes the name to Unicode NFC, lowercases and uppercases it using locale-independent rules, and normalizes it to NFC again. This makes canonically equivalent accents compare equally and handles the demonstrated sharp-S cases consistently: `Groß` matches `GROẞ`, and `Straße` matches `STRASSE`. This is a concrete comparison rule, not a guarantee that every linguistically equivalent Unicode spelling is identical. Phone comparison removes spaces and hyphens while retaining a leading `+`. Country-code equivalence is not applied, so phone numbers that differ by a leading `+` are distinct. The original name spelling, casing, and Unicode representation remain unchanged for display and storage.
 
 A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the guardian's email may also be reused. The student and guardian remain distinct contacts because their names differ.
 </box>
@@ -232,6 +239,7 @@ Names support the same optional double quotes as `add`. For example, `edit 1 n/"
 * `NAME` can contain at most 100 characters.
 * `PHONE` must contain at least three digits. It may start with `+`, and a single space or hyphen may appear between digits. These formatting characters are preserved.
 * A supplied `ADDRESS` must not be blank and can contain at most 200 characters. For example, `😀` counts as one character. Surrounding whitespace is ignored; the address is otherwise preserved as entered.
+* Names, addresses and tags support the same quoting and strict prefix rules as [`add`](#adding-a-contact-add). `edit INDEX a/""` clears the address, just like `edit INDEX a/`; a blank quoted address is not stored.
 * `TAG` follows the same space-and-punctuation and optional quoting rules described for [`add`](#adding-a-contact-add).
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
@@ -252,7 +260,7 @@ Format: `tag INDEX t/TAG [t/TAG]...`
 * Tag identity is case-sensitive: `Math` and `math` are separate stored tags, although `list` matches tags case-insensitively.
 * Existing tags are retained. Success feedback lists only newly added tags, in sorted order and enclosed in double quotes; literal quotes and backslashes are escaped for clarity. Already-present tags are omitted from this list. If every requested tag is already present, the command reports this without saving or changing the displayed filter.
 * When tags change, TuitionBook saves the contact and restores the full contact list. If saving fails, it restores the original contacts and filter.
-* Only `t/` is recognised as a field prefix by `tag` and `untag`. A space followed by `t/` starts another tag unless it is inside a quoted value. Use the same quoting and escape rules as `add`, `edit`, and `list`: `tag 1 t/"study t/weekly"` adds one tag containing `t/weekly`; `untag 1 t/"study t/weekly"` removes it. Enclosing quotes are not stored, and surrounding whitespace is trimmed even inside quotes.
+* Only `t/` is supported as a field prefix by `tag` and `untag`. A space followed by `t/` starts another tag unless it is inside a quoted value; other space-separated letter prefixes are rejected. Use the same quoting and escape rules as `add`, `edit` and `list`: `tag 1 t/"study t/weekly"` adds one tag containing `t/weekly`, while `tag 1 t/"call p/next week"` preserves the literal `p/`. Enclosing quotes are not stored, and surrounding whitespace is trimmed even inside quotes.
 * Inside quoted tags, use `\"` for a literal double quote and `\\` for a literal backslash. For example, `tag 1 t/"\"Sec 4\""` adds the literal tag `"Sec 4"`, and `untag 1 t/"\"Sec 4\""` removes it. Missing closing quotes, extra text after the closing quote, and blank decoded tags are rejected before any tags change.
 
 Example: If contact 1 is Sam Student and has `Math` and `Sec 4`, `tag 1 t/Science t/Math` adds `Science` while keeping both existing tags and reports `Added tags to Sam Student: "Science".` Continue using `add` to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
@@ -309,7 +317,7 @@ Finds contacts whose names contain any of the text you enter. Each piece of text
 Format: `find KEYWORD [MORE_KEYWORDS]...`
 
 * Each keyword matches anywhere within a name, including the start, middle, or end of a name component. For example, `rac` matches `Grace Tan`.
-* The search is Unicode-aware and case-insensitive; for example, `GRACE` matches `Grace Tan`, and `ışık` matches `Işık`.
+* The search converts both each stored name and each keyword to Unicode NFC, lowercases and uppercases them using locale-independent rules, and normalizes them to NFC again before literal substring matching. As a result, `GRACE` matches `Grace Tan`, composed and decomposed accents match, `STRASSE` matches `Straße`, and the demonstrated `Groß`/`GROẞ` forms match consistently. Search does not trim or collapse spaces in stored names and does not otherwise use duplicate-identity normalization. This rule does not make every linguistically equivalent Unicode spelling identical.
 * The search considers only contact names. Text found only in a phone number, email address, home address, tag, role, or linked contact's name does not match.
 * Keywords are treated as literal text, so punctuation is not interpreted as a search pattern.
 * Persons matching at least one keyword are returned (an `OR` search). A person is listed only once even if multiple keywords match their name.
@@ -432,11 +440,12 @@ Find the symptom below and try the suggested action. Error messages appear in th
 | `Unable to access jarfile` | The path or filename in the launch command is wrong | Check the downloaded file's location and name. Put the full path in straight double quotes. |
 | `Unknown command.` | A misspelled or unsupported command word | Use a command word from the [Command summary](#command-summary), without the backticks shown in this guide. Command-word letter case does not matter. |
 | `Invalid command format!` | A required value is missing or a positional argument is misplaced | Read the usage shown with the error. Supply the required index first, then the relevant prefixed fields. For `link`, supply the student index followed by the guardian index. |
-| `Commands must be entered on a single line.` | The input contains a line break, identified by its character code | Enter one command at a time. Remove the indicated line break or replace it with a normal space (`U+0020`); quotation marks do not bypass this rule. |
+| `Commands must be entered on a single line.` | A raw line break reached the parser without command-box conversion; the error identifies its character code | Remove the indicated line break or replace it with a normal space (`U+0020`); quotation marks do not bypass this rule. Normal GUI pasting converts tabs and line separators to spaces before parsing instead. |
 | `Unexpected non-breaking space` or `Unexpected full-width space` | A lookalike space occurs in the command word, an index or a no-argument command's trailing text | Retype that syntax using the spacebar (`U+0020`) and retry. Contact values are not automatically normalised. |
 | `The contact index provided is invalid.` | That index is not in the currently displayed list | Enter `list`, find the intended contact's current index, and retry. Filters can change the displayed indexes. |
 | No contacts appear after `find` or a filtered `list` | No contacts match the current filter | Enter `list` to show all contacts. `find` searches names only; tag filters must match the complete tag, including internal spaces. |
-| A name or tag is split at text such as `a/` or `t/` | The text was interpreted as a field prefix | Quote the complete value, for example `n/"Rina a/p Kaur"` or `t/"study t/weekly"`. See [Adding a contact](#adding-a-contact-add). |
+| `Unrecognised field prefix:` | A space-separated letter prefix, such as `ee/`, is not supported by that command | Correct the prefix using the command format, or quote the complete name, address or tag if the text is intentional. The command has not run; no guessed correction is applied. |
+| A name, address or tag is split at text such as `a/` or `t/` | The text was interpreted as a supported field prefix | Quote the complete value, for example `n/"Rina a/p Kaur"`, `a/"20 Road c/o Rina"` or `t/"study t/weekly"`. See [Adding a contact](#adding-a-contact-add). |
 | A contact-changing command reports a save error | TuitionBook cannot write to its data location | Check write access and available disk space. The attempted change was rolled back. Correct the storage problem, then re-enter the command; it is not retried automatically. |
 | Startup reports an unreadable file or blocked saving | The data could not be loaded, and a backup may also have failed | Follow the reported backup path and [data recovery instructions](#editing-the-data-file). Preserve the original and any new contacts before replacing files. Use `reload` or restart after correcting the file. |
 | The Help window opens but the online guide does not | A browser could not open, or the page cannot be reached | Use the offline summary in Help. Try `Copy URL` in a browser when an internet connection is available. |
@@ -457,7 +466,7 @@ Check [Known issues](#known-issues) first. If you still need help, search the [p
 ## Known issues
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. Close TuitionBook, rename `preferences.json` in the JAR folder to `preferences.json.old`, then reopen the app. This resets window preferences without changing `data/tuitionbook.json`.
-2. **Unquoted name text resembling a parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Wrap the entire name in straight double quotes: `n/"Rina a/p Kaur"`. Slashes without a recognised prefix, as in `Muhammad s/o Ali`, also work without quotes.
+2. **Unquoted text resembling a supported parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Unknown space-separated letter prefixes are rejected instead. Quote complete literal names, addresses and tags, for example `n/"Rina a/p Kaur"` or `n/"Muhammad s/o Ali"`. The parser cannot infer whether an accidentally entered supported prefix was intentional.
 3. **Phone numbers are compared literally** (ignoring spaces and hyphens) when detecting duplicates: `+6591234567` and `91234567` are treated as different numbers. Enter phone numbers in a consistent format.
 4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
 5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.

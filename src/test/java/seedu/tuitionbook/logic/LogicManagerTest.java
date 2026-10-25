@@ -131,6 +131,46 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_unknownPrefixes_rejectWithoutChangingBookFilterOrFile() throws Exception {
+        logic.execute("add r/student n/Amy p/91234567 t/Math");
+        logic.execute("find Amy");
+        TuitionBook original = new TuitionBook(model.getTuitionBook());
+        Predicate<Person> filter = model.getFilteredPersonListPredicate();
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        byte[] bytes = Files.readAllBytes(file);
+        for (String input : List.of("add r/student n/Beth p/92345678 a/12 Road ee/beth@example.com",
+                "edit 1 a/12 Road ee/amy@example.com", "tag 1 t/Math tt/Science",
+                "untag 1 t/Math tt/Science", "list t/Math tt/Science")) {
+            assertThrows(ParseException.class, () -> logic.execute(input));
+            assertEquals(original, model.getTuitionBook());
+            assertSame(filter, model.getFilteredPersonListPredicate());
+            assertEquals(original.getPersonList(), model.getFilteredPersonList());
+            assertArrayEquals(bytes, Files.readAllBytes(file));
+        }
+    }
+
+    @Test
+    public void execute_quotedAddressAndLiteralPrefixes_persistWithoutChangingIdentity() throws Exception {
+        logic.execute("add r/student n/Amy p/91234567 a/\"20 Main Road, c/o Rina a/p Kaur\""
+                + " t/\"Advanced Math/Science\"");
+        Person original = model.getTuitionBook().getPersonList().getFirst();
+        assertEquals(new Address("20 Main Road, c/o Rina a/p Kaur"), original.getAddress().orElseThrow());
+        logic.execute("edit 1 a/\"Unit \\\"A\\\" C:\\\\Road\\\\ ee/literal\"");
+        Person updated = model.getTuitionBook().getPersonList().getFirst();
+        assertEquals(new Address("Unit \"A\" C:\\Road\\ ee/literal"), updated.getAddress().orElseThrow());
+        logic.execute("reload");
+        assertEquals(updated, model.getTuitionBook().getPersonList().getFirst());
+        assertEquals(original.getId(), model.getTuitionBook().getPersonList().getFirst().getId());
+        logic.execute("list t/\"Advanced Math/Science\"");
+        assertEquals(List.of(updated), model.getFilteredPersonList());
+        logic.execute("edit 1 a/\"\"");
+        logic.execute("reload");
+        assertEquals(new PersonBuilder(updated).withoutAddress().build(),
+                model.getTuitionBook().getPersonList().getFirst());
+        assertEquals(original.getId(), model.getTuitionBook().getPersonList().getFirst().getId());
+    }
+
+    @Test
     public void execute_addAndEdit_preservesSpacesPunctuationAndCase() throws Exception {
         logic.execute("add r/student n/Alex Lim p/91234567 t/ Sec  4  t/Math--Science t/-active- t/C++ t/Mrs. Lim's");
         assertEquals(Set.of(new Tag("Sec  4"), new Tag("Math--Science"), new Tag("-active-"),

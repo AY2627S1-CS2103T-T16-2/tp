@@ -14,7 +14,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 * Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
-**Version:** This guide describes the unreleased development source for v1.5; its command-input changes are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, strict prefix checks and quoted addresses are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -88,6 +88,8 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
+`CommandBox` uses `CommandTextField`, a `TextField` subclass that converts pasted tabs and line separators to spaces before JavaFX filters them. This preserves word boundaries while keeping each command on one line. Pasted text is inserted into the field but is not executed until the user presses <kbd>Enter</kbd>.
+
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/ui/MainWindow.java).
 
 The `UI` component,
@@ -133,7 +135,9 @@ How the parsing works:
 
 #### Command-input boundary
 
-`TuitionBookParser` rejects actual line breaks before trimming or dispatching, using Java's `\R` definition (CR/LF, vertical tab, form feed, NEL, line separator and paragraph separator). The error identifies the first line-break code point. This also applies inside quotes and at the input edges; the parser does not split or join multiple commands.
+`CommandTextField` converts pasted tabs and line separators to normal spaces before the text reaches the parser, including inside quoted values. A CRLF pair becomes one space. This GUI conversion preserves word boundaries and does not execute the pasted text.
+
+As a fallback for raw input that reaches it without command-box conversion, `TuitionBookParser` rejects actual line breaks before trimming or dispatching, using Java's `\R` definition (CR/LF, vertical tab, form feed, NEL, line separator and paragraph separator). The error identifies the first line-break code point. This also applies inside quotes and at the input edges; the parser does not split or join multiple commands. Normal GUI paste therefore does not produce this line-break diagnostic.
 
 Only the extracted command word is lowercased with `Locale.ROOT`. Prefixes, arguments, quoted values, tag identity and the exact `confirm` keyword are not case-normalised. This keeps command lookup independent of the computer's locale without changing contact data.
 
@@ -190,7 +194,7 @@ This section describes some noteworthy details on how certain features are imple
 
 `tag INDEX t/TAG [t/TAG]...` adds tags by set union; `untag INDEX t/TAG [t/TAG]...` removes them by set difference. `add` continues to accept an initial tag set and `edit` continues to replace the whole set. Stored tag identity is case-sensitive, unlike the case-insensitive `list` filter. Duplicate arguments are deduplicated, existing tags are ignored on addition, and absent tags are ignored on removal.
 
-`TagCommandParser` and `UntagCommandParser` delegate index and tag validation to `TagModificationCommandParser`. It uses `ArgumentTokenizer.tokenizeWithQuotedValues` with only `PREFIX_TAG`, protecting embedded `t/` text inside quoted tags and decoding the same quote and backslash escapes as `add`, `edit`, and `list`. Other field prefixes remain literal tag text. Every decoded tag is validated before constructing a command, so malformed quotes and invalid or blank tags reject the entire operation. See [Quoted name and tag parsing](#quoted-name-and-tag-parsing) for the shared quoting rules.
+`TagCommandParser` and `UntagCommandParser` delegate index and tag validation to `TagModificationCommandParser`. It uses `ArgumentTokenizer.tokenizeWithQuotedValues` with only `PREFIX_TAG`, protecting embedded prefix-like text inside quoted tags and decoding the same quote and backslash escapes as `add`, `edit` and `list`. Unsupported field-like prefixes outside quotes are rejected rather than absorbed into tags. Every decoded tag is validated before constructing a command, so malformed quotes and invalid or blank tags reject the entire operation. See [Quoted field parsing](#quoted-field-parsing) for the shared quoting rules.
 
 `TagCommand` and `UntagCommand` share execution through `TagModificationCommand`. It resolves the displayed index and modifies a disposable copy of the selected contact's tags. A changed set produces one replacement `Person` retaining its ID, role, relationship, and all other fields, then restores the full list. A no-change result preserves the filter and requests no save. `canMutate()` remains true before execution so `LogicManager` captures the rollback snapshot, while `requiresSave()` is reset each execution and becomes true only after an actual tag change. Existing storage and save-failure rollback apply without a schema change.
 
@@ -210,19 +214,27 @@ Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)
 
 `Name` and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names and addresses support UTF-8 text subject to their field-specific validation rules. Names contain at most 100 Unicode code points and addresses contain at most 200 Unicode code points.
 
-Name comparison treats canonically equivalent Unicode forms, such as é and e followed by a combining acute accent, as equal. Contacts are duplicates only when both their normalized names and normalized phone numbers match.
+`NameComparisonUtil#toUnicodeComparisonForm` centralizes the locale-independent transformation used for Unicode name comparison: NFC normalization, lowercase with `Locale.ROOT`, uppercase with `Locale.ROOT`, then NFC normalization again. Lowercasing before uppercasing makes both `Groß` and `GROẞ` become `GROSS`; it also makes `Straße` and `STRASSE` equal and preserves canonical equivalence between composed and decomposed accents. This standard-library sequence is not complete Unicode case folding and does not promise that every linguistically equivalent spelling compares equally.
+
+Duplicate identity and search apply that shared low-level form differently. `Person#normalizeNameForIdentity` first trims surrounding ASCII spaces and collapses consecutive internal ASCII spaces, then applies the Unicode comparison form; the normalized phone must also match. `NameContainsKeywordsPredicate` applies only the Unicode comparison form to the stored name and every original keyword before literal substring matching. Search neither trims nor collapses the stored name and does not call the complete identity normalizer. Both paths preserve the original name for display and storage.
 
 `JsonAdaptedPerson` uses the same model validators when loading JSON, keeping add, edit, and storage validation consistent. An address remains optional, and `edit INDEX a/` stores no address rather than an empty `Address`. A data file containing an over-limit name or address is rejected through the invalid-data recovery path. If the configured file can be moved to an unused sibling backup, the backup preserves the original bytes and saving new data is allowed. If that backup move fails, the original file remains in place and saving stays blocked until a successful read.
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
-### Quoted name and tag parsing
+<a id="quoted-name-and-tag-parsing"></a>
 
-`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValues` for `PREFIX_NAME` and `PREFIX_TAG`; `ListCommandParser` and the shared `TagModificationCommandParser` for `tag` and `untag` opt in for `PREFIX_TAG`. The tokenizer automatically recognises those quoted prefixes, visits prefix positions in order, and ignores positions inside a quoted value. It then removes the enclosing quotes before normal name or tag validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields retain their existing quote and prefix behaviour. The model and JSON store the plain name or tag, so no storage migration is needed. Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
+### Quoted field parsing
+
+`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValues` for `PREFIX_NAME`, `PREFIX_ADDRESS` and `PREFIX_TAG`; `ListCommandParser` and the shared `TagModificationCommandParser` for `tag` and `untag` opt in for `PREFIX_TAG`. The tokenizer automatically recognises those quoted prefixes, visits candidate positions in order and ignores positions inside a quoted value. It then removes the enclosing quotes before normal field validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields retain their existing quote behaviour. The model and JSON store decoded values, so no storage migration is needed.
+
+For these five field-based commands, a prefix-like token is one or more ASCII letters followed immediately by `/`, at the start of the argument string or after an ordinary ASCII space (`U+0020`). Such a token outside a supported quoted value must match a prefix recognised by that command, including case. Unknown candidates join the same position-ordered scan as known prefixes, so quoted content is skipped before an unknown-prefix error can be raised. The error identifies the token and offers either correcting the command syntax or quoting the complete literal name, address or tag. It does not guess which field was intended.
+
+This deliberately changes some unquoted commands: `n/Muhammad s/o Ali` and `t/Advanced Math/Science` now need complete-value quotes. Non-boundary slashes such as `t/Math/Science` and URL punctuation such as `https://` are not new field boundaries. Recognised unquoted prefixes still start separate fields; the parser cannot detect every accidental use of an otherwise supported prefix. The older `tokenize` method retains its existing contract for other callers.
 
 Inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Other backslash sequences and all unquoted values are preserved. The closing-quote scan and decoding use the same escape predicate, so an escaped quote cannot end a value or expose embedded prefixes. An escaped final quote without a subsequent closing quote is rejected. Surrounding whitespace is trimmed as before, and decoded values pass through the existing domain validators; escaping does not widen name validation.
 
-Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`. This also covers data from intermediate development builds that treated enclosing quotes literally; no automatic stripping or migration of existing tags occurs.
+Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`, and `a/"\"Block A\""` enters an address with literal quotes around it. Existing addresses and tags are not stripped or normalised on loading. Surrounding whitespace continues to be trimmed even inside quoted values; this change does not resolve the padded-JSON-tag issue #185 or change tag case identity.
 
 ### \[Historical proposal\] Undo/redo feature
 
@@ -343,7 +355,7 @@ The following activity diagram summarizes what happens when a user executes a ne
 **Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage student and guardian contacts, organise contacts with roles and tags, and retrieve the correct contact details quickly, instead of using a generic contact list or manually cross-referencing separate records. Guardian links and home addresses are optional. Tutors can label academic levels and subjects using generic tags, for example `t/Sec4 t/AMath` when adding or editing a contact. Dedicated level/subject fields and filtering by those fields are descoped from the final release; they remain possible future enhancements, not promised features. Level and subject grouping is supported through `list r/student t/Sec4 t/AMath`, which requires both tags. See the [tag workflow](UserGuide.md#organising-levels-subjects-and-status-with-tags).
 
 <!-- Codex assisted ooixs with the language-scope and user-story status clarifications for PR #131. -->
-TuitionBook is intended for English-language users and supports `en-*` operating-system locales. Its interface, documentation, and messages are in English; this does not require contact information to contain only English text. Contact fields accept UTF-8 text subject to their documented validation rules. In particular, names accept Unicode letters, numbers, and combining marks, with the accepted capitalization, punctuation, and Unicode representation preserved after surrounding whitespace is trimmed. Duplicate-contact checks treat canonically equivalent Unicode names as equal, as documented in the [User Guide](UserGuide.md#adding-a-contact-add).
+TuitionBook is intended for English-language users and supports `en-*` operating-system locales. Its interface, documentation, and messages are in English; this does not require contact information to contain only English text. Contact fields accept UTF-8 text subject to their documented validation rules. In particular, names accept Unicode letters, numbers, and combining marks, with the accepted capitalization, punctuation, and Unicode representation preserved after surrounding whitespace is trimmed. Duplicate-contact checks apply the documented locale-independent Unicode comparison form after identity-specific ASCII-space normalization; this covers canonically equivalent accents and the demonstrated sharp-S cases without claiming complete Unicode case folding. See the [User Guide](UserGuide.md#adding-a-contact-add).
 
 TuitionBook focuses on contact and relationship management; lesson scheduling, attendance, fees, academic-progress tracking, and messaging are outside its scope.
 
@@ -414,7 +426,7 @@ US20 undo/redo is excluded from the final release. There is no command history t
 
 The earlier US12 descope was reversed by [#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93): Help now includes an offline command summary, with browser access to the full UG and Copy URL as a fallback. It is a static syntax summary, not a context-sensitive help system.
 
-US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Name quoting under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) was extended to tags by [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163). Quoted names and tags support `\"` for a literal double quote and `\\` for a literal backslash. This protects embedded prefixes in those quoted fields; it does not add notes or quoting for every field. See [Quoted name and tag parsing](#quoted-name-and-tag-parsing).
+US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Name quoting under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) was extended to tags by [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163). The v1.5 development source also supports quoted addresses alongside strict unknown-prefix checks for #193/#201. Quoted names, addresses and tags support `\"` for a literal double quote and `\\` for a literal backslash, subject to field validation. This protects embedded prefixes in those quoted fields; it does not add notes or quoting for every field. See [Quoted field parsing](#quoted-field-parsing).
 
 #### Academic grouping and inactive contacts
 
@@ -424,7 +436,7 @@ US18/US19 needs are supported through generic tags: `t/Sec4 t/AMath` records a l
 
 #### Tag identity and compatibility
 
-[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Parsing trims surrounding whitespace, including inside quoted values, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Unquoted prefix collisions retain their existing interpretation. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag`, and `untag`; see the UG for examples.
+[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Parsing trims surrounding whitespace, including inside quoted values, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
 
 Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Once broader tags are saved, narrowing validation or normalising existing tag identities requires an explicit compatibility or migration plan.
 
@@ -585,7 +597,7 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 **MSS**
 
 1.  User submits a find request with one or more name substrings.
-2.  TuitionBook displays each contact whose name contains at least one requested substring, using Unicode-aware, case-insensitive literal matching, and reports the number of matches. Other contact fields and linked contact names are not searched.
+2.  TuitionBook applies the documented locale-independent Unicode comparison form to each stored name and requested substring, then displays each contact whose transformed name contains at least one transformed substring using literal matching. Search does not apply duplicate identity's ASCII-space trimming or collapsing. Other contact fields and linked contact names are not searched.
 
     Use case ends.
 
@@ -696,7 +708,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
 * **Index**: A positive one-based position in the current contact list, used by index-based commands.
 * **Mainstream OS**: Windows, macOS, or a commonly used Linux distribution.
-* **Normalised name**: A UTF-8 name converted to its comparison form before duplicate checking: leading and trailing spaces are removed, each internal run of spaces is collapsed to one space, and names are compared case-insensitively while preserving display casing.
+* **Normalised name**: A UTF-8 name converted to its duplicate-identity form: leading and trailing ASCII spaces are removed, each internal run of ASCII spaces is collapsed to one, and the shared Unicode comparison form is applied while the original display value remains unchanged. Search uses only the Unicode comparison form, without this space normalization.
 * **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: spaces and hyphens are removed while a leading `+` is retained. Country-code equivalence is not applied in the MVP.
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
@@ -726,14 +738,35 @@ Use a fresh, disposable folder with an empty contact list. These steps describe 
    Expected: Both are rejected. Command-word casing does not relax confirmation or field-prefix syntax; the existing contact is unchanged.
 1. For the remaining diagnostic tests, replace each bracketed token with the actual character before submitting; do not type the bracketed name literally. A text editor's Unicode insertion feature can supply these characters.
    * `delete[NBSP]1` and `delete 1[NBSP]`, with `[NBSP]` replaced by U+00A0.
-   * `link 1[IDEOGRAPHIC SPACE]2`, with the token replaced by U+3000.
-   * `edit 1 n/Changed[LINE SEPARATOR]`, with the token replaced by U+2028.
-   * `edit 1 n/"Changed[PARAGRAPH SEPARATOR]Name"`, with the token replaced by U+2029.<br>
-   Expected when the character reaches the parser: The result identifies the unexpected character's code point and how to correct it; no contact is changed or deleted. Quoting does not bypass line-break rejection. Some GUI/clipboard paths transform pasted separators before parsing, so verify the submitted character when reproducing; the parser-level regressions cover the exact code points.
+   * `link 1[IDEOGRAPHIC SPACE]2`, with the token replaced by U+3000.<br>
+   Expected: The result identifies the unexpected character's code point and how to correct it; no contact is changed or deleted.
 1. Enter `EdIt 1 a/Blk[NBSP]12[IDEOGRAPHIC SPACE]Road`, substituting actual U+00A0 and U+3000 characters inside the address.<br>
    Expected: The address is accepted unchanged under its field rules; syntax diagnostics do not normalise address data.
 1. Enter `ExIt`, restart the app, and enter `view 1`.<br>
    Expected: Normal exit works, there is still exactly one contact, and its name, tag and updated address retain their case and spacing.
+
+Pasted tabs and line separators are converted to spaces by the command box, including inside quoted names. Verify this separately using [Pasting separators into the command box](#pasting-separators-into-the-command-box); do not expect a U+2028/U+2029 rejection from normal GUI paste. Raw line-break rejection is a parser fallback covered by `TuitionBookParserTest.parseCommand_lineBreaks_reportCodePointBeforeTrimmingOrDispatch` and the rejected-syntax tests in `LogicManagerTest`, including checks that contacts and stored bytes stay unchanged.
+
+### Strict prefixes and quoted addresses
+
+Use a fresh, disposable folder with an empty contact list. These steps target the v1.5 development build, not the published v1.4 JAR.
+
+1. Enter `add r/student n/Amy p/91234567 a/"20 Main Road, c/o Rina a/p Kaur" t/"Advanced Math/Science"`, then `view 1`.<br>
+   Expected: One student is stored. The address is `20 Main Road, c/o Rina a/p Kaur`, the phone is `91234567` and the tag is `Advanced Math/Science`; enclosing quotes are absent.
+1. Enter each command separately: `edit 1 a/12 Road ee/amy@example.com`, `tag 1 t/Math tt/Science`, `untag 1 t/Math tt/Science` and `list t/Advanced Math/Science`.<br>
+   Expected: Each rejects the unknown prefix (`ee/`, `tt/` or `Math/`) without changing contacts or the active filter. No suspected typo is guessed or saved as field data.
+1. Enter `list t/"Advanced Math/Science"`.<br>
+   Expected: Amy is listed; quoting preserves the complete literal tag.
+1. Enter `tag 1 t/"call p/next week"`, then `untag 1 t/"call p/next week"`.<br>
+   Expected: The complete literal tag is added and removed; `p/` is not interpreted as a phone field.
+1. Enter `edit 1 a/"Unit \"A\" C:\\Road\\"`, then `view 1`.<br>
+   Expected: The address is `Unit "A" C:\Road\`, with literal quotation marks and single backslashes. Other contact details are unchanged.
+1. Enter `edit 1 a/"12 Road` and `edit 1 a/"12 Road" extra` separately.<br>
+   Expected: Helpful quote-format errors appear and the last valid address remains.
+1. Exit and restart, then enter `view 1`.<br>
+   Expected: The escaped address and original tag persist unchanged.
+1. Enter `edit 1 a/""`, then `view 1`.<br>
+   Expected: The address is absent, matching the existing `edit 1 a/` clearing behaviour.
 
 ### Quoted names and tags
 
@@ -807,6 +840,19 @@ Use a fresh, disposable folder with an empty contact list.
 1. With the Help window open, activate the main TuitionBook window and select its `File` → `Exit`.<br>
    Expected: Both the main window and Help window close.
 
+### Pasting separators into the command box
+
+Use a fresh, disposable folder with an empty contact list. Use synthetic contact data only.
+
+1. Copy `Wei Ming` and `Tan` from two adjacent spreadsheet cells, then enter `add r/student n/`, paste the cells, type ` p/91234567`, and inspect the command box.<br>
+   Expected: The command box shows `add r/student n/Wei Ming Tan p/91234567`; the tab is displayed as a space and the command has not run yet.
+1. Press <kbd>Enter</kbd>.<br>
+   Expected: One student named `Wei Ming Tan` is added. The name is not saved as `Wei MingTan`.
+1. Repeat with pasted text containing a tab, line feed, carriage return, CRLF, vertical tab, form feed, NEL, Unicode line separator, and Unicode paragraph separator between two words.<br>
+   Expected: Each separator becomes a space, adjacent words remain separate, and no command runs until <kbd>Enter</kbd> is pressed.
+1. Select part of an existing command and paste text containing one of the separators.<br>
+   Expected: The selected text is replaced, the separator becomes a space, and the caret follows the inserted text.
+
 ### Deleting a person
 
 1. Deleting a person while all persons are being shown
@@ -872,6 +918,17 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, `view 1 v/details`, and `view 1 v/ v/`.<br>
    Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
 
+### Unicode duplicate identity
+
+Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
+
+1. Enter `add r/student n/Groß p/91234567`.<br>
+   Expected: The contact is added and displayed exactly as `Groß`.
+1. Enter `add r/guardian n/GROẞ p/91234567`.<br>
+   Expected: The command is rejected as a duplicate because the Unicode name comparison form and normalized phone match. The stored `Groß` contact remains unchanged.
+1. Enter `add r/guardian n/GROẞ p/92345678`.<br>
+   Expected: The contact is added because its normalized phone differs, and both original name spellings are displayed unchanged.
+
 ### Finding contacts by name substring
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data. Enter these commands to create the contacts used below:
@@ -881,6 +938,9 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. `link 2 1`
 1. `add r/student n/A.B Tan p/91230003`
 1. `add r/student n/Işık p/91230004`
+1. `add r/student n/Straße Weiss p/91230005`
+1. `add r/student n/GROẞ Klein p/91230006`
+1. `add r/student n/José Tan p/91230007` (the `é` is entered as `e` followed by a combining acute accent)
 
 1. Enter `find gr`, `find rac`, `find ace`, and `find GRACE` one at a time.<br>
    Expected: Each command shows only Grace Tan and reports `1 person(s) listed!`.
@@ -890,6 +950,10 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: Grace Tan and Bob Lim are shown once each in their original order and the result reports `2 person(s) listed!`.
 1. Enter `find ışık`, then `find ışı`.<br>
    Expected: Each command shows only Işık and reports `1 person(s) listed!`; matching is Unicode-aware and case-insensitive, including for a partial name.
+1. Enter `find STRASSE`, then `find Groß`.<br>
+   Expected: The first command shows only Straße Weiss, and the second shows only GROẞ Klein. Their displayed spellings remain unchanged.
+1. Enter `find José` using a composed `é`.<br>
+   Expected: José Tan is shown even though the stored name uses a decomposed accent, and its stored spelling remains unchanged.
 1. Enter `find .`, then `find .*`.<br>
    Expected: The first command shows only A.B Tan. The second command shows no contacts because `.*` is matched literally rather than interpreted as a pattern.
 1. Enter `find 91230002`, `find student@example.com`, `find Road`, `find Math`, and `find student` one at a time.<br>
@@ -897,7 +961,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `find grace`.<br>
    Expected: Only Grace Tan is shown; Bob Lim is not matched through the guardian link.
 1. Enter `find bob`, then `list`.<br>
-   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all four contacts in their original order. None of the contacts or the guardian link has changed.
+   Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all seven contacts in their original order. None of the contacts or the guardian link has changed.
 1. Enter `find`, then enter `find` followed only by spaces.<br>
    Expected: Each command reports an invalid-command format message containing the updated `find` usage, including `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
 

@@ -4,10 +4,8 @@ import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
 import static seedu.tuitionbook.commons.util.CollectionUtil.requireAllNonNull;
 
-import java.text.Normalizer;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -130,8 +128,8 @@ public class Person {
 
     /**
      * Returns true if both persons have the same normalized name and phone number.
-     * Names are compared case-insensitively after trimming surrounding spaces, collapsing consecutive spaces, and
-     * applying Unicode NFC normalization. Phone numbers are compared after removing spaces and hyphens while retaining
+     * Names are compared after trimming surrounding ASCII spaces, collapsing consecutive ASCII spaces, and applying
+     * the shared Unicode comparison form. Phone numbers are compared after removing spaces and hyphens while retaining
      * a leading {@code +}; country-code equivalence is not applied. All other fields are ignored.
      * This defines a weaker notion of equality between two persons.
      */
@@ -163,9 +161,7 @@ public class Person {
             previousCharacterWasSpace = currentCharacter == ' ';
         }
 
-        String normalizedName = Normalizer.normalize(collapsedName, Normalizer.Form.NFC);
-        String uppercaseName = normalizedName.toUpperCase(Locale.ROOT);
-        return Normalizer.normalize(uppercaseName, Normalizer.Form.NFC);
+        return NameComparisonUtil.toUnicodeComparisonForm(collapsedName.toString());
     }
 
     /**
