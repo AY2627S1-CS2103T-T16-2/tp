@@ -186,7 +186,9 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
-`JsonUtil` configures the shared Jackson mapper to require the input to end after one JSON value and to reject duplicate property names at any object depth. This prevents trailing or conflicting content from being accepted and then discarded by a later save. For the configured contact file, either parsing failure enters the existing malformed-file recovery path, which moves the original file unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
+`JsonUtil` removes an optional UTF-8 BOM and decodes file bytes with a strict UTF-8 decoder before passing the text to Jackson, while retaining the same string-based parsing for in-memory callers. Invalid UTF-8 and other encoded files are therefore rejected instead of being accepted with replacement characters or silently converted on the next save. The shared mapper also requires the input to end after one JSON value and rejects duplicate property names at any object depth. These checks prevent malformed, trailing, or conflicting content from being accepted and then discarded by a later save. For the configured contact file, parsing failure enters the existing malformed-file recovery path, which moves the original bytes unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
+
+`DataLoadingException` walks its cause chain to produce bounded user guidance for permission denial, invalid contact values, invalid UTF-8 or JSON, and other file-system failures. It does not expose exception types, paths from the cause, or stack traces. `MainApp` carries this guidance through `StartupNotice`; `UiManager` combines it with the actual backup outcome. `ReloadCommand` uses the same guidance while retaining the current contacts and filter after a failed read.
 
 `ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
 
@@ -724,13 +726,13 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
 * 2c. TuitionBook cannot read the file but preserves it in a backup.
 
-    * 2c1. TuitionBook retains the current contacts and active filter, enables saving, and reports the backup path and that corrected data must be restored before reloading again.
+    * 2c1. TuitionBook retains the current contacts and active filter, enables saving, and reports the backup path with permission, encoding/JSON, contact-value, or file-system guidance for restoring the preserved data before reloading again.
 
       Use case ends.
 
 * 2d. TuitionBook cannot read the file or preserve it in a backup.
 
-    * 2d1. TuitionBook retains the current contacts and active filter, leaves the original file in place, blocks saving, and explains that the original must be corrected or moved before reloading again.
+    * 2d1. TuitionBook retains the current contacts and active filter, leaves the original file in place, blocks saving, and reports the cause-specific action required before the original is moved or reloaded.
 
       Use case ends.
 
@@ -746,7 +748,7 @@ If the configured data file is missing, TuitionBook starts with an empty contact
 
 **Malformed-file recovery policy**
 
-When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows the exact backup path and recovery steps in both a warning dialog and the result display. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and tells the user to correct or move the original file before restarting.
+When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path and bounded cause-specific guidance to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows appropriate permission, encoding/JSON, contact-value, or file-system recovery steps in both a warning dialog and the result display. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and presents the same cause-specific guidance before asking the user to reload or restart.
 
 ### Non-Functional Requirements
 
@@ -1257,6 +1259,22 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
 
    1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}`.<br>
       Expected: TuitionBook rejects the duplicate `persons` property, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
+
+1. Handling UTF-8 encoding and read-permission failures
+
+   1. In a fresh, disposable JAR folder, use an editor that can select encodings to create `data/tuitionbook.json` as UTF-8 with a BOM, containing exactly `{"persons":[]}`. Launch TuitionBook.<br>
+      Expected: TuitionBook loads the empty contact list without a recovery warning. The data file remains at its original path and no `.backup` file is created.
+
+   1. Close TuitionBook. In another fresh, disposable folder, create a valid contact whose address is `X`, then use a hex editor to replace the byte for that `X` with the standalone byte `80` (hexadecimal). Launch TuitionBook.<br>
+      Expected: TuitionBook reports that the file is not valid UTF-8 JSON, moves the original bytes unchanged to an unused `.backup` path, and starts with an empty contact list. Comparing the backup in the hex editor shows the same invalid byte.
+
+   1. On macOS or Linux, close TuitionBook and repeat in another disposable folder with valid `{"persons":[]}` data. Leave the `data` folder writable but remove the data file's read permission, for example with `chmod 000 data/tuitionbook.json`, then launch TuitionBook.<br>
+      Expected: TuitionBook reports that it lacked read permission and moves the file unchanged to an unused backup. The warning tells the user to restore read permission and does not say that valid JSON must be fixed. Restore permission on the backup after the test.
+
+1. Distinguishing guardian-link repair from an invalid JSON value type
+
+   1. In a fresh, disposable folder, create a current-format student with valid `id`, `role`, name, and phone fields, but set `guardianId` to the JSON object `{"unexpected":"value"}`. Launch TuitionBook.<br>
+      Expected: TuitionBook cannot deserialize the file, starts with an empty contact list, and preserves the complete file through the invalid-file recovery workflow. It does not report a repaired guardian link because object and array values are not supported link strings.
 
 1. Warning about a repaired guardian link
 

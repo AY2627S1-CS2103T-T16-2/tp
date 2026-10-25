@@ -995,7 +995,10 @@ public class LogicManagerTest {
             }
         };
         Logic inaccessibleLogic = new LogicManager(model, inaccessibleStorage);
-        assertThrows(CommandException.class, () -> inaccessibleLogic.execute("reload"));
+        CommandException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                CommandException.class, () -> inaccessibleLogic.execute("reload"));
+        assertTrue(exception.getMessage().contains("did not have permission to read the data file"));
+        assertFalse(exception.getMessage().contains("JSON"));
         assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
         assertTrue(model.getFilteredPersonList().isEmpty());
     }
