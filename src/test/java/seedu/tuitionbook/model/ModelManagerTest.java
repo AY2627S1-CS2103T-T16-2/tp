@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import seedu.tuitionbook.commons.core.GuiSettings;
 import seedu.tuitionbook.model.person.NameContainsKeywordsPredicate;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.testutil.PersonBuilder;
 import seedu.tuitionbook.testutil.TuitionBookBuilder;
@@ -102,6 +103,72 @@ public class ModelManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void equals_sameRowsDifferentQueries_returnsFalse() {
+        Person alex = new PersonBuilder().withName("Alex Student").withTags("Active").build();
+        TuitionBook book = new TuitionBookBuilder().withPerson(alex).build();
+        ModelManager nameQuery = new ModelManager(book, new UserPrefs());
+        ModelManager tagQuery = new ModelManager(book, new UserPrefs());
+        nameQuery.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alex")), "find Alex");
+        tagQuery.updateFilteredPersonList(new PersonMatchesListFilterPredicate(null, List.of("Active")),
+                "list t/Active");
+
+        assertEquals(nameQuery.getFilteredPersonList(), tagQuery.getFilteredPersonList());
+        assertFalse(nameQuery.equals(tagQuery));
+        assertFalse(tagQuery.equals(nameQuery));
+
+        Person nextAddition = new PersonBuilder().withName("John Student").withTags("Active").build();
+        nameQuery.addPerson(nextAddition);
+        tagQuery.addPerson(nextAddition);
+        assertEquals(List.of(alex), nameQuery.getFilteredPersonList());
+        assertEquals(List.of(alex, nextAddition), tagQuery.getFilteredPersonList());
+    }
+
+    @Test
+    public void equals_sameRowsAndRefreshDifferentPredicates_returnsFalse() {
+        ModelManager allPersons = new ModelManager();
+        ModelManager nameQuery = new ModelManager();
+        nameQuery.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alex")), "list");
+
+        assertFalse(allPersons.equals(nameQuery));
+    }
+
+    @Test
+    public void equals_sameRowsAndPredicateDifferentRefresh_returnsFalse() {
+        ModelManager first = new ModelManager();
+        ModelManager second = new ModelManager();
+        first.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alex")), "find Alex");
+        second.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alex")), "find Alex Alex");
+
+        assertFalse(first.equals(second));
+    }
+
+    @Test
+    public void equals_sameContactValuesDifferentDisplayedIds_returnsFalse() {
+        Person firstContact = new PersonBuilder().build();
+        Person secondContact = new PersonBuilder().build();
+        ModelManager first = new ModelManager(new TuitionBookBuilder().withPerson(firstContact).build(),
+                new UserPrefs());
+        ModelManager second = new ModelManager(new TuitionBookBuilder().withPerson(secondContact).build(),
+                new UserPrefs());
+
+        assertEquals(first.getTuitionBook(), second.getTuitionBook());
+        assertEquals(first.getFilteredPersonList(), second.getFilteredPersonList());
+        assertFalse(first.equals(second));
+    }
+
+    @Test
+    public void equals_equivalentQueryInstancesAndOrderedIds_returnsTrue() {
+        TuitionBook book = new TuitionBookBuilder().withPerson(ALICE).withPerson(BENSON).build();
+        ModelManager first = new ModelManager(book, new UserPrefs());
+        ModelManager second = new ModelManager(book, new UserPrefs());
+        first.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alice")), "find Alice");
+        second.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Alice")), "find Alice");
+
+        assertTrue(first.equals(second));
+        assertTrue(second.equals(first));
     }
 
     @Test

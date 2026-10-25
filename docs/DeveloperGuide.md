@@ -99,7 +99,7 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
-`PersonListPanel` receives both the filtered contact list and the complete contact list from `Logic`. It displays the filtered list while using the complete list to resolve a student's guardian name and contact number and a guardian's linked student names, including when a role filter hides the related contacts' cards. The panel refreshes its cards when the complete list changes so that relationship details remain current.
+`PersonListPanel` receives both the displayed working set and the complete contact list from `Logic`. It displays the working set while using the complete list to resolve a student's guardian name and contact number and a guardian's linked student names, including related contacts outside the working set. The panel refreshes its cards when the complete list changes so that relationship details remain current.
 
 ### Logic component
 
@@ -126,7 +126,7 @@ How the `Logic` component works:
 1. When `Logic` is called upon to execute a command, the command is passed to a `TuitionBookParser` object, which creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the arguments. It creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly instead.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. Before executing a command that can mutate contacts, `LogicManager` copies the contact data and snapshots working-set UUIDs, order, predicate and query for rollback. It calls `execute(model, storage)`; for `DeleteCommand`, the inherited method delegates to `execute(model)`. The inherited delegation is omitted from the second diagram.
-1. `DeleteCommand` resolves the displayed index against the filtered list, identifies affected students from the complete contact list, and passes the resolved `Person` to `Model.deletePerson`. Deleting a guardian clears the affected students' guardian links. The second diagram omits the complete-list lookup and model-internal link updates, which do not change the main command flow.
+1. `DeleteCommand` resolves the displayed index against the working set, identifies affected students from the complete contact list, and passes the resolved `Person` to `Model.deletePerson`. Deleting a guardian clears the affected students' guardian links. The second diagram omits the complete-list lookup and model-internal link updates, which do not change the main command flow.
 1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. The second diagram shows the successful save path. If saving throws an `IOException` or `AccessDeniedException`, `LogicManager` restores the contacts and exact working set that existed before the command, then throws a `CommandException`; those rollback calls are deliberately omitted from the diagram.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
@@ -192,7 +192,7 @@ The `Storage` component,
 
 `ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
 
-At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it attempts to move the legacy `addressbook.json` to that current path. A failed move is logged without aborting initialization: the unchanged legacy path is passed to storage for that run, and migration is retried on a later launch. This preserves readable contacts when directory permissions prevent renaming. If the same permissions also prevent saving, the normal command save-failure rollback restores contacts and the active filter.
+At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it attempts to move the legacy `addressbook.json` to that current path. A failed move is logged without aborting initialization: the unchanged legacy path is passed to storage for that run, and migration is retried on a later launch. This preserves readable contacts when directory permissions prevent renaming. If the same permissions also prevent saving, the normal command save-failure rollback restores contacts and the exact working set (membership, order and originating query).
 
 ### Common classes
 
@@ -218,11 +218,11 @@ This section describes some noteworthy details on how certain features are imple
 
 `ViewCommandParser` parses `view INDEX [v/]` with the same positive-index rule as other index-based commands. The optional empty `v/` prefix selects full details for linked contacts; the parser rejects duplicate prefixes and values after `v/`.
 
-`ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, a filtered list determines the selected index but cannot hide a linked guardian or student from the result. The command does not change the model or its active filter.
+`ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, the working set determines the selected index but cannot hide a linked guardian or student from the result. The command does not change contact data or the working set.
 
 Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in contact-list order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags are sorted alphabetically.
 
-`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active filter remain in the model while the detail view is visible.
+`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The working set remains in the model while the detail view is visible.
 
 ### Stable contact working sets
 
@@ -450,7 +450,7 @@ This record reconciles [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issue
 
 #### Decision 4.1: Undo and confirmation
 
-US20 undo/redo is excluded from the final release. There is no command history that can restore a successful deletion or clear operation; users should back up the data file before bulk changes. General confirmation prompts are also excluded. The later [#141](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/141) decision adds a specific safeguard: `clear confirm` is required, and the message explicitly includes contacts hidden by filters. `delete INDEX` remains immediate. Save-failure rollback is implemented and restores contacts and the active filter after a failed save; it is distinct from user-invoked undo and does not reverse a successful command.
+US20 undo/redo is excluded from the final release. There is no command history that can restore a successful deletion or clear operation; users should back up the data file before bulk changes. General confirmation prompts are also excluded. The later [#141](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/141) decision adds a specific safeguard: `clear confirm` is required, and the message explicitly includes contacts hidden by filters. `delete INDEX` remains immediate. Save-failure rollback is implemented and restores contacts and the exact working set (membership, order and originating query) after a failed save; it is distinct from user-invoked undo and does not reverse a successful command.
 
 #### Help and notes
 
@@ -689,7 +689,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 2a. TuitionBook cannot save the deletion.
 
-    * 2a1. TuitionBook shows a storage error, restores the deleted contact and any guardian links cleared by the request, retains the previously active filter, and does not report a successful deletion.
+    * 2a1. TuitionBook shows a storage error, restores the deleted contact and any guardian links cleared by the request, restores the exact previous working set (membership, order and originating query), and does not report a successful deletion.
 
       Use case ends.
 
@@ -715,7 +715,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  Private tutor submits a reload request.
-2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and clears the active filter.
+2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and resets the working set to all loaded contacts in contact-list order.
 3.  TuitionBook enables saving and reports the number of loaded contacts.
 
     Use case ends.
@@ -724,25 +724,25 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 2a. The configured data file is missing.
 
-    * 2a1. TuitionBook replaces the current contacts with an empty contact list, clears the active filter, enables saving, and reports that zero contacts were loaded.
+    * 2a1. TuitionBook replaces the current contacts and working set with empty lists, enables saving, and reports that zero contacts were loaded.
 
       Use case ends.
 
 * 2b. The file contains invalid guardian links but all contacts are otherwise valid.
 
-    * 2b1. TuitionBook loads the contacts without those links, clears the active filter, and reports the number of links repaired in memory for the tutor to review before saving.
+    * 2b1. TuitionBook loads the contacts without those links, resets the working set to all loaded contacts in contact-list order, and reports the number of links repaired in memory for the tutor to review before saving.
 
       Use case resumes from step 3.
 
 * 2c. TuitionBook cannot read the file but preserves it in a backup.
 
-    * 2c1. TuitionBook retains the current contacts and active filter, enables saving, and reports the backup path with permission, encoding/JSON, contact-value, or file-system guidance for restoring the preserved data before reloading again.
+    * 2c1. TuitionBook retains the current contacts and exact working set (membership, order and originating query), enables saving, and reports the backup path with permission, encoding/JSON, contact-value, or file-system guidance for restoring the preserved data before reloading again.
 
       Use case ends.
 
 * 2d. TuitionBook cannot read the file or preserve it in a backup.
 
-    * 2d1. TuitionBook retains the current contacts and active filter, leaves the original file in place, blocks saving, and reports the cause-specific action required before the original is moved or reloaded.
+    * 2d1. TuitionBook retains the current contacts and exact working set (membership, order and originating query), leaves the original file in place, blocks saving, and reports the cause-specific action required before the original is moved or reloaded.
 
       Use case ends.
 
@@ -750,7 +750,7 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 
 **Role-filter command rule**
 
-The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
+Each `list` query replaces the working set: bare `list` displays all contacts, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria in contact-list order. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
 **Startup data rule**
 
@@ -767,26 +767,27 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 3.  All documented add, edit, delete, list, find, filter, view, tag, untag, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
-6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and active filter to their state before that operation.
+6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
 7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
 
 ### Glossary
 
 * **Contact**: A record in TuitionBook representing either a student or a guardian, with a name, phone number, and optional email address, home address, and tags.
-* **Current contact list**: The contacts currently displayed after applying any active filter; indexes in index-based commands refer to this list.
+* **Current contact list**: The displayed working set, including retained contacts that no longer match its originating query; index-based commands refer to positions in this list.
 * **Contact ID**: A unique, persistent identifier assigned by TuitionBook to a contact.
 * **Data file**: The local text file that stores TuitionBook contacts and their recorded guardian links between application sessions.
-* **Filter**: A condition that restricts the current contact list. TuitionBook supports a name filter or a combined role-and-tag filter; applying a new filter replaces the previous one. The role is optional, and all supplied tags must match exactly, ignoring case.
+* **Filter**: The originating query condition used to establish a working set, classify additions and identify retained contacts that no longer match. TuitionBook supports a name filter or a combined role-and-tag filter. The role is optional, and all supplied tags must match exactly, ignoring case. An explicit query replaces the working set; later edits do not automatically recompute membership.
 * **Guardian**: A contact with the `guardian` role. A guardian contact may have zero or more recorded student links; these links record information in TuitionBook and do not establish or determine real-world responsibility.
 * **Guardian link**: A recorded association from a student to a guardian contact. A student has at most one guardian link, while a guardian can be linked to multiple students.
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
-* **Index**: A positive one-based position in the current contact list, used by index-based commands.
+* **Index**: A positive one-based position in the current working set, used by index-based commands. Indexes can change after deletion compacts the working set, an explicit query, a successful reload, clear or restart.
 * **Mainstream OS**: Windows, macOS, or a commonly used Linux distribution.
 * **Normalised name**: A UTF-8 name converted to its duplicate-identity form: leading and trailing ASCII spaces are removed, each internal run of ASCII spaces is collapsed to one, and the shared Unicode comparison form is applied while the original display value remains unchanged. Search uses only the Unicode comparison form, without this space normalization.
 * **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: ASCII spaces, hyphens, slashes, and numeric-group parentheses are removed; the optional annotation is ignored; a leading `+` is retained; and `x`, `ext`, and `ext.` become `x` while retaining the extension digits. Country-code equivalence is not applied in the MVP.
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
+* **Working set**: Ordered contact UUIDs displayed with their current values, together with the originating query and canonical refresh command. Matching additions append, nonmatching additions stay hidden, and edits preserve membership and indexes. Deletion compacts survivors; an explicit query replaces membership. Successful reload, clear and restart reset the working set.
 * **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON retains the plain tag string without migration. `Tag.equals` and `hashCode` remain case-sensitive; only list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `find` remains name-only.
 
 --------------------------------------------------------------------------------------------------------------------
@@ -845,7 +846,7 @@ Use a fresh, disposable folder with an empty contact list. These steps target th
 1. Enter `add r/student n/Amy p/91234567 a/"20 Main Road, c/o Rina a/p Kaur" t/"Advanced Math/Science"`, then `view 1`.<br>
    Expected: One student is stored. The address is `20 Main Road, c/o Rina a/p Kaur`, the phone is `91234567` and the tag is `Advanced Math/Science`; enclosing quotes are absent.
 1. Enter each command separately: `edit 1 a/12 Road ee/amy@example.com`, `tag 1 t/Math tt/Science`, `untag 1 t/Math tt/Science` and `list t/Advanced Math/Science`.<br>
-   Expected: Each rejects the unknown prefix (`ee/`, `tt/` or `Math/`) without changing contacts or the active filter. No suspected typo is guessed or saved as field data.
+   Expected: Each rejects the unknown prefix (`ee/`, `tt/` or `Math/`) without changing contacts or the working set. No suspected typo is guessed or saved as field data.
 1. Enter `list t/"Advanced Math/Science"`.<br>
    Expected: Amy is listed; quoting preserves the complete literal tag.
 1. Enter `tag 1 t/"call p/next week"`, then `untag 1 t/"call p/next week"`.<br>
@@ -1214,7 +1215,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Launch TuitionBook with an empty, disposable data folder. Enter `add r/student n/Alex Yeoh p/87438807`, then `find Nobody`.
 
    1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
-      Expected: the list contains Reloaded Alex, the filter is cleared, and the result reports one loaded contact. Reload does not rewrite the file.
+      Expected: the working set resets to the full loaded list containing Reloaded Alex, and the result reports one loaded contact. Reload does not rewrite the file.
 
    1. Enter `reload extra`.<br>
       Expected: invalid command format; contacts remain unchanged.
@@ -1237,7 +1238,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
       Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
 
    1. While the app stays open, restore normal permissions and replace the malformed file with the saved valid copy. Enter `reload`.<br>
-      Expected: Alex Yeoh appears, the filter is cleared, and saving is enabled. Merely correcting the file without reloading would leave the write block set.
+      Expected: the working set resets to the full loaded list containing Alex Yeoh, and saving is enabled. Merely correcting the file without reloading would leave the write block set.
 
    1. Enter `edit 1 n/Updated Alex`, then close and relaunch TuitionBook.<br>
       Expected: the edit saves successfully and Updated Alex remains visible after restart.
@@ -1249,7 +1250,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Remove your current user's write permission from the `data` folder beside the JAR, then relaunch TuitionBook.
 
    1. Enter `list r/student`, then `edit 1 n/Updated Alex`.<br>
-      Expected: TuitionBook reports that it could not save. Alex Yeoh's name remains unchanged and the displayed list remains filtered to students.
+      Expected: TuitionBook reports that it could not save. Alex Yeoh's name remains unchanged and the exact previous working set (membership, order and originating query) is restored.
 
    1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
       Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.

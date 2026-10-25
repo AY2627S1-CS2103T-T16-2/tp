@@ -2,6 +2,8 @@ package seedu.tuitionbook.ui;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.CollectionUtil.requireAllNonNull;
+import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
+import static seedu.tuitionbook.model.Model.SHOW_ALL_PERSONS_REFRESH_COMMAND;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,12 +41,13 @@ public class PersonListPanel extends UiPart<Region> {
      * Creates a {@code PersonListPanel} using the filtered persons for display and all persons for
      * relationship lookup.
      *
-     * @param filteredPersons persons selected by the active filter
+     * @param filteredPersons persons in the displayed working set
      * @param allPersons all persons available for relationship lookup
      */
     public PersonListPanel(ObservableList<Person> filteredPersons, ObservableList<Person> allPersons) {
         this(filteredPersons, allPersons, () -> new PersonListViewState(
-                filteredPersons.stream().map(Person::getId).toList(), person -> true, "list"));
+                filteredPersons.stream().map(Person::getId).toList(),
+                PREDICATE_SHOW_ALL_PERSONS, SHOW_ALL_PERSONS_REFRESH_COMMAND));
     }
 
     /** Creates a panel that can mark retained contacts against the originating query. */

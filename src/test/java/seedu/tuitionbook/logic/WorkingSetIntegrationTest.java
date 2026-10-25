@@ -47,6 +47,19 @@ public class WorkingSetIntegrationTest {
     }
 
     @Test
+    public void execute_hiddenAddition_refreshKeepsItHiddenAndListLocatesIt() throws Exception {
+        logic.execute("list r/student");
+        String feedback = logic.execute("add r/guardian n/Hidden Guardian p/90000001").getFeedbackToUser();
+        assertTrue(feedback.contains("Use list to locate it. "
+                + "To refresh the current working set, rerun: list r/student"));
+        assertTrue(ids().isEmpty());
+        logic.execute("list r/student");
+        assertTrue(ids().isEmpty());
+        logic.execute("list");
+        assertEquals(List.of("Hidden Guardian"), names());
+    }
+
+    @Test
     public void execute_queryWithNoncanonicalSyntax_storesEquivalentCanonicalRefreshCommand() throws Exception {
         execute("add r/student n/Alex Student p/90000001 t/Active", " LiSt   t/Active   r/STUDENT ");
         assertEquals("list r/student t/Active", model.getPersonListViewState().refreshCommand());
@@ -165,6 +178,7 @@ public class WorkingSetIntegrationTest {
             assertThrows(CommandException.class, () -> logic.execute(command), command);
             assertEquals(original, model.getTuitionBook(), command);
             assertEquals(originalView, model.getPersonListViewState(), command);
+            assertEquals(originalView, logic.getPersonListViewState(), command);
             assertEquals(originalView.personIds(), ids(), command);
             assertEquals(originalJson, Files.readString(fileStorage.getTuitionBookFilePath()), command);
         }

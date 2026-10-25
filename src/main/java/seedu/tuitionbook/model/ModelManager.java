@@ -31,7 +31,7 @@ public class ModelManager implements Model {
     private final ObservableList<Person> unmodifiableFilteredPersons =
             FXCollections.unmodifiableObservableList(filteredPersons);
     private final List<UUID> displayedPersonIds = new ArrayList<>();
-    private String refreshCommand = "list";
+    private String refreshCommand = SHOW_ALL_PERSONS_REFRESH_COMMAND;
     private Predicate<Person> filteredPersonListPredicate = PREDICATE_SHOW_ALL_PERSONS;
 
     /**
@@ -44,7 +44,7 @@ public class ModelManager implements Model {
 
         this.tuitionBook = new TuitionBook(tuitionBook);
         this.userPrefs = new UserPrefs(userPrefs);
-        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, "list");
+        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, SHOW_ALL_PERSONS_REFRESH_COMMAND);
     }
 
     public ModelManager() {
@@ -74,7 +74,7 @@ public class ModelManager implements Model {
     @Override
     public void setTuitionBook(ReadOnlyTuitionBook tuitionBook) {
         this.tuitionBook.resetData(tuitionBook);
-        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, "list");
+        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, SHOW_ALL_PERSONS_REFRESH_COMMAND);
     }
 
     @Override
@@ -190,7 +190,8 @@ public class ModelManager implements Model {
 
         return tuitionBook.equals(otherModelManager.tuitionBook)
                 && userPrefs.equals(otherModelManager.userPrefs)
-                && filteredPersons.equals(otherModelManager.filteredPersons);
+                && filteredPersons.equals(otherModelManager.filteredPersons)
+                && getPersonListViewState().equals(otherModelManager.getPersonListViewState());
     }
 
 }

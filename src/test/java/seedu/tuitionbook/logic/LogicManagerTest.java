@@ -378,13 +378,18 @@ public class LogicManagerTest {
         String addCommand = AddCommand.COMMAND_WORD + ROLE_DESC_STUDENT + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
         Person expectedPerson = new PersonBuilder(AMY).withTags().build();
-        ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
-
-        assertCommandSuccess(addCommand, String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(expectedPerson)),
-                expectedModel);
+        CommandResult result = logic.execute(addCommand);
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(expectedPerson)),
+                result.getFeedbackToUser());
+        assertEquals(List.of(expectedPerson), model.getTuitionBook().getPersonList());
+        assertEquals(List.of(expectedPerson), model.getFilteredPersonList());
         Path dataFilePath = temporaryFolder.resolve("tuitionBook.json");
-        assertEquals(model.getTuitionBook(), new JsonTuitionBookStorage(dataFilePath).readTuitionBook().orElseThrow());
+        ReadOnlyTuitionBook savedBook = new JsonTuitionBookStorage(dataFilePath).readTuitionBook().orElseThrow();
+        assertEquals(model.getTuitionBook(), savedBook);
+        // The parser generates the UUID; verify that the same identity is displayed and persisted.
+        assertEquals(model.getPersonListViewState().personIds(),
+                savedBook.getPersonList().stream().map(Person::getId).toList());
+        assertEquals("list", model.getPersonListViewState().refreshCommand());
     }
 
     @Test

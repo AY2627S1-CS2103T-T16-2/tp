@@ -10,6 +10,9 @@ import seedu.tuitionbook.model.person.Person;
  * The API of the Model component.
  */
 public interface Model {
+    /** Refresh command for the full, unfiltered working set. */
+    String SHOW_ALL_PERSONS_REFRESH_COMMAND = "list";
+
     /** {@code Predicate} that always evaluates to true */
     Predicate<Person> PREDICATE_SHOW_ALL_PERSONS = unused -> true;
 

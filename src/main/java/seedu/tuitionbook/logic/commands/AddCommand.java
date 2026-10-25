@@ -84,7 +84,8 @@ public class AddCommand extends Command {
                 .anyMatch(person -> person.getId().equals(toAdd.getId()));
         if (!isDisplayed) {
             result = result.withAdditionalFeedback("The new contact is saved but does not match this working set. "
-                    + "Use list to locate it, or refresh with: " + model.getPersonListViewState().refreshCommand());
+                    + "Use list to locate it. To refresh the current working set, rerun: "
+                    + model.getPersonListViewState().refreshCommand());
         }
         return result;
     }

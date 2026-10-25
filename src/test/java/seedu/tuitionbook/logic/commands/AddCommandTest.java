@@ -37,8 +37,10 @@ public class AddCommandTest {
 
         CommandResult result = new AddCommand(guardian).execute(model);
 
-        assertTrue(result.getFeedbackToUser().contains("does not match this working set"));
-        assertTrue(result.getFeedbackToUser().contains("list r/student"));
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(guardian))
+                + "\nThe new contact is saved but does not match this working set. "
+                + "Use list to locate it. To refresh the current working set, rerun: list r/student",
+                result.getFeedbackToUser());
         assertTrue(model.getFilteredPersonList().isEmpty());
         assertEquals(guardian.getId(), model.getTuitionBook().getPersonList().getFirst().getId());
     }

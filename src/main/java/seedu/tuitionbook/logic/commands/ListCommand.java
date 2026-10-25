@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
+import static seedu.tuitionbook.model.Model.SHOW_ALL_PERSONS_REFRESH_COMMAND;
 
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -20,7 +21,7 @@ import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
  */
 public class ListCommand extends Command {
 
-    public static final String COMMAND_WORD = "list";
+    public static final String COMMAND_WORD = SHOW_ALL_PERSONS_REFRESH_COMMAND;
 
     public static final String MESSAGE_SUCCESS = "Listed all persons.";
 
