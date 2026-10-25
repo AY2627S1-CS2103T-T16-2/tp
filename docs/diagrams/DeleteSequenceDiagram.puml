@@ -2,22 +2,13 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
-title Successful execution of delete 1
+title Parsing and creating DeleteCommand
 
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":TuitionBookParser" as TuitionBookParser LOGIC_COLOR
 participant ":DeleteCommandParser" as DeleteCommandParser LOGIC_COLOR
 participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
-participant "r:CommandResult" as CommandResult LOGIC_COLOR
-end box
-
-box Model MODEL_COLOR_T1
-participant "m:Model" as Model MODEL_COLOR
-end box
-
-box Storage STORAGE_COLOR_T1
-participant "s:Storage" as Storage STORAGE_COLOR
 end box
 
 [-> LogicManager : execute("delete 1")
@@ -36,8 +27,7 @@ TuitionBookParser -> DeleteCommandParser : parse(" 1")
 activate DeleteCommandParser
 
 note over DeleteCommandParser
-Parse the argument into an Index
-with one-based value 1.
+Parse the argument as Index 1.
 end note
 
 create DeleteCommand
@@ -52,89 +42,10 @@ deactivate DeleteCommandParser
 TuitionBookParser --> LogicManager : d
 deactivate TuitionBookParser
 
-LogicManager -> DeleteCommand : canMutate()
-activate DeleteCommand
-DeleteCommand --> LogicManager : true
-deactivate DeleteCommand
-
-note over LogicManager
-Before execution, copy the current TuitionBook
-and retain the active filter for rollback.
-Snapshot interactions are omitted.
-end note
-
-LogicManager -> DeleteCommand : execute(m, s)
-activate DeleteCommand
-
-note over DeleteCommand
-The inherited execute(Model, Storage)
-delegates to execute(Model).
-end note
-
-DeleteCommand -> Model : getFilteredPersonList()
-activate Model
-Model --> DeleteCommand : lastShownList
-deactivate Model
-
-note over DeleteCommand
-Validate the displayed index.
-Resolve personToDelete = lastShownList.get(0).
-
-Identify affected students from the full
-contact list for the feedback message.
-These lookup interactions are omitted.
-end note
-
-DeleteCommand -> Model : deletePerson(personToDelete)
-activate Model
-
-note right of Model
-Deleting a guardian also clears
-the guardian links of linked students.
-Model internals are omitted.
-end note
-
-Model --> DeleteCommand
-deactivate Model
-
-note over DeleteCommand
-Set requiresSave to true.
-Build the success message, including
-affected students where applicable.
-end note
-
-create CommandResult
-DeleteCommand -> CommandResult : CommandResult(successMessage)
-activate CommandResult
-CommandResult --> DeleteCommand
-deactivate CommandResult
-
-DeleteCommand --> LogicManager : r
-deactivate DeleteCommand
-
-LogicManager -> DeleteCommand : requiresSave()
-activate DeleteCommand
-DeleteCommand --> LogicManager : true
-deactivate DeleteCommand
-
-opt command requires saving
-    LogicManager -> Model : getTuitionBook()
-    activate Model
-    Model --> LogicManager : tuitionBook
-    deactivate Model
-
-    LogicManager -> Storage : saveTuitionBook(tuitionBook)
-    activate Storage
-    Storage --> LogicManager
-    deactivate Storage
-end
-
-note over LogicManager, Storage
-The successful save path is shown.
-If saving fails with an IOException,
-LogicManager restores the contacts and filter,
-then throws a CommandException.
-end note
+ref over LogicManager, DeleteCommand
+Execute and persist d
+(see the next diagram)
+end ref
 
 [<-- LogicManager : r
 deactivate LogicManager

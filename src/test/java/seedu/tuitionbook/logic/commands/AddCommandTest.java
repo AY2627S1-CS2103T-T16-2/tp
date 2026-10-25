@@ -32,6 +32,15 @@ public class AddCommandTest {
     }
 
     @Test
+    public void messageUsage_exampleAppearsBeforeQuotedValueGuidance() {
+        int exampleIndex = AddCommand.MESSAGE_USAGE.indexOf("Example:");
+        int guidanceIndex = AddCommand.MESSAGE_USAGE.indexOf("Use double quotes");
+        assertTrue(exampleIndex >= 0);
+        assertTrue(guidanceIndex >= 0);
+        assertTrue(exampleIndex < guidanceIndex);
+    }
+
+    @Test
     public void execute_personAcceptedByModel_addSuccessful() throws Exception {
         ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
         Person validPerson = new PersonBuilder().build();
@@ -58,6 +67,17 @@ public class AddCommandTest {
         Person existingPerson = new PersonBuilder().withName("Jos\u00e9 Tan").withPhone("+65 9123-4567").build();
         Person duplicatePerson = new PersonBuilder(existingPerson).withName("JOSE\u0301  TAN ")
                 .withPhone("+65 91234567").build();
+        AddCommand addCommand = new AddCommand(duplicatePerson);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
+    public void execute_personWithEquivalentFormattedPhoneAndExtension_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withPhone("+65 (9123) 4567 (HP) ext. 89").build();
+        Person duplicatePerson = new PersonBuilder(existingPerson).withPhone("+65/9123/4567x89").build();
+
         AddCommand addCommand = new AddCommand(duplicatePerson);
         ModelStub modelStub = new ModelStubWithPerson(existingPerson);
 

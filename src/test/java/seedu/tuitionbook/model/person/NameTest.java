@@ -40,15 +40,23 @@ public class NameTest {
         assertFalse(Name.isValidName("^")); // only non-alphanumeric characters
         assertFalse(Name.isValidName("peter*")); // contains non-alphanumeric characters
         assertFalse(Name.isValidName("James&")); // contains an unsupported symbol
+        assertFalse(Name.isValidName("John@Doe")); // contains an unsupported at sign
+        assertFalse(Name.isValidName("John#Doe")); // contains an unsupported hash sign
         assertFalse(Name.isValidName(" Amy Bee")); // starts with whitespace
         assertFalse(Name.isValidName("\u0301Jose")); // starts with a combining mark
         assertFalse(Name.isValidName("/John")); // starts with a forward slash
+        assertFalse(Name.isValidName("Amy\u00A0Bee")); // non-breaking space is not an ASCII space
+        assertFalse(Name.isValidName("Amy\u2003Bee")); // EM SPACE is not an ASCII space
+        assertFalse(Name.isValidName("Amy\u2009Bee")); // thin space is not an ASCII space
+        assertFalse(Name.isValidName("Amy\u3000Bee")); // ideographic space is not an ASCII space
 
         // valid name
         assertTrue(Name.isValidName("Amy Bee"));
         assertTrue(Name.isValidName("Muhammad s/o Ali")); // contains a forward-slash name particle
         assertTrue(Name.isValidName("Mary-Jane Tan"));
+        assertTrue(Name.isValidName("Anne-Marie Tan"));
         assertTrue(Name.isValidName("O'Connor"));
+        assertTrue(Name.isValidName("O\u2019Connor"));
         assertTrue(Name.isValidName("Dr. Lee"));
         assertTrue(Name.isValidName("José Tan"));
         assertTrue(Name.isValidName("Jose\u0301"));
@@ -59,6 +67,11 @@ public class NameTest {
         assertTrue(Name.isValidName("peter the 2nd")); // alphanumeric characters
         assertTrue(Name.isValidName("Capital Tan")); // with capital letters
         assertTrue(Name.isValidName("David Roger Jackson Ray Jr 2nd")); // long names
+    }
+
+    @Test
+    public void messageConstraints_nameSpacing_identifiesAsciiSpace() {
+        assertTrue(Name.MESSAGE_CONSTRAINTS.contains("ASCII spaces (U+0020)"));
     }
 
     @Test

@@ -29,9 +29,6 @@ public class AddCommand extends Command {
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_TAG + "TAG]...\n"
-            + "Use double quotes around a name, address or tag containing prefix-like text, for example "
-            + "n/\"Rina a/p Kaur\" or a/\"20 Road c/o Rina\".\n"
-            + "Inside quoted values, use \\\" for a literal quote and \\\\ for a literal backslash.\n"
             + "Example: " + COMMAND_WORD + " "
             + PREFIX_ROLE + "student "
             + PREFIX_NAME + "John Doe "
@@ -39,10 +36,14 @@ public class AddCommand extends Command {
             + PREFIX_EMAIL + "johnd@example.com "
             + PREFIX_ADDRESS + "311, Clementi Ave 2, #02-25 "
             + PREFIX_TAG + "friends "
-            + PREFIX_TAG + "owesMoney";
+            + PREFIX_TAG + "owesMoney\n"
+            + "Use double quotes around a name, address or tag containing prefix-like text, for example "
+            + "n/\"Rina a/p Kaur\", a/\"20 Road c/o Rina\" or t/\"call p/next week\".\n"
+            + "Inside quoted values, use \\\" for a literal quote and \\\\ for a literal backslash.";
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in TuitionBook.";
+    public static final String MESSAGE_MISSING_REQUIRED_FIELDS = "Missing required field(s): %1$s\n%2$s";
     public static final String MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED = "`g/` cannot be used when adding a contact. "
             + "Add the contact first, then link the student to a guardian using the guardian-linking command.";
 
