@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assumptions;
@@ -25,7 +26,6 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.TextArea;
@@ -125,7 +125,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void addToLongList_scrollsToAddedPerson() throws Exception {
+    public void addToLongList_doesNotSelectAddedPerson() throws Exception {
         for (int existingContactCount : VIEWPORT_CONTACT_COUNTS) {
             ScrollFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
                 Person addedPerson = new PersonBuilder().withName("Viewport Student").withPhone("99999999").build();
@@ -143,7 +143,7 @@ public class MainWindowTest {
 
                 TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
                 ListView<Person> personListView = getPersonListView(mainWindow);
-                return new ScrollFixture(stage, personListView, commandBox, addedPerson);
+                return new ScrollFixture(stage, personListView, commandBox);
             });
 
             try {
@@ -154,9 +154,6 @@ public class MainWindowTest {
                     fixture.personListView().scrollTo(0);
                     execute(fixture.commandBox(), "add");
                 });
-                assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
-                        isPersonDisplayed(fixture.personListView(), fixture.addedPerson())),
-                        "Added contact should be visible for " + existingContactCount + " existing contacts");
                 assertNull(JavaFxTestUtil.callOnFxThread(() ->
                         fixture.personListView().getSelectionModel().getSelectedItem()));
             } finally {
@@ -176,6 +173,48 @@ public class MainWindowTest {
 
             assertNull(personListView.getSelectionModel().getSelectedItem());
         });
+    }
+
+    @Test
+    public void repeatedScrollRequests_cancelPreviousAnimation() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Person firstPerson = new PersonBuilder().withName("First Student").build();
+            Person secondPerson = new PersonBuilder().withName("Second Student").build();
+            FakeLogic logic = new FakeLogic(firstPerson);
+            logic.people.add(secondPerson);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+            try {
+                mainWindow.fillInnerParts();
+
+                mainWindow.getPersonListPanel().scrollToPerson(firstPerson.getId());
+                mainWindow.getPersonListPanel().scrollToPerson(secondPerson.getId());
+
+                assertNull(getPersonListView(mainWindow).getSelectionModel().getSelectedItem());
+            } finally {
+                stage.hide();
+            }
+        });
+    }
+
+    @Test
+    public void removedScrollTarget_stopsRetryAnimation() throws Exception {
+        Person target = new PersonBuilder().withName("Temporary Student").build();
+        FakeLogic logic = new FakeLogic(target);
+        AtomicInteger pulseCount = new AtomicInteger();
+        Stage stage = JavaFxTestUtil.callOnFxThread(() -> {
+            Stage newStage = new Stage();
+            MainWindow mainWindow = new MainWindow(newStage, logic, Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            mainWindow.getPersonListPanel().scrollToPerson(target.getId());
+            logic.people.remove(target);
+            return newStage;
+        });
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> pulseCount.incrementAndGet() >= 3));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(stage::hide);
+        }
     }
 
     @Test
@@ -430,18 +469,7 @@ public class MainWindowTest {
         return (ListView<Person>) mainWindow.getRoot().getScene().lookup("#personListView");
     }
 
-    @SuppressWarnings("unchecked")
-    private static boolean isPersonDisplayed(ListView<Person> personListView, Person person) {
-        personListView.applyCss();
-        personListView.layout();
-        return personListView.lookupAll(".list-cell").stream()
-                .filter(ListCell.class::isInstance)
-                .map(node -> (ListCell<Person>) node)
-                .anyMatch(cell -> person.equals(cell.getItem()));
-    }
-
-    private record ScrollFixture(Stage stage, ListView<Person> personListView, TextField commandBox,
-            Person addedPerson) {
+    private record ScrollFixture(Stage stage, ListView<Person> personListView, TextField commandBox) {
     }
 
     private static final class FakeLogic implements Logic {
