@@ -11,6 +11,7 @@ The format is based on Keep a Changelog.
 ### Changed
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
+- Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
 
 ### Fixed
 

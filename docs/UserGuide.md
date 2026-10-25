@@ -89,7 +89,7 @@ The command box is where you enter instructions; the result area reports success
 * The `help` and `exit` commands ignore extraneous parameters.<br>
   For example, `help 123` is interpreted as `help`. `reload` accepts no arguments, and `clear` requires exactly `confirm`; `reload 123` and `clear confirm extra` report errors instead of running.
 
-* If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
+* Enter one command at a time and press <kbd>Enter</kbd> to run it. The command box is single-line; when you paste text, tabs and line separators become spaces so that adjacent words are not joined. Pasting text does not run a command automatically.
 </box>
 
 ### Viewing help: `help`
