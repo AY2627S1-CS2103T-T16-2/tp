@@ -429,12 +429,17 @@ public class LogicManagerTest {
         Predicate<Person> expectedFilter = model.getFilteredPersonListPredicate();
         List<String> confirmationCommands = List.of(
                 "clear", "clear   ", "clear CONFIRM", "clear Confirm", "clear confirm confirm",
-                "clear confirm extra", "clear yes", "clearconfirm", "clear confirmation", "clear\tno");
+                "clear confirm extra", "clear yes", "clear confirmno", "clear confirmation", "clear\tno");
         for (String command : confirmationCommands) {
             String expectedMessage = command.trim().equals("clear")
                     ? ClearCommand.MESSAGE_CONFIRMATION_REQUIRED
                     : ClearCommand.MESSAGE_INVALID_CONFIRMATION;
-            assertThrows(ParseException.class, expectedMessage, () -> logic.execute(command));
+            try {
+                logic.execute(command);
+                throw new AssertionError("Expected clear confirmation to be rejected: " + command);
+            } catch (ParseException exception) {
+                assertEquals(expectedMessage, exception.getMessage());
+            }
 
             assertEquals(expectedPersons, logic.getPersonList());
             assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());

@@ -53,10 +53,9 @@ public class TuitionBookParserTest {
         assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " confirm") instanceof ClearCommand);
         assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + "    confirm") instanceof ClearCommand);
 
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
-        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(
+        assertThrows(ParseException.class, ClearCommand.MESSAGE_CONFIRMATION_REQUIRED, () -> parser.parseCommand(
                 ClearCommand.COMMAND_WORD));
-        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(
+        assertThrows(ParseException.class, ClearCommand.MESSAGE_INVALID_CONFIRMATION, () -> parser.parseCommand(
                 ClearCommand.COMMAND_WORD + " 3"));
     }
 
