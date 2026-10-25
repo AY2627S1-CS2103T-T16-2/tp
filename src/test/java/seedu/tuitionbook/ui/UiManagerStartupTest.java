@@ -113,7 +113,7 @@ public class UiManagerStartupTest {
                     new UiManager(logic(), dataFilePath(), Optional.empty()).start(owner));
 
             assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
-                    commandTextField(owner).isFocused()));
+                    owner.getScene().getFocusOwner() == commandTextField(owner)));
             assertTrue(JavaFxTestUtil.callOnFxThread(owner::isShowing));
             assertNull(JavaFxTestUtil.callOnFxThread(this::findDialogPane));
 
@@ -185,8 +185,9 @@ public class UiManagerStartupTest {
             if (failure.get() != null) {
                 throw new AssertionError(failure.get());
             }
-            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> commandTextField(owner.get()).isFocused()),
-                    "Command field did not receive focus after the startup dialog closed");
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                            owner.get().getScene().getFocusOwner() == commandTextField(owner.get())),
+                    "Command field was not selected as the scene focus owner after the startup dialog closed");
         } finally {
             if (owner.get() != null) {
                 JavaFxTestUtil.runOnFxThread(owner.get()::close);

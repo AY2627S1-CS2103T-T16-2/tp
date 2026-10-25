@@ -64,6 +64,16 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_caseEquivalentSharpSIdentity_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withName("Groß").withPhone("91234567").build();
+        Person duplicatePerson = new PersonBuilder(existingPerson).withName("GROẞ").build();
+        AddCommand addCommand = new AddCommand(duplicatePerson);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
     public void equals() {
         Person alice = new PersonBuilder().withName("Alice").build();
         Person bob = new PersonBuilder().withName("Bob").build();

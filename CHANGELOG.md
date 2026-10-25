@@ -11,11 +11,15 @@ The format is based on Keep a Changelog.
 ### Changed
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
+- Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
 
 ### Fixed
 
+- Made duplicate name identity consistently compare `Groß` with `GROẞ`, while preserving the existing normalized-name-and-phone identity rules and original display spelling.
+- Made literal name-substring search use the same locale-independent Unicode comparison form for stored names and keywords, so composed/decomposed accents and the demonstrated sharp-S cases match consistently without applying duplicate identity's space normalization.
 - Focused the command box after startup and after dismissing a startup notice so typing is immediately available without accidentally activating Help.
 - Allowed contact cards to grow and shrink with wrapped tag rows, preventing tags from obscuring contact details or neighbouring cards at narrow widths.
+- Split the dense delete sequence diagram into focused parsing and execution diagrams that remain readable at normal browser zoom.
 
 ## [v1.4] - 2026-10-22
 
