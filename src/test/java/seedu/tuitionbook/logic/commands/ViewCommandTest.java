@@ -76,6 +76,22 @@ public class ViewCommandTest {
     }
 
     @Test
+    public void execute_mixedCaseAndPunctuationTags_usesDisplayOrder() throws CommandException {
+        Person student = new PersonBuilder().withName("Sam Tan").withRole(Role.STUDENT)
+                .withTags("zebra", "Alpha", "alpha", "10", "!tag").build();
+        Model model = modelWith(student);
+
+        String expected = "Name: Sam Tan\n"
+                + "Role: STUDENT\n"
+                + "Phone: 85355255\n"
+                + "Email: amy@gmail.com\n"
+                + "Address: 123, Jurong West Ave 6, #08-111\n"
+                + "Tags: !tag, 10, Alpha, alpha, zebra\n\n"
+                + ViewCommand.MESSAGE_NO_GUARDIAN;
+        assertViewWithoutMutation(model, FIRST_INDEX, expected);
+    }
+
+    @Test
     public void execute_unlinkedStudent_showsNoGuardian() throws CommandException {
         Person student = new PersonBuilder().withName("Sam Tan").withRole(Role.STUDENT)
                 .withoutEmail().withoutAddress().withTags().build();

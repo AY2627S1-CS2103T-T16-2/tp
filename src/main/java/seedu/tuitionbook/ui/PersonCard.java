@@ -1,6 +1,5 @@
 package seedu.tuitionbook.ui;
 
-import java.util.Comparator;
 import java.util.Locale;
 
 import javafx.fxml.FXML;
@@ -12,6 +11,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
+import seedu.tuitionbook.model.tag.Tag;
 
 /**
  * A UI component that displays information of a {@code Person}.
@@ -79,7 +79,7 @@ public class PersonCard extends UiPart<Region> {
         tags.setMinWidth(0);
         tags.setMaxWidth(Double.MAX_VALUE);
         person.getTags().stream()
-                .sorted(Comparator.comparing(tag -> tag.tagName))
+                .sorted(Tag.DISPLAY_COMPARATOR)
                 .map(tag -> createTagLabel(tag.tagName))
                 .forEach(tags.getChildren()::add);
     }

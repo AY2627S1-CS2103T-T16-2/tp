@@ -15,6 +15,7 @@ The format is based on Keep a Changelog.
 ### Fixed
 
 - Scroll the contact list to a newly added contact so it remains visible when the list extends beyond the viewport.
+- Use locale-independent, case-insensitive alphabetical ordering for tags in contact cards and detailed views.
 
 ## [v1.4] - 2026-10-22
 
