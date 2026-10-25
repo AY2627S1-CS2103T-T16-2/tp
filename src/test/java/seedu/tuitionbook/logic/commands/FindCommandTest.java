@@ -111,6 +111,26 @@ public class FindCommandTest {
     }
 
     @Test
+    public void execute_unicodeComparisonForm_filtersMatchingNameWithoutReorderingOrMutation() {
+        Person street = new PersonBuilder().withName("Straße Tan").build();
+        Person gross = new PersonBuilder().withName("Groß Lim").build();
+        Person alice = new PersonBuilder().withName("Alice Ng").build();
+        Model unicodeModel = modelWith(street, gross, alice);
+        Model expectedUnicodeModel = modelWith(street, gross, alice);
+        NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("STRASSE", "GROẞ"));
+        expectedUnicodeModel.updateFilteredPersonList(predicate);
+
+        FindCommand command = new FindCommand(predicate);
+        String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 2);
+
+        assertCommandSuccess(command, unicodeModel, expectedMessage, expectedUnicodeModel);
+        assertEquals(List.of(street, gross), unicodeModel.getFilteredPersonList());
+        assertFalse(command.requiresSave());
+        assertEquals("Straße Tan", street.getName().fullName);
+        assertEquals("Groß Lim", gross.getName().fullName);
+    }
+
+    @Test
     public void execute_multipleKeywordsMatchSamePerson_personListedOnce() {
         Person grace = new PersonBuilder().withName("Grace Tan").build();
         Model singlePersonModel = modelWith(grace);
