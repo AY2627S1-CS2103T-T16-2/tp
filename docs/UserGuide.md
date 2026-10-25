@@ -92,7 +92,7 @@ The command box is where you enter instructions; the result area reports success
 
 * Enter one command at a time and press <kbd>Enter</kbd> to run it. The command box is single-line; pasted tabs and line separators, including Unicode line/paragraph separators, become normal spaces before command parsing, even inside quoted values. Adjacent words remain separate, and pasting does not run a command automatically. Check the resulting text before pressing <kbd>Enter</kbd>.
 
-* If a raw line break reaches the parser without this command-box conversion, it is rejected with its character code (such as `U+2028`), including at the input edges or inside quotes. Remove it or replace it with a normal space before retrying. Quoting does not allow stored multiline values.
+* If a raw line break reaches the parser without this command-box conversion, it is rejected with its character code (such as `U+2028`), including at the input edges or inside quotes. Remove it or replace it with a normal space before retrying. Quoting does not bypass this parser check.
 
 * Use normal spaces (`U+0020`) for command syntax. Non-breaking spaces (`U+00A0`) and full-width spaces (`U+3000`) in a command word, an index, or after a no-argument command are rejected with correction guidance, not silently converted. This check does not rewrite field values; their own validation rules still apply.
 
