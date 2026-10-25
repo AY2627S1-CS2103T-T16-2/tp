@@ -224,13 +224,15 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_widenedNameAndFormattedPhone_success() {
-        String widenedName = "Mary-Jane O'Connor";
-        String formattedPhone = "+65 9123-4567";
+        String widenedName = "Anne-Marie O\u2019Connor";
+        String formattedPhone = "+65 (9123) 4567 (HP) ext. 89";
+        String practicalEmail = "o'connor@example.xn--bcher-kva";
         Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withName(widenedName)
-                .withPhone(formattedPhone).withoutEmail().withoutAddress().withTags().build();
+                .withPhone(formattedPhone).withEmail(practicalEmail).withoutAddress().withTags().build();
 
         assertParseSuccess(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + widenedName
-                + " " + PREFIX_PHONE + formattedPhone, new AddCommand(expectedPerson));
+                + " " + PREFIX_PHONE + formattedPhone + " " + PREFIX_EMAIL + practicalEmail,
+                new AddCommand(expectedPerson));
     }
 
     @Test
@@ -354,12 +356,23 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_compulsoryFieldMissing_failure() {
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB,
+                missingFieldsMessage("r/ROLE"));
+        assertParseFailure(parser, ROLE_DESC_STUDENT + PHONE_DESC_BOB,
+                missingFieldsMessage("n/NAME"));
+        assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB
+                        + TAG_DESC_FRIEND,
+                missingFieldsMessage("p/PHONE"));
+        assertParseFailure(parser, EMAIL_DESC_BOB + ADDRESS_DESC_BOB + TAG_DESC_FRIEND,
+                missingFieldsMessage("r/ROLE, n/NAME, p/PHONE"));
+    }
+
+    @Test
+    public void parse_missingFieldWithMalformedStructure_reportsExistingStructuralError() {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
 
-        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB, expectedMessage);
-        assertParseFailure(parser, ROLE_DESC_STUDENT + VALID_NAME_BOB + PHONE_DESC_BOB, expectedMessage);
-        assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + VALID_PHONE_BOB, expectedMessage);
         assertParseFailure(parser, VALID_NAME_BOB + VALID_PHONE_BOB, expectedMessage);
+        assertParseFailure(parser, PREAMBLE_NON_EMPTY + NAME_DESC_BOB + PHONE_DESC_BOB, expectedMessage);
     }
 
     @Test
@@ -389,5 +402,9 @@ public class AddCommandParserTest {
                 AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
         assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " g/",
                 AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
+    }
+
+    private static String missingFieldsMessage(String missingFields) {
+        return String.format(AddCommand.MESSAGE_MISSING_REQUIRED_FIELDS, missingFields, AddCommand.MESSAGE_USAGE);
     }
 }

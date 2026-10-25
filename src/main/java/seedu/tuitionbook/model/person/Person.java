@@ -129,8 +129,9 @@ public class Person {
     /**
      * Returns true if both persons have the same normalized name and phone number.
      * Names are compared after trimming surrounding ASCII spaces, collapsing consecutive ASCII spaces, and applying
-     * the shared Unicode comparison form. Phone numbers are compared after removing spaces and hyphens while retaining
-     * a leading {@code +}; country-code equivalence is not applied. All other fields are ignored.
+     * the shared Unicode comparison form. Phone numbers are compared after removing supported spaces, hyphens, slashes,
+     * numeric-group parentheses, and annotations while retaining a leading {@code +}. Extension markers are normalized
+     * to {@code x} while retaining their digits; country-code equivalence is not applied. All other fields are ignored.
      * This defines a weaker notion of equality between two persons.
      */
     public boolean isSamePerson(Person otherPerson) {
@@ -165,18 +166,12 @@ public class Person {
     }
 
     /**
-     * Returns the identity representation of {@code phone}, retaining a leading {@code +} while removing spaces and
-     * hyphens.
+     * Returns the identity representation of {@code phone}. It removes spaces, hyphens, slashes, numeric-group
+     * parentheses, and annotations; preserves a leading {@code +}; normalizes extension markers to {@code x}; and
+     * retains the extension digits.
      */
     private static String normalizePhoneForIdentity(String phone) {
-        StringBuilder normalizedPhone = new StringBuilder(phone.length());
-        for (int i = 0; i < phone.length(); i++) {
-            char currentCharacter = phone.charAt(i);
-            if (currentCharacter != ' ' && currentCharacter != '-') {
-                normalizedPhone.append(currentCharacter);
-            }
-        }
-        return normalizedPhone.toString();
+        return Phone.normalizeForIdentity(phone);
     }
 
     /**
