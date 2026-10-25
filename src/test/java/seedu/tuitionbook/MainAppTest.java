@@ -108,6 +108,34 @@ public class MainAppTest {
     }
 
     @Test
+    public void migrateLegacyTuitionBookFile_currentFileExists_usesCurrentAndLeavesLegacyFile() throws Exception {
+        Path currentFile = testFolder.resolve("tuitionbook.json");
+        Path legacyFile = testFolder.resolve("addressbook.json");
+        String currentContents = "{\"persons\":[]}";
+        String legacyContents = "{\"persons\":[{\"name\":\"Legacy Alex\",\"phone\":\"87438807\",\"tags\":[]}]}";
+        Files.writeString(currentFile, currentContents);
+        Files.writeString(legacyFile, legacyContents);
+
+        Path selectedFile = new MainApp().migrateLegacyTuitionBookFile(currentFile, legacyFile);
+
+        assertEquals(currentFile, selectedFile);
+        assertEquals(currentContents, Files.readString(currentFile));
+        assertEquals(legacyContents, Files.readString(legacyFile));
+    }
+
+    @Test
+    public void migrateLegacyTuitionBookFile_filesMissing_usesCurrentFilePath() {
+        Path currentFile = testFolder.resolve("tuitionbook.json");
+        Path legacyFile = testFolder.resolve("addressbook.json");
+
+        Path selectedFile = new MainApp().migrateLegacyTuitionBookFile(currentFile, legacyFile);
+
+        assertEquals(currentFile, selectedFile);
+        assertFalse(Files.exists(currentFile));
+        assertFalse(Files.exists(legacyFile));
+    }
+
+    @Test
     public void clearThenRestart_existingEmptyDataFileDoesNotRestoreContacts() throws Exception {
         StorageManager storage = storage();
         TuitionBook tuitionBook = new TuitionBook();
