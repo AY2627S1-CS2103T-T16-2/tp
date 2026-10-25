@@ -28,6 +28,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Show the fatal startup error dialog when a packaged UI resource is missing or malformed, instead of raising a secondary null-window exception.
 - Rejected whitespace-, control-, or format-only and line-breaking addresses consistently when entered through commands or loaded from JSON.
 - Normalized phone spaces, hyphens, slashes, numeric-group parentheses, annotations, and equivalent extension markers during duplicate detection while retaining a leading `+` and extension digits.
 - Reported every missing mandatory `add` field in role, name, phone order, and showed the ordinary example before quoted-prefix guidance.
