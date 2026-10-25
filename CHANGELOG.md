@@ -11,6 +11,11 @@ The format is based on Keep a Changelog.
 ### Changed
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
+- Documented save-failure rollback in the Delete use case, including restoration of the contact, guardian links, and active filter.
+
+### Fixed
+
+- Continue startup with the unchanged legacy `addressbook.json` when permissions prevent migration to `tuitionbook.json`, allowing migration to be retried on a later launch.
 
 ## [v1.4] - 2026-10-22
 

@@ -53,8 +53,9 @@ public class MainApp extends Application {
 
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(USER_PREFS_FILE_PATH);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
-        migrateLegacyTuitionBookFile();
-        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(TUITION_BOOK_FILE_PATH);
+        Path tuitionBookFilePath = migrateLegacyTuitionBookFile(
+                TUITION_BOOK_FILE_PATH, LEGACY_TUITION_BOOK_FILE_PATH);
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(tuitionBookFilePath);
         storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
 
         StartupState startupState = loadStartupState(storage, userPrefs);
@@ -67,15 +68,26 @@ public class MainApp extends Application {
 
     /**
      * Moves the data file used before TuitionBook was renamed, unless a data file already exists at the current path.
-     *
-     * @throws IOException if the legacy data file cannot be moved to the current path.
+     * Returns the legacy path as a fallback if moving that file fails.
      */
-    private void migrateLegacyTuitionBookFile() throws IOException {
-        if (Files.notExists(TUITION_BOOK_FILE_PATH) && Files.exists(LEGACY_TUITION_BOOK_FILE_PATH)) {
-            logger.info("Moving legacy data file from " + LEGACY_TUITION_BOOK_FILE_PATH
-                    + " to " + TUITION_BOOK_FILE_PATH + ".");
-            Files.move(LEGACY_TUITION_BOOK_FILE_PATH, TUITION_BOOK_FILE_PATH);
+    Path migrateLegacyTuitionBookFile(Path currentFilePath, Path legacyFilePath) {
+        if (Files.notExists(currentFilePath) && Files.exists(legacyFilePath)) {
+            logger.info("Moving legacy data file from " + legacyFilePath
+                    + " to " + currentFilePath + ".");
+            try {
+                moveLegacyTuitionBookFile(legacyFilePath, currentFilePath);
+            } catch (IOException e) {
+                logger.warning("Could not move legacy data file to " + currentFilePath
+                        + ". Using the unchanged legacy file for this run: " + StringUtil.getDetails(e));
+                return legacyFilePath;
+            }
         }
+        return currentFilePath;
+    }
+
+    /** Moves a legacy data file to the current path; overridden in tests to simulate migration failures. */
+    protected void moveLegacyTuitionBookFile(Path source, Path target) throws IOException {
+        Files.move(source, target);
     }
 
     /**

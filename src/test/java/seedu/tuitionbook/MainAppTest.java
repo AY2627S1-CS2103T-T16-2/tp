@@ -74,6 +74,40 @@ public class MainAppTest {
     }
 
     @Test
+    public void migrateLegacyTuitionBookFile_moveFails_usesUnchangedLegacyFile() throws Exception {
+        Path currentFile = testFolder.resolve("tuitionbook.json");
+        Path legacyFile = testFolder.resolve("addressbook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(legacyFile, originalContents);
+        MainApp app = new MainApp() {
+            @Override
+            protected void moveLegacyTuitionBookFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated permission failure");
+            }
+        };
+
+        Path selectedFile = assertDoesNotThrow(() -> app.migrateLegacyTuitionBookFile(currentFile, legacyFile));
+
+        assertEquals(legacyFile, selectedFile);
+        assertEquals(originalContents, Files.readString(legacyFile));
+        assertFalse(Files.exists(currentFile));
+    }
+
+    @Test
+    public void migrateLegacyTuitionBookFile_moveSucceeds_usesCurrentFile() throws Exception {
+        Path currentFile = testFolder.resolve("tuitionbook.json");
+        Path legacyFile = testFolder.resolve("addressbook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(legacyFile, originalContents);
+
+        Path selectedFile = new MainApp().migrateLegacyTuitionBookFile(currentFile, legacyFile);
+
+        assertEquals(currentFile, selectedFile);
+        assertEquals(originalContents, Files.readString(currentFile));
+        assertFalse(Files.exists(legacyFile));
+    }
+
+    @Test
     public void clearThenRestart_existingEmptyDataFileDoesNotRestoreContacts() throws Exception {
         StorageManager storage = storage();
         TuitionBook tuitionBook = new TuitionBook();
