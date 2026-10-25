@@ -68,6 +68,9 @@ public class HelpWindowTest {
             assertEquals(450, helpWindow.getRoot().getMinWidth());
             assertEquals(320, helpWindow.getRoot().getMinHeight());
             IMPLEMENTED_COMMAND_SYNTAX.forEach(syntax -> assertTrue(commandSummary.getText().contains(syntax)));
+            assertTrue(commandSummary.getText().contains("Unknown prefixes are rejected"));
+            assertTrue(commandSummary.getText().contains("add/edit names, addresses and tags"));
+            assertTrue(commandSummary.getText().contains("a/\"20 Main Road, c/o Rina a/p Kaur\""));
             assertEquals(HelpWindow.HELP_MESSAGE, helpMessage.getText());
             assertEquals("Open User Guide", openButton.getText());
             assertEquals("Copy URL", copyButton.getText());

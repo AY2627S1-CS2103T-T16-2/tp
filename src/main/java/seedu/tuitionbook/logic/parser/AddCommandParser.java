@@ -9,8 +9,9 @@ import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import seedu.tuitionbook.logic.commands.AddCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
@@ -34,19 +35,24 @@ public class AddCommandParser implements Parser<AddCommand> {
      */
     public AddCommand parse(String args) throws ParseException {
         ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenizeWithQuotedValues(args, Set.of(PREFIX_NAME, PREFIX_TAG), PREFIX_ROLE,
-                        PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_GUARDIAN);
+                ArgumentTokenizer.tokenizeWithQuotedValues(args, Set.of(PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG),
+                        PREFIX_ROLE, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_GUARDIAN);
 
         if (argMultimap.getValue(PREFIX_GUARDIAN).isPresent()) {
             throw new ParseException(AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
         }
 
-        if (!arePrefixesPresent(argMultimap, PREFIX_ROLE, PREFIX_NAME, PREFIX_PHONE)
-                || !argMultimap.getPreamble().isEmpty()) {
+        if (!argMultimap.getPreamble().isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
 
         argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_ROLE, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS);
+        List<String> missingRequiredFields = getMissingRequiredFields(argMultimap);
+        if (!missingRequiredFields.isEmpty()) {
+            throw new ParseException(String.format(AddCommand.MESSAGE_MISSING_REQUIRED_FIELDS,
+                    String.join(", ", missingRequiredFields), AddCommand.MESSAGE_USAGE));
+        }
+
         Role role = ParserUtil.parseRole(argMultimap.getValue(PREFIX_ROLE).get());
         Name name = ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get());
         Phone phone = ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get());
@@ -62,11 +68,21 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     /**
-     * Returns true if none of the prefixes contains empty {@code Optional} values in the given
-     * {@code ArgumentMultimap}.
+     * Returns the labels of missing mandatory fields in command-usage order.
      */
-    private static boolean arePrefixesPresent(ArgumentMultimap argumentMultimap, Prefix... prefixes) {
-        return Stream.of(prefixes).allMatch(prefix -> argumentMultimap.getValue(prefix).isPresent());
+    private static List<String> getMissingRequiredFields(ArgumentMultimap argumentMultimap) {
+        List<String> missingFields = new ArrayList<>();
+        addIfMissing(argumentMultimap, PREFIX_ROLE, "ROLE", missingFields);
+        addIfMissing(argumentMultimap, PREFIX_NAME, "NAME", missingFields);
+        addIfMissing(argumentMultimap, PREFIX_PHONE, "PHONE", missingFields);
+        return missingFields;
+    }
+
+    private static void addIfMissing(ArgumentMultimap argumentMultimap, Prefix prefix, String fieldName,
+            List<String> missingFields) {
+        if (argumentMultimap.getValue(prefix).isEmpty()) {
+            missingFields.add(prefix + fieldName);
+        }
     }
 
 }
