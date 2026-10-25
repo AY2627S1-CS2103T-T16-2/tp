@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.tuitionbook.logic.Messages.getInvalidPersonDisplayedIndexMessage;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;

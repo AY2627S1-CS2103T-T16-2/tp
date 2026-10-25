@@ -148,11 +148,11 @@ public class MainWindowTest {
             });
 
             try {
-                assertTrue(JavaFxTestUtil.waitForFxCondition(
-                        () -> isPersonDisplayed(fixture.personListView(), fixture.addedPerson())),
+                assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                        isPersonDisplayed(fixture.personListView(), fixture.addedPerson())),
                         "Added contact should be visible for " + existingContactCount + " existing contacts");
-                assertNull(JavaFxTestUtil.callOnFxThread(
-                        () -> fixture.personListView().getSelectionModel().getSelectedItem()));
+                assertNull(JavaFxTestUtil.callOnFxThread(() ->
+                        fixture.personListView().getSelectionModel().getSelectedItem()));
             } finally {
                 JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
             }
