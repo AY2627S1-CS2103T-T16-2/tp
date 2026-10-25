@@ -85,6 +85,52 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_mixedCaseCommands_preserveValuesAndPersistChanges() throws Exception {
+        logic.execute("AdD r/student n/Case Sensitive p/91234567 a/Blk\u00a012\u3000Road"
+                + " t/Math t/\"call p/Next Week\"");
+        Person person = model.getTuitionBook().getPersonList().getFirst();
+        assertEquals(new Name("Case Sensitive"), person.getName());
+        assertEquals(new Address("Blk\u00a012\u3000Road"), person.getAddress().orElseThrow());
+        assertEquals(Set.of(new Tag("Math"), new Tag("call p/Next Week")), person.getTags());
+        logic.execute("EdIt 1 p/92345678");
+        logic.execute("TaG 1 t/UPPER");
+        Person updated = model.getTuitionBook().getPersonList().getFirst();
+        logic.execute("ReLoAd");
+        assertEquals(updated, model.getTuitionBook().getPersonList().getFirst());
+        assertEquals(person.getId(), model.getTuitionBook().getPersonList().getFirst().getId());
+        assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, logic.execute("HeLp").getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_rejectedCommandSyntax_doesNotSaveOrChangeContactsAndFilter() throws Exception {
+        logic.execute("add r/student n/Amy p/91234567 t/Math");
+        logic.execute("add r/guardian n/Guardian p/98765432");
+        logic.execute("find Amy");
+        TuitionBook original = new TuitionBook(model.getTuitionBook());
+        Predicate<Person> filter = model.getFilteredPersonListPredicate();
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(file);
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(file, DUMMY_AD_EXCEPTION);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("SyntaxPrefs.json"))));
+
+        for (String input : List.of("help extra", "exit extra", "reload extra", "HELP extra", "EXIT extra",
+                "RELOAD extra", "CLEAR CONFIRM", "ADD R/student n/Bad p/123", "delete\u00a01",
+                "delete 1\u3000", "edit 1\u00a0 n/Changed", "link 1\u30002", "clear confirm\u2028",
+                "edit 1 n/Changed\u2029", "\nclear confirm")) {
+            assertThrows(ParseException.class, () -> logic.execute(input));
+            assertEquals(original, model.getTuitionBook());
+            assertEquals(original.getPersonList().stream().map(Person::getId).toList(),
+                    model.getTuitionBook().getPersonList().stream().map(Person::getId).toList());
+            assertSame(filter, model.getFilteredPersonListPredicate());
+            assertEquals(displayed, model.getFilteredPersonList());
+            assertArrayEquals(originalBytes, Files.readAllBytes(file));
+        }
+        assertEquals(0, fileStorage.getSaveCallCount());
+    }
+
+    @Test
     public void execute_unknownPrefixes_rejectWithoutChangingBookFilterOrFile() throws Exception {
         logic.execute("add r/student n/Amy p/91234567 t/Math");
         logic.execute("find Amy");

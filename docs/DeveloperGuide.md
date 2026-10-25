@@ -14,7 +14,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 * Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its strict prefix checks and quoted addresses are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, strict prefix checks and quoted addresses are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -139,7 +139,19 @@ How the parsing works:
 * `AddCommandParser` uses `ArgumentTokenizer`, `ArgumentMultimap`, the `Prefix` constants in `CliSyntax`, and `ParserUtil` to parse arguments and construct an `AddCommand`. `EditCommandParser`, `ListCommandParser`, and `ViewCommandParser` also use these utilities. Other parsers use only the helpers they need; for example, `DeleteCommandParser`, `LinkCommandParser`, and `UnlinkCommandParser` use `ParserUtil` to parse indexes.
 * `TagCommandParser` and `UntagCommandParser` delegate argument parsing to the package-private `TagModificationCommandParser` helper, passing their respective command constructor references. The helper uses the same tokenization and validation utilities and invokes the supplied constructor after parsing. It does not implement `Parser`.
 * `ArgumentTokenizer` creates an `ArgumentMultimap`, which stores argument values keyed by `Prefix`. `CliSyntax` defines the recognized prefix constants; `ParserUtil` parses values and indexes without depending on `Prefix`.
-* `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser. In all cases it returns the resulting object as a `Command`.
+* `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser, after rejecting non-blank arguments. In all cases it returns the resulting object as a `Command`.
+
+#### Command-input boundary
+
+`CommandTextField` converts pasted tabs and line separators to normal spaces before the text reaches the parser, including inside quoted values. A CRLF pair becomes one space. This GUI conversion preserves word boundaries and does not execute the pasted text.
+
+As a fallback for raw input that reaches it without command-box conversion, `TuitionBookParser` rejects actual line breaks before trimming or dispatching, using Java's `\R` definition (CR/LF, vertical tab, form feed, NEL, line separator and paragraph separator). The error identifies the first line-break code point. This also applies inside quotes and at the input edges; the parser does not split or join multiple commands. Normal GUI paste therefore does not produce this line-break diagnostic.
+
+Only the extracted command word is lowercased with `Locale.ROOT`. Prefixes, arguments, quoted values, tag identity and the exact `confirm` keyword are not case-normalised. This keeps command lookup independent of the computer's locale without changing contact data.
+
+`ParserUtil.checkForUnsupportedSpaces` diagnoses NBSP (`U+00A0`) and ideographic/full-width space (`U+3000`) only in command words, no-argument command tails and positional-index text. It does not scan field values. Indexed command parsers perform this check before wrapping ordinary invalid-index errors in command-specific usage, and `link` checks before splitting its two indexes. `parseIndex` also checks direct callers. Other invisible-character policies and field validation remain outside this change.
+
+These failures occur during parsing, before command execution, model mutation or contact saving. `help`, `exit` and `reload` with extra arguments never produce an executable command. See [Command input and diagnostics](#command-input-and-diagnostics) for manual scenarios.
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/model/Model.java)
@@ -727,6 +739,27 @@ Use these scenarios to check visible behaviour and persistence. Start with [Laun
 
 **Note:** These instructions only provide a starting point for testers to work on; testers are expected to do more *exploratory* testing.
 </box>
+
+### Command input and diagnostics
+
+Use a fresh, disposable folder with an empty contact list. These steps describe the v1.5 development build, not the released v1.4 JAR.
+
+1. Enter `AdD r/student n/Case Sensitive p/91234567 a/12 Main Road t/Math`, then `LiSt` and `ViEw 1`.<br>
+   Expected: One contact is stored and displayed; the name remains `Case Sensitive`, the address `12 Main Road`, and the tag `Math`.
+1. Enter `help extra`, `EXIT extra`, and `ReLoAd extra` separately.<br>
+   Expected: Each reports an invalid-format error with the relevant usage. The app stays open, no Help window opens, and contacts are not reloaded or changed.
+1. Enter `CLEAR CONFIRM` and `ADD R/student n/Rejected p/92345678` separately.<br>
+   Expected: Both are rejected. Command-word casing does not relax confirmation or field-prefix syntax; the existing contact is unchanged.
+1. For the remaining diagnostic tests, replace each bracketed token with the actual character before submitting; do not type the bracketed name literally. A text editor's Unicode insertion feature can supply these characters.
+   * `delete[NBSP]1` and `delete 1[NBSP]`, with `[NBSP]` replaced by U+00A0.
+   * `link 1[IDEOGRAPHIC SPACE]2`, with the token replaced by U+3000.<br>
+   Expected: The result identifies the unexpected character's code point and how to correct it; no contact is changed or deleted.
+1. Enter `EdIt 1 a/Blk[NBSP]12[IDEOGRAPHIC SPACE]Road`, substituting actual U+00A0 and U+3000 characters inside the address.<br>
+   Expected: The address is accepted unchanged under its field rules; syntax diagnostics do not normalise address data.
+1. Enter `ExIt`, restart the app, and enter `view 1`.<br>
+   Expected: Normal exit works, there is still exactly one contact, and its name, tag and updated address retain their case and spacing.
+
+Pasted tabs and line separators are converted to spaces by the command box, including inside quoted names. Verify this separately using [Pasting separators into the command box](#pasting-separators-into-the-command-box); do not expect a U+2028/U+2029 rejection from normal GUI paste. Raw line-break rejection is a parser fallback covered by `TuitionBookParserTest.parseCommand_lineBreaks_reportCodePointBeforeTrimmingOrDispatch` and the rejected-syntax tests in `LogicManagerTest`, including checks that contacts and stored bytes stay unchanged.
 
 ### Contact validation and missing add fields
 

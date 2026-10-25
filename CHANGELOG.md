@@ -14,6 +14,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 - Expanded the documented contact-field validation subset to support right curly apostrophes in names; phone groups separated by spaces, hyphens, or slashes, optional trailing phone annotations, and numeric extensions; apostrophes and punycode labels in email addresses; and explicitly single-line addresses.
 - Clarified that names accept ordinary ASCII spaces (U+0020), rather than every Unicode whitespace character.
@@ -29,14 +30,10 @@ The format is based on Keep a Changelog.
 - Focused the command box after startup and after dismissing a startup notice so typing is immediately available without accidentally activating Help.
 - Allowed contact cards to grow and shrink with wrapped tag rows, preventing tags from obscuring contact details or neighbouring cards at narrow widths.
 - Split the dense delete sequence diagram into focused parsing and execution diagrams that remain readable at normal browser zoom.
-
-### Fixed
-
 - Reject unknown space-separated ASCII-letter prefixes in `add`, `edit`, `list`, `tag` and `untag` rather than silently absorbing mistyped prefixes into field values; intentional literal text must be quoted (#193). Stored values, field validation, tag identity and whitespace trimming are unchanged.
-
-### Fixed
-
-- Split the dense delete sequence diagram into focused parsing and execution diagrams that remain readable at normal browser zoom.
+- Reject extra arguments to `help` and `exit`, consistently with `reload`, rather than opening Help or exiting unexpectedly.
+- Report raw line-break code points and correction guidance when input reaches the parser without command-box conversion, and diagnose non-breaking/full-width spaces in command words and indexes without normalising those characters in field values.
+- Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.
 
 ## [v1.4] - 2026-10-22
 

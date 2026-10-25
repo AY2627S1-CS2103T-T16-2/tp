@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import seedu.tuitionbook.commons.core.index.Index;
@@ -22,6 +23,24 @@ import seedu.tuitionbook.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+    public static final String MESSAGE_UNSUPPORTED_SPACE = "Unexpected %s (U+%04X). "
+            + "Retype the command separator or index using normal spaces (U+0020).";
+
+    /**
+     * Diagnoses known lookalike spaces in command syntax, without normalising user data.
+     * Call only on command words, no-argument command tails or positional indexes, never on field values.
+     * Index parsers also call this before their generic usage-error wrappers so the diagnosis remains visible.
+     */
+    static void checkForUnsupportedSpaces(String input) throws ParseException {
+        for (int i = 0; i < input.length(); i++) {
+            char space = input.charAt(i);
+            if (space == '\u00a0' || space == '\u3000') {
+                String description = space == '\u00a0' ? "non-breaking space" : "full-width space";
+                throw new ParseException(String.format(Locale.ROOT, MESSAGE_UNSUPPORTED_SPACE,
+                        description, (int) space));
+            }
+        }
+    }
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
@@ -29,6 +48,7 @@ public class ParserUtil {
      * @throws ParseException if the specified index is invalid (not a non-zero unsigned integer).
      */
     public static Index parseIndex(String oneBasedIndex) throws ParseException {
+        checkForUnsupportedSpaces(oneBasedIndex);
         String trimmedIndex = oneBasedIndex.trim();
         if (!StringUtil.isNonZeroUnsignedInteger(trimmedIndex)) {
             throw new ParseException(MESSAGE_INVALID_INDEX);
