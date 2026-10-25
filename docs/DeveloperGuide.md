@@ -226,9 +226,9 @@ Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)
 
 The working set preserves indexes across non-deleting mutations and compacts them after deletion. `ModelManager` stores ordered UUIDs separately from contact values. An explicit `ListCommand` or `FindCommand` establishes its predicate and canonical refresh command together through one model call. Refresh text is generated from immutable parsed criteria, independently of the original input text. List commands normalize role/prefix order and quote and escape tags where needed, preserving internal tag whitespace; find commands join their parsed keywords with single spaces. Matching rules and stored contact values are unchanged. Existing hidden contacts are not automatically inserted when their values change.
 
-`setPerson` updates displayed values in place, including contacts that no longer match. Matching additions append; nonmatching additions remain hidden and receive location guidance. Deletion removes the UUID and compacts survivors without rerunning the query; deleting a guardian also updates linked students. `setTuitionBook`, used by successful reload and clear, resets to the full unfiltered book. Restart constructs a new full working set. Rejected and unchanged mutations preserve the view.
+`setPerson` updates displayed values in place, including contacts that no longer match. Matching additions append; nonmatching additions remain hidden. The add command checks its own contact UUID and prepares location guidance, independently of contact-list ordering; LogicManager returns that feedback only after any required save succeeds. Deletion removes the UUID and compacts survivors without rerunning the query; deleting a guardian also updates linked students. `setTuitionBook`, used by successful reload and clear, resets to the full unfiltered book. Restart constructs a new full working set. Rejected and unchanged mutations preserve the view.
 
-`PersonListViewState` copies UUID membership/order and retains the predicate and query. On an actual save failure, `LogicManager` restores contacts, then this snapshot, preserving appended rows and retained exceptions exactly. The JSON schema is unchanged and contains no working-set state. Refreshing displayed values requires an O(n) UUID lookup; no constant-time or benchmark claim is made.
+`PersonListViewState` copies UUID membership/order and retains the predicate and query. On an actual save failure, `LogicManager` restores contacts, then this snapshot, preserving appended rows and retained exceptions exactly. Every query supplies explicit refresh text; there is no implicit show-all fallback for arbitrary predicates. The query accessor is named `getPersonListQueryPredicate()` because retained displayed contacts may no longer match it. Actual membership comes from the displayed list or snapshot UUIDs. The JSON schema is unchanged and contains no working-set state. Refreshing displayed values requires an O(n) UUID lookup; no constant-time or benchmark claim is made.
 
 `PersonListPanel` supplies each card with a notice when its current values fail the originating predicate. Match status is derived from current data, so it clears when a contact matches again and is correct after rollback. Mutating-command feedback gives the query to refresh; hidden additions explain how to locate the saved contact. Deletion warns that subsequent indexes may have changed.
 
@@ -1077,6 +1077,11 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: `find bob` replaces the previous filter and shows only Bob Lim. `list` restores all seven contacts in their original order. None of the contacts or the guardian link has changed.
 1. Enter `find`, then enter `find` followed only by spaces.<br>
    Expected: Each command reports an invalid-command format message containing the updated `find` usage, including `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
+
+### Editing without losing scroll position
+
+Use at least 120 synthetic contacts in disposable storage. Scroll near the bottom so that contact 91 is visible and note the first visible contact and scrollbar position. Enter `edit 91 p/98888888`.<br>
+Expected: the phone updates in place and the viewport stays at the same part of the list. Repeat with another visible contact. Explicit queries, deletion compaction and adding a contact are separate view operations; this check concerns edits that keep the same working-set membership and card height.
 
 ### Stable indexes across contact changes
 

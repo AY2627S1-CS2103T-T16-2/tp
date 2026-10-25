@@ -38,7 +38,8 @@ public class LinkCommandTest {
                 .withId(STUDENT_ID).withEmail("student@example.com").withAddress("1 Main Street")
                 .withTags("primary", "math").withGuardian(oldGuardian).build();
         ModelManager model = modelWith(student, oldGuardian, newGuardian);
-        model.updateFilteredPersonList(person -> !person.getId().equals(oldGuardian.getId()));
+        model.updateFilteredPersonList(person -> !person.getId().equals(oldGuardian.getId()),
+                "test-only UUID selection");
         assertEquals(List.of(student, newGuardian), model.getFilteredPersonList());
 
         CommandResult result = new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(2)).execute(model);
@@ -104,7 +105,7 @@ public class LinkCommandTest {
     @Test
     public void execute_noMatchesFilter_reportsStudentIndexFailureAndPreservesFilter() {
         ModelManager model = modelWithStudentAndGuardian();
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
 
         assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(1)), model,
                 invalidStudentIndexMessage(0));
@@ -113,7 +114,7 @@ public class LinkCommandTest {
     @Test
     public void execute_roleFilteredList_reportsGuardianIndexUsingDisplayedCount() {
         ModelManager model = modelWithStudentAndGuardian();
-        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN));
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN), "list r/guardian");
 
         assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(2)), model,
                 invalidGuardianIndexMessage(1));
@@ -205,7 +206,8 @@ public class LinkCommandTest {
 
     private static ModelManager filteredModel(Person firstPerson, Person secondPerson, Person hiddenPerson) {
         ModelManager model = modelWith(firstPerson, secondPerson, hiddenPerson);
-        model.updateFilteredPersonList(person -> !person.getId().equals(hiddenPerson.getId()));
+        model.updateFilteredPersonList(person -> !person.getId().equals(hiddenPerson.getId()),
+                "test-only UUID selection");
         assertEquals(List.of(firstPerson, secondPerson), model.getFilteredPersonList());
         return model;
     }

@@ -42,7 +42,7 @@ public class QueryRefreshCommandTest {
             String refresh = original.getPersonListViewState().refreshCommand();
             ModelManager replayed = new ModelManager();
             parser.parseCommand(refresh).execute(replayed);
-            assertEquals(original.getFilteredPersonListPredicate(), replayed.getFilteredPersonListPredicate(), input);
+            assertEquals(original.getPersonListQueryPredicate(), replayed.getPersonListQueryPredicate(), input);
             assertEquals(refresh, replayed.getPersonListViewState().refreshCommand(), input);
         }
         ModelManager model = new ModelManager();

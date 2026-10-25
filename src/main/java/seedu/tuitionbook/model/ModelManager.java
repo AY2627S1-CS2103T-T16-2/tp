@@ -44,7 +44,7 @@ public class ModelManager implements Model {
 
         this.tuitionBook = new TuitionBook(tuitionBook);
         this.userPrefs = new UserPrefs(userPrefs);
-        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, "list");
     }
 
     public ModelManager() {
@@ -74,7 +74,7 @@ public class ModelManager implements Model {
     @Override
     public void setTuitionBook(ReadOnlyTuitionBook tuitionBook) {
         this.tuitionBook.resetData(tuitionBook);
-        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, "list");
     }
 
     @Override
@@ -139,13 +139,8 @@ public class ModelManager implements Model {
     }
 
     @Override
-    public Predicate<Person> getFilteredPersonListPredicate() {
+    public Predicate<Person> getPersonListQueryPredicate() {
         return filteredPersonListPredicate;
-    }
-
-    @Override
-    public void updateFilteredPersonList(Predicate<Person> predicate) {
-        updateFilteredPersonList(predicate, "list");
     }
 
     @Override

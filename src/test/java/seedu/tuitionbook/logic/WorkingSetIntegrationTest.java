@@ -97,9 +97,9 @@ public class WorkingSetIntegrationTest {
         execute("tag 1 t/Inactive", "untag 2 t/Active");
         assertEquals(originalIds, ids());
         assertEquals(2, model.getFilteredPersonList().stream()
-                .filter(model.getFilteredPersonListPredicate().negate()).count());
+                .filter(model.getPersonListQueryPredicate().negate()).count());
         logic.execute("tag 1 t/Active");
-        assertTrue(model.getFilteredPersonListPredicate().test(model.getFilteredPersonList().getFirst()));
+        assertTrue(model.getPersonListQueryPredicate().test(model.getFilteredPersonList().getFirst()));
         logic.execute("list t/Active");
         assertEquals(List.of("Alex Student"), names());
         logic.execute("list");

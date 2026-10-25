@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 import javafx.collections.ObservableList;
 import seedu.tuitionbook.commons.core.GuiSettings;
 import seedu.tuitionbook.commons.core.LogsCenter;
-import seedu.tuitionbook.logic.commands.AddCommand;
 import seedu.tuitionbook.logic.commands.Command;
 import seedu.tuitionbook.logic.commands.CommandResult;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
@@ -69,7 +68,7 @@ public class LogicManager implements Logic {
             }
         }
 
-        return command.canMutate() ? addViewFeedback(command, commandResult) : commandResult;
+        return command.canMutate() ? addViewFeedback(commandResult) : commandResult;
     }
 
     private void restoreModel(TuitionBook tuitionBook, PersonListViewState view) {
@@ -78,15 +77,8 @@ public class LogicManager implements Logic {
     }
 
     /** Adds guidance after any required save completes, so a failed save never reports success. */
-    private CommandResult addViewFeedback(Command command, CommandResult result) {
+    private CommandResult addViewFeedback(CommandResult result) {
         PersonListViewState view = model.getPersonListViewState();
-        if (command instanceof AddCommand) {
-            Person added = model.getTuitionBook().getPersonList().getLast();
-            if (!view.personIds().contains(added.getId())) {
-                result = result.withAdditionalFeedback("The new contact is saved but does not match this working set. "
-                        + "Use list to locate it, or refresh with: " + view.refreshCommand());
-            }
-        }
         long retainedCount = model.getFilteredPersonList().stream().filter(view.predicate().negate()).count();
         if (retainedCount > 0) {
             result = result.withAdditionalFeedback(retainedCount + " displayed contact(s) no longer match the query "

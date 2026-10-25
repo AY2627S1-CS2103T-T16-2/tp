@@ -1,6 +1,7 @@
 package seedu.tuitionbook.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
@@ -39,7 +40,8 @@ public class WorkingSetTest {
         Person eve = new PersonBuilder().withName("Eve Student").withTags("Active").build();
         model.addPerson(eve);
         assertEquals(List.of(john, alex, eve), model.getFilteredPersonList());
-        model.updateFilteredPersonList(model.getFilteredPersonListPredicate());
+        model.updateFilteredPersonList(model.getPersonListQueryPredicate(),
+                model.getPersonListViewState().refreshCommand());
         assertEquals(List.of(alex, john, editedHidden, eve), model.getFilteredPersonList());
     }
 
@@ -50,12 +52,13 @@ public class WorkingSetTest {
         Model model = new ModelManager();
         model.addPerson(alex);
         model.addPerson(john);
-        model.updateFilteredPersonList(person -> !person.getTags().isEmpty());
+        model.updateFilteredPersonList(person -> !person.getTags().isEmpty(), "list t/Active");
 
         Person editedAlex = new PersonBuilder(alex).withTags().build();
         model.setPerson(alex, editedAlex);
 
         assertEquals(List.of(editedAlex, john), model.getFilteredPersonList());
+        assertFalse(model.getPersonListQueryPredicate().test(editedAlex));
     }
 
     @Test
@@ -65,13 +68,14 @@ public class WorkingSetTest {
         Model model = new ModelManager();
         model.addPerson(hidden);
         model.addPerson(visible);
-        model.updateFilteredPersonList(person -> !person.getTags().isEmpty());
+        model.updateFilteredPersonList(person -> !person.getTags().isEmpty(), "list t/Active");
 
         Person editedHidden = new PersonBuilder(hidden).withTags("Active").build();
         model.setPerson(hidden, editedHidden);
         assertEquals(List.of(visible), model.getFilteredPersonList());
 
-        model.updateFilteredPersonList(model.getFilteredPersonListPredicate());
+        model.updateFilteredPersonList(model.getPersonListQueryPredicate(),
+                model.getPersonListViewState().refreshCommand());
         assertEquals(List.of(editedHidden, visible), model.getFilteredPersonList());
     }
 }

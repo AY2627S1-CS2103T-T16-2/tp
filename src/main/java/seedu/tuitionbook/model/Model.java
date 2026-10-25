@@ -64,8 +64,11 @@ public interface Model {
     /** Returns an unmodifiable view of the filtered person list */
     ObservableList<Person> getFilteredPersonList();
 
-    /** Returns the originating query predicate, independently of retained working-set members. */
-    Predicate<Person> getFilteredPersonListPredicate();
+    /**
+     * Returns the originating query predicate. Retained displayed contacts may fail this predicate;
+     * use {@link #getFilteredPersonList()} to inspect actual displayed membership.
+     */
+    Predicate<Person> getPersonListQueryPredicate();
 
     /** Returns a snapshot of the displayed UUIDs, their order and the originating query. */
     PersonListViewState getPersonListViewState();
@@ -74,11 +77,8 @@ public interface Model {
     void restorePersonListViewState(PersonListViewState state);
 
     /**
-     * Replaces the working set by evaluating {@code predicate} once in normal contact-list order.
-     * @throws NullPointerException if {@code predicate} is null.
+     * Replaces the working set and its equivalent refresh command together.
+     * Every query, including show-all, must supply its refresh command explicitly.
      */
-    void updateFilteredPersonList(Predicate<Person> predicate);
-
-    /** Replaces the working set and its equivalent refresh command together. */
     void updateFilteredPersonList(Predicate<Person> predicate, String refreshCommand);
 }

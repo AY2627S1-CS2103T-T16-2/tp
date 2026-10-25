@@ -40,7 +40,7 @@ public class ReloadCommand extends Command {
                     + recovery, exception);
         }
         model.setTuitionBook(result.tuitionBook());
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, "list");
         String message = String.format(MESSAGE_SUCCESS, model.getFilteredPersonList().size());
         if (result.repairedGuardianLinkCount() > 0) {
             message += " Removed " + result.repairedGuardianLinkCount()

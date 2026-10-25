@@ -30,7 +30,7 @@ public class UnlinkCommandTest {
         Person guardian = guardian();
         Person student = linkedStudent(guardian);
         ModelManager model = modelWith(guardian, student);
-        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT));
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT), "list r/student");
 
         CommandResult result = new UnlinkCommand(Index.fromOneBased(1)).execute(model);
 
@@ -46,7 +46,7 @@ public class UnlinkCommandTest {
         Person student = unlinkedStudent();
         Person guardian = guardian();
         ModelManager model = modelWith(student, guardian);
-        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT));
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT), "list r/student");
         List<Person> expectedContacts = new ArrayList<>(model.getTuitionBook().getPersonList());
         List<Person> expectedFilteredContacts = new ArrayList<>(model.getFilteredPersonList());
 
