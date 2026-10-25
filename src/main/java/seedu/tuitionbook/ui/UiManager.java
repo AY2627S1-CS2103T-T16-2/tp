@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import seedu.tuitionbook.MainApp;
@@ -58,7 +59,7 @@ public class UiManager implements Ui {
 
         } catch (Throwable e) {
             logger.severe(StringUtil.getDetails(e));
-            showFatalErrorDialogAndShutdown("Fatal error during initializing", e);
+            showFatalErrorDialogAndShutdown(primaryStage, "Fatal error during initializing", e);
         }
     }
 
@@ -127,7 +128,9 @@ public class UiManager implements Ui {
                                                String contentText) {
         final Alert alert = new Alert(type);
         alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
-        alert.initOwner(owner);
+        if (owner != null && owner.getScene() != null) {
+            alert.initOwner(owner);
+        }
         alert.setTitle(title);
         alert.setHeaderText(headerText);
         alert.setContentText(contentText);
@@ -139,11 +142,39 @@ public class UiManager implements Ui {
      * Shows an error alert dialog with {@code title} and error message, {@code e},
      * and exits the application after the user has closed the alert dialog.
      */
-    private void showFatalErrorDialogAndShutdown(String title, Throwable e) {
-        logger.severe(title + " " + e.getMessage() + StringUtil.getDetails(e));
-        showAlertDialogAndWait(Alert.AlertType.ERROR, title, e.getMessage(), e.toString());
+    private void showFatalErrorDialogAndShutdown(Stage owner, String title, Throwable e) {
+        showFatalErrorDialog(owner, title, e);
         Platform.exit();
         System.exit(1);
+    }
+
+    /** Shows the fatal startup error without depending on the main window being initialized. */
+    void showFatalErrorDialog(Stage owner, String title, Throwable e) {
+        String errorMessage = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+        logger.severe(title + " " + errorMessage + StringUtil.getDetails(e));
+        showFatalErrorDialogAndWait(owner, title, errorMessage, e.toString());
+    }
+
+    /** Shows a fatal error's details in a wrapped, readable control. */
+    private static void showFatalErrorDialogAndWait(Stage owner, String title, String headerText,
+                                                    String detailsText) {
+        final Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
+        if (owner != null && owner.getScene() != null) {
+            alert.initOwner(owner);
+        }
+        alert.setTitle(title);
+        alert.setHeaderText(headerText);
+
+        TextArea details = new TextArea(detailsText);
+        details.setEditable(false);
+        details.setWrapText(true);
+        details.setFocusTraversable(false);
+        details.setPrefColumnCount(70);
+        details.setPrefRowCount(4);
+        alert.getDialogPane().setContent(details);
+        alert.getDialogPane().setId(ALERT_DIALOG_PANE_FIELD_ID);
+        alert.showAndWait();
     }
 
 }

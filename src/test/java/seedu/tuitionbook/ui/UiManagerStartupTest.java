@@ -136,6 +136,92 @@ public class UiManagerStartupTest {
         }
     }
 
+    @Test
+    public void fatalStartupError_beforeMainWindowExists_showsUnownedErrorDialog() throws Exception {
+        Stage owner = JavaFxTestUtil.callOnFxThread(Stage::new);
+        IllegalStateException startupFailure = new IllegalStateException("MainWindow.fxml is missing");
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        CountDownLatch inspected = new CountDownLatch(1);
+
+        try {
+            Platform.runLater(() -> {
+                try {
+                    new UiManager(logic(), dataFilePath(), Optional.empty())
+                            .showFatalErrorDialog(owner, "Fatal error during initializing", startupFailure);
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                }
+            });
+            Platform.runLater(() -> {
+                try {
+                    DialogPane pane = findDialogPane();
+                    assertEquals("Fatal error during initializing",
+                            ((Stage) pane.getScene().getWindow()).getTitle());
+                    assertNull(((Stage) pane.getScene().getWindow()).getOwner());
+                    assertEquals("MainWindow.fxml is missing", pane.getHeaderText());
+                    TextArea details = (TextArea) pane.getContent();
+                    assertEquals(startupFailure.toString(), details.getText());
+                    assertFalse(details.isEditable());
+                    assertTrue(details.isWrapText());
+                    assertTrue(pane.getStyleClass().contains("error"));
+                    pane.getScene().getWindow().hide();
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                } finally {
+                    inspected.countDown();
+                }
+            });
+
+            assertTrue(inspected.await(10, TimeUnit.SECONDS), "Fatal startup dialog was not inspected in time");
+            if (failure.get() != null) {
+                throw new AssertionError(failure.get());
+            }
+        } finally {
+            JavaFxTestUtil.runOnFxThread(owner::close);
+        }
+    }
+
+    @Test
+    public void fatalStartupError_withoutExceptionMessage_showsExceptionType() throws Exception {
+        Stage owner = JavaFxTestUtil.callOnFxThread(Stage::new);
+        NullPointerException startupFailure = new NullPointerException();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        CountDownLatch inspected = new CountDownLatch(1);
+
+        try {
+            Platform.runLater(() -> {
+                try {
+                    new UiManager(logic(), dataFilePath(), Optional.empty())
+                            .showFatalErrorDialog(owner, "Fatal error during initializing", startupFailure);
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                }
+            });
+            Platform.runLater(() -> {
+                try {
+                    DialogPane pane = findDialogPane();
+                    assertEquals("NullPointerException", pane.getHeaderText());
+                    TextArea details = (TextArea) pane.getContent();
+                    assertEquals(startupFailure.toString(), details.getText());
+                    assertFalse(details.isEditable());
+                    assertTrue(details.isWrapText());
+                    pane.getScene().getWindow().hide();
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                } finally {
+                    inspected.countDown();
+                }
+            });
+
+            assertTrue(inspected.await(10, TimeUnit.SECONDS), "Fatal startup dialog was not inspected in time");
+            if (failure.get() != null) {
+                throw new AssertionError(failure.get());
+            }
+        } finally {
+            JavaFxTestUtil.runOnFxThread(owner::close);
+        }
+    }
+
     private void assertStartupDialog(StartupNotice notice, String title, String header, String content,
                                      String styleClass) throws Exception {
         assertStartupDialog(dataFilePath(), notice, title, header, content, styleClass);
