@@ -22,6 +22,7 @@ import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
+import seedu.tuitionbook.model.person.Phone;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
@@ -32,6 +33,9 @@ import seedu.tuitionbook.ui.StartupNotice;
  * Tests the application startup outcome using disposable contact-data files.
  */
 public class MainAppTest {
+
+    private static final String INVALID_JSON_GUIDANCE = "The data file is not valid UTF-8 JSON. Correct the encoding "
+            + "or JSON syntax in the preserved file before trying again.";
 
     @TempDir
     public Path testFolder;
@@ -241,11 +245,29 @@ public class MainAppTest {
 
         assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
         Path backupPath = dataFile.resolveSibling(dataFile.getFileName() + ".backup");
-        assertEquals(StartupNotice.loadFailedBackedUp(backupPath), state.notice().orElseThrow());
+        assertEquals(StartupNotice.loadFailedBackedUp(backupPath, INVALID_JSON_GUIDANCE),
+                state.notice().orElseThrow());
         assertFalse(Files.exists(dataFile));
         assertEquals("{broken", Files.readString(backupPath));
         storage.saveTuitionBook(state.model().getTuitionBook());
         assertTrue(Files.exists(dataFile));
+    }
+
+    @Test
+    public void loadStartupState_invalidPhone_reportsValidatorGuidanceAndPreservesBackup() throws Exception {
+        Path dataFile = testFolder.resolve("contacts.json");
+        Files.writeString(dataFile, """
+                {"persons":[{"name":"Invalid Phone","phone":"not-a-phone","tags":[]}]}
+                """);
+
+        MainApp.StartupState state = MainApp.loadStartupState(storage(), new UserPrefs());
+
+        StartupNotice notice = state.notice().orElseThrow();
+        assertEquals(StartupNotice.Type.LOAD_FAILED_BACKED_UP, notice.type());
+        assertTrue(notice.loadFailureGuidance().contains("invalid contact data"));
+        assertTrue(notice.loadFailureGuidance().contains(Phone.MESSAGE_CONSTRAINTS));
+        assertFalse(Files.exists(dataFile));
+        assertTrue(Files.exists(dataFile.resolveSibling(dataFile.getFileName() + ".backup")));
     }
 
     @Test
@@ -263,7 +285,7 @@ public class MainAppTest {
 
         MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
 
-        assertEquals(StartupNotice.loadFailedBackupFailed(), state.notice().orElseThrow());
+        assertEquals(StartupNotice.loadFailedBackupFailed(INVALID_JSON_GUIDANCE), state.notice().orElseThrow());
         assertEquals("{broken", Files.readString(dataFile));
         assertThrows(IOException.class, () -> storage.saveTuitionBook(state.model().getTuitionBook()));
     }
@@ -368,7 +390,10 @@ public class MainAppTest {
         MainApp.StartupState state = MainApp.loadStartupState(storage, new UserPrefs());
 
         assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
-        assertEquals(StartupNotice.loadFailedBackedUp(backupFile), state.notice().orElseThrow());
+        StartupNotice notice = state.notice().orElseThrow();
+        assertEquals(StartupNotice.Type.LOAD_FAILED_BACKED_UP, notice.type());
+        assertEquals(backupFile, notice.malformedFileBackupPath());
+        assertFalse(notice.loadFailureGuidance().isBlank());
         assertFalse(Files.exists(dataFile));
         assertEquals(contents, Files.readString(backupFile));
         storage.saveTuitionBook(state.model().getTuitionBook());
