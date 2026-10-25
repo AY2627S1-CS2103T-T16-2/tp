@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javafx.animation.AnimationTimer;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -25,9 +26,15 @@ import seedu.tuitionbook.model.person.Role;
  */
 public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
+    /**
+     * Number of JavaFX pulses for which a scroll request is retried while the list is laid out.
+     * A longer bounded window keeps scrolling reliable for large lists on slower platforms.
+     */
+    private static final int SCROLL_RETRY_PULSE_COUNT = 60;
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
     private final Map<UUID, Person> personsById = new HashMap<>();
     private final ObservableList<Person> allPersons;
+    private AnimationTimer scrollAnimation;
 
     @FXML
     private ListView<Person> personListView;
@@ -63,11 +70,38 @@ public class PersonListPanel extends UiPart<Region> {
      */
     void scrollToPerson(UUID personId) {
         requireNonNull(personId);
+        stopScrollAnimation();
+        if (!scrollToPersonOnce(personId)) {
+            return;
+        }
+
+        scrollAnimation = new AnimationTimer() {
+            private int remainingPulseCount = SCROLL_RETRY_PULSE_COUNT;
+
+            @Override
+            public void handle(long now) {
+                if (!scrollToPersonOnce(personId) || --remainingPulseCount == 0) {
+                    stopScrollAnimation();
+                }
+            }
+        };
+        scrollAnimation.start();
+    }
+
+    private boolean scrollToPersonOnce(UUID personId) {
         for (int index = 0; index < personListView.getItems().size(); index++) {
             if (personListView.getItems().get(index).getId().equals(personId)) {
                 personListView.scrollTo(index);
-                return;
+                return true;
             }
+        }
+        return false;
+    }
+
+    private void stopScrollAnimation() {
+        if (scrollAnimation != null) {
+            scrollAnimation.stop();
+            scrollAnimation = null;
         }
     }
 

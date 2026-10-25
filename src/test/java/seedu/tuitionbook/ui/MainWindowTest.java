@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
@@ -162,6 +163,19 @@ public class MainWindowTest {
                 JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
             }
         }
+    }
+
+    @Test
+    public void missingScrollTarget_keepsListUnselected() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            MainWindow mainWindow = new MainWindow(new Stage(), new FakeLogic(), Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            ListView<Person> personListView = getPersonListView(mainWindow);
+
+            mainWindow.getPersonListPanel().scrollToPerson(UUID.randomUUID());
+
+            assertNull(personListView.getSelectionModel().getSelectedItem());
+        });
     }
 
     @Test
