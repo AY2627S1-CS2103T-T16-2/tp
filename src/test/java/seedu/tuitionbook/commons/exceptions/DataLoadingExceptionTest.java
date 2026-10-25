@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 import java.nio.file.AccessDeniedException;
 
 import org.junit.jupiter.api.Test;
@@ -35,12 +36,29 @@ public class DataLoadingExceptionTest {
     }
 
     @Test
+    public void getUserFacingGuidance_nestedInvalidContactValue_mentionsContactData() {
+        Exception wrappedCause = new IOException("wrapper", new IllegalValueException("Invalid phone"));
+        String guidance = new DataLoadingException(wrappedCause).getUserFacingGuidance();
+
+        assertTrue(guidance.contains("invalid contact data"));
+        assertTrue(guidance.contains("Invalid phone"));
+    }
+
+    @Test
     public void getUserFacingGuidance_jsonFailure_mentionsEncodingAndSyntax() {
         String guidance = new DataLoadingException(new JsonParseException(null, "Invalid JSON"))
                 .getUserFacingGuidance();
 
         assertTrue(guidance.contains("UTF-8 JSON"));
         assertTrue(guidance.contains("encoding or JSON syntax"));
+    }
+
+    @Test
+    public void getUserFacingGuidance_invalidUtf8_mentionsEncodingAndSyntax() {
+        String guidance = new DataLoadingException(new CharacterCodingException())
+                .getUserFacingGuidance();
+
+        assertTrue(guidance.contains("UTF-8 JSON"));
     }
 
     @Test

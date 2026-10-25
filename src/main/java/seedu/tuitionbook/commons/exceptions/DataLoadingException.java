@@ -84,19 +84,18 @@ public class DataLoadingException extends Exception {
     }
 
     private String causeMessage(Class<? extends Throwable> type) {
-        for (Throwable current = getCause(); current != null; current = current.getCause()) {
-            if (type.isInstance(current)) {
-                String message = current.getMessage();
-                if (message == null || message.isBlank()) {
-                    return "the contact fields are invalid";
-                }
-                String singleLineMessage = message.replaceAll("\\R", " ").trim();
-                return singleLineMessage.length() > MAX_GUIDANCE_DETAIL_LENGTH
-                        ? singleLineMessage.substring(0, MAX_GUIDANCE_DETAIL_LENGTH) + "..."
-                        : singleLineMessage;
-            }
+        Throwable current = getCause();
+        while (!type.isInstance(current)) {
+            current = current.getCause();
         }
-        return "the contact fields are invalid";
+        String message = current.getMessage();
+        if (message == null || message.isBlank()) {
+            return "the contact fields are invalid";
+        }
+        String singleLineMessage = message.replaceAll("\\R", " ").trim();
+        return singleLineMessage.length() > MAX_GUIDANCE_DETAIL_LENGTH
+                ? singleLineMessage.substring(0, MAX_GUIDANCE_DETAIL_LENGTH) + "..."
+                : singleLineMessage;
     }
 
 }

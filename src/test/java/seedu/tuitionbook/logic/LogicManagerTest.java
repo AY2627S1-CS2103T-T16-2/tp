@@ -1053,6 +1053,22 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_reloadMalformedGuardian_reportsRepairWithoutGuardianId() throws Exception {
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        Files.writeString(file, """
+                {"persons":[{"id":"123e4567-e89b-12d3-a456-426614174000","role":"STUDENT",
+                "guardianId":"not-a-uuid","name":"Malformed Link","phone":"91234567","tags":[]}]}
+                """);
+
+        CommandResult result = logic.execute("reload");
+
+        assertTrue(result.getFeedbackToUser().contains("Malformed Link"));
+        assertTrue(result.getFeedbackToUser().contains("the guardian ID is malformed"));
+        assertFalse(result.getFeedbackToUser().contains("guardianId:"));
+        assertTrue(model.getFilteredPersonList().getFirst().getGuardianId().isEmpty());
+    }
+
+    @Test
     public void execute_reloadMalformedFile_preservesBackupAndCurrentContacts() throws Exception {
         Path file = temporaryFolder.resolve("tuitionBook.json");
         model.addPerson(AMY);

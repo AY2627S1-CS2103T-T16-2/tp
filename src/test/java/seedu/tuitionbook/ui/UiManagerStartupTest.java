@@ -143,6 +143,16 @@ public class UiManagerStartupTest {
     }
 
     @Test
+    public void repairedLink_withoutOriginalGuardianId_showsDiagnosticWithoutGuardianId() throws Exception {
+        assertStartupDialog(StartupNotice.guardianLinksRepaired(List.of(repairWithoutGuardianId("Malformed Link"))),
+                "Guardian links repaired",
+                "1 guardian link was repaired",
+                "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath()
+                        + " before entering a contact-changing command; the next save removes invalid links.",
+                "warning");
+    }
+
+    @Test
     public void multipleRepairedLinks_showsPluralWarning() throws Exception {
         assertStartupDialog(StartupNotice.guardianLinksRepaired(List.of(repair("Sam Student"),
                         repair("Grace Guardian"))), "Guardian links repaired",
@@ -337,6 +347,11 @@ public class UiManagerStartupTest {
     private GuardianLinkRepair repair(String personName) {
         return new GuardianLinkRepair(personName, UUID.randomUUID(), "missing-guardian-id",
                 GuardianLinkRepair.Reason.MISSING_GUARDIAN);
+    }
+
+    private GuardianLinkRepair repairWithoutGuardianId(String personName) {
+        return new GuardianLinkRepair(personName, UUID.randomUUID(), null,
+                GuardianLinkRepair.Reason.MALFORMED_GUARDIAN_ID);
     }
 
     private Logic logic() {
