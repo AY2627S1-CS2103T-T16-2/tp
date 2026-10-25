@@ -117,6 +117,21 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void read_externalAdHocPath_rejectedWithoutBlockingConfiguredFile() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("ad-hoc-read-home"));
+        Path configuredFile = applicationHome.resolve("data/tuitionbook.json");
+        Path outsideFile = testFolder.resolve("ad-hoc-outside.json");
+        Files.writeString(outsideFile, "{\"persons\":[]}");
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(configuredFile, applicationHome);
+
+        assertThrows(DataLoadingException.class, () -> storage.readTuitionBook(outsideFile));
+        storage.saveTuitionBook(new TuitionBook());
+
+        assertEquals("{\"persons\":[]}", Files.readString(outsideFile));
+        assertTrue(Files.isRegularFile(configuredFile));
+    }
+
+    @Test
     public void save_symlinkedParentOutsideApplicationHome_rejectedAndTargetUnchanged() throws Exception {
         Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
         Path outsideDirectory = Files.createDirectory(testFolder.resolve("outside"));

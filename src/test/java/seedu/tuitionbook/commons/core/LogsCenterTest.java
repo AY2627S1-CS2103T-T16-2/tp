@@ -84,6 +84,18 @@ public class LogsCenterTest {
     }
 
     @Test
+    public void preserveFirstCleanupFailure_preservesIoExceptionAndWrapsSecurityException() {
+        IOException firstFailure = new IOException("first failure");
+        IOException laterIoFailure = new IOException("later I/O failure");
+        SecurityException securityFailure = new SecurityException("security failure");
+
+        assertSame(firstFailure, LogsCenter.preserveFirstCleanupFailure(firstFailure, laterIoFailure));
+        assertSame(laterIoFailure, LogsCenter.preserveFirstCleanupFailure(null, laterIoFailure));
+        IOException wrappedSecurityFailure = LogsCenter.preserveFirstCleanupFailure(null, securityFailure);
+        assertSame(securityFailure, wrappedSecurityFailure.getCause());
+    }
+
+    @Test
     public void addFileHandler_literalPatternTokens_writesInsideRequestedDirectory() throws Exception {
         Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
         testLogger.setUseParentHandlers(false);
@@ -332,6 +344,58 @@ public class LogsCenterTest {
         } finally {
             closeAndDetachHandlers(contenderLogger);
             closeAndDetachHandlers(ownerLogger);
+        }
+    }
+
+    @Test
+    public void fileHandler_lockHeldByAnotherProcess_reportsFailureAndCanLaterReopen() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        RecordingHandler recordingHandler = new RecordingHandler();
+        testLogger.addHandler(recordingHandler);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("external-contention-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+
+        try {
+            assertFalse(LogsCenter.addFileHandler(testLogger, logFile, applicationHome,
+                    BasicFileAttributes::fileKey, channel -> null));
+            assertTrue(recordingHandler.records.stream().anyMatch(record ->
+                    record.getLevel() == Level.WARNING
+                            && record.getThrown() != null
+                            && record.getThrown().getMessage().contains("held by another process")));
+
+            assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+            testLogger.info("logging succeeds after external contention ends");
+        } finally {
+            closeAndDetachHandlers(testLogger);
+        }
+        assertTrue(Files.readString(applicationHome.resolve("tuitionbook.log.0"))
+                .contains("logging succeeds after external contention ends"));
+    }
+
+    @Test
+    public void fileHandler_nonLoggableRecord_ignoredWithoutDisablingHandler() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("filtered-record-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+
+        try {
+            assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+            Handler fileHandler = getFileHandler(testLogger, null);
+            fileHandler.setLevel(Level.OFF);
+            fileHandler.publish(new LogRecord(Level.INFO, "filtered message"));
+            fileHandler.setLevel(Level.ALL);
+            testLogger.info("logging remains available after filtering");
+            fileHandler.flush();
+
+            String logContents = Files.readString(applicationHome.resolve("tuitionbook.log.0"));
+            assertFalse(logContents.contains("filtered message"));
+            assertTrue(logContents.contains("logging remains available after filtering"));
+        } finally {
+            closeAndDetachHandlers(testLogger);
         }
     }
 

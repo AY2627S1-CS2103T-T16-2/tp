@@ -119,22 +119,33 @@ public class LogsCenter {
     static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome,
             FileIdentityReader fileIdentityReader) {
         return addFileHandler(targetLogger, logFile, applicationHome,
-                MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, fileIdentityReader);
+                MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, fileIdentityReader,
+                ContainedFileHandler::tryAcquireLock);
+    }
+
+    /** Adds a rotating handler using supplied filesystem-identity and lock-acquisition operations. */
+    static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome,
+            FileIdentityReader fileIdentityReader, FileLockAcquirer fileLockAcquirer) {
+        return addFileHandler(targetLogger, logFile, applicationHome,
+                MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, fileIdentityReader, fileLockAcquirer);
     }
 
     /** Adds a rotating handler with explicit rotation limits. Package-private for deterministic tests. */
     static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome,
             int maxFileSizeInBytes, int maxFileCount) {
         return addFileHandler(targetLogger, logFile, applicationHome,
-                maxFileSizeInBytes, maxFileCount, BasicFileAttributes::fileKey);
+                maxFileSizeInBytes, maxFileCount, BasicFileAttributes::fileKey,
+                ContainedFileHandler::tryAcquireLock);
     }
 
     private static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome,
-            int maxFileSizeInBytes, int maxFileCount, FileIdentityReader fileIdentityReader) {
+            int maxFileSizeInBytes, int maxFileCount, FileIdentityReader fileIdentityReader,
+            FileLockAcquirer fileLockAcquirer) {
         try {
             verifyLogPaths(logFile, applicationHome);
             ContainedFileHandler containedFileHandler = new ContainedFileHandler(
-                    logFile, applicationHome, maxFileSizeInBytes, maxFileCount, fileIdentityReader);
+                    logFile, applicationHome, maxFileSizeInBytes, maxFileCount,
+                    fileIdentityReader, fileLockAcquirer);
             containedFileHandler.setFormatter(new SimpleFormatter());
             containedFileHandler.setLevel(Level.ALL);
             targetLogger.addHandler(containedFileHandler);
@@ -152,6 +163,11 @@ public class LogsCenter {
     }
 
     @FunctionalInterface
+    interface FileLockAcquirer {
+        FileLock acquire(FileChannel channel) throws IOException;
+    }
+
+    @FunctionalInterface
     interface CloseAction {
         void close() throws IOException;
     }
@@ -164,6 +180,14 @@ public class LogsCenter {
         } catch (IOException exception) {
             return earlierFailure == null ? exception : earlierFailure;
         }
+    }
+
+    /** Converts a cleanup failure to an {@code IOException} unless an earlier cleanup failure already exists. */
+    static IOException preserveFirstCleanupFailure(IOException earlierFailure, Exception currentFailure) {
+        if (earlierFailure != null) {
+            return earlierFailure;
+        }
+        return currentFailure instanceof IOException ioException ? ioException : new IOException(currentFailure);
     }
 
     private static void verifyLogPaths(Path logFile, Path applicationHome) throws IOException {
@@ -196,6 +220,7 @@ public class LogsCenter {
         private final int maxFileSizeInBytes;
         private final int maxFileCount;
         private final FileIdentityReader fileIdentityReader;
+        private final FileLockAcquirer fileLockAcquirer;
         private boolean canDeleteLockFile;
         private Object lockFileKey;
 
@@ -207,7 +232,8 @@ public class LogsCenter {
         private boolean isClosed;
 
         private ContainedFileHandler(Path logFile, Path applicationHome, int maxFileSizeInBytes,
-                int maxFileCount, FileIdentityReader fileIdentityReader) throws IOException {
+                int maxFileCount, FileIdentityReader fileIdentityReader,
+                FileLockAcquirer fileLockAcquirer) throws IOException {
             this.logFile = logFile.toAbsolutePath().normalize();
             this.applicationHome = applicationHome.toAbsolutePath().normalize();
             this.activeLogFile = getGenerationPath(0);
@@ -215,13 +241,17 @@ public class LogsCenter {
             this.maxFileSizeInBytes = maxFileSizeInBytes;
             this.maxFileCount = maxFileCount;
             this.fileIdentityReader = fileIdentityReader;
+            this.fileLockAcquirer = fileLockAcquirer;
 
             try {
                 lockChannel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                 BasicFileAttributes lockAttributes = Files.readAttributes(
                         lockFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
                 lockFileKey = fileIdentityReader.read(lockAttributes);
-                fileLock = tryAcquireLock(lockChannel);
+                fileLock = fileLockAcquirer.acquire(lockChannel);
+                if (fileLock == null) {
+                    throw new IOException("The log-file lock is held by another process");
+                }
                 canDeleteLockFile = !lockAttributes.isSymbolicLink();
                 openLogOutput(true);
             } catch (IOException | RuntimeException exception) {
@@ -279,11 +309,7 @@ public class LogsCenter {
 
         private static FileLock tryAcquireLock(FileChannel channel) throws IOException {
             try {
-                FileLock acquiredLock = channel.tryLock();
-                if (acquiredLock == null) {
-                    throw new IOException("The log-file lock is held by another process");
-                }
-                return acquiredLock;
+                return channel.tryLock();
             } catch (OverlappingFileLockException exception) {
                 throw new IOException("The log-file lock is already held in this process", exception);
             }
@@ -372,10 +398,7 @@ public class LogsCenter {
                     Files.delete(lockFile);
                 }
             } catch (IOException | SecurityException exception) {
-                if (earlierFailure == null) {
-                    earlierFailure = exception instanceof IOException ioException
-                            ? ioException : new IOException(exception);
-                }
+                earlierFailure = preserveFirstCleanupFailure(earlierFailure, exception);
             }
             reportCleanupFailure(earlierFailure);
         }

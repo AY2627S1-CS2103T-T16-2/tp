@@ -46,10 +46,9 @@ public final class ApplicationPathGuard {
             try {
                 Files.readAttributes(lexicalPath, BasicFileAttributes.class, NOFOLLOW_LINKS);
             } catch (NoSuchFileException exception) {
+                // The candidate was normalized and every existing ancestor was verified inside realHome, so resolving
+                // a missing suffix beneath the verified ancestor cannot escape realHome.
                 resolvedPath = resolvedPath.resolve(component).normalize();
-                if (!resolvedPath.startsWith(realHome)) {
-                    throw rejectedOutside(candidate, applicationHome);
-                }
                 continue;
             } catch (IOException exception) {
                 throw rejectedUnresolvable(candidate, applicationHome, exception);

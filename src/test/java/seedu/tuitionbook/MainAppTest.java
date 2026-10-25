@@ -116,6 +116,19 @@ public class MainAppTest {
     }
 
     @Test
+    public void migrateLegacyTuitionBookFile_bothFilesMissing_leavesPathsMissing() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("missing-migration-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path legacyFile = dataDirectory.resolve("addressbook.json");
+        Path currentFile = dataDirectory.resolve("tuitionbook.json");
+
+        MainApp.migrateLegacyTuitionBookFile(applicationHome, legacyFile, currentFile);
+
+        assertFalse(Files.exists(legacyFile));
+        assertFalse(Files.exists(currentFile));
+    }
+
+    @Test
     public void verifyStartupPaths_externalDataSymlink_rejectedBeforeJavaFxLaunch() throws Exception {
         Path applicationHome = Files.createDirectory(testFolder.resolve("preflight-home"));
         Path outsideData = Files.createDirectory(testFolder.resolve("preflight-outside"));
