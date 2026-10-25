@@ -74,6 +74,92 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_migrationUsesLegacyFallback_initializesStorageAndModelFromLegacyFile() throws Exception {
+        Path legacyFile = testFolder.resolve("addressbook.json");
+        Files.writeString(legacyFile, """
+                {"persons":[{"name":"Legacy Alex","phone":"87438807","tags":[]}]}
+                """);
+        MainApp app = new MainApp() {
+            @Override
+            protected UserPrefs initPrefs(JsonUserPrefsStorage storage) {
+                return new UserPrefs();
+            }
+
+            @Override
+            Path migrateLegacyTuitionBookFile(Path currentFilePath, Path legacyFilePath) {
+                return legacyFile;
+            }
+        };
+
+        assertDoesNotThrow(app::init);
+
+        assertEquals(legacyFile, app.storage.getTuitionBookFilePath());
+        assertEquals("Legacy Alex", app.model.getTuitionBook().getPersonList().getFirst().getName().fullName);
+    }
+
+    @Test
+    public void migrateLegacyTuitionBookFile_moveFails_usesUnchangedLegacyFile() throws Exception {
+        Path currentFile = testFolder.resolve("tuitionbook.json");
+        Path legacyFile = testFolder.resolve("addressbook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(legacyFile, originalContents);
+        MainApp app = new MainApp() {
+            @Override
+            protected void moveLegacyTuitionBookFile(Path source, Path target) throws IOException {
+                throw new IOException("simulated permission failure");
+            }
+        };
+
+        Path selectedFile = assertDoesNotThrow(() -> app.migrateLegacyTuitionBookFile(currentFile, legacyFile));
+
+        assertEquals(legacyFile, selectedFile);
+        assertEquals(originalContents, Files.readString(legacyFile));
+        assertFalse(Files.exists(currentFile));
+    }
+
+    @Test
+    public void migrateLegacyTuitionBookFile_moveSucceeds_usesCurrentFile() throws Exception {
+        Path currentFile = testFolder.resolve("tuitionbook.json");
+        Path legacyFile = testFolder.resolve("addressbook.json");
+        String originalContents = "{\"persons\":[]}";
+        Files.writeString(legacyFile, originalContents);
+
+        Path selectedFile = new MainApp().migrateLegacyTuitionBookFile(currentFile, legacyFile);
+
+        assertEquals(currentFile, selectedFile);
+        assertEquals(originalContents, Files.readString(currentFile));
+        assertFalse(Files.exists(legacyFile));
+    }
+
+    @Test
+    public void migrateLegacyTuitionBookFile_currentFileExists_usesCurrentAndLeavesLegacyFile() throws Exception {
+        Path currentFile = testFolder.resolve("tuitionbook.json");
+        Path legacyFile = testFolder.resolve("addressbook.json");
+        String currentContents = "{\"persons\":[]}";
+        String legacyContents = "{\"persons\":[{\"name\":\"Legacy Alex\",\"phone\":\"87438807\",\"tags\":[]}]}";
+        Files.writeString(currentFile, currentContents);
+        Files.writeString(legacyFile, legacyContents);
+
+        Path selectedFile = new MainApp().migrateLegacyTuitionBookFile(currentFile, legacyFile);
+
+        assertEquals(currentFile, selectedFile);
+        assertEquals(currentContents, Files.readString(currentFile));
+        assertEquals(legacyContents, Files.readString(legacyFile));
+    }
+
+    @Test
+    public void migrateLegacyTuitionBookFile_filesMissing_usesCurrentFilePath() {
+        Path currentFile = testFolder.resolve("tuitionbook.json");
+        Path legacyFile = testFolder.resolve("addressbook.json");
+
+        Path selectedFile = new MainApp().migrateLegacyTuitionBookFile(currentFile, legacyFile);
+
+        assertEquals(currentFile, selectedFile);
+        assertFalse(Files.exists(currentFile));
+        assertFalse(Files.exists(legacyFile));
+    }
+
+    @Test
     public void clearThenRestart_existingEmptyDataFileDoesNotRestoreContacts() throws Exception {
         StorageManager storage = storage();
         TuitionBook tuitionBook = new TuitionBook();

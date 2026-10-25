@@ -37,6 +37,14 @@ public class PersonTest {
     }
 
     @Test
+    public void isSamePerson_phoneAnnotationAndFormattingDiffer_returnsTrue() {
+        Person annotatedPhone = new PersonBuilder().withPhone("9123 4567 (home)").build();
+        Person slashedPhone = new PersonBuilder(annotatedPhone).withPhone("9123/4567").build();
+
+        assertTrue(annotatedPhone.isSamePerson(slashedPhone));
+    }
+
+    @Test
     public void isSamePerson_requiredUnicodeNameForms_comparesIdentityWithoutChangingDisplayName() {
         Person sharpS = new PersonBuilder().withName("Groß").withPhone("91234567").build();
         Person capitalSharpS = new PersonBuilder().withName("GROẞ").withPhone("91234567").build();
@@ -98,11 +106,26 @@ public class PersonTest {
         assertTrue(ALICE.isSamePerson(editedAlice));
         editedAlice = new PersonBuilder(ALICE).withPhone("9435-1253").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
+        editedAlice = new PersonBuilder(ALICE).withPhone("9435/1253 (home)").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
 
         // phone differs only in formatting while retaining a leading plus -> returns true
         editedAlice = new PersonBuilder(ALICE).withPhone("+9435 1253").build();
         Person unformattedPlusPhoneAlice = new PersonBuilder(ALICE).withPhone("+94351253").build();
         assertTrue(editedAlice.isSamePerson(unformattedPlusPhoneAlice));
+
+        // phone differs only in parenthesized formatting -> returns true
+        editedAlice = new PersonBuilder(ALICE).withPhone("(9435) 1253").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // equivalent extension markers retain the same extension digits -> returns true
+        Person phoneWithXExtension = new PersonBuilder(ALICE).withPhone("9435-1253 x42").build();
+        Person phoneWithExtExtension = new PersonBuilder(ALICE).withPhone("(9435) 1253 (HP) ext. 42").build();
+        assertTrue(phoneWithXExtension.isSamePerson(phoneWithExtExtension));
+
+        // different extension digits -> returns false
+        Person phoneWithDifferentExtension = new PersonBuilder(ALICE).withPhone("94351253 ext 43").build();
+        assertFalse(phoneWithXExtension.isSamePerson(phoneWithDifferentExtension));
 
         // phone differs by a leading plus -> returns false
         editedAlice = new PersonBuilder(ALICE).withPhone("+94351253").build();

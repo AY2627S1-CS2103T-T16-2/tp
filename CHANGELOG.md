@@ -15,18 +15,30 @@ The format is based on Keep a Changelog.
 ### Changed
 
 - Added assertions that execution-dependent save decisions are queried only after a command execution attempt, enabled application assertions in the executable JAR, and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
-
+- Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
+- Documented save-failure rollback in the Delete use case, including restoration of the contact, guardian links, and active filter.
+- Added a Developer Guide use case for reloading contact data, including missing-file, repaired-link, successful-backup, and blocked-saving outcomes.
+- Expanded the documented contact-field validation subset to support right curly apostrophes in names; phone groups separated by spaces, hyphens, or slashes, optional trailing phone annotations, and numeric extensions; apostrophes and punycode labels in email addresses; and explicitly single-line addresses.
+- Clarified that names accept ordinary ASCII spaces (U+0020), rather than every Unicode whitespace character.
 - Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
 
 ### Fixed
 
+- Rejected whitespace-, control-, or format-only and line-breaking addresses consistently when entered through commands or loaded from JSON.
+- Normalized phone spaces, hyphens, slashes, numeric-group parentheses, annotations, and equivalent extension markers during duplicate detection while retaining a leading `+` and extension digits.
+- Reported every missing mandatory `add` field in role, name, phone order, and showed the ordinary example before quoted-prefix guidance.
 - Made duplicate name identity consistently compare `Groß` with `GROẞ`, while preserving the existing normalized-name-and-phone identity rules and original display spelling.
 - Made literal name-substring search use the same locale-independent Unicode comparison form for stored names and keywords, so composed/decomposed accents and the demonstrated sharp-S cases match consistently without applying duplicate identity's space normalization.
-
-### Fixed
-
+- Focused the command box after startup and after dismissing a startup notice so typing is immediately available without accidentally activating Help.
+- Allowed contact cards to grow and shrink with wrapped tag rows, preventing tags from obscuring contact details or neighbouring cards at narrow widths.
+- Split the dense delete sequence diagram into focused parsing and execution diagrams that remain readable at normal browser zoom.
 - Reject unknown space-separated ASCII-letter prefixes in `add`, `edit`, `list`, `tag` and `untag` rather than silently absorbing mistyped prefixes into field values; intentional literal text must be quoted (#193). Stored values, field validation, tag identity and whitespace trimming are unchanged.
+- Reject extra arguments to `help` and `exit`, consistently with `reload`, rather than opening Help or exiting unexpectedly.
+- Report raw line-break code points and correction guidance when input reaches the parser without command-box conversion, and diagnose non-breaking/full-width spaces in command words and indexes without normalising those characters in field values.
+- Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.
+- Reject JSON files containing trailing content or duplicate property names so that ambiguous data is preserved through the existing malformed-file recovery workflow instead of being silently discarded on the next save.
+- Continue startup with the unchanged legacy `addressbook.json` when permissions prevent migration to `tuitionbook.json`, allowing migration to be retried on a later launch.
 
 ## [v1.4] - 2026-10-22
 

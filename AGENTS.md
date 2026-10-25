@@ -12,6 +12,10 @@
 * **Do not credit AI in commit messages.** The course permits and encourages AI use
   but allows only the five team members as commit authors/co-authors: never add AI
   tools as `Co-Authored-By` or include lines such as "Generated with [AI]".
+* **Do not add individual AI-use acknowledgements to the DG.** Do not add entries
+  for a specific contributor, issue, PR or change. Keep the general AI acknowledgement;
+  the team will update it collectively in a consolidated acknowledgement later.
+  This does not replace required attribution for externally reused or adapted material.
 * Credit externally reused or adapted code near its use and comply with its licence.
   Keep DG Acknowledgements accurate for reused or externally inspired ideas, code
   and documentation, with source links and the extent of reuse. Apply the course's

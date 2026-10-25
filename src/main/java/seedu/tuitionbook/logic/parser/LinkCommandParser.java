@@ -9,6 +9,7 @@ import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 public class LinkCommandParser implements Parser<LinkCommand> {
     @Override
     public LinkCommand parse(String args) throws ParseException {
+        ParserUtil.checkForUnsupportedSpaces(args);
         String[] parts = args.trim().split("\\s+");
         if (parts.length != 2) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, LinkCommand.MESSAGE_USAGE));

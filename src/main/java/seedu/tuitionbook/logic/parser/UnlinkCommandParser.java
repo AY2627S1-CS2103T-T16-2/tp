@@ -9,6 +9,7 @@ import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 public class UnlinkCommandParser implements Parser<UnlinkCommand> {
     @Override
     public UnlinkCommand parse(String args) throws ParseException {
+        ParserUtil.checkForUnsupportedSpaces(args);
         try {
             return new UnlinkCommand(ParserUtil.parseIndex(args));
         } catch (ParseException pe) {

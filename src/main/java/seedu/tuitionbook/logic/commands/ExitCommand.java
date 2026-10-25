@@ -9,6 +9,9 @@ public class ExitCommand extends Command {
 
     public static final String COMMAND_WORD = "exit";
 
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Exits TuitionBook. Takes no arguments.\n"
+            + "Example: " + COMMAND_WORD;
+
     public static final String MESSAGE_EXIT_ACKNOWLEDGEMENT = "Exiting TuitionBook as requested ...";
 
     @Override
