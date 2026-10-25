@@ -1,5 +1,6 @@
 package seedu.tuitionbook;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -7,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -251,6 +253,25 @@ public class MainAppTest {
         assertEquals("{broken", Files.readString(backupPath));
         storage.saveTuitionBook(state.model().getTuitionBook());
         assertTrue(Files.exists(dataFile));
+    }
+
+    @Test
+    public void loadStartupState_invalidUtf8_reportsEncodingGuidanceAndPreservesBytes() throws Exception {
+        // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/196
+        Path dataFile = testFolder.resolve("contacts.json");
+        String json = "{\"persons\":[{\"name\":\"Valid Name\",\"phone\":\"81234567\","
+                + "\"address\":\"X\",\"tags\":[]}]}";
+        byte[] originalContents = json.getBytes(StandardCharsets.UTF_8);
+        originalContents[json.indexOf('X')] = (byte) 0x80;
+        Files.write(dataFile, originalContents);
+
+        MainApp.StartupState state = MainApp.loadStartupState(storage(), new UserPrefs());
+
+        Path backupPath = dataFile.resolveSibling(dataFile.getFileName() + ".backup");
+        assertEquals(StartupNotice.loadFailedBackedUp(backupPath, INVALID_JSON_GUIDANCE),
+                state.notice().orElseThrow());
+        assertFalse(Files.exists(dataFile));
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
     }
 
     @Test
