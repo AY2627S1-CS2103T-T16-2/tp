@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the v1.4 source. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
+**Version:** This guide describes the unreleased development source for v1.5; its command-input changes are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -86,10 +86,15 @@ The command box is where you enter instructions; the result area reports success
 * Parameters with a prefix, such as `n/NAME` and `p/PHONE`, can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable. Positional parameters have no prefix and must appear in the order shown: `edit 2 n/James Lee` puts its index first; `link 1 2` puts the student index before the guardian index.
 
-* The `help` and `exit` commands ignore extraneous parameters.<br>
-  For example, `help 123` is interpreted as `help`. `reload` accepts no arguments, and `clear` requires exactly `confirm`; `reload 123` and `clear confirm extra` report errors instead of running.
+* Command words ignore letter case: `list`, `LIST`, and `LiSt` run the same command. Field prefixes must still be lowercase (`n/`, not `N/`), and the confirmation keyword must still be exactly `confirm`. Values keep their existing rules; command-word casing does not change stored names, addresses or tags.
 
-* If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
+* `help`, `exit`, and `reload` take no arguments. For example, `help 123`, `exit extra`, and `reload 123` report errors instead of running. `clear` requires exactly `confirm`; `CLEAR confirm` works, but `clear CONFIRM` and `clear confirm extra` do not.
+
+* Enter one command on a single line. Line breaks, including Unicode line/paragraph separators, are rejected with their character code (such as `U+2028`), even at the beginning or end of a command or inside a quoted value. Replace the line break with a normal space or remove it before retrying. Quoting does not allow multiline values.
+
+* Use normal spaces (`U+0020`) for command syntax. Non-breaking spaces (`U+00A0`) and full-width spaces (`U+3000`) in a command word, an index, or after a no-argument command are rejected with correction guidance, not silently converted. This check does not rewrite field values; their own validation rules still apply.
+
+* When copying commands from a PDF or website, check for missing spaces, unusual spaces and line breaks before submitting them. If the source already removed a separator, TuitionBook cannot reconstruct the intended text.
 </box>
 
 ### Viewing help: `help`
@@ -98,6 +103,7 @@ Opens the Help window, which contains a scrollable summary of every command and 
 
 Format: `help`
 
+* Takes no arguments. `help extra` reports a format error and does not open the Help window.
 * You can also open or focus the same Help window by clicking the one-click `Help` control at the top of the main window, or by pressing <kbd>F1</kbd> even while the command box has focus.
 * Use `Open User Guide` to open this User Guide in your system's default browser.
 * If TuitionBook cannot open a browser, the Help window displays fallback guidance and remains open. Use `Copy URL` to copy the User Guide address and open it manually.
@@ -424,8 +430,10 @@ Find the symptom below and try the suggested action. Error messages appear in th
 |---|---|---|
 | The terminal cannot find `java`, or reports an unsupported Java version | Java is missing, too old, or a different installation is being used | Run `java -version` in that terminal and follow the Java installation links in [Quick start](#quick-start). |
 | `Unable to access jarfile` | The path or filename in the launch command is wrong | Check the downloaded file's location and name. Put the full path in straight double quotes. |
-| `Unknown command.` | A misspelled command or wrong letter case | Use the lowercase command word from the [Command summary](#command-summary), without the backticks shown in this guide. |
+| `Unknown command.` | A misspelled or unsupported command word | Use a command word from the [Command summary](#command-summary), without the backticks shown in this guide. Command-word letter case does not matter. |
 | `Invalid command format!` | A required value is missing or a positional argument is misplaced | Read the usage shown with the error. Supply the required index first, then the relevant prefixed fields. For `link`, supply the student index followed by the guardian index. |
+| `Commands must be entered on a single line.` | The input contains a line break, identified by its character code | Enter one command at a time. Remove the indicated line break or replace it with a normal space (`U+0020`); quotation marks do not bypass this rule. |
+| `Unexpected non-breaking space` or `Unexpected full-width space` | A lookalike space occurs in the command word, an index or a no-argument command's trailing text | Retype that syntax using the spacebar (`U+0020`) and retry. Contact values are not automatically normalised. |
 | `The contact index provided is invalid.` | That index is not in the currently displayed list | Enter `list`, find the intended contact's current index, and retry. Filters can change the displayed indexes. |
 | No contacts appear after `find` or a filtered `list` | No contacts match the current filter | Enter `list` to show all contacts. `find` searches names only; tag filters must match the complete tag, including internal spaces. |
 | A name or tag is split at text such as `a/` or `t/` | The text was interpreted as a field prefix | Quote the complete value, for example `n/"Rina a/p Kaur"` or `t/"study t/weekly"`. See [Adding a contact](#adding-a-contact-add). |

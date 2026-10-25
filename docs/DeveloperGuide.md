@@ -14,7 +14,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 * Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
-**Version:** This guide describes the v1.4 source. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
+**Version:** This guide describes the unreleased development source for v1.5; its command-input changes are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -28,6 +28,7 @@ TuitionBook is scoped to English-language users and any `en-*` locale (for examp
 * This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 * Libraries used: [JavaFX](https://openjfx.io/), [Jackson](https://github.com/FasterXML/jackson), [JUnit5](https://github.com/junit-team/junit5).
 * Some code and documentation changes were made with the assistance of AI tools, as permitted by the course.
+* For the v1.5 command-input fixes (#190, #191, #206 and #210), Ooi Xuan Shan used Devin to assist with parser investigation, implementation, regression tests and guide updates.
 * Some bug-finding test scenarios were adapted from bug reports in the public issue tracker of [TAB](https://github.com/AY2627S1-CS2103T-T16-1/tp), the team project of CS2103T team T16-1, with that team's approval to look through their issues. We rewrote the relevant scenarios using TuitionBook's own commands and data, and checked them against our implementation; no TAB code or documentation was copied for this testing. The reports that revealed or confirmed TuitionBook bugs are TAB issues [#129](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/129), [#145](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/145), [#172](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/172), [#183](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/183), [#187](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/187), [#188](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/188), [#193](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/193), [#196](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/196), [#198](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/198), [#286](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/286), [#312](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/312), [#313](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/313), [#315](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/315), [#317](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/317), [#322](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/322), [#330](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/330), [#341](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/341), [#348](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/348), [#373](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/373), [#374](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/374) and [#395](https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/395).
 
 --------------------------------------------------------------------------------------------------------------------
@@ -129,7 +130,17 @@ How the parsing works:
 * `AddCommandParser` uses `ArgumentTokenizer`, `ArgumentMultimap`, the `Prefix` constants in `CliSyntax`, and `ParserUtil` to parse arguments and construct an `AddCommand`. `EditCommandParser`, `ListCommandParser`, and `ViewCommandParser` also use these utilities. Other parsers use only the helpers they need; for example, `DeleteCommandParser`, `LinkCommandParser`, and `UnlinkCommandParser` use `ParserUtil` to parse indexes.
 * `TagCommandParser` and `UntagCommandParser` delegate argument parsing to the package-private `TagModificationCommandParser` helper, passing their respective command constructor references. The helper uses the same tokenization and validation utilities and invokes the supplied constructor after parsing. It does not implement `Parser`.
 * `ArgumentTokenizer` creates an `ArgumentMultimap`, which stores argument values keyed by `Prefix`. `CliSyntax` defines the recognized prefix constants; `ParserUtil` parses values and indexes without depending on `Prefix`.
-* `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser. In all cases it returns the resulting object as a `Command`.
+* `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser, after rejecting non-blank arguments. In all cases it returns the resulting object as a `Command`.
+
+#### Command-input boundary
+
+`TuitionBookParser` rejects actual line breaks before trimming or dispatching, using Java's `\R` definition (CR/LF, vertical tab, form feed, NEL, line separator and paragraph separator). The error identifies the first line-break code point. This also applies inside quotes and at the input edges; the parser does not split or join multiple commands.
+
+Only the extracted command word is lowercased with `Locale.ROOT`. Prefixes, arguments, quoted values, tag identity and the exact `confirm` keyword are not case-normalised. This keeps command lookup independent of the computer's locale without changing contact data.
+
+`ParserUtil.checkForUnsupportedSpaces` diagnoses NBSP (`U+00A0`) and ideographic/full-width space (`U+3000`) only in command words, no-argument command tails and positional-index text. It does not scan field values. Indexed command parsers perform this check before wrapping ordinary invalid-index errors in command-specific usage, and `link` checks before splitting its two indexes. `parseIndex` also checks direct callers. Other invisible-character policies and field validation remain outside this change.
+
+These failures occur during parsing, before command execution, model mutation or contact saving. `help`, `exit` and `reload` with extra arguments never produce an executable command. See [Command input and diagnostics](#command-input-and-diagnostics) for manual scenarios.
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/model/Model.java)
@@ -703,6 +714,27 @@ Use these scenarios to check visible behaviour and persistence. Start with [Laun
 
 **Note:** These instructions only provide a starting point for testers to work on; testers are expected to do more *exploratory* testing.
 </box>
+
+### Command input and diagnostics
+
+Use a fresh, disposable folder with an empty contact list. These steps describe the v1.5 development build, not the released v1.4 JAR.
+
+1. Enter `AdD r/student n/Case Sensitive p/91234567 a/12 Main Road t/Math`, then `LiSt` and `ViEw 1`.<br>
+   Expected: One contact is stored and displayed; the name remains `Case Sensitive`, the address `12 Main Road`, and the tag `Math`.
+1. Enter `help extra`, `EXIT extra`, and `ReLoAd extra` separately.<br>
+   Expected: Each reports an invalid-format error with the relevant usage. The app stays open, no Help window opens, and contacts are not reloaded or changed.
+1. Enter `CLEAR CONFIRM` and `ADD R/student n/Rejected p/92345678` separately.<br>
+   Expected: Both are rejected. Command-word casing does not relax confirmation or field-prefix syntax; the existing contact is unchanged.
+1. For the remaining diagnostic tests, replace each bracketed token with the actual character before submitting; do not type the bracketed name literally. A text editor's Unicode insertion feature can supply these characters.
+   * `delete[NBSP]1` and `delete 1[NBSP]`, with `[NBSP]` replaced by U+00A0.
+   * `link 1[IDEOGRAPHIC SPACE]2`, with the token replaced by U+3000.
+   * `edit 1 n/Changed[LINE SEPARATOR]`, with the token replaced by U+2028.
+   * `edit 1 n/"Changed[PARAGRAPH SEPARATOR]Name"`, with the token replaced by U+2029.<br>
+   Expected when the character reaches the parser: The result identifies the unexpected character's code point and how to correct it; no contact is changed or deleted. Quoting does not bypass line-break rejection. Some GUI/clipboard paths transform pasted separators before parsing, so verify the submitted character when reproducing; the parser-level regressions cover the exact code points.
+1. Enter `EdIt 1 a/Blk[NBSP]12[IDEOGRAPHIC SPACE]Road`, substituting actual U+00A0 and U+3000 characters inside the address.<br>
+   Expected: The address is accepted unchanged under its field rules; syntax diagnostics do not normalise address data.
+1. Enter `ExIt`, restart the app, and enter `view 1`.<br>
+   Expected: Normal exit works, there is still exactly one contact, and its name, tag and updated address retain their case and spacing.
 
 ### Quoted names and tags
 

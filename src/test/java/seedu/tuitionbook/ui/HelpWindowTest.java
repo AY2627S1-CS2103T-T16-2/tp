@@ -68,6 +68,10 @@ public class HelpWindowTest {
             assertEquals(450, helpWindow.getRoot().getMinWidth());
             assertEquals(320, helpWindow.getRoot().getMinHeight());
             IMPLEMENTED_COMMAND_SYNTAX.forEach(syntax -> assertTrue(commandSummary.getText().contains(syntax)));
+            assertTrue(commandSummary.getText().contains("Command words ignore case"));
+            assertTrue(commandSummary.getText().contains("confirmation word confirm stay lowercase"));
+            assertTrue(commandSummary.getText().contains("help, exit and reload take no arguments"));
+            assertTrue(commandSummary.getText().contains("Enter one command on one line"));
             assertEquals(HelpWindow.HELP_MESSAGE, helpMessage.getText());
             assertEquals("Open User Guide", openButton.getText());
             assertEquals("Copy URL", copyButton.getText());

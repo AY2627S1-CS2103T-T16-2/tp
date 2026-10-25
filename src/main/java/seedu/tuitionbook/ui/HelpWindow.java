@@ -30,6 +30,12 @@ public class HelpWindow extends UiPart<Stage> {
     static final String OPEN_GUIDE_PENDING = "Opening the User Guide...";
 
     static final String COMMAND_SUMMARY = """
+            Command input
+              Command words ignore case: LIST and LiSt work like list.
+              Field prefixes (n/, t/, etc.) and the clear confirmation word confirm stay lowercase.
+              Enter one command on one line. Use normal spaces (U+0020) for command syntax.
+              help, exit and reload take no arguments.
+
             add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...
               Add a student or guardian contact.
 

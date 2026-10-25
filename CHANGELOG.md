@@ -10,7 +10,14 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
+
+### Fixed
+
+- Reject extra arguments to `help` and `exit`, consistently with `reload`, rather than opening Help or exiting unexpectedly.
+- Report line-break code points and correction guidance before command parsing, and diagnose non-breaking/full-width spaces in command words and indexes without silently rewriting contact data.
+- Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.
 
 ## [v1.4] - 2026-10-22
 
