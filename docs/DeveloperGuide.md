@@ -660,6 +660,44 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
       Use case ends.
 
+**Use case: UC09 Reload contact data**
+
+**MSS**
+
+1.  Private tutor submits a reload request.
+2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and clears the active filter.
+3.  TuitionBook enables saving and reports the number of loaded contacts.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. The configured data file is missing.
+
+    * 2a1. TuitionBook replaces the current contacts with an empty contact list, clears the active filter, enables saving, and reports that zero contacts were loaded.
+
+      Use case ends.
+
+* 2b. The file contains invalid guardian links but all contacts are otherwise valid.
+
+    * 2b1. TuitionBook loads the contacts without those links, clears the active filter, and reports the number of links repaired in memory for the tutor to review before saving.
+
+      Use case resumes from step 3.
+
+* 2c. TuitionBook cannot read the file but preserves it in a backup.
+
+    * 2c1. TuitionBook retains the current contacts and active filter, enables saving, and reports the backup path and that corrected data must be restored before reloading again.
+
+      Use case ends.
+
+* 2d. TuitionBook cannot read the file or preserve it in a backup.
+
+    * 2d1. TuitionBook retains the current contacts and active filter, leaves the original file in place, blocks saving, and explains that the original must be corrected or moved before reloading again.
+
+      Use case ends.
+
+See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
+
 **Role-filter command rule**
 
 The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.

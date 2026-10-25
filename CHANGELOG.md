@@ -12,6 +12,7 @@ The format is based on Keep a Changelog.
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 - Documented save-failure rollback in the Delete use case, including restoration of the contact, guardian links, and active filter.
+- Added a Developer Guide use case for reloading contact data, including missing-file, repaired-link, successful-backup, and blocked-saving outcomes.
 
 ### Fixed
 
