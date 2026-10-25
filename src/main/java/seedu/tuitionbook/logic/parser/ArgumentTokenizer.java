@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,9 +22,14 @@ import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 public class ArgumentTokenizer {
 
     public static final String MESSAGE_UNCLOSED_QUOTE =
-            "Missing closing double quote. Enclose the complete name or tag value in straight double quotes.";
+            "Missing closing double quote. Enclose the complete name, address or tag value in straight double quotes.";
     public static final String MESSAGE_TEXT_AFTER_QUOTE =
             "After a quoted value, enter a space followed by another field prefix, or end the command.";
+    public static final String MESSAGE_UNKNOWN_PREFIX = "Unrecognised field prefix: %s "
+            + "Check the command's supported lowercase prefixes. "
+            + "For literal prefix-like text, quote the complete name, address or tag value.";
+
+    private static final Pattern PREFIX_LIKE_TOKEN = Pattern.compile("(?:^| )([A-Za-z]+/)");
 
     /**
      * Tokenizes an arguments string and returns an {@code ArgumentMultimap} object that maps prefixes to their
@@ -39,7 +46,7 @@ public class ArgumentTokenizer {
 
     /**
      * Tokenizes with optional double quotes around values of {@code quotedPrefixes}.
-     * Only those fields interpret quotes; existing prefix boundaries and other fields are unchanged.
+     * Only those fields interpret quotes. Space-separated ASCII letter prefixes outside quotes must be recognised.
      * Enclosing quotes are syntax. Within them, backslash escapes a double quote or another backslash;
      * other backslashes remain literal. Unquoted values are not decoded.
      *
@@ -49,7 +56,7 @@ public class ArgumentTokenizer {
      * @param prefixes Additional prefixes to recognize.
      * @return ArgumentMultimap mapping recognized prefixes to their values, with enclosing quotes removed
      *         from quoted values of {@code quotedPrefixes}.
-     * @throws ParseException if a quoted value is unclosed or has trailing text.
+     * @throws ParseException if a quoted value is unclosed, has trailing text or an unknown prefix occurs outside it.
      */
     public static ArgumentMultimap tokenizeWithQuotedValues(String argsString, Collection<Prefix> quotedPrefixes,
             Prefix... prefixes) throws ParseException {
@@ -58,12 +65,23 @@ public class ArgumentTokenizer {
                 .toList();
         List<PrefixPosition> candidates = findAllPrefixPositions(argsString,
                 recognizedPrefixes.toArray(Prefix[]::new));
+        // Defer unknown-prefix errors until the ordered scan can skip quoted content.
+        Matcher prefixMatcher = PREFIX_LIKE_TOKEN.matcher(argsString);
+        while (prefixMatcher.find()) {
+            Prefix prefix = new Prefix(prefixMatcher.group(1));
+            if (!recognizedPrefixes.contains(prefix)) {
+                candidates.add(new PrefixPosition(prefix, prefixMatcher.start(1)));
+            }
+        }
         candidates.sort((first, second) -> Integer.compare(first.getStartPosition(), second.getStartPosition()));
         List<PrefixPosition> positions = new ArrayList<>();
         int quotedEnd = -1;
         for (PrefixPosition candidate : candidates) {
             if (candidate.getStartPosition() <= quotedEnd) {
                 continue;
+            }
+            if (!recognizedPrefixes.contains(candidate.getPrefix())) {
+                throw new ParseException(String.format(MESSAGE_UNKNOWN_PREFIX, candidate.getPrefix().getPrefix()));
             }
             positions.add(candidate);
             if (quotedPrefixes.contains(candidate.getPrefix())) {

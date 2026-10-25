@@ -198,11 +198,28 @@ public class AddCommandParserTest {
     }
 
     @Test
-    public void parse_nameWithForwardSlashParticle_success() {
+    public void parse_quotedNameWithForwardSlashParticle_success() {
         Person expectedPerson = new PersonBuilder().withName("Muhammad s/o Ali").withPhone("81234567")
                 .withRole(Role.STUDENT).withoutEmail().withoutAddress().withTags().build();
-        assertParseSuccess(parser, ROLE_DESC_STUDENT + " n/Muhammad s/o Ali p/81234567",
+        assertParseSuccess(parser, ROLE_DESC_STUDENT + " n/\"Muhammad s/o Ali\" p/81234567",
                 new AddCommand(expectedPerson));
+        assertParseFailure(parser, ROLE_DESC_STUDENT + " n/Muhammad s/o Ali p/81234567",
+                String.format(ArgumentTokenizer.MESSAGE_UNKNOWN_PREFIX, "s/"));
+    }
+
+    @Test
+    public void parse_quotedAddress_followsNormalFieldValidation() {
+        String required = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
+        assertParseFailure(parser, required + " a/\"\"", Address.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, required + " a/\"   \"", Address.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, required + " a/\"" + "X".repeat(Address.MAX_LENGTH + 1) + "\"",
+                Address.MESSAGE_CONSTRAINTS);
+        Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail()
+                .withAddress("X".repeat(Address.MAX_LENGTH)).withTags().build();
+        assertParseSuccess(parser, required + " a/\"" + "X".repeat(Address.MAX_LENGTH) + "\"",
+                new AddCommand(expected));
+        Person literalQuotes = new PersonBuilder(expected).withAddress("\"Block A\"").build();
+        assertParseSuccess(parser, required + " a/\"\\\"Block A\\\"\"", new AddCommand(literalQuotes));
     }
 
     @Test

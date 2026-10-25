@@ -8,9 +8,17 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Support quoted addresses in `add` and `edit`, protecting complete addresses containing prefix-like text and using the same quote/backslash escapes as names and tags (#201).
+
 ### Changed
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
+
+### Fixed
+
+- Reject unknown space-separated ASCII-letter prefixes in `add`, `edit`, `list`, `tag` and `untag` rather than silently absorbing mistyped prefixes into field values; intentional literal text must be quoted (#193). Stored values, field validation, tag identity and whitespace trimming are unchanged.
 
 ## [v1.4] - 2026-10-22
 

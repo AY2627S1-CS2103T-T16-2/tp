@@ -14,7 +14,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 * Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
-**Version:** This guide describes the v1.4 source. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
+**Version:** This guide describes the unreleased development source for v1.5. Its strict prefix checks and quoted addresses are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -180,7 +180,7 @@ This section describes some noteworthy details on how certain features are imple
 
 `tag INDEX t/TAG [t/TAG]...` adds tags by set union; `untag INDEX t/TAG [t/TAG]...` removes them by set difference. `add` continues to accept an initial tag set and `edit` continues to replace the whole set. Stored tag identity is case-sensitive, unlike the case-insensitive `list` filter. Duplicate arguments are deduplicated, existing tags are ignored on addition, and absent tags are ignored on removal.
 
-`TagCommandParser` and `UntagCommandParser` delegate index and tag validation to `TagModificationCommandParser`. It uses `ArgumentTokenizer.tokenizeWithQuotedValues` with only `PREFIX_TAG`, protecting embedded `t/` text inside quoted tags and decoding the same quote and backslash escapes as `add`, `edit`, and `list`. Other field prefixes remain literal tag text. Every decoded tag is validated before constructing a command, so malformed quotes and invalid or blank tags reject the entire operation. See [Quoted name and tag parsing](#quoted-name-and-tag-parsing) for the shared quoting rules.
+`TagCommandParser` and `UntagCommandParser` delegate index and tag validation to `TagModificationCommandParser`. It uses `ArgumentTokenizer.tokenizeWithQuotedValues` with only `PREFIX_TAG`, protecting embedded prefix-like text inside quoted tags and decoding the same quote and backslash escapes as `add`, `edit` and `list`. Unsupported field-like prefixes outside quotes are rejected rather than absorbed into tags. Every decoded tag is validated before constructing a command, so malformed quotes and invalid or blank tags reject the entire operation. See [Quoted field parsing](#quoted-field-parsing) for the shared quoting rules.
 
 `TagCommand` and `UntagCommand` share execution through `TagModificationCommand`. It resolves the displayed index and modifies a disposable copy of the selected contact's tags. A changed set produces one replacement `Person` retaining its ID, role, relationship, and all other fields, then restores the full list. A no-change result preserves the filter and requests no save. `canMutate()` remains true before execution so `LogicManager` captures the rollback snapshot, while `requiresSave()` is reset each execution and becomes true only after an actual tag change. Existing storage and save-failure rollback apply without a schema change.
 
@@ -206,13 +206,19 @@ Name comparison treats canonically equivalent Unicode forms, such as é and e fo
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
 
-### Quoted name and tag parsing
+<a id="quoted-name-and-tag-parsing"></a>
 
-`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValues` for `PREFIX_NAME` and `PREFIX_TAG`; `ListCommandParser` and the shared `TagModificationCommandParser` for `tag` and `untag` opt in for `PREFIX_TAG`. The tokenizer automatically recognises those quoted prefixes, visits prefix positions in order, and ignores positions inside a quoted value. It then removes the enclosing quotes before normal name or tag validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields retain their existing quote and prefix behaviour. The model and JSON store the plain name or tag, so no storage migration is needed. Unquoted prefix collisions remain ambiguous and retain their existing interpretation, as documented in the UG.
+### Quoted field parsing
+
+`AddCommandParser` and `EditCommandParser` opt into `ArgumentTokenizer.tokenizeWithQuotedValues` for `PREFIX_NAME`, `PREFIX_ADDRESS` and `PREFIX_TAG`; `ListCommandParser` and the shared `TagModificationCommandParser` for `tag` and `untag` opt in for `PREFIX_TAG`. The tokenizer automatically recognises those quoted prefixes, visits candidate positions in order and ignores positions inside a quoted value. It then removes the enclosing quotes before normal field validation. It rejects unclosed quotes and trailing text outside the closing quote. Other fields retain their existing quote behaviour. The model and JSON store decoded values, so no storage migration is needed.
+
+For these five field-based commands, a prefix-like token is one or more ASCII letters followed immediately by `/`, at the start of the argument string or after an ordinary ASCII space (`U+0020`). Such a token outside a supported quoted value must match a prefix recognised by that command, including case. Unknown candidates join the same position-ordered scan as known prefixes, so quoted content is skipped before an unknown-prefix error can be raised. The error identifies the token and offers either correcting the command syntax or quoting the complete literal name, address or tag. It does not guess which field was intended.
+
+This deliberately changes some unquoted commands: `n/Muhammad s/o Ali` and `t/Advanced Math/Science` now need complete-value quotes. Non-boundary slashes such as `t/Math/Science` and URL punctuation such as `https://` are not new field boundaries. Recognised unquoted prefixes still start separate fields; the parser cannot detect every accidental use of an otherwise supported prefix. The older `tokenize` method retains its existing contract for other callers.
 
 Inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Other backslash sequences and all unquoted values are preserved. The closing-quote scan and decoding use the same escape predicate, so an escaped quote cannot end a value or expose embedded prefixes. An escaped final quote without a subsequent closing quote is rejected. Surrounding whitespace is trimmed as before, and decoded values pass through the existing domain validators; escaping does not widen name validation.
 
-Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`. This also covers data from intermediate development builds that treated enclosing quotes literally; no automatic stripping or migration of existing tags occurs.
+Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`, and `a/"\"Block A\""` enters an address with literal quotes around it. Existing addresses and tags are not stripped or normalised on loading. Surrounding whitespace continues to be trimmed even inside quoted values; this change does not resolve the padded-JSON-tag issue #185 or change tag case identity.
 
 ### \[Historical proposal\] Undo/redo feature
 
@@ -404,7 +410,7 @@ US20 undo/redo is excluded from the final release. There is no command history t
 
 The earlier US12 descope was reversed by [#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93): Help now includes an offline command summary, with browser access to the full UG and Copy URL as a fallback. It is a static syntax summary, not a context-sensitive help system.
 
-US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Name quoting under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) was extended to tags by [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163). Quoted names and tags support `\"` for a literal double quote and `\\` for a literal backslash. This protects embedded prefixes in those quoted fields; it does not add notes or quoting for every field. See [Quoted name and tag parsing](#quoted-name-and-tag-parsing).
+US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Name quoting under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) was extended to tags by [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163). The v1.5 development source also supports quoted addresses alongside strict unknown-prefix checks for #193/#201. Quoted names, addresses and tags support `\"` for a literal double quote and `\\` for a literal backslash, subject to field validation. This protects embedded prefixes in those quoted fields; it does not add notes or quoting for every field. See [Quoted field parsing](#quoted-field-parsing).
 
 #### Academic grouping and inactive contacts
 
@@ -414,7 +420,7 @@ US18/US19 needs are supported through generic tags: `t/Sec4 t/AMath` records a l
 
 #### Tag identity and compatibility
 
-[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Parsing trims surrounding whitespace, including inside quoted values, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Unquoted prefix collisions retain their existing interpretation. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag`, and `untag`; see the UG for examples.
+[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Parsing trims surrounding whitespace, including inside quoted values, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
 
 Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Once broader tags are saved, narrowing validation or normalising existing tag identities requires an explicit compatibility or migration plan.
 
@@ -703,6 +709,27 @@ Use these scenarios to check visible behaviour and persistence. Start with [Laun
 
 **Note:** These instructions only provide a starting point for testers to work on; testers are expected to do more *exploratory* testing.
 </box>
+
+### Strict prefixes and quoted addresses
+
+Use a fresh, disposable folder with an empty contact list. These steps target the v1.5 development build, not the published v1.4 JAR.
+
+1. Enter `add r/student n/Amy p/91234567 a/"20 Main Road, c/o Rina a/p Kaur" t/"Advanced Math/Science"`, then `view 1`.<br>
+   Expected: One student is stored. The address is `20 Main Road, c/o Rina a/p Kaur`, the phone is `91234567` and the tag is `Advanced Math/Science`; enclosing quotes are absent.
+1. Enter each command separately: `edit 1 a/12 Road ee/amy@example.com`, `tag 1 t/Math tt/Science`, `untag 1 t/Math tt/Science` and `list t/Advanced Math/Science`.<br>
+   Expected: Each rejects the unknown prefix (`ee/`, `tt/` or `Math/`) without changing contacts or the active filter. No suspected typo is guessed or saved as field data.
+1. Enter `list t/"Advanced Math/Science"`.<br>
+   Expected: Amy is listed; quoting preserves the complete literal tag.
+1. Enter `tag 1 t/"call p/next week"`, then `untag 1 t/"call p/next week"`.<br>
+   Expected: The complete literal tag is added and removed; `p/` is not interpreted as a phone field.
+1. Enter `edit 1 a/"Unit \"A\" C:\\Road\\"`, then `view 1`.<br>
+   Expected: The address is `Unit "A" C:\Road\`, with literal quotation marks and single backslashes. Other contact details are unchanged.
+1. Enter `edit 1 a/"12 Road` and `edit 1 a/"12 Road" extra` separately.<br>
+   Expected: Helpful quote-format errors appear and the last valid address remains.
+1. Exit and restart, then enter `view 1`.<br>
+   Expected: The escaped address and original tag persist unchanged.
+1. Enter `edit 1 a/""`, then `view 1`.<br>
+   Expected: The address is absent, matching the existing `edit 1 a/` clearing behaviour.
 
 ### Quoted names and tags
 
