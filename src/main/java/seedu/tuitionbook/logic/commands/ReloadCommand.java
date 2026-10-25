@@ -3,7 +3,10 @@ package seedu.tuitionbook.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
+import java.util.Optional;
+
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
+import seedu.tuitionbook.commons.exceptions.StoragePathException;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.TuitionBook;
@@ -32,6 +35,13 @@ public class ReloadCommand extends Command {
             result = storage.readTuitionBookWithResult()
                     .orElseGet(() -> new TuitionBookLoadResult(new TuitionBook(), 0));
         } catch (DataLoadingException exception) {
+            Optional<StoragePathException> storagePathException = StoragePathException.findIn(exception);
+            if (storagePathException.isPresent()) {
+                throw new CommandException("Could not reload contacts. Current contacts and filter are unchanged. "
+                        + storagePathException.get().getMessage()
+                        + " Saving remains blocked until the path is corrected "
+                        + "and reload succeeds.", exception);
+            }
             String recovery = exception.getMalformedFileBackupPath()
                     .map(path -> " Unreadable file preserved at " + path
                             + ". Saving is enabled. Restore corrected data before reloading again.")
@@ -58,4 +68,5 @@ public class ReloadCommand extends Command {
     public boolean canMutate() {
         return true;
     }
+
 }

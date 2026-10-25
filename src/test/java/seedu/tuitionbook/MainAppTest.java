@@ -26,6 +26,7 @@ import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
 import seedu.tuitionbook.testutil.PersonBuilder;
+import seedu.tuitionbook.testutil.SymlinkTestUtil;
 import seedu.tuitionbook.ui.StartupNotice;
 
 /**
@@ -46,6 +47,39 @@ public class MainAppTest {
     }
 
     @Test
+    public void migrateLegacyTuitionBookFile_externalDataSymlink_rejectedWithoutMovingFile() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path outsideData = Files.createDirectory(testFolder.resolve("outside-data"));
+        Path legacyFile = outsideData.resolve("addressbook.json");
+        Files.writeString(legacyFile, "legacy contents");
+        Path dataLink = applicationHome.resolve("data");
+        SymlinkTestUtil.createSymbolicLink(dataLink, outsideData);
+
+        org.junit.jupiter.api.Assertions.assertThrows(IOException.class, () -> MainApp.migrateLegacyTuitionBookFile(
+                applicationHome, dataLink.resolve("addressbook.json"), dataLink.resolve("tuitionbook.json")));
+
+        assertTrue(Files.isSymbolicLink(dataLink));
+        assertEquals("legacy contents", Files.readString(legacyFile));
+        assertFalse(Files.exists(outsideData.resolve("tuitionbook.json")));
+    }
+
+    @Test
+    public void verifyStartupPaths_externalDataSymlink_rejectedBeforeJavaFxLaunch() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("preflight-home"));
+        Path outsideData = Files.createDirectory(testFolder.resolve("preflight-outside"));
+        Path dataLink = applicationHome.resolve("data");
+        SymlinkTestUtil.createSymbolicLink(dataLink, outsideData);
+
+        IOException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                IOException.class, () -> MainApp.verifyStartupPaths(applicationHome,
+                        applicationHome.resolve("preferences.json"), dataLink.resolve("addressbook.json"),
+                        dataLink.resolve("tuitionbook.json")));
+
+        assertTrue(exception.getMessage().contains("resolves outside the application folder"));
+        assertTrue(Files.isSymbolicLink(dataLink));
+    }
+
+    @Test
     public void loadStartupState_existingEmptyFile_keepsEmptyDataWithoutWarning() throws Exception {
         StorageManager storage = storage();
         storage.saveTuitionBook(new TuitionBook());
@@ -54,6 +88,25 @@ public class MainAppTest {
 
         assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
         assertTrue(state.notice().isEmpty());
+    }
+
+    @Test
+    public void loadStartupState_externalDataSymlink_refusesStartupWithActionableMessage() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("startup-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path outsideFile = testFolder.resolve("startup-outside.json");
+        Files.writeString(outsideFile, "{\"persons\":[]}");
+        Path dataFile = dataDirectory.resolve("tuitionbook.json");
+        SymlinkTestUtil.createSymbolicLink(dataFile, outsideFile);
+        StorageManager storage = new StorageManager(new JsonTuitionBookStorage(dataFile, applicationHome),
+                new JsonUserPrefsStorage(applicationHome.resolve("preferences.json"), applicationHome));
+
+        IllegalStateException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class, () -> MainApp.loadStartupState(storage, new UserPrefs()));
+
+        assertTrue(exception.getMessage().contains("resolves outside the application folder"));
+        assertTrue(exception.getMessage().contains("Correct or remove the symbolic link"));
+        assertEquals("{\"persons\":[]}", Files.readString(outsideFile));
     }
 
     @Test
@@ -203,6 +256,23 @@ public class MainAppTest {
 
         assertEquals(expectedPrefs, loadedPrefs);
         assertEquals(expectedPrefs, prefsStorage.readUserPrefs().orElseThrow());
+    }
+
+    @Test
+    public void initPrefs_externalSymlink_refusesStartupAndPreservesTarget() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("prefs-home"));
+        Path outsideFile = testFolder.resolve("outside-prefs.json");
+        Files.writeString(outsideFile, "{}");
+        Path preferencesFile = applicationHome.resolve("preferences.json");
+        SymlinkTestUtil.createSymbolicLink(preferencesFile, outsideFile);
+        JsonUserPrefsStorage prefsStorage = new JsonUserPrefsStorage(preferencesFile, applicationHome);
+
+        IllegalStateException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class, () -> new MainApp().initPrefs(prefsStorage));
+
+        assertTrue(exception.getMessage().contains("resolves outside the application folder"));
+        assertEquals("{}", Files.readString(outsideFile));
+        assertTrue(Files.isSymbolicLink(preferencesFile));
     }
 
     @Test

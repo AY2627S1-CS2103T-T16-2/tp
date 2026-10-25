@@ -3,11 +3,15 @@ package seedu.tuitionbook.commons.core;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
@@ -86,7 +90,7 @@ public class LogsCenter {
         baseLogger.addHandler(consoleHandler);
 
         // add a FileHandler to log to a file
-        addFileHandler(baseLogger, LOG_FILE);
+        addFileHandler(baseLogger, LOG_FILE, ApplicationPaths.getApplicationHome());
     }
 
     /**
@@ -95,13 +99,22 @@ public class LogsCenter {
      * @return true if the file handler was added
      */
     static boolean addFileHandler(Logger targetLogger, Path logFile) {
+        return addFileHandler(targetLogger, logFile, logFile.toAbsolutePath().normalize().getParent());
+    }
+
+    /** Adds a rotating handler only when its log, rotation, and lock paths are contained in the application home. */
+    static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome) {
         try {
+            verifyLogPaths(logFile, applicationHome);
             String escapedLogFilePattern = logFile.toString().replace("%", "%%");
             FileHandler fileHandler = new FileHandler(escapedLogFilePattern,
                     MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
             fileHandler.setFormatter(new SimpleFormatter());
             fileHandler.setLevel(Level.ALL);
-            targetLogger.addHandler(fileHandler);
+            ContainedFileHandler containedFileHandler = new ContainedFileHandler(
+                    fileHandler, logFile, applicationHome);
+            containedFileHandler.setLevel(Level.ALL);
+            targetLogger.addHandler(containedFileHandler);
             return true;
         } catch (IOException | SecurityException e) {
             targetLogger.log(Level.WARNING, "Unable to create log file at " + logFile
@@ -110,5 +123,63 @@ public class LogsCenter {
         }
     }
 
+    private static void verifyLogPaths(Path logFile, Path applicationHome) throws IOException {
+        ApplicationPathGuard pathGuard = new ApplicationPathGuard(applicationHome);
+        Path logDirectory = logFile.toAbsolutePath().normalize().getParent();
+        pathGuard.verify(logDirectory);
+        pathGuard.verify(logFile);
+        for (int generation = 0; generation < MAX_FILE_COUNT; generation++) {
+            Path rotatedFile = logFile.resolveSibling(logFile.getFileName() + "." + generation);
+            pathGuard.verify(rotatedFile);
+            pathGuard.verify(rotatedFile.resolveSibling(rotatedFile.getFileName() + ".lck"));
+        }
+        String generatedFilePrefix = logFile.getFileName() + ".";
+        try (DirectoryStream<Path> generatedFiles = Files.newDirectoryStream(logDirectory,
+                path -> path.getFileName().toString().startsWith(generatedFilePrefix))) {
+            for (Path generatedFile : generatedFiles) {
+                pathGuard.verify(generatedFile);
+            }
+        }
+    }
+
+    /** Revalidates rotation and lock paths before each publish without logging failures recursively. */
+    private static final class ContainedFileHandler extends Handler {
+        private final FileHandler delegate;
+        private final Path logFile;
+        private final Path applicationHome;
+        private boolean isDisabled;
+
+        private ContainedFileHandler(FileHandler delegate, Path logFile, Path applicationHome) {
+            this.delegate = delegate;
+            this.logFile = logFile;
+            this.applicationHome = applicationHome;
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            if (isDisabled || !isLoggable(record)) {
+                return;
+            }
+            try {
+                verifyLogPaths(logFile, applicationHome);
+                delegate.publish(record);
+            } catch (IOException | SecurityException exception) {
+                isDisabled = true;
+                delegate.close();
+                System.err.println("Unable to continue file logging at " + logFile
+                        + " because its path is unsafe; console logging will continue. " + exception);
+            }
+        }
+
+        @Override
+        public void flush() {
+            delegate.flush();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+    }
 
 }

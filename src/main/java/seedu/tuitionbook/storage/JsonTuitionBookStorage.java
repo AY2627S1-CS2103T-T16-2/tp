@@ -9,6 +9,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import seedu.tuitionbook.commons.core.ApplicationPathGuard;
 import seedu.tuitionbook.commons.core.LogsCenter;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.commons.exceptions.IllegalValueException;
@@ -26,11 +27,18 @@ public class JsonTuitionBookStorage {
 
     private static final Logger logger = LogsCenter.getLogger(JsonTuitionBookStorage.class);
 
-    private Path filePath;
+    private final Path filePath;
+    private final ApplicationPathGuard pathGuard;
     private boolean isWriteBlocked;
 
     public JsonTuitionBookStorage(Path filePath) {
+        this(filePath, filePath.toAbsolutePath().normalize().getParent());
+    }
+
+    /** Creates storage whose managed paths must remain inside {@code applicationHome}. */
+    public JsonTuitionBookStorage(Path filePath, Path applicationHome) {
         this.filePath = filePath;
+        pathGuard = new ApplicationPathGuard(applicationHome);
     }
 
     public Path getTuitionBookFilePath() {
@@ -74,6 +82,14 @@ public class JsonTuitionBookStorage {
     public Optional<TuitionBookLoadResult> readTuitionBookWithResult(Path filePath) throws DataLoadingException {
         requireNonNull(filePath);
         boolean isConfiguredFile = isConfiguredFilePath(filePath);
+        try {
+            pathGuard.verify(filePath);
+        } catch (IOException exception) {
+            if (isConfiguredFile) {
+                isWriteBlocked = true;
+            }
+            throw new DataLoadingException(exception);
+        }
 
         try {
             Optional<JsonSerializableTuitionBook> jsonTuitionBook = JsonUtil.readJsonFile(
@@ -108,8 +124,10 @@ public class JsonTuitionBookStorage {
      * Saving remains blocked if the original file cannot be preserved.
      */
     private Optional<Path> preserveMalformedFile() {
-        Path backupPath = getAvailableBackupPath();
         try {
+            Path backupPath = getAvailableBackupPath();
+            pathGuard.verify(filePath);
+            pathGuard.verify(backupPath);
             moveFile(filePath, backupPath);
             isWriteBlocked = false;
             logger.warning("Moved unreadable data file from " + filePath + " to " + backupPath + ".");
@@ -127,11 +145,13 @@ public class JsonTuitionBookStorage {
     }
 
     /** Returns an unused sibling backup path, starting with {@code <file>.backup}. */
-    private Path getAvailableBackupPath() {
+    private Path getAvailableBackupPath() throws IOException {
         Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
         int suffix = 1;
-        while (Files.exists(backupPath)) {
+        pathGuard.verify(backupPath);
+        while (Files.exists(backupPath, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
             backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup." + suffix++);
+            pathGuard.verify(backupPath);
         }
         return backupPath;
     }
@@ -158,12 +178,20 @@ public class JsonTuitionBookStorage {
             throw new IOException(String.format(MESSAGE_WRITE_BLOCKED, this.filePath));
         }
 
-        Path absoluteFilePath = filePath.toAbsolutePath();
-        Files.createDirectories(absoluteFilePath.getParent());
-        Path temporaryFile = Files.createTempFile(absoluteFilePath.getParent(),
+        Path absoluteFilePath = filePath.toAbsolutePath().normalize();
+        pathGuard.verify(absoluteFilePath);
+        Path parent = absoluteFilePath.getParent();
+        pathGuard.verify(parent);
+        Files.createDirectories(parent);
+        pathGuard.verify(parent);
+        pathGuard.verify(absoluteFilePath);
+        Path temporaryFile = Files.createTempFile(parent,
                 absoluteFilePath.getFileName() + ".", ".tmp");
         try {
+            pathGuard.verify(temporaryFile);
             writeJsonFile(new JsonSerializableTuitionBook(tuitionBook), temporaryFile);
+            pathGuard.verify(temporaryFile);
+            pathGuard.verify(absoluteFilePath);
             replaceFile(temporaryFile, absoluteFilePath);
         } finally {
             Files.deleteIfExists(temporaryFile);

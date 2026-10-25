@@ -35,6 +35,7 @@ import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.testutil.PersonBuilder;
+import seedu.tuitionbook.testutil.SymlinkTestUtil;
 
 public class JsonTuitionBookStorageTest {
     private static final String CONFLICTING_TUITION_BOOK_JSON = """
@@ -99,6 +100,104 @@ public class JsonTuitionBookStorageTest {
     @Test
     public void read_missingFile_emptyResult() throws Exception {
         assertFalse(readTuitionBook("NonExistentFile.json").isPresent());
+    }
+
+    @Test
+    public void read_symlinkedParentOutsideApplicationHome_rejected() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path outsideDirectory = Files.createDirectory(testFolder.resolve("outside"));
+        Path outsideFile = outsideDirectory.resolve("tuitionbook.json");
+        Files.writeString(outsideFile, "{\"persons\":[]}");
+        SymlinkTestUtil.createSymbolicLink(applicationHome.resolve("data"), outsideDirectory);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(
+                applicationHome.resolve("data").resolve("tuitionbook.json"), applicationHome);
+
+        org.junit.jupiter.api.Assertions.assertThrows(DataLoadingException.class, storage::readTuitionBook);
+        assertEquals("{\"persons\":[]}", Files.readString(outsideFile));
+    }
+
+    @Test
+    public void save_symlinkedParentOutsideApplicationHome_rejectedAndTargetUnchanged() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path outsideDirectory = Files.createDirectory(testFolder.resolve("outside"));
+        Path outsideFile = outsideDirectory.resolve("tuitionbook.json");
+        Files.writeString(outsideFile, "outside contents");
+        Path dataLink = applicationHome.resolve("data");
+        SymlinkTestUtil.createSymbolicLink(dataLink, outsideDirectory);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(
+                dataLink.resolve("tuitionbook.json"), applicationHome);
+
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(new TuitionBook()));
+        assertTrue(Files.isSymbolicLink(dataLink));
+        assertEquals("outside contents", Files.readString(outsideFile));
+    }
+
+    @Test
+    public void readAndSave_finalFileSymlinkOutside_rejectedAndLinkAndTargetUnchanged() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path outsideFile = testFolder.resolve("outside.json");
+        Files.writeString(outsideFile, "{\"persons\":[]}");
+        Path dataLink = dataDirectory.resolve("tuitionbook.json");
+        SymlinkTestUtil.createSymbolicLink(dataLink, outsideFile);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(dataLink, applicationHome);
+
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(new TuitionBook()));
+        assertTrue(Files.isSymbolicLink(dataLink));
+        assertEquals("{\"persons\":[]}", Files.readString(outsideFile));
+    }
+
+    @Test
+    public void read_malformedExternalFileSymlink_doesNotBackUpOrMoveExternalData() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path outsideFile = testFolder.resolve("outside.json");
+        Files.writeString(outsideFile, "{broken");
+        Path dataLink = dataDirectory.resolve("tuitionbook.json");
+        SymlinkTestUtil.createSymbolicLink(dataLink, outsideFile);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(dataLink, applicationHome);
+
+        DataLoadingException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DataLoadingException.class, storage::readTuitionBook);
+
+        assertTrue(exception.getMalformedFileBackupPath().isEmpty());
+        assertTrue(Files.isSymbolicLink(dataLink));
+        assertFalse(Files.exists(dataDirectory.resolve("tuitionbook.json.backup")));
+        assertEquals("{broken", Files.readString(outsideFile));
+    }
+
+    @Test
+    public void readAndSave_internalParentSymlink_succeeds() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path internalData = Files.createDirectory(applicationHome.resolve("internal-data"));
+        Path dataLink = applicationHome.resolve("data");
+        SymlinkTestUtil.createSymbolicLink(dataLink, internalData);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(
+                dataLink.resolve("tuitionbook.json"), applicationHome);
+
+        storage.saveTuitionBook(getTypicalTuitionBook());
+
+        assertEquals(getTypicalTuitionBook(), new TuitionBook(storage.readTuitionBook().orElseThrow()));
+        assertTrue(Files.exists(internalData.resolve("tuitionbook.json")));
+    }
+
+    @Test
+    public void save_pathChangedToOutsideSymlinkSinceRead_revalidatesAndRejects() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path dataFile = dataDirectory.resolve("tuitionbook.json");
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(dataFile, applicationHome);
+        storage.saveTuitionBook(new TuitionBook());
+        storage.readTuitionBook();
+        Files.delete(dataFile);
+        Path outsideFile = testFolder.resolve("outside.json");
+        Files.writeString(outsideFile, "outside contents");
+        SymlinkTestUtil.createSymbolicLink(dataFile, outsideFile);
+
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(getTypicalTuitionBook()));
+        assertTrue(Files.isSymbolicLink(dataFile));
+        assertEquals("outside contents", Files.readString(outsideFile));
     }
 
     @Test
@@ -173,6 +272,18 @@ public class JsonTuitionBookStorageTest {
         readBack = jsonTuitionBookStorage.readTuitionBook().get(); // file path not specified
         assertEquals(original, new TuitionBook(readBack));
 
+    }
+
+    @Test
+    public void saveAndRead_missingDirectoriesInsideApplicationHome_createdSuccessfully() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path filePath = applicationHome.resolve("missing/data/tuitionbook.json");
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath, applicationHome);
+
+        storage.saveTuitionBook(getTypicalTuitionBook());
+
+        assertTrue(Files.isRegularFile(filePath));
+        assertEquals(getTypicalTuitionBook(), new TuitionBook(storage.readTuitionBook().orElseThrow()));
     }
 
     @Test
@@ -287,6 +398,28 @@ public class JsonTuitionBookStorageTest {
         assertEquals("existing backup", Files.readString(backupPath));
         assertEquals(CONFLICTING_TUITION_BOOK_JSON,
                 Files.readString(filePath.resolveSibling(filePath.getFileName() + ".backup.1")));
+    }
+
+    @Test
+    public void readTuitionBook_externalBackupSymlink_preservesSourceLinkAndTargetAndBlocksSave() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path filePath = dataDirectory.resolve("tuitionbook.json");
+        Files.writeString(filePath, CONFLICTING_TUITION_BOOK_JSON);
+        Path outsideFile = testFolder.resolve("outside-backup.json");
+        Files.writeString(outsideFile, "outside contents");
+        Path backupLink = dataDirectory.resolve("tuitionbook.json.backup");
+        SymlinkTestUtil.createSymbolicLink(backupLink, outsideFile);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath, applicationHome);
+
+        DataLoadingException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DataLoadingException.class, storage::readTuitionBook);
+
+        assertTrue(exception.getMalformedFileBackupPath().isEmpty());
+        assertEquals(CONFLICTING_TUITION_BOOK_JSON, Files.readString(filePath));
+        assertTrue(Files.isSymbolicLink(backupLink));
+        assertEquals("outside contents", Files.readString(outsideFile));
+        assertThrows(IOException.class, () -> storage.saveTuitionBook(new TuitionBook()));
     }
 
     @Test

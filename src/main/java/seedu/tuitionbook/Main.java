@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import javafx.application.Application;
 import seedu.tuitionbook.commons.core.LogsCenter;
+import seedu.tuitionbook.commons.exceptions.StoragePathException;
 
 /**
  * The main entry point to the application.
@@ -28,6 +29,13 @@ public class Main {
 
         logger.warning("The warnings about a 'restricted method in java.lang.System' "
             + "and 'enabling native access' appearing below (if any) can be ignored.");
+        try {
+            MainApp.verifyStartupPaths();
+        } catch (StoragePathException exception) {
+            System.err.println("TuitionBook could not start. " + exception.getMessage());
+            System.exit(1);
+            return;
+        }
         Application.launch(MainApp.class, args);
     }
 }

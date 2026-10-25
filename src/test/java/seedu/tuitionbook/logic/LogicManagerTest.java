@@ -63,6 +63,7 @@ import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
 import seedu.tuitionbook.storage.TuitionBookLoadResult;
 import seedu.tuitionbook.testutil.PersonBuilder;
+import seedu.tuitionbook.testutil.SymlinkTestUtil;
 
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
@@ -867,6 +868,56 @@ public class LogicManagerTest {
         assertTrue(model.getFilteredPersonList().isEmpty());
         assertEquals(MALFORMED_TUITION_BOOK_JSON, Files.readString(file));
         assertThrows(CommandException.class, () -> blocked.execute("clear confirm"));
+    }
+
+    @Test
+    public void execute_reloadOutsideSymlink_reportsContainmentAndPreservesState() throws Exception {
+        Path applicationHome = Files.createDirectory(temporaryFolder.resolve("application-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path outsideFile = temporaryFolder.resolve("outside.json");
+        Files.writeString(outsideFile, "{\"persons\":[]}");
+        Path dataFile = dataDirectory.resolve("tuitionbook.json");
+        SymlinkTestUtil.createSymbolicLink(dataFile, outsideFile);
+        JsonTuitionBookStorage fileStorage = new JsonTuitionBookStorage(dataFile, applicationHome);
+        Logic guardedLogic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(applicationHome.resolve("preferences.json"), applicationHome)));
+        model.addPerson(AMY);
+        model.updateFilteredPersonList(person -> false);
+
+        CommandException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                CommandException.class, () -> guardedLogic.execute("reload"));
+
+        assertTrue(exception.getMessage().contains("resolves outside the application folder"));
+        assertTrue(exception.getMessage().contains("Saving remains blocked"));
+        assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertEquals("{\"persons\":[]}", Files.readString(outsideFile));
+        assertFalse(Files.exists(dataDirectory.resolve("tuitionbook.json.backup")));
+    }
+
+    @Test
+    public void execute_saveAfterPathChangedToOutsideSymlink_rollsBackModel() throws Exception {
+        Path applicationHome = Files.createDirectory(temporaryFolder.resolve("save-home"));
+        Path dataDirectory = Files.createDirectory(applicationHome.resolve("data"));
+        Path dataFile = dataDirectory.resolve("tuitionbook.json");
+        JsonTuitionBookStorage fileStorage = new JsonTuitionBookStorage(dataFile, applicationHome);
+        StorageManager guardedStorage = new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(applicationHome.resolve("preferences.json"), applicationHome));
+        fileStorage.saveTuitionBook(new TuitionBook());
+        Path outsideFile = temporaryFolder.resolve("save-outside.json");
+        Files.writeString(outsideFile, "outside contents");
+        Files.delete(dataFile);
+        SymlinkTestUtil.createSymbolicLink(dataFile, outsideFile);
+        Logic guardedLogic = new LogicManager(model, guardedStorage);
+        model.addPerson(AMY);
+
+        CommandException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                CommandException.class, () -> guardedLogic.execute("add r/student n/New Student p/91234567"));
+
+        assertTrue(exception.getMessage().contains("resolves outside the application folder"));
+        assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
+        assertEquals("outside contents", Files.readString(outsideFile));
+        assertTrue(Files.isSymbolicLink(dataFile));
     }
 
     @Test

@@ -8,9 +8,11 @@ import java.util.logging.Logger;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import seedu.tuitionbook.commons.core.ApplicationPathGuard;
 import seedu.tuitionbook.commons.core.ApplicationPaths;
 import seedu.tuitionbook.commons.core.LogsCenter;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
+import seedu.tuitionbook.commons.exceptions.StoragePathException;
 import seedu.tuitionbook.commons.util.StringUtil;
 import seedu.tuitionbook.logic.Logic;
 import seedu.tuitionbook.logic.LogicManager;
@@ -46,15 +48,32 @@ public class MainApp extends Application {
     protected Storage storage;
     protected Model model;
 
+    /** Verifies all startup-managed paths before JavaFX initialization begins. */
+    static void verifyStartupPaths() throws StoragePathException {
+        verifyStartupPaths(ApplicationPaths.getApplicationHome(), USER_PREFS_FILE_PATH,
+                LEGACY_TUITION_BOOK_FILE_PATH, TUITION_BOOK_FILE_PATH);
+    }
+
+    /** Verifies startup-managed paths against an explicit application home. */
+    static void verifyStartupPaths(Path applicationHome, Path prefsPath, Path legacyPath, Path dataPath)
+            throws StoragePathException {
+        ApplicationPathGuard pathGuard = new ApplicationPathGuard(applicationHome);
+        pathGuard.verify(prefsPath);
+        pathGuard.verify(legacyPath);
+        pathGuard.verify(dataPath);
+    }
+
     @Override
     public void init() throws Exception {
         logger.info("=============================[ Initializing TuitionBook ]===========================");
         super.init();
 
-        JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(USER_PREFS_FILE_PATH);
+        JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(
+                USER_PREFS_FILE_PATH, ApplicationPaths.getApplicationHome());
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
         migrateLegacyTuitionBookFile();
-        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(TUITION_BOOK_FILE_PATH);
+        JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(
+                TUITION_BOOK_FILE_PATH, ApplicationPaths.getApplicationHome());
         storage = new StorageManager(tuitionBookStorage, userPrefsStorage);
 
         StartupState startupState = loadStartupState(storage, userPrefs);
@@ -71,10 +90,21 @@ public class MainApp extends Application {
      * @throws IOException if the legacy data file cannot be moved to the current path.
      */
     private void migrateLegacyTuitionBookFile() throws IOException {
-        if (Files.notExists(TUITION_BOOK_FILE_PATH) && Files.exists(LEGACY_TUITION_BOOK_FILE_PATH)) {
-            logger.info("Moving legacy data file from " + LEGACY_TUITION_BOOK_FILE_PATH
-                    + " to " + TUITION_BOOK_FILE_PATH + ".");
-            Files.move(LEGACY_TUITION_BOOK_FILE_PATH, TUITION_BOOK_FILE_PATH);
+        migrateLegacyTuitionBookFile(ApplicationPaths.getApplicationHome(),
+                LEGACY_TUITION_BOOK_FILE_PATH, TUITION_BOOK_FILE_PATH);
+    }
+
+    /** Moves an existing legacy file to the current path while enforcing application-home containment. */
+    static void migrateLegacyTuitionBookFile(Path applicationHome, Path legacyPath, Path currentPath)
+            throws IOException {
+        ApplicationPathGuard pathGuard = new ApplicationPathGuard(applicationHome);
+        pathGuard.verify(legacyPath);
+        pathGuard.verify(currentPath);
+        if (Files.notExists(currentPath) && Files.exists(legacyPath)) {
+            pathGuard.verify(legacyPath);
+            pathGuard.verify(currentPath);
+            logger.info("Moving legacy data file from " + legacyPath + " to " + currentPath + ".");
+            Files.move(legacyPath, currentPath);
         }
     }
 
@@ -106,6 +136,9 @@ public class MainApp extends Application {
                 }
             }
         } catch (DataLoadingException e) {
+            StoragePathException.findIn(e).ifPresent(storagePathException -> {
+                throw new IllegalStateException(storagePathException.getMessage(), storagePathException);
+            });
             logger.warning("Data file at " + storage.getTuitionBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty TuitionBook.");
             initialData = new TuitionBook();
@@ -138,6 +171,9 @@ public class MainApp extends Application {
             }
             initializedPrefs = prefsOptional.orElse(new UserPrefs());
         } catch (DataLoadingException e) {
+            StoragePathException.findIn(e).ifPresent(storagePathException -> {
+                throw new IllegalStateException(storagePathException.getMessage(), storagePathException);
+            });
             logger.warning("Preference file at " + prefsFilePath + " could not be loaded."
                     + " Using default preferences.");
             initializedPrefs = new UserPrefs();

@@ -12,6 +12,10 @@ The format is based on Keep a Changelog.
 
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 
+### Fixed
+
+- Rejected application-managed data, preference, migration, log, rotation, and lock paths that resolve outside the JAR folder or through unsafe links, while preserving contained local JSON storage, atomic saves, and malformed-file recovery.
+
 ## [v1.4] - 2026-10-22
 
 ### Added

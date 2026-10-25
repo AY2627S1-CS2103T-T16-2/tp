@@ -166,6 +166,8 @@ The `Storage` component,
 
 `ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
 
+`ApplicationPathGuard` revalidates those paths at their read, write, temporary-file, replacement, backup, migration, and logging boundaries. It compares `Path` objects, resolves the real application home, walks existing components without first following their final links, and resolves missing suffixes beneath the deepest existing ancestor. Internal symbolic links are allowed when their resolved path stays inside the real application home. Outside-pointing, dangling, looping, inaccessible, and otherwise unresolvable links are rejected before the corresponding I/O. Contact-data containment failures block saving until a corrected path is successfully reloaded; unsafe startup data or preference paths refuse initialization with corrective guidance, while an unsafe log path leaves console logging active. This is application-level protection against pre-existing unsafe paths, not a complete security boundary against another process racing filesystem changes between validation and I/O.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.tuitionbook.commons` package.
@@ -673,6 +675,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and active filter to their state before that operation.
 7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+8.  Application-managed data, preference, migration, and log paths shall be physically contained within the folder containing the packaged JAR. Pre-existing symbolic links or filesystem aliases that resolve outside that folder, or cannot be resolved safely, shall be rejected without accessing their outside targets.
 
 ### Glossary
 
@@ -1037,6 +1040,17 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
 
    1. Compare `data/tuitionbook.json.backup` with the saved copy.<br>
       Expected: The backup file is identical to the saved copy; TuitionBook did not modify its malformed contents.
+
+1. Rejecting an outside-pointing contact-data link
+
+   1. In a fresh, disposable JAR folder, create a separate disposable folder outside it containing a valid synthetic `tuitionbook.json`. Create `data` beside the JAR as a symbolic link to that outside folder. Link creation commands and permissions vary by operating system; do not use real contact data.<br>
+      Expected: the link resolves successfully at the operating-system level before TuitionBook is launched.
+
+   1. Launch TuitionBook from the JAR.<br>
+      Expected: initialization is refused with a message that the application-managed path resolves outside the application folder and must be corrected. The link and outside JSON bytes remain unchanged, and no malformed-file backup is created.
+
+   1. Replace the link with a real `data` folder beside the JAR and launch again.<br>
+      Expected: TuitionBook starts normally with an empty contact list. Adding a synthetic contact creates `data/tuitionbook.json` inside the JAR folder.
 
 1. Warning about a repaired guardian link
 

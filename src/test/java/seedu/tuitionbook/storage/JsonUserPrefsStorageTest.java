@@ -2,9 +2,11 @@ package seedu.tuitionbook.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.tuitionbook.commons.core.GuiSettings;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.model.UserPrefs;
+import seedu.tuitionbook.testutil.SymlinkTestUtil;
 
 public class JsonUserPrefsStorageTest {
 
@@ -117,6 +120,21 @@ public class JsonUserPrefsStorageTest {
         jsonUserPrefsStorage.saveUserPrefs(original);
         readBack = jsonUserPrefsStorage.readUserPrefs().get();
         assertEquals(original, readBack);
+    }
+
+    @Test
+    public void readAndSave_externalFileSymlink_rejectedAndTargetUnchanged() throws Exception {
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path outsideFile = testFolder.resolve("outside-preferences.json");
+        Files.writeString(outsideFile, "{}");
+        Path preferencesLink = applicationHome.resolve("preferences.json");
+        SymlinkTestUtil.createSymbolicLink(preferencesLink, outsideFile);
+        JsonUserPrefsStorage storage = new JsonUserPrefsStorage(preferencesLink, applicationHome);
+
+        assertThrows(DataLoadingException.class, storage::readUserPrefs);
+        assertThrows(IOException.class, () -> storage.saveUserPrefs(new UserPrefs()));
+        assertTrue(Files.isSymbolicLink(preferencesLink));
+        assertEquals("{}", Files.readString(outsideFile));
     }
 
 }

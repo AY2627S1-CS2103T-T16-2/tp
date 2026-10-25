@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import seedu.tuitionbook.commons.core.ApplicationPathGuard;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.commons.util.JsonUtil;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
@@ -14,10 +15,17 @@ import seedu.tuitionbook.model.UserPrefs;
  */
 public class JsonUserPrefsStorage {
 
-    private Path filePath;
+    private final Path filePath;
+    private final ApplicationPathGuard pathGuard;
 
     public JsonUserPrefsStorage(Path filePath) {
+        this(filePath, filePath.toAbsolutePath().normalize().getParent());
+    }
+
+    /** Creates preferences storage whose managed paths must remain inside {@code applicationHome}. */
+    public JsonUserPrefsStorage(Path filePath, Path applicationHome) {
         this.filePath = filePath;
+        pathGuard = new ApplicationPathGuard(applicationHome);
     }
 
     public Path getUserPrefsFilePath() {
@@ -40,6 +48,11 @@ public class JsonUserPrefsStorage {
      * @throws DataLoadingException if the file format is not as expected.
      */
     public Optional<UserPrefs> readUserPrefs(Path prefsFilePath) throws DataLoadingException {
+        try {
+            pathGuard.verify(prefsFilePath);
+        } catch (IOException exception) {
+            throw new DataLoadingException(exception);
+        }
         return JsonUtil.readJsonFile(prefsFilePath, UserPrefs.class);
     }
 
@@ -49,6 +62,7 @@ public class JsonUserPrefsStorage {
      * @throws IOException if there was any problem writing to the file.
      */
     public void saveUserPrefs(ReadOnlyUserPrefs userPrefs) throws IOException {
+        pathGuard.verify(filePath);
         JsonUtil.saveJsonFile(userPrefs, filePath);
     }
 
