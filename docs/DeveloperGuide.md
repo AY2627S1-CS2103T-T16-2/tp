@@ -190,6 +190,8 @@ The `Storage` component,
 
 `ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
 
+At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it attempts to move the legacy `addressbook.json` to that current path. A failed move is logged without aborting initialization: the unchanged legacy path is passed to storage for that run, and migration is retried on a later launch. This preserves readable contacts when directory permissions prevent renaming. If the same permissions also prevent saving, the normal command save-failure rollback restores contacts and the active filter.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.tuitionbook.commons` package.
@@ -673,6 +675,12 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
       Use case ends.
 
+* 2a. TuitionBook cannot save the deletion.
+
+    * 2a1. TuitionBook shows a storage error, restores the deleted contact and any guardian links cleared by the request, retains the previously active filter, and does not report a successful deletion.
+
+      Use case ends.
+
 **Use case: UC08 Filter contacts by role**
 
 **MSS**
@@ -689,6 +697,44 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
     * 1a1. TuitionBook shows an error message describing the invalid request.
 
       Use case ends.
+
+**Use case: UC09 Reload contact data**
+
+**MSS**
+
+1.  Private tutor submits a reload request.
+2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and clears the active filter.
+3.  TuitionBook enables saving and reports the number of loaded contacts.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. The configured data file is missing.
+
+    * 2a1. TuitionBook replaces the current contacts with an empty contact list, clears the active filter, enables saving, and reports that zero contacts were loaded.
+
+      Use case ends.
+
+* 2b. The file contains invalid guardian links but all contacts are otherwise valid.
+
+    * 2b1. TuitionBook loads the contacts without those links, clears the active filter, and reports the number of links repaired in memory for the tutor to review before saving.
+
+      Use case resumes from step 3.
+
+* 2c. TuitionBook cannot read the file but preserves it in a backup.
+
+    * 2c1. TuitionBook retains the current contacts and active filter, enables saving, and reports the backup path and that corrected data must be restored before reloading again.
+
+      Use case ends.
+
+* 2d. TuitionBook cannot read the file or preserve it in a backup.
+
+    * 2d1. TuitionBook retains the current contacts and active filter, leaves the original file in place, blocks saving, and explains that the original must be corrected or moved before reloading again.
+
+      Use case ends.
+
+See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
 **Role-filter command rule**
 
@@ -1170,6 +1216,20 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
 
    1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
       Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
+
+1. Retrying legacy-file migration after a permission failure
+
+   1. In a fresh, disposable JAR folder, create `data/addressbook.json` containing `{"persons":[{"name":"Legacy Alex","phone":"87438807","tags":[]}]}` and ensure that `data/tuitionbook.json` is absent. Make the `data` folder readable but not writable for the current user; permission controls differ by operating system.<br>
+      Expected: creating or renaming a file in `data` fails, while `addressbook.json` remains readable. If not, the permission-failure precondition was not established.
+
+   1. Launch TuitionBook.<br>
+      Expected: TuitionBook opens without an initialization error and displays Legacy Alex. `addressbook.json` remains unchanged and `tuitionbook.json` is absent.
+
+   1. Enter `edit 1 n/Updated Alex`.<br>
+      Expected: TuitionBook reports that it could not save and restores the contact as Legacy Alex.
+
+   1. Close TuitionBook, restore write permission to `data`, and relaunch it.<br>
+      Expected: TuitionBook displays Legacy Alex, moves the data to `data/tuitionbook.json`, and removes `data/addressbook.json`. Later contact changes can be saved normally.
 
 1. Recovering from malformed contact data (backup succeeds)
 
