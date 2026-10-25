@@ -35,6 +35,10 @@ The format is based on Keep a Changelog.
 - Report raw line-break code points and correction guidance when input reaches the parser without command-box conversion, and diagnose non-breaking/full-width spaces in command words and indexes without normalising those characters in field values.
 - Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.
 
+### Fixed
+
+- Reject JSON files containing trailing content or duplicate property names so that ambiguous data is preserved through the existing malformed-file recovery workflow instead of being silently discarded on the next save.
+
 ## [v1.4] - 2026-10-22
 
 ### Added
