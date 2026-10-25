@@ -37,9 +37,9 @@ public class AddCommand extends Command {
             + PREFIX_ADDRESS + "311, Clementi Ave 2, #02-25 "
             + PREFIX_TAG + "friends "
             + PREFIX_TAG + "owesMoney\n"
-            + "Use double quotes around a name or tag containing field prefixes, for example "
-            + "n/\"Rina a/p Kaur\" or t/\"call p/next week\".\n"
-            + "Inside quoted tags, use \\\" for a literal quote and \\\\ for a literal backslash.";
+            + "Use double quotes around a name, address or tag containing prefix-like text, for example "
+            + "n/\"Rina a/p Kaur\", a/\"20 Road c/o Rina\" or t/\"call p/next week\".\n"
+            + "Inside quoted values, use \\\" for a literal quote and \\\\ for a literal backslash.";
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in TuitionBook.";

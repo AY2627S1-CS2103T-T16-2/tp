@@ -72,9 +72,14 @@ public class HelpWindow extends UiPart<Stage> {
             exit
               Exit TuitionBook.
 
-            Quoted values (add/edit names and tags; list/tag/untag tags)
+            Field prefixes (add/edit/list/tag/untag)
+              After a normal space, ASCII letters followed by / are field syntax, e.g. ee/.
+              Unknown prefixes are rejected. Quote complete literal names, addresses or tags.
+
+            Quoted values (add/edit names, addresses and tags; list/tag/untag tags)
               Use double quotes around values containing field prefixes, e.g. t/"call p/next week".
-              Inside quoted tags, use \\" for a literal quote and \\\\ for a literal backslash.
+              For a complete address, use a/"20 Main Road, c/o Rina a/p Kaur".
+              Inside quoted values, use \\" for a literal quote and \\\\ for a literal backslash.
               Surrounding whitespace is trimmed, including inside quotes.
             """.strip();
 
