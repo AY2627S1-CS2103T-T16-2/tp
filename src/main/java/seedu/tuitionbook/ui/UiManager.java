@@ -77,29 +77,13 @@ public class UiManager implements Ui {
             case MISSING_DATA_FILE -> showAlertDialogAndWait(AlertType.INFORMATION, "No data file found",
                     "TuitionBook started with an empty contact list",
                     "No contact data was found at " + displayedDataFilePath + ". Add contacts to get started.");
-            case LOAD_FAILED_BACKED_UP -> showLoadFailureNotice(notice.loadFailureGuidance(),
-                    "TuitionBook started with an empty contact list",
-                    "Your data file could not be read, so it was moved unchanged to "
-                            + displayedPath(notice.malformedFileBackupPath())
-                            + ". Your original data is not lost. TuitionBook will save new contacts to "
-                            + displayedDataFilePath + ". To restore the original data, fix the JSON in the backup, "
-                            + "rename it to " + displayedDataFilePath + " (replacing the new file), "
-                            + "then restart TuitionBook. "
-                            + "Contacts added after recovery are in the new file and must be re-entered; "
-                            + "the files cannot be merged automatically.",
-                    "Data file was moved unchanged to " + displayedPath(notice.malformedFileBackupPath()) + ".\n"
-                            + "New contacts save to " + displayedDataFilePath
-                            + ". Fix the backup JSON and replace this file to restore it.\n"
-                            + "Restart TuitionBook; contacts added after recovery must be re-entered.");
-            case LOAD_FAILED_BACKUP_FAILED -> showLoadFailureNotice(notice.loadFailureGuidance(),
+            case LOAD_FAILED_BACKED_UP -> showLoadFailureNotice("TuitionBook started with an empty contact list",
+                    backedUpDialogMessage(notice, displayedDataFilePath),
+                    backedUpResultMessage(notice, displayedDataFilePath));
+            case LOAD_FAILED_BACKUP_FAILED -> showLoadFailureNotice(
                     "TuitionBook started with an empty contact list, but saving is disabled",
-                    "Your data file could not be read and could not be moved to a backup. It remains at "
-                            + displayedDataFilePath
-                            + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, "
-                            + "then restart "
-                            + "TuitionBook.",
-                    "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
-                            + "Saving is disabled. Correct or move the file, then restart TuitionBook.");
+                    backupFailedDialogMessage(notice, displayedDataFilePath),
+                    backupFailedResultMessage(notice, displayedDataFilePath));
             case GUARDIAN_LINKS_REPAIRED -> {
                 int count = notice.repairedGuardianLinkCount();
                 String header = count + (count == 1 ? " guardian link was repaired" : " guardian links were repaired");
@@ -155,11 +139,63 @@ public class UiManager implements Ui {
         return path.toAbsolutePath().normalize();
     }
 
-    private void showLoadFailureNotice(String guidance, String header, String dialogMessage, String resultMessage) {
-        String fullDialogMessage = guidance == null ? dialogMessage : guidance + "\n\n" + dialogMessage;
-        String fullResultMessage = guidance == null ? resultMessage : guidance + "\n" + resultMessage;
-        mainWindow.showStartupMessage(fullResultMessage);
-        showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded", header, fullDialogMessage);
+    private String backedUpDialogMessage(StartupNotice notice, Path displayedDataFilePath) {
+        if (notice.loadFailureGuidance() == null) {
+            return "Your data file could not be read, so it was moved unchanged to "
+                    + displayedPath(notice.malformedFileBackupPath())
+                    + ". Your original data is not lost. TuitionBook will save new contacts to "
+                    + displayedDataFilePath + ". To restore the original data, fix the JSON in the backup, "
+                    + "rename it to " + displayedDataFilePath + " (replacing the new file), "
+                    + "then restart TuitionBook. Contacts added after recovery are in the new file and must be "
+                    + "re-entered; the files cannot be merged automatically.";
+        }
+        return notice.loadFailureGuidance() + " The data file was moved unchanged to "
+                + displayedPath(notice.malformedFileBackupPath()) + ". Your original data is not lost. "
+                + "TuitionBook will save new contacts to " + displayedDataFilePath + ". After resolving the reported "
+                + "problem, rename the preserved file to " + displayedDataFilePath
+                + " (replacing the new file), then restart TuitionBook. Contacts added after recovery are in the new "
+                + "file and must be re-entered; the files cannot be merged automatically.";
+    }
+
+    private String backedUpResultMessage(StartupNotice notice, Path displayedDataFilePath) {
+        if (notice.loadFailureGuidance() == null) {
+            return "Data file was moved unchanged to " + displayedPath(notice.malformedFileBackupPath()) + ".\n"
+                    + "New contacts save to " + displayedDataFilePath
+                    + ". Fix the backup JSON and replace this file to restore it.\n"
+                    + "Restart TuitionBook; contacts added after recovery must be re-entered.";
+        }
+        return notice.loadFailureGuidance() + "\nData file was moved unchanged to "
+                + displayedPath(notice.malformedFileBackupPath()) + ".\nNew contacts save to " + displayedDataFilePath
+                + ". Resolve the reported problem and replace this file to restore the preserved contacts.\n"
+                + "Restart TuitionBook; contacts added after recovery must be re-entered.";
+    }
+
+    private String backupFailedDialogMessage(StartupNotice notice, Path displayedDataFilePath) {
+        if (notice.loadFailureGuidance() == null) {
+            return "Your data file could not be read and could not be moved to a backup. It remains at "
+                    + displayedDataFilePath
+                    + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, then restart "
+                    + "TuitionBook.";
+        }
+        String reason = notice.loadFailureGuidance();
+        return reason + " It could not be moved to a backup and remains at " + displayedDataFilePath
+                + ". To protect it, TuitionBook cannot save contacts. Resolve the reported problem or move the file, "
+                + "then restart TuitionBook.";
+    }
+
+    private String backupFailedResultMessage(StartupNotice notice, Path displayedDataFilePath) {
+        if (notice.loadFailureGuidance() == null) {
+            return "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
+                    + "Saving is disabled. Correct or move the file, then restart TuitionBook.";
+        }
+        String reason = notice.loadFailureGuidance();
+        return reason + "\nThe file could not be backed up and remains at " + displayedDataFilePath
+                + ".\nSaving is disabled. Resolve the reported problem or move the file, then restart TuitionBook.";
+    }
+
+    private void showLoadFailureNotice(String header, String dialogMessage, String resultMessage) {
+        mainWindow.showStartupMessage(resultMessage);
+        showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded", header, dialogMessage);
     }
 
     void showAlertDialogAndWait(Alert.AlertType type, String title, String headerText, String contentText) {

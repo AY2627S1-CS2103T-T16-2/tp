@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import seedu.tuitionbook.storage.GuardianLinkRepair;
 
 /**
- * Tests validation of startup notice types and repair counts.
+ * Tests validation of startup notice types and repair diagnostics.
  */
 public class StartupNoticeTest {
 
@@ -31,7 +31,7 @@ public class StartupNoticeTest {
     }
 
     @Test
-    public void constructor_otherNoticeWithRepairCount_throwsIllegalArgumentException() {
+    public void constructor_otherNoticeWithRepairs_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> new StartupNotice(
                 StartupNotice.Type.LOAD_FAILED_BACKUP_FAILED, List.of(repair()), null, null));
     }
@@ -49,13 +49,13 @@ public class StartupNoticeTest {
     }
 
     @Test
-    public void constructor_nonLoadFailureWithGuidance_throwsIllegalArgumentException() {
+    public void constructor_nonLoadNoticeWithGuidance_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> new StartupNotice(
-                StartupNotice.Type.MISSING_DATA_FILE, List.of(), null, "Check the file."));
+                StartupNotice.Type.MISSING_DATA_FILE, List.of(), null, "Check permissions."));
     }
 
     @Test
-    public void constructor_loadFailureWithBlankGuidance_throwsIllegalArgumentException() {
+    public void constructor_blankGuidance_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> StartupNotice.loadFailedBackupFailed(" "));
     }
 

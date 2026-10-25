@@ -15,8 +15,10 @@ public class DataLoadingExceptionTest {
 
     @Test
     public void getUserFacingGuidance_accessDenied_mentionsPermission() {
-        String guidance = new DataLoadingException(new AccessDeniedException("contacts.json"))
-                .getUserFacingGuidance();
+        DataLoadingException exception = new DataLoadingException(
+                new IOException("wrapper", new AccessDeniedException("contacts.json")));
+
+        String guidance = exception.getUserFacingGuidance();
 
         assertTrue(guidance.contains("permission"));
         assertTrue(guidance.contains("read permission"));
@@ -25,20 +27,28 @@ public class DataLoadingExceptionTest {
 
     @Test
     public void getUserFacingGuidance_invalidContactValue_mentionsContactData() {
-        String guidance = new DataLoadingException(new IllegalValueException("invalid role"))
+        String guidance = new DataLoadingException(new IllegalValueException("Invalid phone"))
                 .getUserFacingGuidance();
 
         assertTrue(guidance.contains("invalid contact data"));
-        assertTrue(guidance.contains("invalid role"));
+        assertTrue(guidance.contains("Invalid phone"));
     }
 
     @Test
     public void getUserFacingGuidance_jsonFailure_mentionsEncodingAndSyntax() {
-        String guidance = new DataLoadingException(new JsonParseException(null, "malformed JSON"))
+        String guidance = new DataLoadingException(new JsonParseException(null, "Invalid JSON"))
                 .getUserFacingGuidance();
 
         assertTrue(guidance.contains("UTF-8 JSON"));
         assertTrue(guidance.contains("encoding or JSON syntax"));
+    }
+
+    @Test
+    public void getUserFacingGuidance_nullJsonRoot_mentionsEncodingAndSyntax() {
+        String guidance = new DataLoadingException(new IOException("JSON root value must not be null."))
+                .getUserFacingGuidance();
+
+        assertTrue(guidance.contains("UTF-8 JSON"));
     }
 
     @Test
@@ -51,11 +61,20 @@ public class DataLoadingExceptionTest {
     }
 
     @Test
+    public void getUserFacingGuidance_unknownFailure_mentionsFileSystem() {
+        String guidance = new DataLoadingException(new Exception("Unexpected read failure"))
+                .getUserFacingGuidance();
+
+        assertTrue(guidance.contains("file-system error"));
+    }
+
+    @Test
     public void getUserFacingGuidance_unknownFailure_usesGenericGuidance() {
         String guidance = new DataLoadingException(new RuntimeException("unexpected failure"))
                 .getUserFacingGuidance();
 
-        assertEquals("TuitionBook could not read the data file. Check the file before trying again.", guidance);
+        assertEquals("The data file could not be read because of a file-system error. Check access to the preserved "
+                + "file before trying again.", guidance);
     }
 
     @Test

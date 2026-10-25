@@ -1,6 +1,7 @@
 package seedu.tuitionbook.commons.exceptions;
 
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -51,19 +52,31 @@ public class DataLoadingException extends Exception {
             return "The file contains invalid contact data: " + detail
                     + (detail.endsWith(".") ? "" : ".");
         }
-        if (hasCause(JsonProcessingException.class)) {
-            return "The file is not valid UTF-8 JSON. Check its encoding or JSON syntax before trying again.";
+        if (hasCause(CharacterCodingException.class) || hasCause(JsonProcessingException.class)
+                || hasCauseWithMessage(IOException.class, "JSON root value must not be null.")) {
+            return "The data file is not valid UTF-8 JSON. Correct the encoding or JSON syntax in the preserved "
+                    + "file before trying again.";
         }
         if (hasCause(IOException.class)) {
-            return "TuitionBook could not read the data file because of a file-system error. "
-                    + "Check the file and its containing folder before trying again.";
+            return "The data file could not be read because of a file-system error. Check access to the preserved "
+                    + "file before trying again.";
         }
-        return "TuitionBook could not read the data file. Check the file before trying again.";
+        return "The data file could not be read because of a file-system error. Check access to the preserved "
+                + "file before trying again.";
     }
 
     private boolean hasCause(Class<? extends Throwable> type) {
         for (Throwable current = getCause(); current != null; current = current.getCause()) {
             if (type.isInstance(current)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasCauseWithMessage(Class<? extends Throwable> type, String message) {
+        for (Throwable current = getCause(); current != null; current = current.getCause()) {
+            if (type.isInstance(current) && message.equals(current.getMessage())) {
                 return true;
             }
         }
