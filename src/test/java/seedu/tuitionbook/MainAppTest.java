@@ -74,6 +74,30 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_migrationUsesLegacyFallback_initializesStorageAndModelFromLegacyFile() throws Exception {
+        Path legacyFile = testFolder.resolve("addressbook.json");
+        Files.writeString(legacyFile, """
+                {"persons":[{"name":"Legacy Alex","phone":"87438807","tags":[]}]}
+                """);
+        MainApp app = new MainApp() {
+            @Override
+            protected UserPrefs initPrefs(JsonUserPrefsStorage storage) {
+                return new UserPrefs();
+            }
+
+            @Override
+            Path migrateLegacyTuitionBookFile(Path currentFilePath, Path legacyFilePath) {
+                return legacyFile;
+            }
+        };
+
+        assertDoesNotThrow(app::init);
+
+        assertEquals(legacyFile, app.storage.getTuitionBookFilePath());
+        assertEquals("Legacy Alex", app.model.getTuitionBook().getPersonList().getFirst().getName().fullName);
+    }
+
+    @Test
     public void migrateLegacyTuitionBookFile_moveFails_usesUnchangedLegacyFile() throws Exception {
         Path currentFile = testFolder.resolve("tuitionbook.json");
         Path legacyFile = testFolder.resolve("addressbook.json");
