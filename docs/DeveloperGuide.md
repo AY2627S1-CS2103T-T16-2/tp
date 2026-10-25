@@ -194,7 +194,7 @@ This section describes some noteworthy details on how certain features are imple
 
 Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in contact-list order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags use one locale-independent, case-insensitive alphabetical order; original spelling breaks ties. Each displayed tag is enclosed in brackets, with literal backslashes and square brackets escaped for unambiguous boundaries.
 
-`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The list and its active filter remain in the model while the detail view is visible.
+`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. A successful command that has no detail text restores `PersonListPanel`; parse, command, index, and save failures leave the currently visible screen unchanged. The list and its active filter remain in the model while the detail view is visible.
 
 ### Contact field validation
 
@@ -838,8 +838,8 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports `No students linked.`
 1. Enter `list r/student`, then `view 1 v/`.<br>
    Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list` and `find` replace it, so they are unsuitable for this check.
-1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, `view 1 v/details`, and `view 1 v/ v/`.<br>
-   Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
+1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, and `view 1 v/details` while the detail view is visible.<br>
+   Expected: Each command reports an index or format error and leaves the detail view visible; no contact data changes.
 
 ### Finding contacts by name substring
 

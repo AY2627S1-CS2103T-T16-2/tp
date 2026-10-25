@@ -184,7 +184,7 @@ To try this workflow in a fresh, empty contact list:
 
 ### Viewing a contact: `view`
 
-Replaces the contact list with a contact's details and their recorded relationship. The next command other than `view` restores the contact list.
+Replaces the contact list with a contact's details and their recorded relationship. A successful command other than `view` restores the contact list. If a command fails, the current screen remains visible so that you can correct the command without losing the details you were reading.
 
 Format: `view INDEX [v/]`
 

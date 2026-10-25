@@ -17,6 +17,7 @@ The format is based on Keep a Changelog.
 - Scroll the contact list to a newly added contact so it remains visible when the list extends beyond the viewport.
 - Use locale-independent, case-insensitive alphabetical ordering for tags in contact cards and detailed views.
 - Render detailed-view tags with brackets and escape literal backslashes and square brackets.
+- Keep the current screen visible when a command fails instead of forcing a return to the contact list.
 
 ## [v1.4] - 2026-10-22
 

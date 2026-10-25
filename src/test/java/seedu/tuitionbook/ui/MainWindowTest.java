@@ -97,8 +97,29 @@ public class MainWindowTest {
 
             execute(commandBox, "view 1");
             execute(commandBox, "invalid");
-            assertListVisible(mainWindow, detailText, true, false);
+            assertListVisible(mainWindow, detailText, false, true);
             assertEquals("Invalid command", resultText.getText());
+        });
+    }
+
+    @Test
+    public void failedCommands_preserveDetailsView() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            MainWindow mainWindow = new MainWindow(new Stage(), new FakeLogic(), Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+
+            TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+            TextArea detailText = (TextArea) mainWindow.getRoot().getScene().lookup("#detailDisplay");
+            execute(commandBox, "view 1");
+
+            List<String> failedCommands = List.of(
+                    "", "   ", "unknown", "view", "view 0", "view 99", "view 1 extra",
+                    "view 1 v/details", "view 1 v/ v/", "save-failure");
+            for (String failedCommand : failedCommands) {
+                execute(commandBox, failedCommand);
+                assertListVisible(mainWindow, detailText, false, true);
+                assertEquals("Name: Alex Lim", detailText.getText());
+            }
         });
     }
 
@@ -402,6 +423,7 @@ public class MainWindowTest {
                 }
                 case "view 1" -> new CommandResult("Viewing contact: Alex Lim", "Name: Alex Lim");
                 case "list" -> new CommandResult("Listed all contacts");
+                case "save-failure" -> throw new CommandException("Save failed");
                 default -> throw new ParseException("Invalid command");
             };
         }
