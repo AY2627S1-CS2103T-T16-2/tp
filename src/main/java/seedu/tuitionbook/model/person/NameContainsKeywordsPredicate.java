@@ -2,7 +2,6 @@ package seedu.tuitionbook.model.person;
 
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
 
 import seedu.tuitionbook.commons.util.ToStringBuilder;
 
@@ -12,7 +11,7 @@ import seedu.tuitionbook.commons.util.ToStringBuilder;
  */
 public class NameContainsKeywordsPredicate implements Predicate<Person> {
     private final List<String> keywords;
-    private final List<Pattern> keywordPatterns;
+    private final List<String> comparisonKeywords;
 
     /**
      * Creates a predicate that matches any of the given literal keywords.
@@ -21,17 +20,15 @@ public class NameContainsKeywordsPredicate implements Predicate<Person> {
      */
     public NameContainsKeywordsPredicate(List<String> keywords) {
         this.keywords = List.copyOf(keywords);
-        keywordPatterns = this.keywords.stream()
-                .map(keyword -> Pattern.compile(Pattern.quote(keyword),
-                        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE))
+        comparisonKeywords = this.keywords.stream()
+                .map(NameComparisonUtil::toUnicodeComparisonForm)
                 .toList();
     }
 
     @Override
     public boolean test(Person person) {
-        String fullName = person.getName().fullName;
-        return keywordPatterns.stream()
-                .anyMatch(pattern -> pattern.matcher(fullName).find());
+        String comparisonName = NameComparisonUtil.toUnicodeComparisonForm(person.getName().fullName);
+        return comparisonKeywords.stream().anyMatch(comparisonName::contains);
     }
 
     @Override

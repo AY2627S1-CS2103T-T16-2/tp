@@ -11,8 +11,9 @@ public class Address {
 
     public static final int MAX_LENGTH = 200;
 
-    public static final String MESSAGE_CONSTRAINTS = "Addresses must be non-blank, single-line, and at most "
-            + MAX_LENGTH + " characters, counted as Unicode code points.";
+    public static final String MESSAGE_CONSTRAINTS = "Addresses must contain at least one visible character other "
+            + "than Unicode whitespace, space, control, or format characters; must be single-line; and must contain "
+            + "at most " + MAX_LENGTH + " characters, counted as Unicode code points.";
 
     public final String value;
 
@@ -36,18 +37,26 @@ public class Address {
             return false;
         }
 
-        boolean hasNonWhitespaceCharacter = false;
+        boolean hasMeaningfulVisibleCharacter = false;
         for (int offset = 0; offset < test.length();) {
             int codePoint = test.codePointAt(offset);
             if (isLineBreak(codePoint)) {
                 return false;
             }
-            if (!Character.isWhitespace(codePoint) && !Character.isSpaceChar(codePoint)) {
-                hasNonWhitespaceCharacter = true;
+            if (isMeaningfulVisibleCodePoint(codePoint)) {
+                hasMeaningfulVisibleCharacter = true;
             }
             offset += Character.charCount(codePoint);
         }
-        return hasNonWhitespaceCharacter;
+        return hasMeaningfulVisibleCharacter;
+    }
+
+    private static boolean isMeaningfulVisibleCodePoint(int codePoint) {
+        int unicodeCategory = Character.getType(codePoint);
+        return !Character.isWhitespace(codePoint)
+                && !Character.isSpaceChar(codePoint)
+                && unicodeCategory != Character.CONTROL
+                && unicodeCategory != Character.FORMAT;
     }
 
     private static boolean isLineBreak(int codePoint) {

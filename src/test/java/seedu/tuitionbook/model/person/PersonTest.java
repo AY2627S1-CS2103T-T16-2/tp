@@ -45,6 +45,27 @@ public class PersonTest {
     }
 
     @Test
+    public void isSamePerson_requiredUnicodeNameForms_comparesIdentityWithoutChangingDisplayName() {
+        Person sharpS = new PersonBuilder().withName("Groß").withPhone("91234567").build();
+        Person capitalSharpS = new PersonBuilder().withName("GROẞ").withPhone("91234567").build();
+        assertTrue(sharpS.isSamePerson(capitalSharpS));
+
+        Person street = new PersonBuilder().withName("Straße").withPhone("91234567").build();
+        Person uppercaseStreet = new PersonBuilder().withName("STRASSE").withPhone("91234567").build();
+        assertTrue(street.isSamePerson(uppercaseStreet));
+
+        Person composedAccent = new PersonBuilder().withName("Jos\u00e9").withPhone("91234567").build();
+        Person decomposedAccent = new PersonBuilder().withName("Jose\u0301").withPhone("91234567").build();
+        assertTrue(composedAccent.isSamePerson(decomposedAccent));
+
+        Person differentPhone = new PersonBuilder(capitalSharpS).withPhone("92345678").build();
+        assertFalse(sharpS.isSamePerson(differentPhone));
+
+        assertEquals("Groß", sharpS.getName().fullName);
+        assertEquals("GROẞ", capitalSharpS.getName().fullName);
+    }
+
+    @Test
     public void asObservableList_modifyList_throwsUnsupportedOperationException() {
         Person person = new PersonBuilder().build();
         assertThrows(UnsupportedOperationException.class, () -> person.getTags().remove(0));

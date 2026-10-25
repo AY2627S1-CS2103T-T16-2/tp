@@ -256,8 +256,9 @@ public class Phone {
     }
 
     /**
-     * Returns an identity representation that ignores supported main-number formatting and uses {@code x} as the
-     * extension marker while retaining the extension digits.
+     * Returns an identity representation that removes spaces, hyphens, slashes, numeric-group parentheses, and the
+     * annotation; preserves a leading {@code +}; normalizes the extension marker to {@code x}; and retains the
+     * extension digits.
      */
     static String normalizeForIdentity(String phone) {
         requireNonNull(phone);

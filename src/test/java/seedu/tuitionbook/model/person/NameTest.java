@@ -45,6 +45,10 @@ public class NameTest {
         assertFalse(Name.isValidName(" Amy Bee")); // starts with whitespace
         assertFalse(Name.isValidName("\u0301Jose")); // starts with a combining mark
         assertFalse(Name.isValidName("/John")); // starts with a forward slash
+        assertFalse(Name.isValidName("Amy\u00A0Bee")); // non-breaking space is not an ASCII space
+        assertFalse(Name.isValidName("Amy\u2003Bee")); // EM SPACE is not an ASCII space
+        assertFalse(Name.isValidName("Amy\u2009Bee")); // thin space is not an ASCII space
+        assertFalse(Name.isValidName("Amy\u3000Bee")); // ideographic space is not an ASCII space
 
         // valid name
         assertTrue(Name.isValidName("Amy Bee"));
@@ -63,6 +67,11 @@ public class NameTest {
         assertTrue(Name.isValidName("peter the 2nd")); // alphanumeric characters
         assertTrue(Name.isValidName("Capital Tan")); // with capital letters
         assertTrue(Name.isValidName("David Roger Jackson Ray Jr 2nd")); // long names
+    }
+
+    @Test
+    public void messageConstraints_nameSpacing_identifiesAsciiSpace() {
+        assertTrue(Name.MESSAGE_CONSTRAINTS.contains("ASCII spaces (U+0020)"));
     }
 
     @Test

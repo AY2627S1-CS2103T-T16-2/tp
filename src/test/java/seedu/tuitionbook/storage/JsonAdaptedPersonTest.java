@@ -133,6 +133,23 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_formatOnlyAddress_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL,
+                "\u200B\uFEFF\u2060\u200E", VALID_TAGS);
+
+        assertThrows(IllegalValueException.class, Address.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_visibleAddressWithCombiningAndFormatCharacters_preservesAddress() throws Exception {
+        String visibleAddress = "Cafe\u0301\u200B Road";
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL,
+                visibleAddress, VALID_TAGS);
+
+        assertEquals(visibleAddress, person.toModelType().getAddress().orElseThrow().value);
+    }
+
+    @Test
     public void toModelType_addressWithEscapedLineBreak_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, "123 Main Street\nUnit 2", VALID_TAGS);

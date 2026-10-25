@@ -46,6 +46,34 @@ public class AddressTest {
     }
 
     @Test
+    public void isValidAddress_formatOrControlCharactersOnly_returnsFalse() {
+        String[] formatOnlyAddresses = {
+            "\u200B", // zero-width space
+            "\uFEFF", // byte-order mark
+            "\u2060", // word joiner
+            "\u200E\u200F", // left-to-right and right-to-left marks
+            "\u202A\u202E\u2066", // bidi embedding, override, and isolate marks
+            "\u200B\uFEFF\u2060\u200E"
+        };
+        for (String address : formatOnlyAddresses) {
+            assertFalse(Address.isValidAddress(address));
+        }
+
+        String[] controlOnlyAddresses = {"\u0000", "\u0001\u001F", "\u007F", "\u009F"};
+        for (String address : controlOnlyAddresses) {
+            assertFalse(Address.isValidAddress(address));
+        }
+    }
+
+    @Test
+    public void isValidAddress_visibleUnicodeWithCombiningOrFormatCharacters_returnsTrue() {
+        assertTrue(Address.isValidAddress("李小龙街 12号"));
+        assertTrue(Address.isValidAddress("Cafe\u0301 Road"));
+        assertTrue(Address.isValidAddress("123\u200B Main Street"));
+        assertTrue(Address.isValidAddress("\u202AJosé Street\u202C"));
+    }
+
+    @Test
     public void isValidAddress_lengthBoundariesCountUnicodeCodePoints() {
         String supplementaryCharacter = "\uD83D\uDE00";
         String addressWith199CodePoints = supplementaryCharacter.repeat(199);
