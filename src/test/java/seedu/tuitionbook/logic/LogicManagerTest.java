@@ -223,7 +223,7 @@ public class LogicManagerTest {
                 logic.execute("tag 1 t/Science t/Math t/Science").getFeedbackToUser());
         Person expected = new PersonBuilder(original).withTags("Math", "Sec 4", "Science").build();
         assertEquals(expected, logic.getPersonList().get(1));
-        assertEquals(2, logic.getFilteredPersonList().size());
+        assertEquals(1, logic.getFilteredPersonList().size());
         logic.execute("reload");
         assertEquals(expected, logic.getPersonList().get(1));
         assertEquals(original.getId(), logic.getPersonList().get(1).getId());
@@ -257,7 +257,7 @@ public class LogicManagerTest {
         Person expected = new PersonBuilder(original)
                 .withTags("Math", "study t/weekly r/student", "\"Sec 4\"", "C:\\Math\\").build();
         assertEquals(expected, logic.getPersonList().get(1));
-        assertEquals(2, logic.getFilteredPersonList().size());
+        assertEquals(1, logic.getFilteredPersonList().size());
         logic.execute("reload");
         assertEquals(expected, logic.getPersonList().get(1));
         assertEquals(original.getId(), logic.getPersonList().get(1).getId());
@@ -265,7 +265,7 @@ public class LogicManagerTest {
         assertEquals(List.of(expected), logic.getFilteredPersonList());
 
         logic.execute("untag 1" + arguments);
-        assertEquals(2, logic.getFilteredPersonList().size());
+        assertEquals(1, logic.getFilteredPersonList().size());
         logic.execute("reload");
         assertEquals(original, logic.getPersonList().get(1));
         assertEquals(original.getId(), logic.getPersonList().get(1).getId());
@@ -578,7 +578,7 @@ public class LogicManagerTest {
             logic.execute(command);
             assertEquals(0, fileStorage.getSaveCallCount(), command);
             assertEquals(List.of(student, guardian), logic.getPersonList(), command);
-            assertEquals(List.of(student, guardian), logic.getFilteredPersonList(), command);
+            assertEquals(List.of(student), logic.getFilteredPersonList(), command);
         }
     }
 

@@ -26,7 +26,7 @@ public class UnlinkCommandTest {
     private static final UUID GUARDIAN_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
     @Test
-    public void execute_filteredLinkedStudent_successClearsFilter() throws Exception {
+    public void execute_filteredLinkedStudent_successPreservesWorkingSet() throws Exception {
         Person guardian = guardian();
         Person student = linkedStudent(guardian);
         ModelManager model = modelWith(guardian, student);
@@ -38,7 +38,7 @@ public class UnlinkCommandTest {
         assertEquals(String.format(UnlinkCommand.MESSAGE_UNLINK_SUCCESS, student.getName(), guardian.getName()),
                 result.getFeedbackToUser());
         assertEquals(List.of(guardian, unlinkedStudent), model.getTuitionBook().getPersonList());
-        assertEquals(List.of(guardian, unlinkedStudent), model.getFilteredPersonList());
+        assertEquals(List.of(unlinkedStudent), model.getFilteredPersonList());
     }
 
     @Test

@@ -39,8 +39,8 @@ public class TagModificationCommandTest {
 
         Person expected = new PersonBuilder(student).withTags("Math", "Science", "math").build();
         assertEquals("Added tags to Sam Student: \"Science\", \"math\".", result.getFeedbackToUser());
-        assertEquals(List.of(guardian, expected), model.getFilteredPersonList());
-        assertEquals(student.getId(), model.getFilteredPersonList().get(1).getId());
+        assertEquals(List.of(expected), model.getFilteredPersonList());
+        assertEquals(student.getId(), model.getFilteredPersonList().getFirst().getId());
         assertTrue(command.requiresSave());
     }
 
@@ -58,8 +58,8 @@ public class TagModificationCommandTest {
         Person expected = new PersonBuilder(guardian).withTags("math", "Sec 4").build();
         assertEquals(String.format(UntagCommand.MESSAGE_SUCCESS, guardian.getName())
                 + " Tags not present: \"absent\".", result.getFeedbackToUser());
-        assertEquals(List.of(student, expected), model.getFilteredPersonList());
-        assertEquals(guardian.getId(), model.getFilteredPersonList().get(1).getId());
+        assertEquals(List.of(expected), model.getFilteredPersonList());
+        assertEquals(guardian.getId(), model.getFilteredPersonList().getFirst().getId());
         assertTrue(command.requiresSave());
     }
 

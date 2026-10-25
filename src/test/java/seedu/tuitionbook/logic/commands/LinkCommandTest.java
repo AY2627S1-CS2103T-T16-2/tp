@@ -52,7 +52,7 @@ public class LinkCommandTest {
         assertEquals(expectedStudent, updatedStudent);
         assertEquals(List.of(expectedStudent, oldGuardian, newGuardian), model.getTuitionBook().getPersonList());
         assertEquals(List.of(STUDENT_ID, OLD_GUARDIAN_ID, NEW_GUARDIAN_ID), contactIds(model));
-        assertEquals(List.of(expectedStudent, oldGuardian, newGuardian), model.getFilteredPersonList());
+        assertEquals(List.of(expectedStudent, newGuardian), model.getFilteredPersonList());
     }
 
     @Test

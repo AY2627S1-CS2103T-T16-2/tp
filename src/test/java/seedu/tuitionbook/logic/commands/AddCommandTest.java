@@ -129,6 +129,16 @@ public class AddCommandTest {
      */
     private class ModelStub implements Model {
         @Override
+        public seedu.tuitionbook.model.PersonListViewState getPersonListViewState() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void restorePersonListViewState(seedu.tuitionbook.model.PersonListViewState state) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public ReadOnlyUserPrefs getUserPrefs() {
             throw new AssertionError("This method should not be called.");
         }
@@ -185,6 +195,11 @@ public class AddCommandTest {
 
         @Override
         public void updateFilteredPersonList(Predicate<Person> predicate) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void updateFilteredPersonList(Predicate<Person> predicate, String refreshCommand) {
             throw new AssertionError("This method should not be called.");
         }
     }
