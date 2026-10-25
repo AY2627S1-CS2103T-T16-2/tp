@@ -142,12 +142,17 @@ public class MainWindowTest {
 
                 TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
                 ListView<Person> personListView = getPersonListView(mainWindow);
-                personListView.scrollTo(0);
-                execute(commandBox, "add");
-                return new ScrollFixture(stage, personListView, addedPerson);
+                return new ScrollFixture(stage, personListView, commandBox, addedPerson);
             });
 
             try {
+                assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                        fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0),
+                        "Contact list should finish layout before adding a contact");
+                JavaFxTestUtil.runOnFxThread(() -> {
+                    fixture.personListView().scrollTo(0);
+                    execute(fixture.commandBox(), "add");
+                });
                 assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
                         isPersonDisplayed(fixture.personListView(), fixture.addedPerson())),
                         "Added contact should be visible for " + existingContactCount + " existing contacts");
@@ -398,7 +403,8 @@ public class MainWindowTest {
                 .anyMatch(cell -> person.equals(cell.getItem()));
     }
 
-    private record ScrollFixture(Stage stage, ListView<Person> personListView, Person addedPerson) {
+    private record ScrollFixture(Stage stage, ListView<Person> personListView, TextField commandBox,
+            Person addedPerson) {
     }
 
     private static final class FakeLogic implements Logic {
