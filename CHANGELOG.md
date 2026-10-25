@@ -18,6 +18,7 @@ The format is based on Keep a Changelog.
 - Use locale-independent, case-insensitive alphabetical ordering for tags in contact cards and detailed views.
 - Render detailed-view tags with brackets and escape literal backslashes and square brackets.
 - Keep the current screen visible when a command fails instead of forcing a return to the contact list.
+- Give bare and invalid `clear` confirmations distinct guidance without changing `clear confirm` behaviour.
 
 ## [v1.4] - 2026-10-22
 

@@ -739,11 +739,11 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `add r/guardian n/Grace Guardian p/90000001`, then enter `add r/student n/Sam Student p/90000002`.
 1. Enter `list r/student`.<br>
    Expected: Only Sam Student is visible; Grace Guardian remains stored but hidden by the active filter.
-1. Enter `clear`, `clear CONFIRM`, and `clear confirm extra` one at a time.<br>
-   Expected: Each command reports the valid `clear confirm` format. Neither contact is deleted, and the student filter remains active.
-1. Enter `clear confirm`.<br>
+1. Enter `clear`, `clear   `, `clear CONFIRM`, `clear Confirm`, `clear confirm confirm`, `clear confirm extra`, `clear yes`, `clearconfirm`, `clear confirmation`, and `clear\tno` one at a time.<br>
+   Expected: Bare or whitespace-only `clear` reports `Confirmation required: enter "clear confirm" to clear all contacts.` Each other nonblank argument reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Neither contact is deleted, and the student filter remains active.
+2. Enter `clear confirm`.<br>
    Expected: All contacts are deleted, including Grace Guardian, who was hidden by the filter. The result states that contacts hidden by the current filter were also cleared.
-1. Exit and restart TuitionBook.<br>
+3. Exit and restart TuitionBook.<br>
    Expected: The contact list remains empty.
 
 ### Launch and shutdown

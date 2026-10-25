@@ -349,7 +349,7 @@ This deletes every contact, including contacts hidden by a filter. There is no u
 </box>
 
 * The confirmation keyword must be the exact lowercase word `confirm`.
-* `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
+* Bare or whitespace-only `clear` reports `Confirmation required: enter "clear confirm" to clear all contacts.` Any nonblank argument other than exact lowercase `confirm` reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Neither error deletes contacts.
 
 ### Reloading contacts: `reload`
 

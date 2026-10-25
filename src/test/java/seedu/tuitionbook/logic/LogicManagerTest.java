@@ -427,9 +427,13 @@ public class LogicManagerTest {
         List<Person> expectedPersons = List.of(visibleStudent, hiddenGuardian);
         List<Person> expectedFilteredPersons = List.of(visibleStudent);
         Predicate<Person> expectedFilter = model.getFilteredPersonListPredicate();
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
-
-        for (String command : List.of("clear", "clear CONFIRM", "clear confirm extra")) {
+        List<String> confirmationCommands = List.of(
+                "clear", "clear   ", "clear CONFIRM", "clear Confirm", "clear confirm confirm",
+                "clear confirm extra", "clear yes", "clearconfirm", "clear confirmation", "clear\tno");
+        for (String command : confirmationCommands) {
+            String expectedMessage = command.trim().equals("clear")
+                    ? ClearCommand.MESSAGE_CONFIRMATION_REQUIRED
+                    : ClearCommand.MESSAGE_INVALID_CONFIRMATION;
             assertThrows(ParseException.class, expectedMessage, () -> logic.execute(command));
 
             assertEquals(expectedPersons, logic.getPersonList());
