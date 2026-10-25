@@ -182,8 +182,7 @@ public class UiManagerStartupTest {
             Platform.runLater(() -> {
                 try {
                     DialogPane pane = findDialogPane();
-                    assertEquals("Fatal error during initializing",
-                            ((Stage) pane.getScene().getWindow()).getTitle());
+                    assertEquals("Fatal error during initializing", ((Stage) pane.getScene().getWindow()).getTitle());
                     assertNull(((Stage) pane.getScene().getWindow()).getOwner());
                     assertEquals("MainWindow.fxml is missing", pane.getHeaderText());
                     TextArea details = (TextArea) pane.getContent();
