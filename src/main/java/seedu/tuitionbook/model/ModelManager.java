@@ -3,12 +3,17 @@ package seedu.tuitionbook.model;
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import seedu.tuitionbook.commons.core.GuiSettings;
 import seedu.tuitionbook.commons.core.LogsCenter;
 import seedu.tuitionbook.model.person.Person;
@@ -22,7 +27,11 @@ public class ModelManager implements Model {
 
     private final TuitionBook tuitionBook;
     private final UserPrefs userPrefs;
-    private final FilteredList<Person> filteredPersons;
+    private final ObservableList<Person> filteredPersons = FXCollections.observableArrayList();
+    private final ObservableList<Person> unmodifiableFilteredPersons =
+            FXCollections.unmodifiableObservableList(filteredPersons);
+    private final List<UUID> displayedPersonIds = new ArrayList<>();
+    private String refreshCommand = "list";
     private Predicate<Person> filteredPersonListPredicate = PREDICATE_SHOW_ALL_PERSONS;
 
     /**
@@ -35,7 +44,7 @@ public class ModelManager implements Model {
 
         this.tuitionBook = new TuitionBook(tuitionBook);
         this.userPrefs = new UserPrefs(userPrefs);
-        filteredPersons = new FilteredList<>(this.tuitionBook.getPersonList());
+        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 
     public ModelManager() {
@@ -65,6 +74,7 @@ public class ModelManager implements Model {
     @Override
     public void setTuitionBook(ReadOnlyTuitionBook tuitionBook) {
         this.tuitionBook.resetData(tuitionBook);
+        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 
     @Override
@@ -94,12 +104,16 @@ public class ModelManager implements Model {
         }
         updatedTuitionBook.removePerson(target);
         tuitionBook.resetData(updatedTuitionBook);
+        refreshDisplayedPersons();
     }
 
     @Override
     public void addPerson(Person person) {
         tuitionBook.addPerson(person);
-        updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        if (filteredPersonListPredicate.test(person)) {
+            displayedPersonIds.add(person.getId());
+        }
+        refreshDisplayedPersons();
     }
 
     @Override
@@ -107,17 +121,21 @@ public class ModelManager implements Model {
         requireAllNonNull(target, editedPerson);
 
         tuitionBook.setPerson(target, editedPerson);
+        int displayedIndex = displayedPersonIds.indexOf(target.getId());
+        if (displayedIndex >= 0) {
+            displayedPersonIds.set(displayedIndex, editedPerson.getId());
+        }
+        refreshDisplayedPersons();
     }
 
     //=========== Filtered Person List Accessors =============================================================
 
     /**
-     * Returns an unmodifiable view of the list of {@code Person} backed by the internal list of
-     * {@code tuitionBook}
+     * Returns the unmodifiable working set, whose UUIDs resolve to current contact values.
      */
     @Override
     public ObservableList<Person> getFilteredPersonList() {
-        return filteredPersons;
+        return unmodifiableFilteredPersons;
     }
 
     @Override
@@ -127,9 +145,41 @@ public class ModelManager implements Model {
 
     @Override
     public void updateFilteredPersonList(Predicate<Person> predicate) {
-        requireNonNull(predicate);
+        updateFilteredPersonList(predicate, "list");
+    }
+
+    @Override
+    public void updateFilteredPersonList(Predicate<Person> predicate, String refreshCommand) {
+        requireAllNonNull(predicate, refreshCommand);
+        List<UUID> matchingIds = tuitionBook.getPersonList().stream().filter(predicate).map(Person::getId).toList();
         filteredPersonListPredicate = predicate;
-        filteredPersons.setPredicate(predicate);
+        this.refreshCommand = refreshCommand;
+        displayedPersonIds.clear();
+        displayedPersonIds.addAll(matchingIds);
+        refreshDisplayedPersons();
+    }
+
+    @Override
+    public PersonListViewState getPersonListViewState() {
+        return new PersonListViewState(displayedPersonIds, filteredPersonListPredicate, refreshCommand);
+    }
+
+    @Override
+    public void restorePersonListViewState(PersonListViewState state) {
+        requireNonNull(state);
+        displayedPersonIds.clear();
+        displayedPersonIds.addAll(state.personIds());
+        filteredPersonListPredicate = state.predicate();
+        refreshCommand = state.refreshCommand();
+        refreshDisplayedPersons();
+    }
+
+    /** Resolves surviving UUIDs to live values without re-evaluating query membership or order. */
+    private void refreshDisplayedPersons() {
+        Map<UUID, Person> personsById = tuitionBook.getPersonList().stream()
+                .collect(Collectors.toMap(Person::getId, Function.identity()));
+        displayedPersonIds.removeIf(id -> !personsById.containsKey(id));
+        filteredPersons.setAll(displayedPersonIds.stream().map(personsById::get).toList());
     }
 
     @Override

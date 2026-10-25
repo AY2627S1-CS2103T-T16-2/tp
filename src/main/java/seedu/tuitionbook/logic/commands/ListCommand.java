@@ -12,6 +12,8 @@ import seedu.tuitionbook.commons.util.ToStringBuilder;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.person.PersonHasRolePredicate;
+import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
 
 /**
  * Lists persons in TuitionBook to the user, optionally filtered by role and tags.
@@ -30,20 +32,46 @@ public class ListCommand extends Command {
             + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "student " + PREFIX_TAG + "Sec4";
 
     private final Predicate<Person> predicate;
+    private final String refreshCommand;
 
     /**
      * Creates a ListCommand that lists every person.
      */
     public ListCommand() {
         this.predicate = null;
+        this.refreshCommand = COMMAND_WORD;
     }
 
-    /**
-     * Creates a ListCommand that lists only the persons matching the given predicate.
-     */
-    public ListCommand(Predicate<Person> predicate) {
+    /** Creates a role-filtered command and its equivalent refresh text from the parsed role. */
+    public ListCommand(PersonHasRolePredicate predicate) {
+        this(predicate, COMMAND_WORD + " " + PREFIX_ROLE + requireNonNull(predicate).getRole());
+    }
+
+    /** Creates a tag/role-filtered command and its equivalent refresh text from the parsed criteria. */
+    public ListCommand(PersonMatchesListFilterPredicate predicate) {
+        this(predicate, formatRefreshCommand(requireNonNull(predicate)));
+    }
+
+    private ListCommand(Predicate<Person> predicate, String refreshCommand) {
         requireNonNull(predicate);
         this.predicate = predicate;
+        this.refreshCommand = refreshCommand;
+    }
+
+    private static String formatRefreshCommand(PersonMatchesListFilterPredicate predicate) {
+        StringBuilder command = new StringBuilder(COMMAND_WORD);
+        if (predicate.getRole() != null) {
+            command.append(" ").append(PREFIX_ROLE).append(predicate.getRole());
+        }
+        for (String tag : predicate.getTags()) {
+            command.append(" ").append(PREFIX_TAG);
+            if (tag.matches("[A-Za-z0-9_-]+")) {
+                command.append(tag);
+            } else {
+                command.append('"').append(tag.replace("\\", "\\\\").replace("\"", "\\\"")).append('"');
+            }
+        }
+        return command.toString();
     }
 
     @Override
@@ -55,10 +83,10 @@ public class ListCommand extends Command {
     public CommandResult execute(Model model) {
         requireNonNull(model);
         if (predicate == null) {
-            model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+            model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, refreshCommand);
             return new CommandResult(MESSAGE_SUCCESS);
         }
-        model.updateFilteredPersonList(predicate);
+        model.updateFilteredPersonList(predicate, refreshCommand);
         return new CommandResult(
                 String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, model.getFilteredPersonList().size()));
     }

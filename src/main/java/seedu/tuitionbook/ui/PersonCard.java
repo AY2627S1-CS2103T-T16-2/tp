@@ -48,6 +48,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label email;
     @FXML
+    private Label queryNotice;
+    @FXML
     private FlowPane tags;
 
     /**
@@ -58,7 +60,16 @@ public class PersonCard extends UiPart<Region> {
      * @param relationshipSummary resolved guardian summary or student names, or {@code "-"}
      */
     public PersonCard(Person person, int displayedIndex, String relationshipSummary) {
+        this(person, displayedIndex, relationshipSummary, "");
+    }
+
+    /** Creates a card with an optional retained-query notice and copyable refresh command. */
+    public PersonCard(Person person, int displayedIndex, String relationshipSummary, String notice) {
         super(FXML);
+        queryNotice.setText(notice);
+        queryNotice.setVisible(!notice.isEmpty());
+        queryNotice.setManaged(!notice.isEmpty());
+        queryNotice.setTooltip(createFullValueTooltip(notice));
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);

@@ -29,7 +29,7 @@ public interface Model {
     void setGuiSettings(GuiSettings guiSettings);
 
     /**
-     * Replaces TuitionBook data with the data in {@code tuitionBook}.
+     * Replaces TuitionBook data and resets the working set to the full, unfiltered book.
      */
     void setTuitionBook(ReadOnlyTuitionBook tuitionBook);
 
@@ -64,12 +64,21 @@ public interface Model {
     /** Returns an unmodifiable view of the filtered person list */
     ObservableList<Person> getFilteredPersonList();
 
-    /** Returns the predicate currently used to filter the displayed person list. */
+    /** Returns the originating query predicate, independently of retained working-set members. */
     Predicate<Person> getFilteredPersonListPredicate();
 
+    /** Returns a snapshot of the displayed UUIDs, their order and the originating query. */
+    PersonListViewState getPersonListViewState();
+
+    /** Restores a working-set snapshot against the current contact data. */
+    void restorePersonListViewState(PersonListViewState state);
+
     /**
-     * Updates the filter of the filtered person list to filter by the given {@code predicate}.
+     * Replaces the working set by evaluating {@code predicate} once in normal contact-list order.
      * @throws NullPointerException if {@code predicate} is null.
      */
     void updateFilteredPersonList(Predicate<Person> predicate);
+
+    /** Replaces the working set and its equivalent refresh command together. */
+    void updateFilteredPersonList(Predicate<Person> predicate, String refreshCommand);
 }
