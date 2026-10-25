@@ -182,8 +182,9 @@ public class UiManagerStartupTest {
             Platform.runLater(() -> {
                 try {
                     DialogPane pane = findDialogPane();
-                    assertEquals("Fatal error during initializing", ((Stage) pane.getScene().getWindow()).getTitle());
-                    assertNull(((Stage) pane.getScene().getWindow()).getOwner());
+                    Stage dialogStage = (Stage) pane.getScene().getWindow();
+                    assertEquals("Fatal error during initializing", dialogStage.getTitle());
+                    assertNull(dialogStage.getOwner());
                     assertEquals("MainWindow.fxml is missing", pane.getHeaderText());
                     TextArea details = (TextArea) pane.getContent();
                     assertEquals(startupFailure.toString(), details.getText());
@@ -218,7 +219,7 @@ public class UiManagerStartupTest {
             Platform.runLater(() -> {
                 try {
                     UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty());
-                    uiManager.showFatalErrorDialog(owner, "Fatal error during initializing", startupFailure);
+                    uiManager.showFatalErrorDialog(null, "Fatal error during initializing", startupFailure);
                 } catch (Throwable throwable) {
                     failure.set(throwable);
                 }
@@ -226,6 +227,8 @@ public class UiManagerStartupTest {
             Platform.runLater(() -> {
                 try {
                     DialogPane pane = findDialogPane();
+                    Stage dialogStage = (Stage) pane.getScene().getWindow();
+                    assertNull(dialogStage.getOwner());
                     assertEquals("NullPointerException", pane.getHeaderText());
                     TextArea details = (TextArea) pane.getContent();
                     assertEquals(startupFailure.toString(), details.getText());
