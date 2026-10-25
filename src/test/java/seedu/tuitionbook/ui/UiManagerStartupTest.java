@@ -146,8 +146,8 @@ public class UiManagerStartupTest {
         try {
             Platform.runLater(() -> {
                 try {
-                    new UiManager(logic(), dataFilePath(), Optional.empty())
-                            .showFatalErrorDialog(owner, "Fatal error during initializing", startupFailure);
+                    UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty());
+                    uiManager.showFatalErrorDialog(owner, "Fatal error during initializing", startupFailure);
                 } catch (Throwable throwable) {
                     failure.set(throwable);
                 }
@@ -191,8 +191,8 @@ public class UiManagerStartupTest {
         try {
             Platform.runLater(() -> {
                 try {
-                    new UiManager(logic(), dataFilePath(), Optional.empty())
-                            .showFatalErrorDialog(owner, "Fatal error during initializing", startupFailure);
+                    UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty());
+                    uiManager.showFatalErrorDialog(owner, "Fatal error during initializing", startupFailure);
                 } catch (Throwable throwable) {
                     failure.set(throwable);
                 }

@@ -66,10 +66,12 @@ public class UiPartTest {
     @Test
     public void constructor_missingFileName_throwsIllegalStateExceptionWithResourcePath() {
         String expectedMessage = "Missing UI resource: /view/" + MISSING_FILE_PATH;
-        assertThrows(IllegalStateException.class, expectedMessage,
-                () -> new TestUiPart<Object>(MISSING_FILE_PATH));
-        assertThrows(IllegalStateException.class, expectedMessage,
-                () -> new TestUiPart<Object>(MISSING_FILE_PATH, new Object()));
+        assertThrows(IllegalStateException.class, expectedMessage, () -> {
+            new TestUiPart<Object>(MISSING_FILE_PATH);
+        });
+        assertThrows(IllegalStateException.class, expectedMessage, () -> {
+            new TestUiPart<Object>(MISSING_FILE_PATH, new Object());
+        });
     }
 
     @Test
