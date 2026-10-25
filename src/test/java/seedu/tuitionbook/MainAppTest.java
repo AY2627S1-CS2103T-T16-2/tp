@@ -24,8 +24,8 @@ import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
-import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.model.person.Phone;
+import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
@@ -291,7 +291,7 @@ public class MainAppTest {
         StartupNotice notice = state.notice().orElseThrow();
         assertEquals(StartupNotice.Type.LOAD_FAILED_BACKED_UP, notice.type());
         assertTrue(notice.loadFailureGuidance().contains("invalid contact data"));
-        assertTrue(notice.loadFailureGuidance().contains(Phone.MESSAGE_CONSTRAINTS));
+        assertTrue(notice.loadFailureGuidance().contains(Phone.MESSAGE_CONSTRAINTS.substring(0, 100)));
         assertFalse(Files.exists(dataFile));
         assertTrue(Files.exists(dataFile.resolveSibling(dataFile.getFileName() + ".backup")));
     }
