@@ -152,6 +152,29 @@ public class MainWindowTest {
     }
 
     @Test
+    public void spaceWithCommandBoxFocused_doesNotOpenHelp() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Stage primaryStage = new Stage();
+            try {
+                MainWindow mainWindow = new MainWindow(primaryStage, new FakeLogic(), Path.of("synthetic.json"));
+                mainWindow.fillInnerParts();
+                mainWindow.show();
+                TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+                commandBox.requestFocus();
+
+                Event.fireEvent(commandBox, new KeyEvent(KeyEvent.KEY_PRESSED, " ", " ", KeyCode.SPACE,
+                        false, false, false, false));
+                Event.fireEvent(commandBox, new KeyEvent(KeyEvent.KEY_RELEASED, " ", " ", KeyCode.SPACE,
+                        false, false, false, false));
+
+                assertFalse(isHelpStageShowing());
+            } finally {
+                primaryStage.hide();
+            }
+        });
+    }
+
+    @Test
     public void nonF1KeyWithCommandBoxFocused_doesNotOpenHelpAndReachesDownstreamHandler() throws Exception {
         JavaFxTestUtil.runOnFxThread(() -> {
             Stage primaryStage = new Stage();

@@ -68,6 +68,15 @@ public class HelpWindowTest {
             assertEquals(450, helpWindow.getRoot().getMinWidth());
             assertEquals(320, helpWindow.getRoot().getMinHeight());
             IMPLEMENTED_COMMAND_SYNTAX.forEach(syntax -> assertTrue(commandSummary.getText().contains(syntax)));
+            assertTrue(commandSummary.getText().contains("Command words ignore case"));
+            assertTrue(commandSummary.getText().contains("confirmation word confirm stay lowercase"));
+            assertTrue(commandSummary.getText().contains("help, exit and reload take no arguments"));
+            assertTrue(commandSummary.getText().contains("Enter one command on one line"));
+            assertTrue(commandSummary.getText().contains("Pasted tabs and line separators become spaces"));
+            assertTrue(commandSummary.getText().contains("Raw line breaks reaching the parser are rejected"));
+            assertTrue(commandSummary.getText().contains("Unknown prefixes are rejected"));
+            assertTrue(commandSummary.getText().contains("add/edit names, addresses and tags"));
+            assertTrue(commandSummary.getText().contains("a/\"20 Main Road, c/o Rina a/p Kaur\""));
             assertEquals(HelpWindow.HELP_MESSAGE, helpMessage.getText());
             assertEquals("Open User Guide", openButton.getText());
             assertEquals("Copy URL", copyButton.getText());

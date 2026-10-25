@@ -3,6 +3,7 @@ package seedu.tuitionbook.logic.parser;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 
+import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,10 +31,14 @@ import seedu.tuitionbook.logic.parser.exceptions.ParseException;
  */
 public class TuitionBookParser {
 
+    public static final String MESSAGE_LINE_BREAK = "Commands must be entered on a single line. "
+            + "Found line break U+%04X; remove it or replace it with a normal space (U+0020).";
+
     /**
      * Used for initial separation of command word and args.
      */
     private static final Pattern BASIC_COMMAND_FORMAT = Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
+    private static final Pattern LINE_BREAK = Pattern.compile("\\R");
     private static final Logger logger = LogsCenter.getLogger(TuitionBookParser.class);
 
     /**
@@ -44,12 +49,18 @@ public class TuitionBookParser {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public Command parseCommand(String userInput) throws ParseException {
+        Matcher lineBreak = LINE_BREAK.matcher(userInput);
+        if (lineBreak.find()) {
+            throw new ParseException(String.format(Locale.ROOT, MESSAGE_LINE_BREAK,
+                    lineBreak.group().codePointAt(0)));
+        }
         final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(userInput.trim());
         if (!matcher.matches()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE));
         }
 
-        final String commandWord = matcher.group("commandWord");
+        ParserUtil.checkForUnsupportedSpaces(matcher.group("commandWord"));
+        final String commandWord = matcher.group("commandWord").toLowerCase(Locale.ROOT);
         final String arguments = matcher.group("arguments");
 
         // Note to developers: Change LOG_LEVEL in LogsCenter to enable lower level (i.e., FINE, FINER and lower)
@@ -59,10 +70,7 @@ public class TuitionBookParser {
 
         return switch (commandWord) {
             case ReloadCommand.COMMAND_WORD -> {
-                if (!arguments.isBlank()) {
-                    throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
-                            ReloadCommand.MESSAGE_USAGE));
-                }
+                checkNoArguments(arguments, ReloadCommand.MESSAGE_USAGE);
                 yield new ReloadCommand();
             }
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
@@ -76,8 +84,14 @@ public class TuitionBookParser {
             case LinkCommand.COMMAND_WORD -> new LinkCommandParser().parse(arguments);
             case UnlinkCommand.COMMAND_WORD -> new UnlinkCommandParser().parse(arguments);
             case ViewCommand.COMMAND_WORD -> new ViewCommandParser().parse(arguments);
-            case ExitCommand.COMMAND_WORD -> new ExitCommand();
-            case HelpCommand.COMMAND_WORD -> new HelpCommand();
+            case ExitCommand.COMMAND_WORD -> {
+                checkNoArguments(arguments, ExitCommand.MESSAGE_USAGE);
+                yield new ExitCommand();
+            }
+            case HelpCommand.COMMAND_WORD -> {
+                checkNoArguments(arguments, HelpCommand.MESSAGE_USAGE);
+                yield new HelpCommand();
+            }
             default -> {
                 logger.finer("This user input caused a ParseException: " + userInput);
                 throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
@@ -85,4 +99,10 @@ public class TuitionBookParser {
         };
     }
 
+    private static void checkNoArguments(String arguments, String usage) throws ParseException {
+        ParserUtil.checkForUnsupportedSpaces(arguments);
+        if (!arguments.isBlank()) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, usage));
+        }
+    }
 }

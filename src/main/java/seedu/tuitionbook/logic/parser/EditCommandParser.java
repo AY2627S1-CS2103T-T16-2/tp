@@ -34,9 +34,10 @@ public class EditCommandParser implements Parser<EditCommand> {
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
         ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenizeWithQuotedValues(args, Set.of(PREFIX_NAME, PREFIX_TAG), PREFIX_PHONE,
-                        PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_ROLE, PREFIX_GUARDIAN);
+                ArgumentTokenizer.tokenizeWithQuotedValues(args, Set.of(PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG),
+                        PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE, PREFIX_GUARDIAN);
 
+        ParserUtil.checkForUnsupportedSpaces(argMultimap.getPreamble());
         Index index;
 
         try {

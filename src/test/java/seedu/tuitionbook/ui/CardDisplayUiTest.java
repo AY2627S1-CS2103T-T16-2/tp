@@ -265,6 +265,104 @@ public class CardDisplayUiTest {
     }
 
     @Test
+    public void personCard_wrappedTags_growsWithoutOverlappingDetailsAndRelayoutsAfterResize() throws Exception {
+        CardLayoutFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
+            Person sixTagsPerson = new PersonBuilder()
+                    .withTags("Active Tuition Student", "Secondary Four Level", "Additional Mathematics",
+                            "English Language Study", "Physics Practical Prep", "Chemistry Practical Prep")
+                    .build();
+            Person oneTagPerson = new PersonBuilder().withTags("Active").build();
+            Person noTagsPerson = new PersonBuilder().withTags().build();
+            PersonCard sixTagsCard = new PersonCard(sixTagsPerson, 1, "-");
+            PersonCard oneTagCard = new PersonCard(oneTagPerson, 2, "-");
+            PersonCard noTagsCard = new PersonCard(noTagsPerson, 3, "-");
+            VBox cards = new VBox(sixTagsCard.getRoot(), oneTagCard.getRoot(), noTagsCard.getRoot());
+            Stage stage = new Stage();
+            stage.setScene(new Scene(cards, TAG_RESIZED_WINDOW_WIDTH, TAG_OVERFLOW_SCENE_HEIGHT));
+            stage.show();
+            return new CardLayoutFixture(stage, sixTagsCard, oneTagCard, noTagsCard, cards);
+        });
+
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.cards().getWidth() > 600));
+            double wideSixTagHeight = JavaFxTestUtil.callOnFxThread(() -> {
+                assertTagsDoNotOverlapPhone(fixture.sixTagsCard());
+                return fixture.sixTagsCard().getRoot().getHeight();
+            });
+
+            JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(TAG_OVERFLOW_SCENE_WIDTH));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.cards().getWidth() < 400));
+            double narrowSixTagHeight = JavaFxTestUtil.callOnFxThread(() -> {
+                assertTagsDoNotOverlapPhone(fixture.sixTagsCard());
+                return fixture.sixTagsCard().getRoot().getHeight();
+            });
+            JavaFxTestUtil.runOnFxThread(() -> {
+                assertTrue(narrowSixTagHeight > wideSixTagHeight,
+                        "Card did not grow when the tags wrapped after narrowing the window");
+                assertTrue(narrowSixTagHeight > fixture.oneTagCard().getRoot().getHeight(),
+                        "Card did not grow when tags wrapped onto additional rows");
+                assertTrue(fixture.oneTagCard().getRoot().getHeight() >= fixture.noTagsCard().getRoot().getHeight(),
+                        "A card with no tags should not reserve more tag space than a one-tag card");
+            });
+
+            JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(TAG_RESIZED_WINDOW_WIDTH));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.cards().getWidth() > 600));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                assertTagsDoNotOverlapPhone(fixture.sixTagsCard());
+                assertTrue(fixture.sixTagsCard().getRoot().getHeight() < narrowSixTagHeight,
+                            "Card did not shrink after wrapped tags returned to fewer rows");
+            });
+
+            JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(TAG_OVERFLOW_SCENE_WIDTH));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.cards().getWidth() < 400));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                assertTagsDoNotOverlapPhone(fixture.sixTagsCard());
+                assertTrue(fixture.sixTagsCard().getRoot().getHeight()
+                                >= narrowSixTagHeight - LAYOUT_BOUNDS_TOLERANCE,
+                        "Card did not grow again after narrowing the window");
+            });
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::close);
+        }
+    }
+
+    @Test
+    public void personListPanel_wrappedTags_doNotOverlapPhoneAtNarrowWidth() throws Exception {
+        PanelLayoutFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
+            Person sixTagsPerson = new PersonBuilder().withName("Six Tags")
+                    .withTags("Active Tuition Student", "Secondary Four Level", "Additional Mathematics",
+                            "English Language Study", "Physics Practical Prep", "Chemistry Practical Prep")
+                    .build();
+            Person nextPerson = new PersonBuilder().withName("Next Contact").withTags().build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(sixTagsPerson, nextPerson);
+            PersonListPanel panel = new PersonListPanel(persons, persons);
+            ListView<Person> personListView = getPersonListView(panel);
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), TAG_RESIZED_WINDOW_WIDTH, TAG_OVERFLOW_SCENE_HEIGHT));
+            stage.show();
+            return new PanelLayoutFixture(stage, panel, personListView, sixTagsPerson, nextPerson);
+        });
+
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() > 600));
+            JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(TAG_OVERFLOW_SCENE_WIDTH));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() < 400));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                ListCell<Person> sixTagsCell = getDisplayedCell(fixture.personListView(), fixture.sixTagsPerson());
+                ListCell<Person> nextCell = getDisplayedCell(fixture.personListView(), fixture.nextPerson());
+                assertTagsDoNotOverlapPhone(sixTagsCell);
+                Bounds emailBounds = sixTagsCell.getGraphic().lookup("#email").localToScene(
+                        sixTagsCell.getGraphic().lookup("#email").getBoundsInLocal());
+                Bounds nextCardBounds = nextCell.getGraphic().localToScene(nextCell.getGraphic().getBoundsInLocal());
+                assertTrue(emailBounds.getMaxY() <= nextCardBounds.getMinY() + LAYOUT_BOUNDS_TOLERANCE,
+                        "Contact details extend into the neighbouring card");
+            });
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::close);
+        }
+    }
+
+    @Test
     public void personListPanel_guardianFilteredOut_displaysGuardianSummary() throws Exception {
         JavaFxTestUtil.callOnFxThread(() -> {
             Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("91234567")
@@ -424,6 +522,28 @@ public class CardDisplayUiTest {
         }
     }
 
+    private static void assertTagsDoNotOverlapPhone(PersonCard card) {
+        FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
+        Label phone = getLabel(card, "phone");
+        Bounds phoneBounds = phone.localToScene(phone.getBoundsInLocal());
+        for (Label tagLabel : getTagLabels(card)) {
+            Bounds tagBounds = tagLabel.localToScene(tagLabel.getBoundsInLocal());
+            assertTrue(tagBounds.getMaxY() <= phoneBounds.getMinY() + LAYOUT_BOUNDS_TOLERANCE,
+                    "Wrapped tag overlaps phone: " + tagBounds + " vs " + phoneBounds);
+        }
+    }
+
+    private static void assertTagsDoNotOverlapPhone(ListCell<Person> cell) {
+        FlowPane tags = (FlowPane) cell.getGraphic().lookup("#tags");
+        Label phone = (Label) cell.getGraphic().lookup("#phone");
+        Bounds phoneBounds = phone.localToScene(phone.getBoundsInLocal());
+        for (javafx.scene.Node tagNode : tags.getChildren()) {
+            Bounds tagBounds = tagNode.localToScene(tagNode.getBoundsInLocal());
+            assertTrue(tagBounds.getMaxY() <= phoneBounds.getMinY() + LAYOUT_BOUNDS_TOLERANCE,
+                    "Wrapped tag overlaps phone: " + tagBounds + " vs " + phoneBounds);
+        }
+    }
+
     private static void assertLabelStaysInsideCard(Label label, PersonCard card) {
         Bounds cardBounds = card.getRoot().localToScene(card.getRoot().getBoundsInLocal());
         Bounds labelBounds = label.localToScene(label.getBoundsInLocal());
@@ -469,5 +589,13 @@ public class CardDisplayUiTest {
                 .filter(cell -> person.equals(cell.getItem()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Person does not have a displayed list cell"));
+    }
+
+    private record CardLayoutFixture(Stage stage, PersonCard sixTagsCard, PersonCard oneTagCard,
+                                     PersonCard noTagsCard, VBox cards) {
+    }
+
+    private record PanelLayoutFixture(Stage stage, PersonListPanel panel, ListView<Person> personListView,
+                                      Person sixTagsPerson, Person nextPerson) {
     }
 }
