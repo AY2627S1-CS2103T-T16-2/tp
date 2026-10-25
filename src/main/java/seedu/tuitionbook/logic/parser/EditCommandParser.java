@@ -37,6 +37,7 @@ public class EditCommandParser implements Parser<EditCommand> {
                 ArgumentTokenizer.tokenizeWithQuotedValues(args, Set.of(PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG),
                         PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE, PREFIX_GUARDIAN);
 
+        ParserUtil.checkForUnsupportedSpaces(argMultimap.getPreamble());
         Index index;
 
         try {

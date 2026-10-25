@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -86,14 +86,21 @@ The command box is where you enter instructions; the result area reports success
 * Parameters with a prefix, such as `n/NAME` and `p/PHONE`, can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable. Positional parameters have no prefix and must appear in the order shown: `edit 2 n/James Lee` puts its index first; `link 1 2` puts the student index before the guardian index.
 
+* Command words ignore letter case: `list`, `LIST`, and `LiSt` run the same command. Field prefixes must still be lowercase (`n/`, not `N/`), and the confirmation keyword must still be exactly `confirm`. Values keep their existing rules; command-word casing does not change stored names, addresses or tags.
+
+* `help`, `exit`, and `reload` take no arguments. For example, `help 123`, `exit extra`, and `reload 123` report errors instead of running. `clear` requires exactly `confirm`; `CLEAR confirm` works, but `clear CONFIRM` and `clear confirm extra` do not.
+
+* Enter one command at a time and press <kbd>Enter</kbd> to run it. The command box is single-line; pasted tabs and line separators, including Unicode line/paragraph separators, become normal spaces before command parsing, even inside quoted values. Adjacent words remain separate, and pasting does not run a command automatically. Check the resulting text before pressing <kbd>Enter</kbd>.
+
+* If a raw line break reaches the parser without this command-box conversion, it is rejected with its character code (such as `U+2028`), including at the input edges or inside quotes. Remove it or replace it with a normal space before retrying. Quoting does not bypass this parser check.
+
+* Use normal spaces (`U+0020`) for command syntax. Non-breaking spaces (`U+00A0`) and full-width spaces (`U+3000`) in a command word, an index, or after a no-argument command are rejected with correction guidance, not silently converted. This check does not rewrite field values; their own validation rules still apply.
+
+* When copying commands from a PDF or website, check for missing spaces, unusual spaces and line breaks before submitting them. If the source already removed a separator, TuitionBook cannot reconstruct the intended text.
+
 * In `add`, `edit`, `list`, `tag` and `untag`, a token beginning after a normal space (`U+0020`) with one or more ASCII letters immediately followed by `/` is field syntax. It must be a supported lowercase prefix for that command. Unknown prefixes such as `ee/` are rejected before the command runs, not silently saved as another field's text or automatically corrected. This is a defined syntax rule, not a detector for every possible typo.
 
 * Quote the complete name, address or tag when that text contains a literal prefix-like token: `n/"Muhammad s/o Ali"`, `a/"20 Main Road, c/o Rina a/p Kaur"` or `t/"Advanced Math/Science"`. Supported prefixes inside quotes also remain literal. Slashes that do not start such a space-separated token, as in `t/Math/Science`, still work without quotes. Quoting does not bypass field validation.
-
-* The `help` and `exit` commands ignore extraneous parameters.<br>
-  For example, `help 123` is interpreted as `help`. `reload` accepts no arguments, and `clear` requires exactly `confirm`; `reload 123` and `clear confirm extra` report errors instead of running.
-
-* Enter one command at a time and press <kbd>Enter</kbd> to run it. The command box is single-line; when you paste text, tabs and line separators become spaces so that adjacent words are not joined. Pasting text does not run a command automatically.
 </box>
 
 ### Viewing help: `help`
@@ -102,6 +109,7 @@ Opens the Help window, which contains a scrollable summary of every command and 
 
 Format: `help`
 
+* Takes no arguments. `help extra` reports a format error and does not open the Help window.
 * You can also open or focus the same Help window by clicking the one-click `Help` control at the top of the main window, or by pressing <kbd>F1</kbd> even while the command box has focus.
 * When TuitionBook starts, the command box is ready for typing after any startup notice is dismissed. Pressing <kbd>Space</kbd> types in the command box instead of opening Help.
 * Use `Open User Guide` to open this User Guide in your system's default browser.
@@ -382,7 +390,7 @@ If TuitionBook cannot load an existing data file, it shows a startup warning wit
 
 **Close TuitionBook before editing or replacing its data file.** Make a backup first, edit the file, then reopen the app. An open instance keeps its own copy in memory and can overwrite external edits on the next save. `reload` is available for the recovery workflow described above, but it replaces contacts rather than merging changes.
 
-TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder from which it is launched. Contact data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file. On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path. If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged.
+TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder from which it is launched. Contact data is saved automatically as a JSON file `[JAR file location]/data/tuitionbook.json`. Advanced users are welcome to update data directly by editing that data file. On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path. If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged. If permissions prevent the move, TuitionBook continues using the unchanged `addressbook.json` for that run and retries migration on a later launch. Contact-changing commands can still report a save error and roll back if the legacy file's folder is not writable.
 
 Each contact in the file has these relationship fields:
 
@@ -391,6 +399,8 @@ Each contact in the file has these relationship fields:
 * `guardianId`: optional. For a student, it is the `id` of a guardian contact; guardians must have no guardian link (the field is absent or `null`).
 
 Do not change an existing `id` when editing the file. A current-format contact must include valid `id` and `role` fields. Contacts with the same normalized name and phone number are duplicates and make the file invalid, even when their `id` values differ.
+
+The file must contain exactly one JSON value and each object must use every property name at most once. Additional JSON after the first value and repeated property names make the file invalid, even if the repeated values are identical. Such files follow the recovery behavior below so that ignored or conflicting content is not lost on a later save.
 
 Data files created before these relationship fields were introduced remain supported. A contact that has none of `id`, `role`, or `guardianId` is loaded as an unlinked student and receives a generated `id`. The updated fields are written when TuitionBook next saves the data file.
 
@@ -431,8 +441,10 @@ Find the symptom below and try the suggested action. Error messages appear in th
 |---|---|---|
 | The terminal cannot find `java`, or reports an unsupported Java version | Java is missing, too old, or a different installation is being used | Run `java -version` in that terminal and follow the Java installation links in [Quick start](#quick-start). |
 | `Unable to access jarfile` | The path or filename in the launch command is wrong | Check the downloaded file's location and name. Put the full path in straight double quotes. |
-| `Unknown command.` | A misspelled command or wrong letter case | Use the lowercase command word from the [Command summary](#command-summary), without the backticks shown in this guide. |
+| `Unknown command.` | A misspelled or unsupported command word | Use a command word from the [Command summary](#command-summary), without the backticks shown in this guide. Command-word letter case does not matter. |
 | `Invalid command format!` | A required value is missing or a positional argument is misplaced | Read the usage shown with the error. Supply the required index first, then the relevant prefixed fields. For `link`, supply the student index followed by the guardian index. |
+| `Commands must be entered on a single line.` | A raw line break reached the parser without command-box conversion; the error identifies its character code | Remove the indicated line break or replace it with a normal space (`U+0020`); quotation marks do not bypass this rule. Normal GUI pasting converts tabs and line separators to spaces before parsing instead. |
+| `Unexpected non-breaking space` or `Unexpected full-width space` | A lookalike space occurs in the command word, an index or a no-argument command's trailing text | Retype that syntax using the spacebar (`U+0020`) and retry. Contact values are not automatically normalised. |
 | `Missing required field(s): ...` | An `add` command omitted one or more of `r/ROLE`, `n/NAME`, or `p/PHONE` | Add every field named in the message. The fields are listed in role, name, phone order, followed by the full `add` usage. |
 | `The contact index provided is invalid.` | That index is not in the currently displayed list | Enter `list`, find the intended contact's current index, and retry. Filters can change the displayed indexes. |
 | No contacts appear after `find` or a filtered `list` | No contacts match the current filter | Enter `list` to show all contacts. `find` searches names only; tag filters must match the complete tag, including internal spaces. |

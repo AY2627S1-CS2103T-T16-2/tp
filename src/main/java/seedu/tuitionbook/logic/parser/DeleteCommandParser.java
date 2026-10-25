@@ -18,6 +18,7 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public DeleteCommand parse(String args) throws ParseException {
+        ParserUtil.checkForUnsupportedSpaces(args);
         try {
             Index index = ParserUtil.parseIndex(args);
             return new DeleteCommand(index);

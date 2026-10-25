@@ -14,7 +14,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 * Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its strict prefix checks and quoted addresses are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, strict prefix checks and quoted addresses are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -139,7 +139,19 @@ How the parsing works:
 * `AddCommandParser` uses `ArgumentTokenizer`, `ArgumentMultimap`, the `Prefix` constants in `CliSyntax`, and `ParserUtil` to parse arguments and construct an `AddCommand`. `EditCommandParser`, `ListCommandParser`, and `ViewCommandParser` also use these utilities. Other parsers use only the helpers they need; for example, `DeleteCommandParser`, `LinkCommandParser`, and `UnlinkCommandParser` use `ParserUtil` to parse indexes.
 * `TagCommandParser` and `UntagCommandParser` delegate argument parsing to the package-private `TagModificationCommandParser` helper, passing their respective command constructor references. The helper uses the same tokenization and validation utilities and invokes the supplied constructor after parsing. It does not implement `Parser`.
 * `ArgumentTokenizer` creates an `ArgumentMultimap`, which stores argument values keyed by `Prefix`. `CliSyntax` defines the recognized prefix constants; `ParserUtil` parses values and indexes without depending on `Prefix`.
-* `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser. In all cases it returns the resulting object as a `Command`.
+* `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser, after rejecting non-blank arguments. In all cases it returns the resulting object as a `Command`.
+
+#### Command-input boundary
+
+`CommandTextField` converts pasted tabs and line separators to normal spaces before the text reaches the parser, including inside quoted values. A CRLF pair becomes one space. This GUI conversion preserves word boundaries and does not execute the pasted text.
+
+As a fallback for raw input that reaches it without command-box conversion, `TuitionBookParser` rejects actual line breaks before trimming or dispatching, using Java's `\R` definition (CR/LF, vertical tab, form feed, NEL, line separator and paragraph separator). The error identifies the first line-break code point. This also applies inside quotes and at the input edges; the parser does not split or join multiple commands. Normal GUI paste therefore does not produce this line-break diagnostic.
+
+Only the extracted command word is lowercased with `Locale.ROOT`. Prefixes, arguments, quoted values, tag identity and the exact `confirm` keyword are not case-normalised. This keeps command lookup independent of the computer's locale without changing contact data.
+
+`ParserUtil.checkForUnsupportedSpaces` diagnoses NBSP (`U+00A0`) and ideographic/full-width space (`U+3000`) only in command words, no-argument command tails and positional-index text. It does not scan field values. Indexed command parsers perform this check before wrapping ordinary invalid-index errors in command-specific usage, and `link` checks before splitting its two indexes. `parseIndex` also checks direct callers. Other invisible-character policies and field validation remain outside this change.
+
+These failures occur during parsing, before command execution, model mutation or contact saving. `help`, `exit` and `reload` with extra arguments never produce an executable command. See [Command input and diagnostics](#command-input-and-diagnostics) for manual scenarios.
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/model/Model.java)
@@ -174,7 +186,11 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`JsonUtil` configures the shared Jackson mapper to require the input to end after one JSON value and to reject duplicate property names at any object depth. This prevents trailing or conflicting content from being accepted and then discarded by a later save. For the configured contact file, either parsing failure enters the existing malformed-file recovery path, which moves the original file unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
+
 `ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
+
+At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it attempts to move the legacy `addressbook.json` to that current path. A failed move is logged without aborting initialization: the unchanged legacy path is passed to storage for that run, and migration is retried on a later launch. This preserves readable contacts when directory permissions prevent renaming. If the same permissions also prevent saving, the normal command save-failure rollback restores contacts and the active filter.
 
 ### Common classes
 
@@ -659,6 +675,12 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
       Use case ends.
 
+* 2a. TuitionBook cannot save the deletion.
+
+    * 2a1. TuitionBook shows a storage error, restores the deleted contact and any guardian links cleared by the request, retains the previously active filter, and does not report a successful deletion.
+
+      Use case ends.
+
 **Use case: UC08 Filter contacts by role**
 
 **MSS**
@@ -675,6 +697,44 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
     * 1a1. TuitionBook shows an error message describing the invalid request.
 
       Use case ends.
+
+**Use case: UC09 Reload contact data**
+
+**MSS**
+
+1.  Private tutor submits a reload request.
+2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and clears the active filter.
+3.  TuitionBook enables saving and reports the number of loaded contacts.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. The configured data file is missing.
+
+    * 2a1. TuitionBook replaces the current contacts with an empty contact list, clears the active filter, enables saving, and reports that zero contacts were loaded.
+
+      Use case ends.
+
+* 2b. The file contains invalid guardian links but all contacts are otherwise valid.
+
+    * 2b1. TuitionBook loads the contacts without those links, clears the active filter, and reports the number of links repaired in memory for the tutor to review before saving.
+
+      Use case resumes from step 3.
+
+* 2c. TuitionBook cannot read the file but preserves it in a backup.
+
+    * 2c1. TuitionBook retains the current contacts and active filter, enables saving, and reports the backup path and that corrected data must be restored before reloading again.
+
+      Use case ends.
+
+* 2d. TuitionBook cannot read the file or preserve it in a backup.
+
+    * 2d1. TuitionBook retains the current contacts and active filter, leaves the original file in place, blocks saving, and explains that the original must be corrected or moved before reloading again.
+
+      Use case ends.
+
+See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
 **Role-filter command rule**
 
@@ -727,6 +787,27 @@ Use these scenarios to check visible behaviour and persistence. Start with [Laun
 
 **Note:** These instructions only provide a starting point for testers to work on; testers are expected to do more *exploratory* testing.
 </box>
+
+### Command input and diagnostics
+
+Use a fresh, disposable folder with an empty contact list. These steps describe the v1.5 development build, not the released v1.4 JAR.
+
+1. Enter `AdD r/student n/Case Sensitive p/91234567 a/12 Main Road t/Math`, then `LiSt` and `ViEw 1`.<br>
+   Expected: One contact is stored and displayed; the name remains `Case Sensitive`, the address `12 Main Road`, and the tag `Math`.
+1. Enter `help extra`, `EXIT extra`, and `ReLoAd extra` separately.<br>
+   Expected: Each reports an invalid-format error with the relevant usage. The app stays open, no Help window opens, and contacts are not reloaded or changed.
+1. Enter `CLEAR CONFIRM` and `ADD R/student n/Rejected p/92345678` separately.<br>
+   Expected: Both are rejected. Command-word casing does not relax confirmation or field-prefix syntax; the existing contact is unchanged.
+1. For the remaining diagnostic tests, replace each bracketed token with the actual character before submitting; do not type the bracketed name literally. A text editor's Unicode insertion feature can supply these characters.
+   * `delete[NBSP]1` and `delete 1[NBSP]`, with `[NBSP]` replaced by U+00A0.
+   * `link 1[IDEOGRAPHIC SPACE]2`, with the token replaced by U+3000.<br>
+   Expected: The result identifies the unexpected character's code point and how to correct it; no contact is changed or deleted.
+1. Enter `EdIt 1 a/Blk[NBSP]12[IDEOGRAPHIC SPACE]Road`, substituting actual U+00A0 and U+3000 characters inside the address.<br>
+   Expected: The address is accepted unchanged under its field rules; syntax diagnostics do not normalise address data.
+1. Enter `ExIt`, restart the app, and enter `view 1`.<br>
+   Expected: Normal exit works, there is still exactly one contact, and its name, tag and updated address retain their case and spacing.
+
+Pasted tabs and line separators are converted to spaces by the command box, including inside quoted names. Verify this separately using [Pasting separators into the command box](#pasting-separators-into-the-command-box); do not expect a U+2028/U+2029 rejection from normal GUI paste. Raw line-break rejection is a parser fallback covered by `TuitionBookParserTest.parseCommand_lineBreaks_reportCodePointBeforeTrimmingOrDispatch` and the rejected-syntax tests in `LogicManagerTest`, including checks that contacts and stored bytes stay unchanged.
 
 ### Contact validation and missing add fields
 
@@ -1136,6 +1217,20 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Restore write permission to the `data` folder and enter `edit 1 n/Updated Alex` again.<br>
       Expected: TuitionBook confirms the edit. Close and relaunch the application; the contact is named Updated Alex.
 
+1. Retrying legacy-file migration after a permission failure
+
+   1. In a fresh, disposable JAR folder, create `data/addressbook.json` containing `{"persons":[{"name":"Legacy Alex","phone":"87438807","tags":[]}]}` and ensure that `data/tuitionbook.json` is absent. Make the `data` folder readable but not writable for the current user; permission controls differ by operating system.<br>
+      Expected: creating or renaming a file in `data` fails, while `addressbook.json` remains readable. If not, the permission-failure precondition was not established.
+
+   1. Launch TuitionBook.<br>
+      Expected: TuitionBook opens without an initialization error and displays Legacy Alex. `addressbook.json` remains unchanged and `tuitionbook.json` is absent.
+
+   1. Enter `edit 1 n/Updated Alex`.<br>
+      Expected: TuitionBook reports that it could not save and restores the contact as Legacy Alex.
+
+   1. Close TuitionBook, restore write permission to `data`, and relaunch it.<br>
+      Expected: TuitionBook displays Legacy Alex, moves the data to `data/tuitionbook.json`, and removes `data/addressbook.json`. Later contact changes can be saved normally.
+
 1. Recovering from malformed contact data (backup succeeds)
 
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
@@ -1154,6 +1249,14 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
 
    1. Compare `data/tuitionbook.json.backup` with the saved copy.<br>
       Expected: The backup file is identical to the saved copy; TuitionBook did not modify its malformed contents.
+
+1. Preserving ambiguous JSON input
+
+   1. Place the JAR file in a fresh, disposable folder. Create `data/tuitionbook.json` containing exactly `{"persons":[]} {"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}` and launch TuitionBook.<br>
+      Expected: TuitionBook rejects the trailing second JSON value, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
+
+   1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}`.<br>
+      Expected: TuitionBook rejects the duplicate `persons` property, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
 
 1. Warning about a repaired guardian link
 

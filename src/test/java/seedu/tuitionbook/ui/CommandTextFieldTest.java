@@ -23,6 +23,7 @@ import javafx.scene.input.DataFormat;
 import javafx.stage.Stage;
 import seedu.tuitionbook.logic.LogicManager;
 import seedu.tuitionbook.logic.commands.CommandResult;
+import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
@@ -143,6 +144,50 @@ public class CommandTextFieldTest {
                 assertEquals("Wei Ming Tan", model.getTuitionBook().getPersonList().getFirst().getName().fullName);
             } finally {
                 stage.hide();
+            }
+        });
+    }
+
+    // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/322.
+    @Test
+    public void paste_lineBreaksInQuotedName_normalizesBeforeParsingAndPersists() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            int separatorIndex = 0;
+            for (String separator : List.of("\n", "\r", "\r\n", "\u000B", "\u000C",
+                    "\u0085", "\u2028", "\u2029")) {
+                ModelManager model = new ModelManager();
+                Path file = temporaryFolder.resolve("tuitionbook-" + separatorIndex + ".json");
+                separatorIndex++;
+                LogicManager logic = new LogicManager(model, new StorageManager(
+                        new JsonTuitionBookStorage(file),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+                String rawCommand = "AdD r/student n/\"Wei" + separator + "Ming Tan\" p/91234567";
+                assertThrows(ParseException.class, () -> logic.execute(rawCommand));
+                assertTrue(model.getTuitionBook().getPersonList().isEmpty());
+
+                CommandBox commandBox = new CommandBox(logic::execute);
+                Stage stage = new Stage();
+                Scene scene = new Scene(commandBox.getRoot());
+                stage.setScene(scene);
+                stage.show();
+                CommandTextField field = (CommandTextField) scene.lookup("#commandTextField");
+                try {
+                    ClipboardContent pasted = new ClipboardContent();
+                    pasted.putString(rawCommand);
+                    assertTrue(Clipboard.getSystemClipboard().setContent(pasted));
+                    field.requestFocus();
+                    field.paste();
+
+                    assertEquals("AdD r/student n/\"Wei Ming Tan\" p/91234567", field.getText());
+                    assertTrue(model.getTuitionBook().getPersonList().isEmpty());
+                    field.fireEvent(new ActionEvent());
+                    assertEquals("", field.getText());
+                    logic.execute("ReLoAd");
+                    assertEquals(1, model.getTuitionBook().getPersonList().size());
+                    assertEquals("Wei Ming Tan", model.getTuitionBook().getPersonList().getFirst().getName().fullName);
+                } finally {
+                    stage.hide();
+                }
             }
         });
     }

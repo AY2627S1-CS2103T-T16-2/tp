@@ -27,6 +27,7 @@ public class ViewCommandParser implements Parser<ViewCommand> {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, ViewCommand.MESSAGE_USAGE));
         }
 
+        ParserUtil.checkForUnsupportedSpaces(argMultimap.getPreamble());
         try {
             Index index = ParserUtil.parseIndex(argMultimap.getPreamble());
             return new ViewCommand(index, shouldShowFullLinkedDetails);

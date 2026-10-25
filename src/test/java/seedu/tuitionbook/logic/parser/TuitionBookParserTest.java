@@ -8,6 +8,7 @@ import static seedu.tuitionbook.testutil.Assert.assertThrows;
 import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,6 +24,7 @@ import seedu.tuitionbook.logic.commands.FindCommand;
 import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.LinkCommand;
 import seedu.tuitionbook.logic.commands.ListCommand;
+import seedu.tuitionbook.logic.commands.ReloadCommand;
 import seedu.tuitionbook.logic.commands.TagCommand;
 import seedu.tuitionbook.logic.commands.UnlinkCommand;
 import seedu.tuitionbook.logic.commands.UntagCommand;
@@ -78,7 +80,7 @@ public class TuitionBookParserTest {
     @Test
     public void parseCommand_exit() throws Exception {
         assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD) instanceof ExitCommand);
-        assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD + " 3") instanceof ExitCommand);
+        assertThrows(ParseException.class, () -> parser.parseCommand(ExitCommand.COMMAND_WORD + " 3"));
     }
 
     @Test
@@ -92,7 +94,8 @@ public class TuitionBookParserTest {
     @Test
     public void parseCommand_help() throws Exception {
         assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD) instanceof HelpCommand);
-        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD + " 3") instanceof HelpCommand);
+        assertThrows(ParseException.class, String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE), ()
+            -> parser.parseCommand(HelpCommand.COMMAND_WORD + " 3"));
     }
 
     @Test
@@ -141,5 +144,98 @@ public class TuitionBookParserTest {
     @Test
     public void parseCommand_unknownCommand_throwsParseException() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
+    }
+
+    @Test
+    public void parseCommand_noArgumentCommands_rejectExtraArgumentsInEveryCasing() throws Exception {
+        for (String word : List.of("help", "exit", "reload")) {
+            assertEquals(parser.parseCommand(word).getClass(),
+                    parser.parseCommand(" \t" + word.toUpperCase(Locale.ROOT) + " \t ").getClass());
+            for (String extra : List.of(" extra", " 1", " confirm", " n/Amy")) {
+                assertThrows(ParseException.class, () -> parser.parseCommand(word + extra));
+                assertThrows(ParseException.class, () -> parser.parseCommand(word.toUpperCase(Locale.ROOT) + extra));
+            }
+        }
+        assertTrue(parser.parseCommand("reload") instanceof ReloadCommand);
+    }
+
+    @Test
+    public void parseCommand_allCommandWords_acceptUpperAndMixedCase() throws Exception {
+        for (String input : List.of("add r/student n/Amy p/123", "edit 1 n/Amy", "delete 1", "clear confirm",
+                "find Amy", "list r/student", "link 1 2", "unlink 1", "view 1 v/", "help", "exit", "reload",
+                "tag 1 t/Math", "untag 1 t/Math")) {
+            int boundary = input.indexOf(' ');
+            String word = boundary < 0 ? input : input.substring(0, boundary);
+            String arguments = boundary < 0 ? "" : input.substring(boundary);
+            Class<?> expected = parser.parseCommand(input).getClass();
+            assertEquals(expected, parser.parseCommand(word.toUpperCase(Locale.ROOT) + arguments).getClass());
+            String mixedWord = word.substring(0, 1) + word.substring(1).toUpperCase(Locale.ROOT);
+            assertEquals(expected, parser.parseCommand(mixedWord + arguments).getClass());
+        }
+    }
+
+    @Test
+    public void parseCommand_commandCase_doesNotChangeValuesPrefixesOrConfirmation() throws Exception {
+        Person expected = new PersonBuilder().withName("Rina a/p TAN").withPhone("123")
+                .withoutEmail().withAddress("Blk\u00a012\u3000Road").withTags("Math", "call p/Next Week").build();
+        assertEquals(new AddCommand(expected), parser.parseCommand(
+                "AdD r/STUDENT n/\"Rina a/p TAN\" p/123 a/Blk\u00a012\u3000Road t/Math t/\"call p/Next Week\""));
+        assertEquals(new FindCommand(new NameContainsKeywordsPredicate(List.of("Rina", "TAN"))),
+                parser.parseCommand("FiNd Rina TAN"));
+        assertThrows(ParseException.class, () -> parser.parseCommand("ADD R/student n/Amy p/123"));
+        assertThrows(ParseException.class, () -> parser.parseCommand("CLEAR CONFIRM"));
+        assertThrows(ParseException.class, () -> parser.parseCommand("CLEAR"));
+    }
+
+    @Test
+    public void parseCommand_commandCase_isIndependentOfDefaultLocale() throws Exception {
+        Locale original = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            assertTrue(parser.parseCommand("LIST") instanceof ListCommand);
+            assertTrue(parser.parseCommand("LINK 1 2") instanceof LinkCommand);
+            assertTrue(parser.parseCommand("UNLINK 1") instanceof UnlinkCommand);
+            assertTrue(parser.parseCommand("EXIT") instanceof ExitCommand);
+        } finally {
+            Locale.setDefault(original);
+        }
+    }
+
+    @Test
+    public void parseCommand_lineBreaks_reportCodePointBeforeTrimmingOrDispatch() {
+        // Scenarios adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/322
+        for (char separator : new char[] {'\n', '\r', '\u000b', '\f', '\u0085', '\u2028', '\u2029'}) {
+            String expectedMessage = String.format(Locale.ROOT, "Commands must be entered on a single line. "
+                    + "Found line break U+%04X; remove it or replace it with a normal space (U+0020).",
+                    (int) separator);
+            for (String input : List.of(separator + "list", "list" + separator, "li" + separator + "st",
+                    "list " + separator + "help", "add r/student n/Amy p/123 a/12" + separator + "Road",
+                    "edit 1 n/\"Amy" + separator + " Tan\"")) {
+                assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+            }
+        }
+        assertThrows(ParseException.class, "Commands must be entered on a single line. "
+                + "Found line break U+000D; remove it or replace it with a normal space (U+0020).", ()
+                -> parser.parseCommand("list\r\nhelp"));
+    }
+
+    @Test
+    public void parseCommand_unicodeSyntaxSpaces_reportActionableDiagnostics() {
+        // Scenarios adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/129
+        // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/187
+        // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/374
+        // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/188
+        for (char space : new char[] {'\u00a0', '\u3000'}) {
+            String description = space == '\u00a0' ? "non-breaking space" : "full-width space";
+            String expectedMessage = String.format(Locale.ROOT, "Unexpected %s (U+%04X). "
+                    + "Retype the command separator or index using normal spaces (U+0020).", description, (int) space);
+            for (String input : List.of(space + "list", "list" + space, "LiSt" + space + "r/student",
+                    "help " + space, "exit " + space, "reload " + space, "delete " + space + "1",
+                    "edit 1" + space + " n/Amy", "tag 1" + space + " t/Math", "untag " + space + "1 t/Math",
+                    "unlink 1" + space, "link 1" + space + "2", "link 1 " + space + "2",
+                    "view 1" + space + " v/")) {
+                assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+            }
+        }
     }
 }
