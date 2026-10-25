@@ -3,6 +3,8 @@ package seedu.tuitionbook.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
+import java.util.List;
+
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.model.Model;
@@ -30,7 +32,7 @@ public class ReloadCommand extends Command {
         TuitionBookLoadResult result;
         try {
             result = storage.readTuitionBookWithResult()
-                    .orElseGet(() -> new TuitionBookLoadResult(new TuitionBook(), 0));
+                    .orElseGet(() -> new TuitionBookLoadResult(new TuitionBook(), List.of()));
         } catch (DataLoadingException exception) {
             String recovery = exception.getMalformedFileBackupPath()
                     .map(path -> " Unreadable file preserved at " + path

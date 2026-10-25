@@ -22,6 +22,7 @@ import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
+import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
@@ -228,7 +229,11 @@ public class MainAppTest {
 
         assertEquals(2, state.model().getTuitionBook().getPersonList().size());
         assertTrue(state.model().getTuitionBook().getPersonList().get(0).getGuardianId().isEmpty());
-        assertEquals(StartupNotice.guardianLinksRepaired(1), state.notice().orElseThrow());
+        StartupNotice notice = state.notice().orElseThrow();
+        assertEquals(1, notice.repairedGuardianLinkCount());
+        assertEquals("Sam Student", notice.guardianLinkRepairs().get(0).personName());
+        assertEquals(GuardianLinkRepair.Reason.MISSING_GUARDIAN,
+                notice.guardianLinkRepairs().get(0).reason());
     }
 
     @Test

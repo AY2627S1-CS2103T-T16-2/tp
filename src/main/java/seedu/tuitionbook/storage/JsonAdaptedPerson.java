@@ -135,7 +135,7 @@ class JsonAdaptedPerson {
         UUID modelId;
         Role modelRole;
         UUID modelGuardianId = null;
-        boolean hasRepairedGuardianLink = false;
+        GuardianLinkRepair.Reason repairReason = null;
         if (isLegacyPerson()) {
             modelId = UUID.randomUUID();
             modelRole = Role.STUDENT;
@@ -149,22 +149,27 @@ class JsonAdaptedPerson {
             }
             modelRole = Role.fromString(role);
             modelGuardianId = parseGuardianId();
-            hasRepairedGuardianLink = guardianId != null && modelGuardianId == null;
+            repairReason = guardianId != null && modelGuardianId == null
+                    ? GuardianLinkRepair.Reason.MALFORMED_GUARDIAN_ID : null;
             if (modelGuardianId != null && (modelRole != Role.STUDENT || modelGuardianId.equals(modelId))) {
                 logger.warning("Discarding invalid guardian link for contact " + modelName);
+                repairReason = modelGuardianId.equals(modelId)
+                        ? GuardianLinkRepair.Reason.SELF_LINK
+                        : GuardianLinkRepair.Reason.NON_STUDENT_GUARDIAN_LINK;
                 modelGuardianId = null;
-                hasRepairedGuardianLink = true;
             }
         }
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
         Person person = new Person(modelId, modelRole, modelGuardianId, modelName, modelPhone, modelEmail,
                 modelAddress, modelTags);
-        return new PersonLoadResult(person, hasRepairedGuardianLink);
+        GuardianLinkRepair repair = repairReason == null ? null
+                : new GuardianLinkRepair(modelName.fullName, modelId, guardianId, repairReason);
+        return new PersonLoadResult(person, repair);
     }
 
     /** A converted contact and its guardian-link repair status. */
-    record PersonLoadResult(Person person, boolean hasRepairedGuardianLink) {
+    record PersonLoadResult(Person person, GuardianLinkRepair repair) {
     }
 
     private boolean isLegacyPerson() {

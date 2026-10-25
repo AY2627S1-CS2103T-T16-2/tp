@@ -2,6 +2,8 @@ package seedu.tuitionbook.storage;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.model.TuitionBook;
@@ -13,11 +15,11 @@ public class TuitionBookLoadResultTest {
 
     @Test
     public void constructor_nullContacts_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new TuitionBookLoadResult(null, 0));
+        assertThrows(NullPointerException.class, () -> new TuitionBookLoadResult(null, List.of()));
     }
 
     @Test
-    public void constructor_negativeRepairCount_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new TuitionBookLoadResult(new TuitionBook(), -1));
+    public void constructor_nullRepairs_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new TuitionBookLoadResult(new TuitionBook(), null));
     }
 }

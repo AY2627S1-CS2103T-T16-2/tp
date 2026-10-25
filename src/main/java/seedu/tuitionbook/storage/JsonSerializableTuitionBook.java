@@ -65,20 +65,20 @@ class JsonSerializableTuitionBook {
     }
 
     /**
-     * Returns the loaded contacts and the number of guardian links repaired during conversion.
+     * Returns the loaded contacts and diagnostics for guardian links repaired during conversion.
      */
     TuitionBookLoadResult toModelTypeWithResult() throws IllegalValueException {
         List<Person> loadedPersons = new ArrayList<>();
+        List<GuardianLinkRepair> repairs = new ArrayList<>();
         Set<UUID> loadedIds = new HashSet<>();
-        int repairedGuardianLinkCount = 0;
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
             if (jsonAdaptedPerson == null) {
                 throw new IllegalValueException(MESSAGE_NULL_PERSON);
             }
             JsonAdaptedPerson.PersonLoadResult personResult = jsonAdaptedPerson.toModelTypeWithResult();
             Person person = personResult.person();
-            if (personResult.hasRepairedGuardianLink()) {
-                repairedGuardianLinkCount++;
+            if (personResult.repair() != null) {
+                repairs.add(personResult.repair());
             }
             // IDs must be unique before they can safely be used to resolve guardian links.
             if (!loadedIds.add(person.getId())) {
@@ -97,7 +97,11 @@ class JsonSerializableTuitionBook {
         for (Person person : loadedPersons) {
             Person resolvedPerson = resolveGuardianLink(person, personsById);
             if (resolvedPerson != person) {
-                repairedGuardianLinkCount++;
+                GuardianLinkRepair.Reason reason = personsById.containsKey(person.getGuardianId().orElseThrow())
+                        ? GuardianLinkRepair.Reason.STUDENT_GUARDIAN
+                        : GuardianLinkRepair.Reason.MISSING_GUARDIAN;
+                repairs.add(new GuardianLinkRepair(person.getName().fullName, person.getId(),
+                        person.getGuardianId().map(UUID::toString).orElse(null), reason));
             }
             // TuitionBook rejects manually introduced duplicate contact identities.
             if (tuitionBook.hasPerson(resolvedPerson)) {
@@ -105,7 +109,7 @@ class JsonSerializableTuitionBook {
             }
             tuitionBook.addPerson(resolvedPerson);
         }
-        return new TuitionBookLoadResult(tuitionBook, repairedGuardianLinkCount);
+        return new TuitionBookLoadResult(tuitionBook, repairs);
     }
 
     /**

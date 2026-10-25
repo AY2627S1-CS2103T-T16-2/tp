@@ -11,6 +11,7 @@ The format is based on Keep a Changelog.
 ### Added
 
 - Support quoted addresses in `add` and `edit`, protecting complete addresses containing prefix-like text and using the same quote/backslash escapes as names and tags (#201).
+- Detailed guardian-link repair diagnostics in the startup warning, including every affected contact and repair reason.
 
 ### Changed
 
@@ -38,6 +39,7 @@ The format is based on Keep a Changelog.
 - Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.
 - Reject JSON files containing trailing content or duplicate property names so that ambiguous data is preserved through the existing malformed-file recovery workflow instead of being silently discarded on the next save.
 - Continue startup with the unchanged legacy `addressbook.json` when permissions prevent migration to `tuitionbook.json`, allowing migration to be retried on a later launch.
+- Show all repaired guardian links in a scrollable startup summary while retaining the existing in-memory repair and next-save behaviour.
 
 ## [v1.4] - 2026-10-22
 

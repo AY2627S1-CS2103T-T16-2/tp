@@ -136,6 +136,13 @@ public class JsonSerializableTuitionBookTest {
 
         assertEquals(5, result.repairedGuardianLinkCount());
         assertEquals(5, result.tuitionBook().getPersonList().size());
+        assertEquals(List.of(
+                GuardianLinkRepair.Reason.SELF_LINK,
+                GuardianLinkRepair.Reason.MALFORMED_GUARDIAN_ID,
+                GuardianLinkRepair.Reason.NON_STUDENT_GUARDIAN_LINK,
+                GuardianLinkRepair.Reason.MISSING_GUARDIAN,
+                GuardianLinkRepair.Reason.STUDENT_GUARDIAN),
+                result.guardianLinkRepairs().stream().map(GuardianLinkRepair::reason).toList());
         for (Person person : result.tuitionBook().getPersonList()) {
             assertTrue(person.getGuardianId().isEmpty());
         }

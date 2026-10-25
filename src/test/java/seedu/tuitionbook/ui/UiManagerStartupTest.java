@@ -6,11 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,6 +33,7 @@ import seedu.tuitionbook.logic.LogicManager;
 import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
+import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.storage.StorageManager;
 
 /**
@@ -78,7 +82,8 @@ public class UiManagerStartupTest {
 
     @Test
     public void oneRepairedLink_showsSingularWarning() throws Exception {
-        assertStartupDialog(StartupNotice.guardianLinksRepaired(1), "Guardian links repaired",
+        assertStartupDialog(StartupNotice.guardianLinksRepaired(List.of(repair("Sam Student"))),
+                "Guardian links repaired",
                 "1 guardian link was repaired",
                 "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath()
                         + " before entering a contact-changing command; the next save removes invalid links.",
@@ -87,7 +92,8 @@ public class UiManagerStartupTest {
 
     @Test
     public void multipleRepairedLinks_showsPluralWarning() throws Exception {
-        assertStartupDialog(StartupNotice.guardianLinksRepaired(2), "Guardian links repaired",
+        assertStartupDialog(StartupNotice.guardianLinksRepaired(List.of(repair("Sam Student"),
+                        repair("Grace Guardian"))), "Guardian links repaired",
                 "2 guardian links were repaired",
                 "All valid contacts were retained. Review invalid guardianId values in " + dataFilePath()
                         + " before entering a contact-changing command; the next save removes invalid links.",
@@ -95,9 +101,19 @@ public class UiManagerStartupTest {
     }
 
     @Test
+    public void manyRepairedLinks_areShownInScrollableDetailsArea() throws Exception {
+        List<GuardianLinkRepair> repairs = IntStream.range(0, 30)
+                .mapToObj(index -> repair("Student " + index))
+                .toList();
+        assertStartupDialog(StartupNotice.guardianLinksRepaired(repairs), "Guardian links repaired",
+                "30 guardian links were repaired", "", "warning");
+    }
+
+    @Test
     public void repairedLinks_relativeDataFilePath_showsAbsolutePathInWarning() throws Exception {
         Path relativeDataFilePath = Path.of("data", "contacts.json");
-        assertStartupDialog(relativeDataFilePath, StartupNotice.guardianLinksRepaired(1), "Guardian links repaired",
+        assertStartupDialog(relativeDataFilePath,
+                StartupNotice.guardianLinksRepaired(List.of(repair("Sam Student"))), "Guardian links repaired",
                 "1 guardian link was repaired",
                 "All valid contacts were retained. Review invalid guardianId values in "
                         + relativeDataFilePath.toAbsolutePath().normalize()
@@ -163,7 +179,22 @@ public class UiManagerStartupTest {
                 assertEquals(title, ((Stage) pane.getScene().getWindow()).getTitle());
                 assertEquals(owner.get(), ((Stage) pane.getScene().getWindow()).getOwner());
                 assertEquals(header, pane.getHeaderText());
-                assertEquals(content, pane.getContentText());
+                if (notice.type() == StartupNotice.Type.GUARDIAN_LINKS_REPAIRED) {
+                    TextArea details = (TextArea) pane.getContent();
+                    Stage dialogStage = (Stage) pane.getScene().getWindow();
+                    assertFalse(details.isEditable());
+                    assertTrue(details.isWrapText());
+                    assertTrue(dialogStage.isResizable());
+                    assertEquals(MainWindow.MIN_WIDTH, dialogStage.getMinWidth());
+                    assertEquals(MainWindow.MIN_HEIGHT / 4, dialogStage.getMinHeight());
+                    assertEquals(Math.min(12, Math.max(4, notice.guardianLinkRepairs().size())),
+                            details.getPrefRowCount());
+                    for (GuardianLinkRepair repair : notice.guardianLinkRepairs()) {
+                        assertTrue(details.getText().contains(repair.personName()));
+                    }
+                } else {
+                    assertEquals(content, pane.getContentText());
+                }
                 assertTrue(pane.getStyleClass().contains(styleClass));
                 assertFalse(pane.getButtonTypes().isEmpty());
                 if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP
@@ -232,6 +263,11 @@ public class UiManagerStartupTest {
         }
         return "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
                 + "Saving is disabled. Correct or move the file, then restart TuitionBook.";
+    }
+
+    private GuardianLinkRepair repair(String personName) {
+        return new GuardianLinkRepair(personName, UUID.randomUUID(), null,
+                GuardianLinkRepair.Reason.MISSING_GUARDIAN);
     }
 
     private Logic logic() {

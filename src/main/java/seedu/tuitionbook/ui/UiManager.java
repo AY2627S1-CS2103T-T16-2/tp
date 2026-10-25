@@ -1,18 +1,21 @@
 package seedu.tuitionbook.ui;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import seedu.tuitionbook.MainApp;
 import seedu.tuitionbook.commons.core.LogsCenter;
 import seedu.tuitionbook.commons.util.StringUtil;
 import seedu.tuitionbook.logic.Logic;
+import seedu.tuitionbook.storage.GuardianLinkRepair;
 
 /**
  * The manager of the UI component.
@@ -97,13 +100,52 @@ public class UiManager implements Ui {
             case GUARDIAN_LINKS_REPAIRED -> {
                 int count = notice.repairedGuardianLinkCount();
                 String header = count + (count == 1 ? " guardian link was repaired" : " guardian links were repaired");
-                showAlertDialogAndWait(AlertType.WARNING, "Guardian links repaired", header,
-                        "All valid contacts were retained. Review invalid guardianId values in "
-                                + displayedDataFilePath
-                                + " before entering a contact-changing command; the next save removes invalid links.");
+                showGuardianRepairNotice(header, notice.guardianLinkRepairs(), displayedDataFilePath);
             }
             default -> throw new AssertionError("Unexpected startup notice: " + notice.type());
         }
+    }
+
+    private void showGuardianRepairNotice(String header, List<GuardianLinkRepair> repairs,
+                                           Path displayedDataFilePath) {
+        Alert alert = new Alert(AlertType.WARNING);
+        alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
+        alert.initOwner(mainWindow.getPrimaryStage());
+        alert.setTitle("Guardian links repaired");
+        alert.setHeaderText(header);
+
+        TextArea details = new TextArea();
+        details.setEditable(false);
+        details.setWrapText(true);
+        details.setPrefRowCount(Math.min(12, Math.max(4, repairs.size())));
+        details.setPrefColumnCount(70);
+        details.setText(buildGuardianRepairDetails(repairs, displayedDataFilePath));
+        alert.getDialogPane().setContent(details);
+        alert.getDialogPane().setId(ALERT_DIALOG_PANE_FIELD_ID);
+        alert.setResizable(true);
+        alert.setOnShown(event -> {
+            Stage dialogStage = (Stage) alert.getDialogPane().getScene().getWindow();
+            dialogStage.setMinWidth(MainWindow.MIN_WIDTH);
+            dialogStage.setMinHeight(MainWindow.MIN_HEIGHT / 4);
+        });
+        alert.showAndWait();
+    }
+
+    private String buildGuardianRepairDetails(List<GuardianLinkRepair> repairs,
+                                              Path displayedDataFilePath) {
+        StringBuilder details = new StringBuilder("All valid contacts were retained.\n\n");
+        for (GuardianLinkRepair repair : repairs) {
+            details.append("• ").append(repair.personName())
+                    .append(" [").append(repair.personId()).append("] — ")
+                    .append(repair.reason().getDescription());
+            if (repair.guardianId() != null) {
+                details.append(" (guardianId: ").append(repair.guardianId()).append(")");
+            }
+            details.append('\n');
+        }
+        details.append("\nReview the invalid guardianId values in ").append(displayedDataFilePath)
+                .append(" before entering a contact-changing command. The next save removes the invalid links.");
+        return details.toString();
     }
 
     private Path displayedPath(Path path) {

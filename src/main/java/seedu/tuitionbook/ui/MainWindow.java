@@ -26,6 +26,9 @@ public class MainWindow extends UiPart<Stage> {
     private static final String FXML = "MainWindow.fxml";
     private static final KeyCombination HELP_KEY = new KeyCodeCombination(KeyCode.F1);
 
+    static final double MIN_WIDTH = 450;
+    static final double MIN_HEIGHT = 600;
+
     private final Logger logger = LogsCenter.getLogger(getClass());
 
     private Stage primaryStage;
@@ -64,6 +67,8 @@ public class MainWindow extends UiPart<Stage> {
         this.dataFilePath = dataFilePath;
 
         // Configure the UI
+        primaryStage.setMinWidth(MIN_WIDTH);
+        primaryStage.setMinHeight(MIN_HEIGHT);
         setWindowDefaultSize(logic.getGuiSettings());
 
         setAccelerators();
