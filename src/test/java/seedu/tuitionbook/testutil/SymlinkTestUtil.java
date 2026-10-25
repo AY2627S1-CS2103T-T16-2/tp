@@ -1,9 +1,11 @@
 package seedu.tuitionbook.testutil;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Assumptions;
 
@@ -17,8 +19,16 @@ public final class SymlinkTestUtil {
     public static Path createSymbolicLink(Path link, Path target) throws IOException {
         try {
             return Files.createSymbolicLink(link, target);
-        } catch (UnsupportedOperationException | FileSystemException exception) {
+        } catch (UnsupportedOperationException | AccessDeniedException exception) {
             Assumptions.assumeTrue(false, "Symbolic links are unavailable: " + exception.getMessage());
+            throw exception;
+        } catch (FileSystemException exception) {
+            String reason = (String.valueOf(exception.getReason()) + " " + exception.getMessage())
+                    .toLowerCase(Locale.ROOT);
+            if (reason.contains("permission denied") || reason.contains("operation not permitted")
+                    || reason.contains("privilege")) {
+                Assumptions.assumeTrue(false, "Symbolic links are unavailable: " + exception.getMessage());
+            }
             throw exception;
         }
     }

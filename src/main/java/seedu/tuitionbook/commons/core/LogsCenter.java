@@ -3,12 +3,20 @@ package seedu.tuitionbook.commons.core;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -71,7 +79,7 @@ public class LogsCenter {
     }
 
     /**
-     * Creates a logger named 'ab3', containing a {@code ConsoleHandler} and a {@code FileHandler}.
+     * Creates a logger named 'ab3', containing console and rotating-file handlers.
      * Sets it as the {@code baseLogger}, to be used as the parent logger of all other loggers.
      */
     private static void setBaseLogger() {
@@ -89,7 +97,7 @@ public class LogsCenter {
         consoleHandler.setLevel(Level.ALL);
         baseLogger.addHandler(consoleHandler);
 
-        // add a FileHandler to log to a file
+        // add a rotating handler to log to files
         addFileHandler(baseLogger, LOG_FILE, ApplicationPaths.getApplicationHome());
     }
 
@@ -106,13 +114,9 @@ public class LogsCenter {
     static boolean addFileHandler(Logger targetLogger, Path logFile, Path applicationHome) {
         try {
             verifyLogPaths(logFile, applicationHome);
-            String escapedLogFilePattern = logFile.toString().replace("%", "%%");
-            FileHandler fileHandler = new FileHandler(escapedLogFilePattern,
-                    MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
-            fileHandler.setFormatter(new SimpleFormatter());
-            fileHandler.setLevel(Level.ALL);
             ContainedFileHandler containedFileHandler = new ContainedFileHandler(
-                    fileHandler, logFile, applicationHome);
+                    logFile, applicationHome, MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT);
+            containedFileHandler.setFormatter(new SimpleFormatter());
             containedFileHandler.setLevel(Level.ALL);
             targetLogger.addHandler(containedFileHandler);
             return true;
@@ -142,43 +146,209 @@ public class LogsCenter {
         }
     }
 
-    /** Revalidates rotation and lock paths before each publish without logging failures recursively. */
+    /**
+     * Rotates contained log files and owns the resources needed to close them without pathname-based JDK cleanup.
+     */
     private static final class ContainedFileHandler extends Handler {
-        private final FileHandler delegate;
         private final Path logFile;
         private final Path applicationHome;
-        private boolean isDisabled;
+        private final Path activeLogFile;
+        private final Path lockFile;
+        private final int maxFileSizeInBytes;
+        private final int maxFileCount;
+        private boolean canDeleteLockFile;
+        private Object lockFileKey;
 
-        private ContainedFileHandler(FileHandler delegate, Path logFile, Path applicationHome) {
-            this.delegate = delegate;
-            this.logFile = logFile;
-            this.applicationHome = applicationHome;
+        private OutputStream logOutput;
+        private FileChannel lockChannel;
+        private FileLock fileLock;
+        private long currentFileSize;
+        private boolean isDisabled;
+        private boolean isClosed;
+
+        private ContainedFileHandler(Path logFile, Path applicationHome, int maxFileSizeInBytes,
+                int maxFileCount) throws IOException {
+            this.logFile = logFile.toAbsolutePath().normalize();
+            this.applicationHome = applicationHome.toAbsolutePath().normalize();
+            this.activeLogFile = getGenerationPath(0);
+            this.lockFile = activeLogFile.resolveSibling(activeLogFile.getFileName() + ".lck");
+            this.maxFileSizeInBytes = maxFileSizeInBytes;
+            this.maxFileCount = maxFileCount;
+
+            try {
+                lockChannel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                BasicFileAttributes lockAttributes = Files.readAttributes(
+                        lockFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                lockFileKey = lockAttributes.fileKey();
+                fileLock = tryAcquireLock(lockChannel);
+                canDeleteLockFile = !lockAttributes.isSymbolicLink();
+                openLogOutput(true);
+            } catch (IOException | RuntimeException exception) {
+                IOException closeFailure = closeOpenResources();
+                deleteLockFileIfUnchanged(closeFailure);
+                if (exception instanceof IOException ioException) {
+                    throw ioException;
+                }
+                throw new IOException("Unable to acquire the log-file lock " + lockFile, exception);
+            }
         }
 
         @Override
-        public void publish(LogRecord record) {
+        public synchronized void publish(LogRecord record) {
             if (isDisabled || !isLoggable(record)) {
                 return;
             }
             try {
                 verifyLogPaths(logFile, applicationHome);
-                delegate.publish(record);
+                byte[] formattedRecord = getFormatter().format(record).getBytes(StandardCharsets.UTF_8);
+                if (currentFileSize > 0 && currentFileSize + formattedRecord.length > maxFileSizeInBytes) {
+                    rotateLogs();
+                }
+                logOutput.write(formattedRecord);
+                logOutput.flush();
+                currentFileSize += formattedRecord.length;
             } catch (IOException | SecurityException exception) {
-                isDisabled = true;
-                delegate.close();
-                System.err.println("Unable to continue file logging at " + logFile
-                        + " because its path is unsafe; console logging will continue. " + exception);
+                disable(exception);
             }
         }
 
         @Override
-        public void flush() {
-            delegate.flush();
+        public synchronized void flush() {
+            if (isDisabled) {
+                return;
+            }
+            try {
+                verifyLogPaths(logFile, applicationHome);
+                logOutput.flush();
+            } catch (IOException | SecurityException exception) {
+                disable(exception);
+            }
         }
 
         @Override
-        public void close() {
-            delegate.close();
+        public synchronized void close() {
+            if (isClosed) {
+                return;
+            }
+            isClosed = true;
+            isDisabled = true;
+            IOException closeFailure = closeOpenResources();
+            deleteLockFileIfUnchanged(closeFailure);
+        }
+
+        private static FileLock tryAcquireLock(FileChannel channel) throws IOException {
+            try {
+                FileLock acquiredLock = channel.tryLock();
+                if (acquiredLock == null) {
+                    throw new IOException("The log-file lock is held by another process");
+                }
+                return acquiredLock;
+            } catch (OverlappingFileLockException exception) {
+                throw new IOException("The log-file lock is already held in this process", exception);
+            }
+        }
+
+        private Path getGenerationPath(int generation) {
+            return logFile.resolveSibling(logFile.getFileName() + "." + generation);
+        }
+
+        private void openLogOutput(boolean append) throws IOException {
+            if (append) {
+                logOutput = Files.newOutputStream(activeLogFile, StandardOpenOption.CREATE,
+                        StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+                currentFileSize = Files.size(activeLogFile);
+            } else {
+                logOutput = Files.newOutputStream(activeLogFile, StandardOpenOption.CREATE,
+                        StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+                currentFileSize = 0;
+            }
+        }
+
+        private void rotateLogs() throws IOException {
+            logOutput.close();
+            logOutput = null;
+            verifyLogPaths(logFile, applicationHome);
+            for (int generation = maxFileCount - 2; generation >= 0; generation--) {
+                Path source = getGenerationPath(generation);
+                if (Files.exists(source, LinkOption.NOFOLLOW_LINKS)) {
+                    Files.move(source, getGenerationPath(generation + 1), StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            openLogOutput(false);
+        }
+
+        private void disable(Exception exception) {
+            if (isDisabled) {
+                return;
+            }
+            isDisabled = true;
+            IOException closeFailure = closeOpenResources();
+            deleteLockFileIfUnchanged(closeFailure);
+            System.err.println("Unable to continue file logging at " + logFile
+                    + " because its path is unsafe; console logging will continue. " + exception);
+        }
+
+        /** Closes only already-open resources, so a changed pathname cannot redirect cleanup. */
+        private IOException closeOpenResources() {
+            IOException firstFailure = null;
+            if (logOutput != null) {
+                try {
+                    logOutput.close();
+                } catch (IOException exception) {
+                    firstFailure = exception;
+                } finally {
+                    logOutput = null;
+                }
+            }
+            if (fileLock != null) {
+                try {
+                    fileLock.release();
+                } catch (IOException exception) {
+                    firstFailure = firstFailure == null ? exception : firstFailure;
+                } finally {
+                    fileLock = null;
+                }
+            }
+            if (lockChannel != null) {
+                try {
+                    lockChannel.close();
+                } catch (IOException exception) {
+                    firstFailure = firstFailure == null ? exception : firstFailure;
+                } finally {
+                    lockChannel = null;
+                }
+            }
+            return firstFailure;
+        }
+
+        /** Deletes only the unchanged regular lock file exclusively acquired by this handler. */
+        private void deleteLockFileIfUnchanged(IOException earlierFailure) {
+            if (!canDeleteLockFile) {
+                reportCleanupFailure(earlierFailure);
+                return;
+            }
+            try {
+                new ApplicationPathGuard(applicationHome).verify(lockFile);
+                BasicFileAttributes attributes = Files.readAttributes(
+                        lockFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                if (!attributes.isSymbolicLink() && lockFileKey != null
+                        && lockFileKey.equals(attributes.fileKey())) {
+                    Files.delete(lockFile);
+                }
+            } catch (IOException | SecurityException exception) {
+                if (earlierFailure == null) {
+                    earlierFailure = exception instanceof IOException ioException
+                            ? ioException : new IOException(exception);
+                }
+            }
+            reportCleanupFailure(earlierFailure);
+        }
+
+        private void reportCleanupFailure(IOException exception) {
+            if (exception != null) {
+                System.err.println("Unable to finish file-logging cleanup at " + logFile
+                        + "; no unverified pathname was removed. " + exception);
+            }
         }
     }
 

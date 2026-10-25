@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +19,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -111,6 +115,8 @@ public class LogsCenterTest {
         Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
         testLogger.setUseParentHandlers(false);
         testLogger.setLevel(Level.ALL);
+        RecordingHandler recordingHandler = new RecordingHandler();
+        testLogger.addHandler(recordingHandler);
         Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
         Path logFile = applicationHome.resolve("tuitionbook.log");
         Path outsideFile = testFolder.resolve("outside.log");
@@ -118,17 +124,130 @@ public class LogsCenterTest {
 
         try {
             assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
-            Path rotatedFile = applicationHome.resolve("tuitionbook.log.0");
-            assertTrue(Files.exists(rotatedFile));
-            Files.delete(rotatedFile);
+            Path rotatedFile = applicationHome.resolve("tuitionbook.log.1");
+            assertFalse(Files.exists(rotatedFile));
             SymlinkTestUtil.createSymbolicLink(rotatedFile, outsideFile);
 
             assertDoesNotThrow(() -> testLogger.info("must not reach outside target"));
 
             assertEquals("outside contents", Files.readString(outsideFile));
             assertTrue(Files.isSymbolicLink(rotatedFile));
+            assertFalse(Files.readString(applicationHome.resolve("tuitionbook.log.0"))
+                    .contains("must not reach outside target"));
+            assertTrue(recordingHandler.records.stream().anyMatch(record ->
+                    record.getMessage().equals("must not reach outside target")));
         } finally {
             closeAndDetachHandlers(testLogger);
+        }
+    }
+
+    @Test
+    public void fileHandler_lockPathChangedBeforePublish_rejectedLinkPreservedAndHandlerDisabled() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        RecordingHandler recordingHandler = new RecordingHandler();
+        testLogger.addHandler(recordingHandler);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+        Path lockFile = applicationHome.resolve("tuitionbook.log.0.lck");
+        Path outsideFile = testFolder.resolve("outside-lock");
+        Files.writeString(outsideFile, "outside contents");
+
+        try {
+            assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+            assertTrue(Files.exists(lockFile));
+            deleteActiveLockFileOrSkip(lockFile);
+            SymlinkTestUtil.createSymbolicLink(lockFile, outsideFile);
+
+            assertDoesNotThrow(() -> testLogger.info("first message remains on console"));
+            assertDoesNotThrow(() -> testLogger.info("disabled handler ignores later messages"));
+            Handler fileHandler = getFileHandler(testLogger, recordingHandler);
+            assertDoesNotThrow(fileHandler::close);
+            assertDoesNotThrow(fileHandler::close);
+
+            assertTrue(Files.isSymbolicLink(lockFile));
+            assertEquals("outside contents", Files.readString(outsideFile));
+            assertTrue(recordingHandler.records.stream().anyMatch(record ->
+                    record.getMessage().equals("first message remains on console")));
+            assertTrue(recordingHandler.records.stream().anyMatch(record ->
+                    record.getMessage().equals("disabled handler ignores later messages")));
+        } finally {
+            closeAndDetachHandlers(testLogger);
+        }
+    }
+
+    @Test
+    public void fileHandler_lockPathChangedBeforeClose_rejectedLinkPreservedAndCloseIsIdempotent() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        RecordingHandler recordingHandler = new RecordingHandler();
+        testLogger.addHandler(recordingHandler);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+        Path lockFile = applicationHome.resolve("tuitionbook.log.0.lck");
+        Path outsideFile = testFolder.resolve("outside-lock");
+        Files.writeString(outsideFile, "outside contents");
+
+        try {
+            assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+            Handler fileHandler = getFileHandler(testLogger, recordingHandler);
+            assertTrue(Files.exists(lockFile));
+            deleteActiveLockFileOrSkip(lockFile);
+            SymlinkTestUtil.createSymbolicLink(lockFile, outsideFile);
+
+            assertDoesNotThrow(fileHandler::close);
+            assertDoesNotThrow(fileHandler::close);
+
+            assertTrue(Files.isSymbolicLink(lockFile));
+            assertEquals("outside contents", Files.readString(outsideFile));
+        } finally {
+            closeAndDetachHandlers(testLogger);
+        }
+    }
+
+    @Test
+    public void fileHandler_normalLoggingRotationAndClose_writesLogsAndRemovesOwnedLock() throws Exception {
+        Logger testLogger = Logger.getLogger("LogsCenterTest." + UUID.randomUUID());
+        testLogger.setUseParentHandlers(false);
+        testLogger.setLevel(Level.ALL);
+        Path applicationHome = Files.createDirectory(testFolder.resolve("application-home"));
+        Path logFile = applicationHome.resolve("tuitionbook.log");
+        Path lockFile = applicationHome.resolve("tuitionbook.log.0.lck");
+
+        assertTrue(LogsCenter.addFileHandler(testLogger, logFile, applicationHome));
+        try {
+            String largeMessage = "x".repeat(1024 * 1024);
+            for (int messageNumber = 0; messageNumber < 6; messageNumber++) {
+                testLogger.info(largeMessage);
+            }
+
+            assertTrue(Files.isRegularFile(applicationHome.resolve("tuitionbook.log.0")));
+            assertTrue(Files.isRegularFile(applicationHome.resolve("tuitionbook.log.1")));
+            assertTrue(Files.exists(lockFile));
+        } finally {
+            closeAndDetachHandlers(testLogger);
+        }
+        assertFalse(Files.exists(lockFile, LinkOption.NOFOLLOW_LINKS));
+    }
+
+    private static Handler getFileHandler(Logger logger, Handler otherHandler) {
+        return Stream.of(logger.getHandlers())
+                .filter(handler -> handler != otherHandler)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static void deleteActiveLockFileOrSkip(Path lockFile) throws IOException {
+        try {
+            Files.delete(lockFile);
+        } catch (FileSystemException exception) {
+            if (System.getProperty("os.name").startsWith("Windows")) {
+                Assumptions.assumeTrue(false,
+                        "The platform does not allow replacing an open lock path: " + exception.getMessage());
+            }
+            throw exception;
         }
     }
 
