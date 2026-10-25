@@ -2,6 +2,7 @@ package seedu.tuitionbook.ui;
 
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.IntConsumer;
 import java.util.logging.Logger;
 
 import javafx.application.Platform;
@@ -28,6 +29,8 @@ public class UiManager implements Ui {
     private Logic logic;
     private Path dataFilePath;
     private Optional<StartupNotice> startupNotice;
+    private final Runnable platformExit;
+    private final IntConsumer systemExit;
     private MainWindow mainWindow;
 
     /**
@@ -38,9 +41,17 @@ public class UiManager implements Ui {
      * @param startupNotice contact-data recovery notice to show at startup, or empty for a clean load
      */
     public UiManager(Logic logic, Path dataFilePath, Optional<StartupNotice> startupNotice) {
+        this(logic, dataFilePath, startupNotice, Platform::exit, System::exit);
+    }
+
+    /** Creates a {@code UiManager} with replaceable exit operations for testing fatal startup failures. */
+    UiManager(Logic logic, Path dataFilePath, Optional<StartupNotice> startupNotice,
+              Runnable platformExit, IntConsumer systemExit) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
         this.startupNotice = startupNotice;
+        this.platformExit = platformExit;
+        this.systemExit = systemExit;
     }
 
     @Override
@@ -167,9 +178,7 @@ public class UiManager implements Ui {
                                                String contentText) {
         final Alert alert = new Alert(type);
         alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
-        if (owner != null && owner.getScene() != null) {
-            alert.initOwner(owner);
-        }
+        initializeOwnerIfAvailable(alert, owner);
         alert.setTitle(title);
         alert.setHeaderText(headerText);
         alert.setContentText(contentText);
@@ -181,10 +190,10 @@ public class UiManager implements Ui {
      * Shows an error alert dialog with {@code title} and error message, {@code e},
      * and exits the application after the user has closed the alert dialog.
      */
-    private void showFatalErrorDialogAndShutdown(Stage owner, String title, Throwable e) {
+    void showFatalErrorDialogAndShutdown(Stage owner, String title, Throwable e) {
         showFatalErrorDialog(owner, title, e);
-        Platform.exit();
-        System.exit(1);
+        platformExit.run();
+        systemExit.accept(1);
     }
 
     /** Shows the fatal startup error without depending on the main window being initialized. */
@@ -199,9 +208,7 @@ public class UiManager implements Ui {
                                                     String detailsText) {
         final Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
-        if (owner != null && owner.getScene() != null) {
-            alert.initOwner(owner);
-        }
+        initializeOwnerIfAvailable(alert, owner);
         alert.setTitle(title);
         alert.setHeaderText(headerText);
 
@@ -214,6 +221,13 @@ public class UiManager implements Ui {
         alert.getDialogPane().setContent(details);
         alert.getDialogPane().setId(ALERT_DIALOG_PANE_FIELD_ID);
         alert.showAndWait();
+    }
+
+    /** Sets the alert owner only when the supplied stage has an initialized scene. */
+    private static void initializeOwnerIfAvailable(Alert alert, Stage owner) {
+        if (owner != null && owner.getScene() != null) {
+            alert.initOwner(owner);
+        }
     }
 
 }

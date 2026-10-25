@@ -164,19 +164,29 @@ public class UiManagerStartupTest {
     }
 
     @Test
-    public void fatalStartupError_beforeMainWindowExists_showsUnownedErrorDialog() throws Exception {
+    public void fatalStartupError_beforeMainWindowExists_showsUnownedErrorDialogAndRequestsShutdown()
+            throws Exception {
         Stage owner = JavaFxTestUtil.callOnFxThread(Stage::new);
         IllegalStateException startupFailure = new IllegalStateException("MainWindow.fxml is missing");
         AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicBoolean platformExitRequested = new AtomicBoolean();
+        AtomicReference<Integer> systemExitStatus = new AtomicReference<>();
         CountDownLatch inspected = new CountDownLatch(1);
+        CountDownLatch shutdownRequested = new CountDownLatch(1);
 
         try {
             Platform.runLater(() -> {
                 try {
-                    UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty());
-                    uiManager.showFatalErrorDialog(owner, "Fatal error during initializing", startupFailure);
+                    UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty(),
+                            () -> platformExitRequested.set(true), exitStatus -> {
+                                systemExitStatus.set(exitStatus);
+                                shutdownRequested.countDown();
+                            });
+                    uiManager.showFatalErrorDialogAndShutdown(owner, "Fatal error during initializing",
+                            startupFailure);
                 } catch (Throwable throwable) {
                     failure.set(throwable);
+                    shutdownRequested.countDown();
                 }
             });
             Platform.runLater(() -> {
@@ -200,9 +210,12 @@ public class UiManagerStartupTest {
             });
 
             assertTrue(inspected.await(10, TimeUnit.SECONDS), "Fatal startup dialog was not inspected in time");
+            assertTrue(shutdownRequested.await(10, TimeUnit.SECONDS), "Fatal startup shutdown was not requested");
             if (failure.get() != null) {
                 throw new AssertionError(failure.get());
             }
+            assertTrue(platformExitRequested.get());
+            assertEquals(1, systemExitStatus.get());
         } finally {
             JavaFxTestUtil.runOnFxThread(owner::close);
         }
