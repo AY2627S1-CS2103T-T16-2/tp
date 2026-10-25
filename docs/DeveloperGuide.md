@@ -683,20 +683,26 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
       Use case ends.
 
-**Use case: UC08 Filter contacts by role**
+**Use case: UC08 Filter contacts by role and tags**
 
 **MSS**
 
-1.  Private tutor requests contacts with a specified role.
-2.  TuitionBook displays contacts with that role and reports the number of matches.
+1.  User requests student contacts tagged with both `Sec4` and `AMath`, for example by entering `list r/student t/Sec4 t/AMath`.
+2.  TuitionBook replaces the active filter, displays only contacts whose role and complete tag names match every supplied criterion case-insensitively, and reports the number of matches.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The requested role is invalid.
+* 1a. The request is malformed, or a supplied role or tag is invalid.
 
-    * 1a1. TuitionBook shows an error message describing the invalid request.
+    * 1a1. TuitionBook shows an error message describing the invalid request and retains the active filter.
+
+      Use case ends.
+
+* 2a. No contact matches every supplied criterion.
+
+    * 2a1. TuitionBook displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
 
       Use case ends.
 
@@ -738,9 +744,40 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
 See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
-**Role-filter command rule**
+**Use case: UC10 Clear all contacts**
 
-The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
+**Preconditions**
+
+* At least one contact is stored. The active filter may hide some contacts.
+
+**Guarantee**
+
+* On success, no contacts remain. TuitionBook does not provide an undo operation for a successful clear.
+
+**MSS**
+
+1.  User requests to clear all contacts using the exact confirmation keyword, by entering `clear confirm`.
+2.  TuitionBook removes every stored contact, including contacts hidden by the active filter, saves the empty contact list, and reports completion.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The confirmation keyword is missing or incorrect, or the request contains other arguments.
+
+    * 1a1. TuitionBook shows the required `clear confirm` format and retains all contacts and the active filter.
+
+      Use case ends.
+
+* 2a. TuitionBook cannot save the cleared contact list.
+
+    * 2a1. TuitionBook shows a storage error, restores all contacts and guardian links, retains the previously active filter, and does not report a successful clear.
+
+      Use case ends.
+
+**List-filter command rule**
+
+The filtered form supersedes the plain-list rule: `list` displays all contacts and clears any active filter, while `list [r/ROLE] [t/TAG]...` displays contacts matching the supplied criteria. The role is optional; when supplied, it and every supplied tag must match. Role and complete-tag matching is exact and case-insensitive. Other trailing text is rejected.
 
 **Startup data rule**
 
