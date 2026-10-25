@@ -102,7 +102,7 @@ class JsonSerializableTuitionBook {
                         ? GuardianLinkRepair.Reason.STUDENT_GUARDIAN
                         : GuardianLinkRepair.Reason.MISSING_GUARDIAN;
                 repair = new GuardianLinkRepair(person.getName().fullName, person.getId(),
-                        person.getGuardianId().map(UUID::toString).orElse(null), reason));
+                        person.getGuardianId().map(UUID::toString).orElse(null), reason);
             }
             if (repair != null) {
                 repairs.add(repair);
