@@ -47,6 +47,11 @@ public class ListCommand extends Command {
     }
 
     @Override
+    public boolean canMutate() {
+        return false;
+    }
+
+    @Override
     public boolean requiresSave() {
         return false;
     }

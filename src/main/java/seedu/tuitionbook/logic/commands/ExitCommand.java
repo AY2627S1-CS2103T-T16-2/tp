@@ -12,6 +12,11 @@ public class ExitCommand extends Command {
     public static final String MESSAGE_EXIT_ACKNOWLEDGEMENT = "Exiting TuitionBook as requested ...";
 
     @Override
+    public boolean canMutate() {
+        return false;
+    }
+
+    @Override
     public boolean requiresSave() {
         return false;
     }

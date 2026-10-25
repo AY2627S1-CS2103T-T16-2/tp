@@ -30,6 +30,8 @@ public class DeleteCommand extends Command {
     public static final String MESSAGE_GUARDIAN_LINKS_CLEARED =
             "\n%1$d student(s) are no longer linked to a guardian:\n%2$s";
 
+    private boolean hasExecuted;
+
     private final Index targetIndex;
     private boolean requiresSave;
 
@@ -39,6 +41,7 @@ public class DeleteCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        assert hasExecuted : "execute() must be called before requiresSave()";
         return requiresSave;
     }
 
@@ -49,6 +52,7 @@ public class DeleteCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        hasExecuted = true;
         requireNonNull(model);
         requiresSave = false;
         List<Person> lastShownList = model.getFilteredPersonList();

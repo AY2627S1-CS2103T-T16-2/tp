@@ -14,6 +14,8 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Added assertions that execution-dependent save decisions are queried only after a command execution attempt, enabled application assertions in the executable JAR, and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
+
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 - Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
 

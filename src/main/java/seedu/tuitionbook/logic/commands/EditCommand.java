@@ -55,6 +55,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in TuitionBook.";
 
+    private boolean hasExecuted;
+
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
     private boolean requiresSave;
@@ -73,6 +75,7 @@ public class EditCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        assert hasExecuted : "execute() must be called before requiresSave()";
         return requiresSave;
     }
 
@@ -83,6 +86,7 @@ public class EditCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        hasExecuted = true;
         requireNonNull(model);
         requiresSave = false;
         List<Person> lastShownList = model.getFilteredPersonList();

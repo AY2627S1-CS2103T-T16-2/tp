@@ -15,6 +15,11 @@ public class HelpCommand extends Command {
     public static final String SHOWING_HELP_MESSAGE = "Opened help window.";
 
     @Override
+    public boolean canMutate() {
+        return false;
+    }
+
+    @Override
     public boolean requiresSave() {
         return false;
     }

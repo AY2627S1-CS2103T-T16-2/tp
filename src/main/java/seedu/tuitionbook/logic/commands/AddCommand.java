@@ -46,6 +46,8 @@ public class AddCommand extends Command {
     public static final String MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED = "`g/` cannot be used when adding a contact. "
             + "Add the contact first, then link the student to a guardian using the guardian-linking command.";
 
+    private boolean hasExecuted;
+
     private final Person toAdd;
     private boolean requiresSave;
 
@@ -59,6 +61,7 @@ public class AddCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        assert hasExecuted : "execute() must be called before requiresSave()";
         return requiresSave;
     }
 
@@ -69,6 +72,7 @@ public class AddCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        hasExecuted = true;
         requireNonNull(model);
         requiresSave = false;
 
