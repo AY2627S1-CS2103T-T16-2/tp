@@ -1064,7 +1064,7 @@ public class LogicManagerTest {
 
         assertTrue(result.getFeedbackToUser().contains("Malformed Link"));
         assertTrue(result.getFeedbackToUser().contains("the guardian ID is malformed"));
-        assertFalse(result.getFeedbackToUser().contains("guardianId:"));
+        assertTrue(result.getFeedbackToUser().contains("guardianId: not-a-uuid"));
         assertTrue(model.getFilteredPersonList().getFirst().getGuardianId().isEmpty());
     }
 
