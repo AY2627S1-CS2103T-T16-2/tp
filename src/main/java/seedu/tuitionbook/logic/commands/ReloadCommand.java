@@ -32,12 +32,14 @@ public class ReloadCommand extends Command {
             result = storage.readTuitionBookWithResult()
                     .orElseGet(() -> new TuitionBookLoadResult(new TuitionBook(), 0));
         } catch (DataLoadingException exception) {
+            String guidance = " " + exception.getUserFacingGuidance();
             String recovery = exception.getMalformedFileBackupPath()
                     .map(path -> " Unreadable file preserved at " + path
-                            + ". Saving is enabled. Restore corrected data before reloading again.")
-                    .orElse(" Saving remains blocked. Correct or move the original file, then run reload again.");
+                            + ". Saving is enabled. Restore the preserved file before reloading again.")
+                    .orElse(" Saving remains blocked. Resolve the problem with the original file, then run reload "
+                            + "again.");
             throw new CommandException("Could not reload contacts. Current contacts and filter are unchanged."
-                    + recovery, exception);
+                    + guidance + recovery, exception);
         }
         model.setTuitionBook(result.tuitionBook());
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, "list");
