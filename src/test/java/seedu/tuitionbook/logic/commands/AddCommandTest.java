@@ -13,18 +13,37 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import seedu.tuitionbook.commons.core.GuiSettings;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.model.Model;
+import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyTuitionBook;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
 public class AddCommandTest {
+
+    @Test
+    public void execute_nonmatchingAddition_reportsHiddenContactWithoutLogicManager() throws Exception {
+        ModelManager model = new ModelManager();
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
+        Person guardian = new PersonBuilder().withName("Hidden Guardian").withRole(Role.GUARDIAN).build();
+
+        CommandResult result = new AddCommand(guardian).execute(model);
+
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(guardian))
+                + "\nThe new contact is saved but does not match this working set. "
+                + "Use list to locate it. To refresh the current working set, rerun: list r/student",
+                result.getFeedbackToUser());
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertEquals(guardian.getId(), model.getTuitionBook().getPersonList().getFirst().getId());
+    }
 
     @Test
     public void constructor_nullPerson_throwsNullPointerException() {
@@ -130,6 +149,16 @@ public class AddCommandTest {
      */
     private class ModelStub implements Model {
         @Override
+        public seedu.tuitionbook.model.PersonListViewState getPersonListViewState() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void restorePersonListViewState(seedu.tuitionbook.model.PersonListViewState state) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public ReadOnlyUserPrefs getUserPrefs() {
             throw new AssertionError("This method should not be called.");
         }
@@ -180,12 +209,12 @@ public class AddCommandTest {
         }
 
         @Override
-        public Predicate<Person> getFilteredPersonListPredicate() {
+        public Predicate<Person> getPersonListQueryPredicate() {
             throw new AssertionError("This method should not be called.");
         }
 
         @Override
-        public void updateFilteredPersonList(Predicate<Person> predicate) {
+        public void updateFilteredPersonList(Predicate<Person> predicate, String refreshCommand) {
             throw new AssertionError("This method should not be called.");
         }
     }
@@ -213,6 +242,11 @@ public class AddCommandTest {
      */
     private class ModelStubAcceptingPersonAdded extends ModelStub {
         final ArrayList<Person> personsAdded = new ArrayList<>();
+
+        @Override
+        public ObservableList<Person> getFilteredPersonList() {
+            return FXCollections.observableArrayList(personsAdded);
+        }
 
         @Override
         public boolean hasPerson(Person person) {

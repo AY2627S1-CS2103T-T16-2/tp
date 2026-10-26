@@ -106,7 +106,7 @@ public class LogicManagerTest {
         logic.execute("add r/guardian n/Guardian p/98765432");
         logic.execute("find Amy");
         TuitionBook original = new TuitionBook(model.getTuitionBook());
-        Predicate<Person> filter = model.getFilteredPersonListPredicate();
+        Predicate<Person> filter = model.getPersonListQueryPredicate();
         List<Person> displayed = List.copyOf(model.getFilteredPersonList());
         Path file = temporaryFolder.resolve("tuitionBook.json");
         byte[] originalBytes = Files.readAllBytes(file);
@@ -122,7 +122,7 @@ public class LogicManagerTest {
             assertEquals(original, model.getTuitionBook());
             assertEquals(original.getPersonList().stream().map(Person::getId).toList(),
                     model.getTuitionBook().getPersonList().stream().map(Person::getId).toList());
-            assertSame(filter, model.getFilteredPersonListPredicate());
+            assertSame(filter, model.getPersonListQueryPredicate());
             assertEquals(displayed, model.getFilteredPersonList());
             assertArrayEquals(originalBytes, Files.readAllBytes(file));
         }
@@ -134,7 +134,7 @@ public class LogicManagerTest {
         logic.execute("add r/student n/Amy p/91234567 t/Math");
         logic.execute("find Amy");
         TuitionBook original = new TuitionBook(model.getTuitionBook());
-        Predicate<Person> filter = model.getFilteredPersonListPredicate();
+        Predicate<Person> filter = model.getPersonListQueryPredicate();
         Path file = temporaryFolder.resolve("tuitionBook.json");
         byte[] bytes = Files.readAllBytes(file);
         for (String input : List.of("add r/student n/Beth p/92345678 a/12 Road ee/beth@example.com",
@@ -142,7 +142,7 @@ public class LogicManagerTest {
                 "untag 1 t/Math tt/Science", "list t/Math tt/Science")) {
             assertThrows(ParseException.class, () -> logic.execute(input));
             assertEquals(original, model.getTuitionBook());
-            assertSame(filter, model.getFilteredPersonListPredicate());
+            assertSame(filter, model.getPersonListQueryPredicate());
             assertEquals(original.getPersonList(), model.getFilteredPersonList());
             assertArrayEquals(bytes, Files.readAllBytes(file));
         }
@@ -222,7 +222,7 @@ public class LogicManagerTest {
                 logic.execute("tag 1 t/Science t/Math t/Science").getFeedbackToUser());
         Person expected = new PersonBuilder(original).withTags("Math", "Sec 4", "Science").build();
         assertEquals(expected, logic.getPersonList().get(1));
-        assertEquals(2, logic.getFilteredPersonList().size());
+        assertEquals(1, logic.getFilteredPersonList().size());
         logic.execute("reload");
         assertEquals(expected, logic.getPersonList().get(1));
         assertEquals(original.getId(), logic.getPersonList().get(1).getId());
@@ -256,7 +256,7 @@ public class LogicManagerTest {
         Person expected = new PersonBuilder(original)
                 .withTags("Math", "study t/weekly r/student", "\"Sec 4\"", "C:\\Math\\").build();
         assertEquals(expected, logic.getPersonList().get(1));
-        assertEquals(2, logic.getFilteredPersonList().size());
+        assertEquals(1, logic.getFilteredPersonList().size());
         logic.execute("reload");
         assertEquals(expected, logic.getPersonList().get(1));
         assertEquals(original.getId(), logic.getPersonList().get(1).getId());
@@ -264,7 +264,7 @@ public class LogicManagerTest {
         assertEquals(List.of(expected), logic.getFilteredPersonList());
 
         logic.execute("untag 1" + arguments);
-        assertEquals(2, logic.getFilteredPersonList().size());
+        assertEquals(1, logic.getFilteredPersonList().size());
         logic.execute("reload");
         assertEquals(original, logic.getPersonList().get(1));
         assertEquals(original.getId(), logic.getPersonList().get(1).getId());
@@ -276,7 +276,7 @@ public class LogicManagerTest {
         model.addPerson(student);
         model.addPerson(new PersonBuilder().withName("Hidden Guardian").withRole(Role.GUARDIAN).build());
         Predicate<Person> filter = person -> person.getRole() == Role.STUDENT;
-        model.updateFilteredPersonList(filter);
+        model.updateFilteredPersonList(filter, "list r/student");
         CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
                 temporaryFolder.resolve("NoOpTags.json"), DUMMY_AD_EXCEPTION);
         logic = new LogicManager(model, new StorageManager(fileStorage,
@@ -289,7 +289,7 @@ public class LogicManagerTest {
                 logic.execute("untag 1 t/math t/absent").getFeedbackToUser());
         assertEquals(0, fileStorage.getSaveCallCount());
         assertEquals(List.of(student), logic.getFilteredPersonList());
-        assertSame(filter, model.getFilteredPersonListPredicate());
+        assertSame(filter, model.getPersonListQueryPredicate());
     }
 
     @Test
@@ -301,7 +301,7 @@ public class LogicManagerTest {
         byte[] originalBytes = Files.readAllBytes(file);
         TuitionBook original = new TuitionBook(model.getTuitionBook());
         Predicate<Person> filter = person -> person.getRole() == Role.STUDENT;
-        model.updateFilteredPersonList(filter);
+        model.updateFilteredPersonList(filter, "list r/student");
 
         for (IOException failure : List.of(DUMMY_IO_EXCEPTION, DUMMY_AD_EXCEPTION)) {
             CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(file, failure);
@@ -312,7 +312,7 @@ public class LogicManagerTest {
                 assertEquals(original, model.getTuitionBook());
                 assertEquals(original.getPersonList().stream().map(Person::getId).toList(),
                         failingLogic.getPersonList().stream().map(Person::getId).toList());
-                assertSame(filter, model.getFilteredPersonListPredicate());
+                assertSame(filter, model.getPersonListQueryPredicate());
                 assertEquals(List.of(original.getPersonList().get(1)), failingLogic.getFilteredPersonList());
                 assertArrayEquals(originalBytes, Files.readAllBytes(file));
             }
@@ -377,13 +377,18 @@ public class LogicManagerTest {
         String addCommand = AddCommand.COMMAND_WORD + ROLE_DESC_STUDENT + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
         Person expectedPerson = new PersonBuilder(AMY).withTags().build();
-        ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
-
-        assertCommandSuccess(addCommand, String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(expectedPerson)),
-                expectedModel);
+        CommandResult result = logic.execute(addCommand);
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(expectedPerson)),
+                result.getFeedbackToUser());
+        assertEquals(List.of(expectedPerson), model.getTuitionBook().getPersonList());
+        assertEquals(List.of(expectedPerson), model.getFilteredPersonList());
         Path dataFilePath = temporaryFolder.resolve("tuitionBook.json");
-        assertEquals(model.getTuitionBook(), new JsonTuitionBookStorage(dataFilePath).readTuitionBook().orElseThrow());
+        ReadOnlyTuitionBook savedBook = new JsonTuitionBookStorage(dataFilePath).readTuitionBook().orElseThrow();
+        assertEquals(model.getTuitionBook(), savedBook);
+        // The parser generates the UUID; verify that the same identity is displayed and persisted.
+        assertEquals(model.getPersonListViewState().personIds(),
+                savedBook.getPersonList().stream().map(Person::getId).toList());
+        assertEquals("list", model.getPersonListViewState().refreshCommand());
     }
 
     @Test
@@ -483,7 +488,7 @@ public class LogicManagerTest {
         Person original = model.getTuitionBook().getPersonList().get(0);
         Path dataFile = temporaryFolder.resolve("tuitionBook.json");
         byte[] originalBytes = Files.readAllBytes(dataFile);
-        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
         assertEquals(List.of(original), model.getFilteredPersonList());
         for (String name : List.of("\"Rina a/p Kaur", "\"Rina\" extra", "\"@invalid\"", "\"Rina \\\"alias\\\"\"",
                 "\"\"", "\"" + "A".repeat(Name.MAX_LENGTH + 1) + "\"",
@@ -507,11 +512,11 @@ public class LogicManagerTest {
         Person hiddenGuardian = model.getTuitionBook().getPersonList().get(1);
         Path dataFile = temporaryFolder.resolve("tuitionBook.json");
         byte[] originalBytes = Files.readAllBytes(dataFile);
-        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
 
         List<Person> expectedPersons = List.of(visibleStudent, hiddenGuardian);
         List<Person> expectedFilteredPersons = List.of(visibleStudent);
-        Predicate<Person> expectedFilter = model.getFilteredPersonListPredicate();
+        Predicate<Person> expectedFilter = model.getPersonListQueryPredicate();
         List<String> confirmationCommands = List.of(
                 "clear", "clear   ", "clear CONFIRM", "clear Confirm", "clear confirm confirm",
                 "clear confirm extra", "clear yes", "clear confirmno", "clear confirmation", "clear\tno");
@@ -525,10 +530,9 @@ public class LogicManagerTest {
             } catch (ParseException exception) {
                 assertEquals(expectedMessage, exception.getMessage());
             }
-
             assertEquals(expectedPersons, logic.getPersonList());
             assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());
-            assertSame(expectedFilter, model.getFilteredPersonListPredicate());
+            assertSame(expectedFilter, model.getPersonListQueryPredicate());
             assertArrayEquals(originalBytes, Files.readAllBytes(dataFile));
         }
 
@@ -549,7 +553,7 @@ public class LogicManagerTest {
         model.addPerson(student);
         model.addPerson(hidden);
         Predicate<Person> filter = person -> !person.getId().equals(hidden.getId());
-        model.updateFilteredPersonList(filter);
+        model.updateFilteredPersonList(filter, "test-only UUID selection");
         CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(
                 temporaryFolder.resolve("NoOpLink.json"), DUMMY_AD_EXCEPTION);
         logic = new LogicManager(model, new StorageManager(fileStorage,
@@ -562,7 +566,7 @@ public class LogicManagerTest {
         assertEquals(0, fileStorage.getSaveCallCount());
         assertEquals(List.of(guardian, student, hidden), logic.getPersonList());
         assertEquals(List.of(guardian, student), logic.getFilteredPersonList());
-        assertSame(filter, model.getFilteredPersonListPredicate());
+        assertSame(filter, model.getPersonListQueryPredicate());
     }
 
     @Test
@@ -581,12 +585,12 @@ public class LogicManagerTest {
                 new JsonUserPrefsStorage(temporaryFolder.resolve("NoOpEditPrefs.json"))));
 
         for (String command : commands) {
-            model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+            model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
             assertEquals(List.of(student), logic.getFilteredPersonList(), command);
             logic.execute(command);
             assertEquals(0, fileStorage.getSaveCallCount(), command);
             assertEquals(List.of(student, guardian), logic.getPersonList(), command);
-            assertEquals(List.of(student, guardian), logic.getFilteredPersonList(), command);
+            assertEquals(List.of(student), logic.getFilteredPersonList(), command);
         }
     }
 
@@ -675,7 +679,7 @@ public class LogicManagerTest {
                 .withRole(Role.STUDENT).build();
         model.addPerson(student);
         model.addPerson(guardian);
-        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
         CountingTuitionBookStorage tuitionBookStorage = new CountingTuitionBookStorage(
                 temporaryFolder.resolve("NoOpUnlink.json"), DUMMY_IO_EXCEPTION);
         logic = new LogicManager(model, new StorageManager(tuitionBookStorage,
@@ -740,7 +744,7 @@ public class LogicManagerTest {
             failedSaveModel.addPerson(student);
             failedSaveModel.addPerson(guardian);
             if (!command.startsWith("link")) {
-                failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+                failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
             }
             Logic failedSaveLogic = new LogicManager(failedSaveModel, storageThatFailsOnSave(
                     temporaryFolder.resolve(command.split(" ")[0] + ".json")));
@@ -765,7 +769,7 @@ public class LogicManagerTest {
         Model failedSaveModel = new ModelManager(new TuitionBook(), new UserPrefs());
         failedSaveModel.addPerson(student);
         failedSaveModel.addPerson(guardian);
-        failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.GUARDIAN);
+        failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.GUARDIAN, "list r/guardian");
         Logic failedSaveLogic = new LogicManager(failedSaveModel,
                 storageThatFailsOnSave(temporaryFolder.resolve("deleteLinkedGuardian.json")));
 
@@ -788,7 +792,7 @@ public class LogicManagerTest {
         Model failedSaveModel = new ModelManager(new TuitionBook(), new UserPrefs());
         failedSaveModel.addPerson(student);
         failedSaveModel.addPerson(guardian);
-        failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
         Logic failedSaveLogic = new LogicManager(failedSaveModel,
                 storageThatFailsOnSave(temporaryFolder.resolve("unlink.json")));
 
@@ -933,7 +937,7 @@ public class LogicManagerTest {
     public void execute_reloadCorrectedFile_unblocksSavingAndReplacesFilteredContacts() throws Exception {
         Path file = temporaryFolder.resolve("reload.json");
         model.addPerson(AMY);
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         Logic blocked = createLogicWithBlockedStorage(file, model);
         assertThrows(CommandException.class, () -> blocked.execute("clear confirm"));
         TuitionBook corrected = new TuitionBook();
@@ -954,7 +958,7 @@ public class LogicManagerTest {
     public void execute_reloadStillBlocked_preservesModelFilterAndOriginalFile() throws Exception {
         Path file = temporaryFolder.resolve("stillBlocked.json");
         model.addPerson(AMY);
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         Logic blocked = createLogicWithBlockedStorage(file, model);
         assertThrows(CommandException.class, () -> blocked.execute("reload"));
         assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
@@ -985,7 +989,7 @@ public class LogicManagerTest {
     @Test
     public void execute_reloadAccessDenied_preservesContactsAndFilter() throws Exception {
         model.addPerson(AMY);
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         StorageManager inaccessibleStorage = new StorageManager(
                 new JsonTuitionBookStorage(temporaryFolder.resolve("inaccessible.json")),
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))) {
@@ -1013,7 +1017,7 @@ public class LogicManagerTest {
         Logic restrictedLogic = new LogicManager(model, new StorageManager(fileStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("restrictedPrefs.json"))));
         model.addPerson(AMY);
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(directory);
         try {
             Files.setPosixFilePermissions(directory, Set.of());
@@ -1040,7 +1044,7 @@ public class LogicManagerTest {
         fileStorage.saveTuitionBook(persisted);
         byte[] originalBytes = Files.readAllBytes(file);
         model.addPerson(AMY);
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
 
         CommandResult result = logic.execute("reload");
 
@@ -1060,7 +1064,7 @@ public class LogicManagerTest {
     public void execute_reloadMalformedFile_preservesBackupAndCurrentContacts() throws Exception {
         Path file = temporaryFolder.resolve("tuitionBook.json");
         model.addPerson(AMY);
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         Files.writeString(file, MALFORMED_TUITION_BOOK_JSON);
         assertThrows(CommandException.class, () -> logic.execute("reload"));
         assertEquals(List.of(AMY), model.getTuitionBook().getPersonList());
@@ -1083,7 +1087,7 @@ public class LogicManagerTest {
         Person guardian = new PersonBuilder().withName("Gail Guardian").withRole(Role.GUARDIAN).build();
         model.addPerson(student);
         model.addPerson(guardian);
-        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
 
         assertEquals(List.of(student), logic.getFilteredPersonList());
         assertEquals(List.of(student, guardian), logic.getPersonList());

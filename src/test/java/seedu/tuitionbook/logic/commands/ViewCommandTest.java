@@ -37,7 +37,7 @@ public class ViewCommandTest {
                 .withRole(Role.STUDENT).withGuardian(guardian).withoutEmail().withoutAddress()
                 .withTags("math", "friends").build();
         Model model = modelWith(guardian, student);
-        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT));
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT), "list r/student");
 
         String expected = "Name: Sam Tan\n"
                 + "Role: STUDENT\n"
@@ -57,7 +57,7 @@ public class ViewCommandTest {
                 .withRole(Role.STUDENT).withGuardian(guardian).withoutEmail().withoutAddress()
                 .withTags("math", "friends").build();
         Model model = modelWith(guardian, student);
-        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT));
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.STUDENT), "list r/student");
 
         String expected = "Name: Sam Tan\n"
                 + "Role: STUDENT\n"
@@ -172,7 +172,7 @@ public class ViewCommandTest {
         Person secondStudent = new PersonBuilder().withName("Amy Tan").withPhone("82345678")
                 .withRole(Role.STUDENT).withGuardian(guardian).build();
         Model model = modelWith(firstStudent, guardian, secondStudent);
-        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN));
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN), "list r/guardian");
 
         String expected = "Name: Grace Tan\n"
                 + "Role: GUARDIAN\n"
@@ -196,7 +196,7 @@ public class ViewCommandTest {
         Person secondStudent = new PersonBuilder().withName("Amy Tan").withPhone("82345678")
                 .withRole(Role.STUDENT).withGuardian(guardian).build();
         Model model = modelWith(firstStudent, guardian, secondStudent);
-        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN));
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN), "list r/guardian");
 
         String expected = "Name: Grace Tan\n"
                 + "Role: GUARDIAN\n"
@@ -256,7 +256,7 @@ public class ViewCommandTest {
         Person student = new PersonBuilder().withRole(Role.STUDENT).build();
         Person guardian = new PersonBuilder().withName("Grace Tan").withRole(Role.GUARDIAN).build();
         Model model = modelWith(student, guardian);
-        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN));
+        model.updateFilteredPersonList(new PersonHasRolePredicate(Role.GUARDIAN), "list r/guardian");
 
         assertCommandFailure(new ViewCommand(SECOND_INDEX), model,
                 Messages.getInvalidPersonDisplayedIndexMessage(model.getFilteredPersonList().size()));

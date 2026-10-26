@@ -26,7 +26,8 @@ public class DeleteCommand extends Command {
             + "Parameters: INDEX (must be a positive integer)\n"
             + "Example: " + COMMAND_WORD + " 1";
 
-    public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted person: %1$s";
+    public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted person: %1$s\n"
+            + "The displayed list changed; subsequent indexes may have changed. Check the list before continuing.";
     public static final String MESSAGE_GUARDIAN_LINKS_CLEARED =
             "\n%1$d student(s) are no longer linked to a guardian:\n%2$s";
 

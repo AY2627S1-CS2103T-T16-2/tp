@@ -45,6 +45,7 @@ import seedu.tuitionbook.logic.commands.HelpCommand;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 import seedu.tuitionbook.model.ModelManager;
+import seedu.tuitionbook.model.PersonListViewState;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Person;
@@ -547,6 +548,12 @@ public class MainWindowTest {
 
         private FakeLogic(Person personToAdd) {
             this.personToAdd = personToAdd;
+        }
+
+        @Override
+        public PersonListViewState getPersonListViewState() {
+            return new PersonListViewState(
+                    people.stream().map(Person::getId).toList(), person -> true, "list");
         }
 
         @Override
