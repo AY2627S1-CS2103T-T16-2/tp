@@ -10,8 +10,10 @@ import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -51,8 +53,15 @@ public class EditCommandParser implements Parser<EditCommand> {
 
         EditPersonDescriptor editPersonDescriptor = new EditPersonDescriptor();
 
-        if (argMultimap.getValue(PREFIX_ROLE).isPresent() || argMultimap.getValue(PREFIX_GUARDIAN).isPresent()) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
+        List<String> unsupportedEditMessages = new ArrayList<>();
+        if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
+            unsupportedEditMessages.add(EditCommand.MESSAGE_ROLE_NOT_EDITABLE);
+        }
+        if (argMultimap.getValue(PREFIX_GUARDIAN).isPresent()) {
+            unsupportedEditMessages.add(EditCommand.MESSAGE_GUARDIAN_NOT_EDITABLE);
+        }
+        if (!unsupportedEditMessages.isEmpty()) {
+            throw new ParseException(String.join("\n", unsupportedEditMessages));
         }
 
         if (argMultimap.getValue(PREFIX_NAME).isPresent()) {
