@@ -374,6 +374,8 @@ This deletes every contact, including contacts outside the current working set. 
 * The confirmation keyword must be the exact lowercase word `confirm`.
 * `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
 
+Diagnostic log files are stored separately from the contact data file, so `clear confirm` does not remove them. For the packaged TuitionBook, these logs are in the same folder as the JAR. They are normally named `tuitionbook.log.0` through `tuitionbook.log.4`; only files that have already been created are present. The files may contain information entered in earlier commands, so review them before sharing them. To remove the logs, close TuitionBook, open the folder containing the JAR, and delete every existing numbered log file. Ordinary file deletion is not secure erasure, and TuitionBook does not provide a secure-erasure guarantee.
+
 ### Reloading contacts: `reload`
 
 Format: `reload`
@@ -465,7 +467,7 @@ Find the symptom below and try the suggested action. Error messages appear in th
 
 ### Reporting a problem or unclear instruction
 
-Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file.
+Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file. Review diagnostic logs before sharing them because they may contain information entered during earlier commands.
 
 --------------------------------------------------------------------------------------------------------------------
 
