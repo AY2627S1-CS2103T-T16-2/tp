@@ -28,6 +28,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Made equal `Index` values produce the same hash code, including equivalent one-based and zero-based indexes (#212).
 - Show the fatal startup error dialog when a packaged UI resource is missing or malformed, instead of raising a secondary null-window exception.
 - Rejected whitespace-, control-, or format-only and line-breaking addresses consistently when entered through commands or loaded from JSON.
 - Normalized phone spaces, hyphens, slashes, numeric-group parentheses, annotations, and equivalent extension markers during duplicate detection while retaining a leading `+` and extension digits.
