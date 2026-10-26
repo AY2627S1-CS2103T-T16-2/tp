@@ -22,6 +22,10 @@ import seedu.tuitionbook.commons.core.LogsCenter;
  * to be the entry point of the application, we avoid this issue.
  */
 public class Main {
+    static {
+        Main.class.getClassLoader()
+                .setPackageAssertionStatus("seedu.tuitionbook", true);
+    }
     private static Logger logger = LogsCenter.getLogger(Main.class);
 
     public static void main(String[] args) {
