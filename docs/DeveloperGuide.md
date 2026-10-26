@@ -683,20 +683,49 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
       Use case ends.
 
-**Use case: UC08 Filter contacts by role and tags**
+**Use case: UC08 Filter contacts by role**
 
 **MSS**
 
-1.  User requests student contacts tagged with both `Sec4` and `AMath`, for example by entering `list r/student t/Sec4 t/AMath`.
-2.  TuitionBook replaces the active filter, displays only contacts whose role and complete tag names match every supplied criterion case-insensitively, and reports the number of matches.
+1.  User requests contacts with a specified role.
+2.  TuitionBook replaces the active filter, displays only contacts with that role, and reports the number of matches.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The request is malformed, or a supplied role or tag is invalid.
+* 1a. The request is malformed, or the supplied role is invalid.
 
     * 1a1. TuitionBook shows an error message describing the invalid request and retains the active filter.
+
+      Use case ends.
+
+* 2a. No contact has the specified role.
+
+    * 2a1. TuitionBook displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
+
+      Use case ends.
+
+**Use case: UC09 Filter contacts by tags**
+
+**MSS**
+
+1.  User requests contacts tagged with both `Sec4` and `AMath`, for example by entering `list t/Sec4 t/AMath`.
+2.  TuitionBook replaces the active filter, displays only contacts that match every supplied tag by complete name case-insensitively and, if specified, the role, and reports the number of matches.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. User also specifies a role, for example by entering `list r/student t/Sec4 t/AMath`.
+
+    * 1a1. TuitionBook applies the role together with every supplied tag as the new filter.
+
+      Use case resumes from step 2.
+
+* 1b. The request is malformed, or a supplied tag or role is invalid.
+
+    * 1b1. TuitionBook shows an error message describing the invalid request and retains the active filter.
 
       Use case ends.
 
@@ -706,7 +735,7 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
       Use case ends.
 
-**Use case: UC09 Reload contact data**
+**Use case: UC10 Reload contact data**
 
 **MSS**
 
@@ -744,7 +773,7 @@ US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY26
 
 See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
-**Use case: UC10 Clear all contacts**
+**Use case: UC11 Clear all contacts**
 
 **Preconditions**
 
