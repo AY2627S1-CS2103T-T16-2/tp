@@ -82,7 +82,7 @@ public class JsonTuitionBookStorageTest {
         assertEquals(original, restored.getTuitionBook());
         assertEquals(person.getTags(), restored.getTuitionBook().getPersonList().getFirst().getTags());
         restored.updateFilteredPersonList(new PersonMatchesListFilterPredicate(Role.STUDENT,
-                List.of("math  science", "\"QUOTES\"", "c:\\NOTES")));
+                List.of("math  science", "\"QUOTES\"", "c:\\NOTES")), "list r/student");
         assertEquals(List.of(person), restored.getFilteredPersonList());
     }
 

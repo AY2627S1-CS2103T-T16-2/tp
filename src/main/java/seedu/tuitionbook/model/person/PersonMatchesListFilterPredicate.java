@@ -27,6 +27,16 @@ public class PersonMatchesListFilterPredicate implements Predicate<Person> {
         this.tags = List.copyOf(requireNonNull(tags));
     }
 
+    /** Returns the required role, or null when the query matches either role. */
+    public Role getRole() {
+        return role;
+    }
+
+    /** Returns the immutable requested tag names, preserving their internal whitespace and spelling. */
+    public List<String> getTags() {
+        return tags;
+    }
+
     @Override
     public boolean test(Person person) {
         if (role != null && person.getRole() != role) {

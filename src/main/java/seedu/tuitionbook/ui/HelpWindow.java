@@ -37,6 +37,10 @@ public class HelpWindow extends UiPart<Stage> {
               Pasted tabs and line separators become spaces; press Enter to run the command.
               Raw line breaks reaching the parser are rejected, including inside quotes.
               help, exit and reload take no arguments.
+              Edits, tags and links keep the working set and displayed indexes.
+              Rerun the originating list/find query to refresh; bare list shows all contacts.
+              Matching additions append; nonmatching additions are saved but hidden.
+              Deletion compacts the list and can change subsequent indexes.
 
             add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...
               Add a student or guardian contact.

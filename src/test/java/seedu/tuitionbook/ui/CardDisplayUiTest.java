@@ -26,6 +26,7 @@ import javafx.scene.control.OverrunStyle;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.person.Address;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
@@ -47,6 +48,54 @@ public class CardDisplayUiTest {
     @BeforeAll
     public static void startJavaFxToolkit() {
         JavaFxTestUtil.initialize();
+    }
+
+    @Test
+    public void personCard_retainedQueryNotice_isVisibleAndWraps() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            String notice = "No longer matches the query. Refresh with: list t/Active";
+            PersonCard card = new PersonCard(new PersonBuilder().build(), 1, "-", notice);
+            Label label = getLabel(card, "queryNotice");
+            assertTrue(label.isVisible());
+            assertTrue(label.isManaged());
+            assertTrue(label.isWrapText());
+            assertEquals(notice, label.getText());
+            assertEquals(notice, label.getTooltip().getText());
+            assertFalse(getLabel(new PersonCard(card.person, 1, "-"), "queryNotice").isManaged());
+            return null;
+        });
+    }
+
+    @Test
+    public void personListPanel_retainedContact_marksMismatchAndClearsMarkerWhenMatchingAgain() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            Person original = new PersonBuilder().withTags("Active").build();
+            ModelManager model = new ModelManager();
+            model.addPerson(original);
+            model.updateFilteredPersonList(person -> !person.getTags().isEmpty(), "list t/Active");
+            PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList(),
+                    model.getTuitionBook().getPersonList(), model::getPersonListViewState);
+            Stage stage = new Stage();
+            try {
+                stage.setScene(new Scene(panel.getRoot(), 700, 500));
+                stage.show();
+                Person edited = new PersonBuilder(original).withTags().build();
+                model.setPerson(original, edited);
+                panel.getRoot().applyCss();
+                panel.getRoot().layout();
+                Label notice = (Label) panel.getRoot().lookup("#queryNotice");
+                assertTrue(notice.isVisible());
+                assertTrue(notice.getText().contains("list t/Active"));
+                model.setPerson(edited, original);
+                panel.getRoot().applyCss();
+                panel.getRoot().layout();
+                assertFalse(((Label) panel.getRoot().lookup("#queryNotice")).isVisible());
+                assertEquals(List.of(original.getId()), model.getPersonListViewState().personIds());
+            } finally {
+                stage.close();
+            }
+            return null;
+        });
     }
 
     @Test
