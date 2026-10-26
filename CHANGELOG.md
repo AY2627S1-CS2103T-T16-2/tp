@@ -45,6 +45,7 @@ The format is based on Keep a Changelog.
 - Continue startup with the unchanged legacy `addressbook.json` when permissions prevent migration to `tuitionbook.json`, allowing migration to be retried on a later launch.
 - Decode JSON files strictly as UTF-8 so UTF-8 BOMs are accepted while invalid UTF-8 and other encodings are rejected and preserved unchanged through recovery.
 - Report permission, encoding/JSON, invalid contact-value, and other file-system load failures with appropriate startup and reload recovery guidance.
+- Made the UG's index-based examples runnable by adding shared sample contacts with their expected list, rebasing the command summary and the `view`, `edit`, `tag`, `untag`, `link`, `unlink`, `find`, `delete` and stable-index examples onto them, and marking which examples run in order (#195).
 
 ## [v1.4] - 2026-10-22
 
