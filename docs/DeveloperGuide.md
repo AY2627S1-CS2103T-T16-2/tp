@@ -364,6 +364,10 @@ The following activity diagram summarizes what happens when a user executes a ne
 * [Configuration guide](Configuration.md)
 * [DevOps guide](DevOps.md)
 
+### Diagnostic logging and contact clearing
+
+Contact storage and diagnostic logs are separate. `ClearCommand` clears all contacts, including contacts hidden by the current filter, but does not remove logs. See the [Logging guide](Logging.md) for log location, rotation and handling details.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Appendix: Requirements**

@@ -14,6 +14,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Clarified that `clear confirm` removes all contacts but not separately stored diagnostic logs, which may retain earlier command information and should be reviewed before sharing; no secure-erasure guarantee is made.
 - Align the UG and DG descriptions of indexes, unchanged commands, reload and save-failure recovery with exact working-set membership, order and query; share the full-list refresh command across model, commands and UI.
 - Clarify that `list` locates hidden additions while rerunning the originating query only refreshes its working set; include ordered displayed UUIDs, query predicates and refresh text when comparing models.
 - Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
