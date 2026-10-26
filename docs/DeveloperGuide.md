@@ -731,7 +731,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 * 2b. The file contains invalid guardian links but all contacts are otherwise valid.
 
     * 2b1. TuitionBook loads the contacts without those links, resets the working set to all loaded contacts in contact-list order, and reports the number of links repaired in memory for the tutor to review before saving.
-    The warning lists every affected contact, contact ID, and repair reason for the tutor to review before saving.
+    The result lists every affected contact, contact ID, guardian ID when present, and repair reason for the tutor to review before saving.
 
       Use case resumes from step 3.
 
