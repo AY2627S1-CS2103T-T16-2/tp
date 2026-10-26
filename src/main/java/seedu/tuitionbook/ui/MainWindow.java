@@ -1,9 +1,13 @@
 package seedu.tuitionbook.ui;
 
+import static seedu.tuitionbook.model.Model.SHOW_ALL_PERSONS_REFRESH_COMMAND;
+
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -16,6 +20,7 @@ import seedu.tuitionbook.logic.Logic;
 import seedu.tuitionbook.logic.commands.CommandResult;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
+import seedu.tuitionbook.model.PersonListViewState;
 
 /**
  * The Main Window. Provides the basic application layout containing
@@ -25,8 +30,10 @@ public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
     private static final KeyCombination HELP_KEY = new KeyCodeCombination(KeyCode.F1);
+    private static final double QUERY_TOOLTIP_MAX_WIDTH = 600;
 
     private final Logger logger = LogsCenter.getLogger(getClass());
+    private final Tooltip contactViewQueryTooltip = new Tooltip();
 
     private Stage primaryStage;
     private Logic logic;
@@ -51,6 +58,12 @@ public class MainWindow extends UiPart<Stage> {
     @FXML
     private StackPane statusbarPlaceholder;
 
+    @FXML
+    private Label contactViewQuery;
+
+    @FXML
+    private Label contactViewCounts;
+
     /**
      * Creates a {@code MainWindow} with the given {@code Stage}, {@code Logic},
      * and the data file path to show in the status bar.
@@ -62,6 +75,10 @@ public class MainWindow extends UiPart<Stage> {
         this.primaryStage = primaryStage;
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+
+        contactViewQueryTooltip.setWrapText(true);
+        contactViewQueryTooltip.setMaxWidth(QUERY_TOOLTIP_MAX_WIDTH);
+        contactViewQuery.setTooltip(contactViewQueryTooltip);
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
@@ -119,6 +136,27 @@ public class MainWindow extends UiPart<Stage> {
 
         commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+        updateContactViewStatus();
+    }
+
+    /** Describes the current working set without counting retained rows as query matches. */
+    private void updateContactViewStatus() {
+        PersonListViewState view = logic.getPersonListViewState();
+        boolean filtered = !SHOW_ALL_PERSONS_REFRESH_COMMAND.equals(view.refreshCommand());
+        contactViewQuery.setVisible(filtered);
+        contactViewQuery.setManaged(filtered);
+        contactViewQuery.setText("Query: " + view.refreshCommand());
+        contactViewQueryTooltip.setText(contactViewQuery.getText());
+
+        int total = logic.getPersonList().size();
+        if (filtered) {
+            int shown = logic.getFilteredPersonList().size();
+            long matching = logic.getFilteredPersonList().stream().filter(view.predicate()).count();
+            contactViewCounts.setText("Shown: " + shown + " of " + total + " contacts · Matching: " + matching
+                    + " · Retained: " + (shown - matching));
+        } else {
+            contactViewCounts.setText("All contacts: " + total);
+        }
     }
 
     /** Gives keyboard focus to the command input after startup has completed. */
@@ -216,6 +254,10 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setFeedbackToUser(e.getMessage());
             showPersonList();
             throw e;
+        } finally {
+            // All post-startup view mutations currently use this command-box callback. Any future
+            // non-command mutation path must also refresh the indicator after its state settles.
+            updateContactViewStatus();
         }
     }
 }
