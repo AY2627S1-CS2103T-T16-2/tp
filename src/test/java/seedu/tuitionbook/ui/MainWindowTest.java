@@ -261,14 +261,15 @@ public class MainWindowTest {
             assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
                     fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
             JavaFxTestUtil.runOnFxThread(() -> {
-                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
-                Event.fireEvent(fixture.personListView(), new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.HOME,
-                        false, false, false, false));
+                for (KeyCode keyCode : List.of(KeyCode.UP, KeyCode.DOWN, KeyCode.PAGE_UP,
+                        KeyCode.PAGE_DOWN, KeyCode.HOME, KeyCode.END)) {
+                    fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                    Event.fireEvent(fixture.personListView(), new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
+                            false, false, false, false));
+                    assertFalse(fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation());
+                }
                 fixture.personListView().scrollTo(0);
             });
-
-            assertFalse(JavaFxTestUtil.callOnFxThread(() ->
-                    fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
         } finally {
             JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
         }
