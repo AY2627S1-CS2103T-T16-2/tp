@@ -287,7 +287,8 @@ public class LogicManagerTest {
         assertEquals(String.format(TagCommand.MESSAGE_NO_CHANGE, student.getName()),
                 logic.execute("tag 1 t/Math t/Math").getFeedbackToUser());
         assertEquals(String.format(UntagCommand.MESSAGE_NO_CHANGE, student.getName())
-                + " Tags not present: \"absent\", \"math\".",
+                + " Tags not present: \"absent\", \"math\"."
+                + " Tag \"math\" not found, did you mean \"Math\"?",
                 logic.execute("untag 1 t/math t/absent").getFeedbackToUser());
         assertEquals(0, fileStorage.getSaveCallCount());
         assertEquals(List.of(student), logic.getFilteredPersonList());

@@ -33,6 +33,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
 - Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).
 - Made equal `Index` values produce the same hash code, including equivalent one-based and zero-based indexes (#212).
 - Recovered from a `null` `guiSettings` value in `preferences.json` by restoring and saving default window settings instead of failing during startup (#192).
