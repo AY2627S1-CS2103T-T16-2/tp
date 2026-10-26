@@ -33,6 +33,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).
 - Made equal `Index` values produce the same hash code, including equivalent one-based and zero-based indexes (#212).
 - Recovered from a `null` `guiSettings` value in `preferences.json` by restoring and saving default window settings instead of failing during startup (#192).
 - Show the fatal startup error dialog when a packaged UI resource is missing or malformed, instead of raising a secondary null-window exception.
