@@ -75,10 +75,11 @@ public class ApplicationInstanceGuardTest {
         Files.writeString(lockFile, originalContents);
 
         try (ApplicationInstanceGuard ignored = ApplicationInstanceGuard.acquire(testFolder)) {
-            assertEquals(originalContents, Files.readString(lockFile));
+            // Acquisition itself is the behavior under test; inspect the file only after releasing the lock.
         }
 
         assertTrue(Files.exists(lockFile));
+        assertEquals(originalContents, Files.readString(lockFile));
     }
 
     @Test
