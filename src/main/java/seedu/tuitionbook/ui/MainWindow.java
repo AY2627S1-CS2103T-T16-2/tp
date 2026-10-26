@@ -33,6 +33,7 @@ public class MainWindow extends UiPart<Stage> {
     private static final double QUERY_TOOLTIP_MAX_WIDTH = 600;
 
     private final Logger logger = LogsCenter.getLogger(getClass());
+    private final Tooltip contactViewQueryTooltip = new Tooltip();
 
     private Stage primaryStage;
     private Logic logic;
@@ -74,6 +75,10 @@ public class MainWindow extends UiPart<Stage> {
         this.primaryStage = primaryStage;
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+
+        contactViewQueryTooltip.setWrapText(true);
+        contactViewQueryTooltip.setMaxWidth(QUERY_TOOLTIP_MAX_WIDTH);
+        contactViewQuery.setTooltip(contactViewQueryTooltip);
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
@@ -141,10 +146,7 @@ public class MainWindow extends UiPart<Stage> {
         contactViewQuery.setVisible(filtered);
         contactViewQuery.setManaged(filtered);
         contactViewQuery.setText("Query: " + view.refreshCommand());
-        Tooltip queryTooltip = new Tooltip(contactViewQuery.getText());
-        queryTooltip.setWrapText(true);
-        queryTooltip.setMaxWidth(QUERY_TOOLTIP_MAX_WIDTH);
-        contactViewQuery.setTooltip(queryTooltip);
+        contactViewQueryTooltip.setText(contactViewQuery.getText());
 
         int total = logic.getPersonList().size();
         if (filtered) {
@@ -253,6 +255,8 @@ public class MainWindow extends UiPart<Stage> {
             showPersonList();
             throw e;
         } finally {
+            // All post-startup view mutations currently use this command-box callback. Any future
+            // non-command mutation path must also refresh the indicator after its state settles.
             updateContactViewStatus();
         }
     }

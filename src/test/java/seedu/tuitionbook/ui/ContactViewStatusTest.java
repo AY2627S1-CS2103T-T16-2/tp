@@ -31,6 +31,13 @@ import seedu.tuitionbook.testutil.PersonBuilder;
 
 /** Verifies the persistent query/count indicator through real command, storage and UI boundaries. */
 public class ContactViewStatusTest {
+    private static final int NARROW_WINDOW_WIDTH = 450;
+    private static final int NARROW_WINDOW_HEIGHT = 600;
+    private static final int LONG_QUERY_REPETITIONS = 200;
+    // Allow font metrics to vary while detecting a query that wraps into excessive vertical space.
+    private static final int MAX_SINGLE_LINE_QUERY_HEIGHT = 40;
+    private static final int MAX_COMPACT_STATUS_HEIGHT = 100;
+
     @TempDir
     public Path temporaryFolder;
 
@@ -144,18 +151,18 @@ public class ContactViewStatusTest {
 
     @Test
     public void narrowWindow_longQueryDoesNotPushCountsOrCommandBoxOutsideWindow() throws Exception {
-        String query = "find " + "LongQuery".repeat(200);
+        String query = "find " + "LongQuery".repeat(LONG_QUERY_REPETITIONS);
         WindowFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
             WindowFixture created = new WindowFixture(temporaryFolder);
             created.execute(query);
-            created.window.getPrimaryStage().setWidth(450);
-            created.window.getPrimaryStage().setHeight(600);
+            created.window.getPrimaryStage().setWidth(NARROW_WINDOW_WIDTH);
+            created.window.getPrimaryStage().setHeight(NARROW_WINDOW_HEIGHT);
             created.window.show();
             return created;
         });
         try {
             assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
-                    fixture.window.getRoot().getScene().getWidth() <= 450));
+                    fixture.window.getRoot().getScene().getWidth() <= NARROW_WINDOW_WIDTH));
             JavaFxTestUtil.runOnFxThread(() -> {
                 fixture.window.getRoot().getScene().getRoot().applyCss();
                 fixture.window.getRoot().getScene().getRoot().layout();
@@ -163,9 +170,10 @@ public class ContactViewStatusTest {
                 Label countsLabel = fixture.label("contactViewCounts");
                 VBox status = (VBox) queryLabel.getParent();
                 assertEquals("Query: " + query, queryLabel.getTooltip().getText());
-                assertTrue(queryLabel.getHeight() < 40, "Query should occupy a single line");
+                assertTrue(queryLabel.getHeight() < MAX_SINGLE_LINE_QUERY_HEIGHT, "Query should occupy a single line");
                 assertTrue(countsLabel.getHeight() > 0);
-                assertTrue(status.getHeight() < 100, "A long query should not consume the contact list");
+                assertTrue(status.getHeight() < MAX_COMPACT_STATUS_HEIGHT,
+                        "A long query should not consume the contact list");
                 assertTrue(countsLabel.localToScene(countsLabel.getBoundsInLocal()).getMaxX()
                         <= fixture.window.getRoot().getScene().getWidth());
                 assertTrue(countsLabel.localToScene(countsLabel.getBoundsInLocal()).getMaxY()
@@ -184,6 +192,7 @@ public class ContactViewStatusTest {
         private final FailingStorage fileStorage;
         private final MainWindow window;
         private final TextField commandBox;
+        private String lastCommand = "initial load";
 
         WindowFixture(Path folder) throws Exception {
             fileStorage = new FailingStorage(folder.resolve("contacts.json"));
@@ -198,6 +207,7 @@ public class ContactViewStatusTest {
         }
 
         void execute(String command) {
+            lastCommand = command;
             commandBox.setText(command);
             commandBox.getOnAction().handle(new ActionEvent());
         }
@@ -209,16 +219,19 @@ public class ContactViewStatusTest {
         }
 
         void assertAllContacts(int total) {
-            assertEquals("All contacts: " + total, label("contactViewCounts").getText());
-            assertFalse(label("contactViewQuery").isVisible());
-            assertFalse(label("contactViewQuery").isManaged());
+            String context = "after: " + lastCommand;
+            assertEquals("All contacts: " + total, label("contactViewCounts").getText(), context);
+            assertFalse(label("contactViewQuery").isVisible(), context);
+            assertFalse(label("contactViewQuery").isManaged(), context);
         }
 
         void assertQuery(String query, int shown, int total, int matching, int retained) {
-            assertTrue(label("contactViewQuery").isVisible());
-            assertEquals("Query: " + query, label("contactViewQuery").getText());
+            String context = "after: " + lastCommand;
+            assertTrue(label("contactViewQuery").isVisible(), context);
+            assertEquals("Query: " + query, label("contactViewQuery").getText(), context);
+            assertEquals("Query: " + query, label("contactViewQuery").getTooltip().getText(), context);
             assertEquals("Shown: " + shown + " of " + total + " contacts · Matching: " + matching
-                    + " · Retained: " + retained, label("contactViewCounts").getText());
+                    + " · Retained: " + retained, label("contactViewCounts").getText(), context);
         }
 
         @Override
