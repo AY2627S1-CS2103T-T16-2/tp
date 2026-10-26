@@ -236,6 +236,8 @@ The working set preserves indexes across non-deleting mutations and compacts the
 
 `PersonListPanel` supplies each card with a notice when its current values fail the originating predicate. Match status is derived from current data, so it clears when a contact matches again and is correct after rollback. Mutating-command feedback gives the query to refresh; hidden additions explain how to locate the saved contact. Deletion warns that subsequent indexes may have changed.
 
+`MainWindow` also keeps a query/count indicator above the shared list/detail area. It reads the canonical refresh command from `Logic#getPersonListViewState()`, the working set from `Logic#getFilteredPersonList()` and the total from `Logic#getPersonList()`. The shared full-list refresh command identifies the unfiltered state; equal displayed and total counts do not imply that a query is inactive. Matching and retained counts partition only the displayed working set, using its originating predicate against current contact values. The indicator is initialized with the window contents and updated in `executeCommand`'s `finally` block, after success, rejection or save-failure rollback has finished. It does not change query membership, storage or focus. Query text stays on one line with a wrapped full-command tooltip, while the count line wraps at narrow widths.
+
 ### Contact field validation
 
 `Name`, `Phone`, `Email`, and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding input whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names support Unicode letters, numbers and combining marks plus ordinary ASCII spaces (U+0020) and the documented punctuation, including straight and right curly apostrophes, and contain at most 100 Unicode code points. Other Unicode whitespace is not valid inside a name. Phone validation uses a linear parser shared with identity normalization. It accepts an optional leading `+`; plain or parenthesized digit groups separated by one or more ASCII spaces, one hyphen, or one slash; at most one trailing parenthesized annotation; and an optional numeric `x`, `ext`, or `ext.` extension. An annotation is separated from the main number by at least one ASCII space, contains at least one ASCII letter, and otherwise contains only ASCII letters, digits, and single internal spaces. The parser rejects malformed or nested parentheses, empty groups, doubled or trailing punctuation separators, malformed annotations, unsupported letters, and malformed or repeated extensions. Email validation implements the documented ASCII local-part and domain-label subset, including apostrophes and internal consecutive hyphens used by punycode labels, while rejecting consecutive periods.
@@ -1175,6 +1177,28 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 Use at least 120 synthetic contacts in disposable storage. Scroll near the bottom so that contact 91 is visible and note the first visible contact and scrollbar position. Enter `edit 91 p/98888888`.<br>
 Expected: the phone updates in place and the viewport stays at the same part of the list. Repeat with another visible contact. Explicit queries, deletion compaction and adding a contact are separate view operations; this check concerns edits that keep the same working-set membership and card height.
+
+### Persistent query and contact counts
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Confirm the indicator above the contact list says `All contacts: 0`.
+1. Enter `add r/student n/Alex Student p/90000001 t/Active`, `add r/student n/John Student p/90000002 t/Active`, then `list r/student`.<br>
+   Expected: The indicator shows `Query: list r/student` and `Shown: 2 of 2 contacts · Matching: 2 · Retained: 0`. A query remains active even when every contact matches.
+1. Enter `add r/guardian n/Grace Guardian p/90000003`, then `list t/Active`.<br>
+   Expected: The indicator shows `Query: list t/Active` and `Shown: 2 of 3 contacts · Matching: 2 · Retained: 0`.
+1. Enter `untag 1 t/Active`, then `view 1`.<br>
+   Expected: The indicator remains visible above the details and shows `Shown: 2 of 3 contacts · Matching: 1 · Retained: 1`. Alex is retained rather than counted as a query match.
+1. Enter `tag 1 t/Active`, then `add r/student n/Eve Student p/90000004 t/Active`.<br>
+   Expected: The list returns and the indicator shows `Shown: 3 of 4 contacts · Matching: 3 · Retained: 0`.
+1. Enter `delete 2`, then `edit 99 n/Missing Student`.<br>
+   Expected: After deletion, `Shown: 2 of 3 contacts · Matching: 2 · Retained: 0` is displayed. The rejected edit changes neither the query nor its counts.
+1. Enter `find Missing`, then `reload`.<br>
+   Expected: The empty query result shows `Query: find Missing` and `Shown: 0 of 3 contacts · Matching: 0 · Retained: 0`. Successful reload resets the indicator to `All contacts: 3`.
+1. Enter `clear confirm`, then restart.<br>
+   Expected: Both clearing and restarting show `All contacts: 0`. No query state is persisted.
+
+The automated `ContactViewStatusTest` also injects save failures and a failed reload, verifying that the indicator describes the restored contacts and working set rather than an unsuccessful attempted change. It checks a long query at a narrow window width without hiding the counts.
 
 ### Stable indexes across contact changes
 

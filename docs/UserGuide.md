@@ -224,6 +224,8 @@ This workflow uses its own contact, Alex Tan, instead of the sample contacts. To
 
 ### Keeping displayed indexes stable
 
+The indicator above the contact list stays visible even when later commands replace the result message or open contact details. An unfiltered view shows `All contacts: 42`. A filtered view shows its query, for example `Query: list t/Active`, and `Shown: 3 of 42 contacts · Matching: 2 · Retained: 1`. `Shown` is the working-set size, and the total includes hidden contacts. `Matching` counts only displayed contacts that currently satisfy the query; `Retained` counts displayed contacts that no longer match. Hidden contacts are not included in either of these two counts. The query remains identified even when it matches every contact or no contacts. A long query is shortened on screen; hover over it to read the complete command.
+
 Each `list` or `find` establishes a working set in normal contact-list order. `edit`, `tag`, `untag`, `link` and `unlink` preserve all surviving displayed indexes, even when contacts stop matching the query. Those rows show **No longer matches the query** with a command to refresh. Matching again removes the notice without moving the row. An existing hidden contact that becomes a match stays hidden until an explicit query.
 
 Rerun the originating command, such as `list t/Active`, to refresh membership. Bare `list` deliberately shows all contacts. Matching additions append; nonmatching additions are saved without being displayed.
