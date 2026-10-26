@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assumptions;
@@ -32,6 +31,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -203,19 +204,33 @@ public class MainWindowTest {
     public void removedScrollTarget_stopsRetryAnimation() throws Exception {
         Person target = new PersonBuilder().withName("Temporary Student").build();
         FakeLogic logic = new FakeLogic(target);
-        AtomicInteger pulseCount = new AtomicInteger();
+        PersonListPanel[] panel = new PersonListPanel[1];
         Stage stage = JavaFxTestUtil.callOnFxThread(() -> {
             Stage newStage = new Stage();
             MainWindow mainWindow = new MainWindow(newStage, logic, Path.of("synthetic.json"));
             mainWindow.fillInnerParts();
+            panel[0] = mainWindow.getPersonListPanel();
             mainWindow.getPersonListPanel().scrollToPerson(target.getId());
             logic.people.remove(target);
             return newStage;
         });
         try {
-            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> pulseCount.incrementAndGet() >= 3));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> !panel[0].hasPendingScrollAnimation()));
         } finally {
             JavaFxTestUtil.runOnFxThread(stage::hide);
+        }
+    }
+
+    @Test
+    public void retryAnimation_stopsAfterTenPulses() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            JavaFxTestUtil.runOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId()));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    !fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
         }
     }
 
@@ -253,6 +268,39 @@ public class MainWindowTest {
             });
 
             assertFalse(JavaFxTestUtil.callOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void mousePress_cancelsPendingAutomaticScroll() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                Event.fireEvent(fixture.personListView(), new MouseEvent(MouseEvent.MOUSE_PRESSED,
+                        0, 0, 0, 0, MouseButton.PRIMARY, 1, false, false, false, false,
+                        false, false, false, false, false, false, null));
+            });
+            assertFalse(JavaFxTestUtil.callOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void nonNavigationKey_doesNotCancelPendingAutomaticScroll() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                Event.fireEvent(fixture.personListView(), new KeyEvent(KeyEvent.KEY_PRESSED, "a", "a", KeyCode.A,
+                        false, false, false, false));
+            });
+            assertTrue(JavaFxTestUtil.callOnFxThread(() ->
                     fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
         } finally {
             JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
