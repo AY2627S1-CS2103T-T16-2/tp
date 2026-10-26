@@ -20,6 +20,7 @@ The format is based on Keep a Changelog.
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 - Documented save-failure rollback in the Delete use case, including restoration of the contact, guardian links, and active filter.
 - Added a Developer Guide use case for reloading contact data, including missing-file, repaired-link, successful-backup, and blocked-saving outcomes.
+- Expanded the Developer Guide use cases for combined role-and-tag filtering and confirmed clearing, including zero-match, invalid-request, hidden-contact, and save-failure outcomes.
 - Expanded the documented contact-field validation subset to support right curly apostrophes in names; phone groups separated by spaces, hyphens, or slashes, optional trailing phone annotations, and numeric extensions; apostrophes and punycode labels in email addresses; and explicitly single-line addresses.
 - Clarified that names accept ordinary ASCII spaces (U+0020), rather than every Unicode whitespace character.
 - Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
