@@ -56,7 +56,7 @@ MainWindow ..> StatusBarFooter : <<create>>
 MainWindow -left-> "1" Logic : commands and lists
 
 PersonListPanel ..> PersonCard : <<create>> via ListCell
-PersonListPanel ..> Person : filtered and complete lists
+PersonListPanel --> "*" Person : working set and\ncomplete list
 PersonCard --> "1" Person : displays
 HelpWindow --> "1" DesktopAdapter : opens User Guide
 
@@ -73,7 +73,8 @@ legend bottom
   CommandTextField normalizes pasted separators before JavaFX filters them.
   CommandBox invokes a CommandExecutor bound to MainWindow::executeCommand.
   PersonListPanel's nested PersonListViewCell creates cards for nonempty cells;
-  the complete list supplies linked contact summaries across active filters.
+  PersonListPanel retains the complete list and a lookup of Person objects by ID,
+  which supply linked contact summaries for contacts outside the working set.
   HelpWindow opens the User Guide through DesktopAdapter's Browser callback
   on a background Executor, or copies its URL to the clipboard.
 endlegend

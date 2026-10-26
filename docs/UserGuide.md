@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide saved with that release: the [v1.4 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) or the [v1.3 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These open on GitHub, which does not show this website's navigation or styled note boxes. Commands added in later versions are not available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -405,6 +405,8 @@ This deletes every contact, including contacts outside the current working set. 
 * The confirmation keyword must be the exact lowercase word `confirm`.
 * `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
 
+Diagnostic log files are stored separately from the contact data file, so `clear confirm` does not remove them. For the packaged TuitionBook, these logs are in the same folder as the JAR. They are normally named `tuitionbook.log.0` through `tuitionbook.log.4`; only files that have already been created are present. The files may contain information entered in earlier commands, so review them before sharing them. To remove the logs, close TuitionBook, open the folder containing the JAR, and delete every existing numbered log file. Ordinary file deletion is not secure erasure, and TuitionBook does not provide a secure-erasure guarantee.
+
 ### Reloading contacts: `reload`
 
 Format: `reload`
@@ -412,6 +414,8 @@ Format: `reload`
 Reads the configured contact file again and resets the working set to all loaded contacts in contact-list order. Use this after correcting a file that could not be loaded and backed up. A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards. No arguments are accepted.
 
 If the file is missing, the contact list becomes empty and saving is enabled. Reloading does not save anything. If reading fails, the current contacts and exact working set (membership, order and originating query) are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the reported permission, encoding, JSON, or contact-value guidance before restoring the preserved file and reloading again. Reload replaces rather than merges contacts; preserve any external file edits you need before using it.
+
+When a reload succeeds but invalid guardian links are repaired, the result lists every affected contact's name, UUID, guardian ID when present, and reason. Valid contacts remain loaded, the links are removed in memory, and the next successful save removes those invalid links from the JSON file.
 
 ### Exiting the program: `exit`
 
@@ -444,7 +448,7 @@ The file must contain exactly one JSON value and each object must use every prop
 
 Data files created before these relationship fields were introduced remain supported. A contact that has none of `id`, `role`, or `guardianId` is loaded as an unlinked student and receives a generated `id`. The updated fields are written when TuitionBook next saves the data file.
 
-If a string `guardianId` is not a UUID, refers to a missing contact, refers to a student, or links a student to itself, TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present. An object or array `guardianId` cannot be interpreted as a link string, so the complete file follows the invalid-file recovery behavior instead of loading contacts and repairing only that link.
+If a string `guardianId` is not a UUID, refers to a missing contact, refers to a student, or links a student to itself, TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired and lists every affected contact, its UUID, guardian ID when present, and the reason for the repair in a scrollable summary. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present. An object or array `guardianId` cannot be interpreted as a link string, so the complete file follows the invalid-file recovery behavior instead of loading contacts and repairing only that link.
 
 <box type="warning" seamless>
 
@@ -496,7 +500,7 @@ Find the symptom below and try the suggested action. Error messages appear in th
 
 ### Reporting a problem or unclear instruction
 
-Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file.
+Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file. Review diagnostic logs before sharing them because they may contain information entered during earlier commands.
 
 --------------------------------------------------------------------------------------------------------------------
 

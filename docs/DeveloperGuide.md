@@ -69,6 +69,8 @@ The *Sequence Diagram* below shows how the components interact with each other f
 
 <puml src="diagrams/ArchitectureSequenceDiagram.puml" width="574" />
 
+This is a simplified component-level view. It omits calls within a component's turn, such as resolving the displayed index, looking up linked students and snapshotting data for save-failure rollback. The [Logic component](#logic-component) shows the detailed `delete` sequence.
+
 Each of the four main components (also shown in the diagram above),
 
 * defines its *API* in an `interface` with the same name as the Component.
@@ -363,6 +365,10 @@ The following activity diagram summarizes what happens when a user executes a ne
 * [Logging guide](Logging.md)
 * [Configuration guide](Configuration.md)
 * [DevOps guide](DevOps.md)
+
+### Diagnostic logging and contact clearing
+
+Contact storage and diagnostic logs are separate. `ClearCommand` clears all contacts, including contacts hidden by the current filter, but does not remove logs. See the [Logging guide](Logging.md) for log location, rotation and handling details.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -697,26 +703,61 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 **MSS**
 
-1.  Private tutor requests contacts with a specified role.
-2.  TuitionBook displays contacts with that role and reports the number of matches.
+1.  User requests contacts with a specified role.
+2.  TuitionBook replaces the active filter, displays only contacts with that role, and reports the number of matches.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The requested role is invalid.
+* 1a. The request is malformed, or the supplied role is invalid.
 
-    * 1a1. TuitionBook shows an error message describing the invalid request.
+    * 1a1. TuitionBook shows an error message describing the invalid request and retains the active filter.
 
       Use case ends.
 
-**Use case: UC09 Reload contact data**
+* 2a. No contact has the specified role.
+
+    * 2a1. TuitionBook displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
+
+      Use case ends.
+
+**Use case: UC09 Filter contacts by tags**
+
+**MSS**
+
+1.  User requests contacts tagged with both `Sec4` and `AMath`, for example by entering `list t/Sec4 t/AMath`.
+2.  TuitionBook replaces the active filter, displays only contacts that match every supplied tag by complete name case-insensitively and, if specified, the role, and reports the number of matches.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. User also specifies a role, for example by entering `list r/student t/Sec4 t/AMath`.
+
+    * 1a1. TuitionBook applies the role together with every supplied tag as the new filter.
+
+      Use case resumes from step 2.
+
+* 1b. The request is malformed, or a supplied tag or role is invalid.
+
+    * 1b1. TuitionBook shows an error message describing the invalid request and retains the active filter.
+
+      Use case ends.
+
+* 2a. No contact matches every supplied criterion.
+
+    * 2a1. TuitionBook displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
+
+      Use case ends.
+
+**Use case: UC10 Reload contact data**
 
 **MSS**
 
 1.  Private tutor submits a reload request.
 2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and resets the working set to all loaded contacts in contact-list order.
-3.  TuitionBook enables saving and reports the number of loaded contacts.
+3.  TuitionBook enables saving and reports the number of loaded contacts. If guardian links are repaired, it lists each affected contact's name, UUID, guardian ID when present, and repair reason.
 
     Use case ends.
 
@@ -731,6 +772,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 * 2b. The file contains invalid guardian links but all contacts are otherwise valid.
 
     * 2b1. TuitionBook loads the contacts without those links, resets the working set to all loaded contacts in contact-list order, and reports the number of links repaired in memory for the tutor to review before saving.
+    The result lists every affected contact, contact ID, guardian ID when present, and repair reason for the tutor to review before saving.
 
       Use case resumes from step 3.
 
@@ -748,7 +790,38 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
-**Role-filter command rule**
+**Use case: UC11 Clear all contacts**
+
+**Preconditions**
+
+* At least one contact is stored. The active filter may hide some contacts.
+
+**Guarantee**
+
+* On success, no contacts remain. TuitionBook does not provide an undo operation for a successful clear.
+
+**MSS**
+
+1.  User requests to clear all contacts using the exact confirmation keyword, by entering `clear confirm`.
+2.  TuitionBook removes every stored contact, including contacts hidden by the active filter, saves the empty contact list, and reports completion.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The confirmation keyword is missing or incorrect, or the request contains other arguments.
+
+    * 1a1. TuitionBook shows the required `clear confirm` format and retains all contacts and the active filter.
+
+      Use case ends.
+
+* 2a. TuitionBook cannot save the cleared contact list.
+
+    * 2a1. TuitionBook shows a storage error, restores all contacts and guardian links, retains the previously active filter, and does not report a successful clear.
+
+      Use case ends.
+
+**List-filter command rule**
 
 Each `list` query replaces the working set: bare `list` displays all contacts, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria in contact-list order. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
@@ -768,7 +841,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
 
 ### Glossary
 
@@ -933,6 +1006,16 @@ Use a fresh, disposable folder with an empty contact list.
 
    1. Relaunch the app using the same terminal command.<br>
        Expected: The most recent window size and location are retained.
+
+1. Recovering from null window preferences
+
+   1. Close TuitionBook. In the folder containing the JAR, replace the contents of `preferences.json` with `{"guiSettings": null}`.
+
+   1. Relaunch the app using the same terminal command.<br>
+      Expected: TuitionBook opens using the default window settings without a `NullPointerException`. Existing contacts remain unchanged.
+
+   1. Close TuitionBook and inspect `preferences.json`.<br>
+      Expected: `guiSettings` contains saved window settings instead of `null`.
 
 ### Getting help
 
@@ -1224,6 +1307,9 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
       Expected: the working set resets to the full loaded list containing Reloaded Alex, and the result reports one loaded contact. Reload does not rewrite the file.
 
+   1. Replace the file with valid JSON containing a student whose `guardianId` refers to a missing contact, then enter `reload`.<br>
+      Expected: the student remains loaded, the result identifies the affected contact by name and UUID, includes the invalid guardian ID and explains that the referenced contact is missing. The file remains unchanged until a later successful save.
+
    1. Enter `reload extra`.<br>
       Expected: invalid command format; contacts remain unchanged.
 
@@ -1324,4 +1410,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. In a fresh, disposable folder, create a valid `data/tuitionbook.json` containing a student whose `guardianId` refers to a missing contact.
 
    1. Launch TuitionBook.<br>
-      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link.
+      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link. The scrollable details area identifies the student by name and UUID, shows the invalid `guardianId`, and explains that the referenced guardian is missing.
+
+   1. Close TuitionBook and repeat in another disposable folder with two or more students whose `guardianId` values are malformed, missing, self-referential, or refer to students.<br>
+      Expected: All valid contacts remain visible, all invalid links are removed, and the scrollable warning lists every affected contact in JSON order with its repair reason.
