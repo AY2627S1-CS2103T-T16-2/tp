@@ -33,6 +33,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Made equal `Index` values produce the same hash code, including equivalent one-based and zero-based indexes (#212).
 - Recovered from a `null` `guiSettings` value in `preferences.json` by restoring and saving default window settings instead of failing during startup (#192).
 - Show the fatal startup error dialog when a packaged UI resource is missing or malformed, instead of raising a secondary null-window exception.
 - Rejected whitespace-, control-, or format-only and line-breaking addresses consistently when entered through commands or loaded from JSON.
@@ -52,6 +53,7 @@ The format is based on Keep a Changelog.
 - Show all repaired guardian links in a scrollable startup summary while retaining the existing in-memory repair and next-save behaviour.
 - Decode JSON files strictly as UTF-8 so UTF-8 BOMs are accepted while invalid UTF-8 and other encodings are rejected and preserved unchanged through recovery.
 - Report permission, encoding/JSON, invalid contact-value, and other file-system load failures with appropriate startup and reload recovery guidance.
+- Made the UG's index-based examples runnable by adding shared sample contacts with their expected list, rebasing the command summary and the `view`, `edit`, `tag`, `untag`, `link`, `unlink`, `find`, `delete` and stable-index examples onto them, and marking which examples run in order (#195).
 - Link the UG version notice directly to the v1.3 and v1.4 User Guides saved with those releases, whose release pages contain no guide link (#223).
 - Show `PersonListPanel`'s retained `Person` references as an association in the UI class diagram, and identify the architecture sequence diagram as a simplified view of the detailed `delete` sequence (#177).
 
