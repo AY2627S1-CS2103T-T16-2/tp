@@ -247,7 +247,7 @@ Names support the same optional double quotes as `add`. For example, `edit 1 n/"
 * At least one of the optional fields must be provided.
 * To remove an existing email or address, use `e/` or `a/` with no value respectively.
 * Existing values will be updated to the input values.
-* `edit` cannot change a person's role or guardian link. Use `link` or `unlink` to change a student's guardian link. The role specified with `add` applies only to the new contact.
+* `edit` cannot change a person's role or guardian link. Supplying `r/` reports that a contact's role cannot be changed after it is added. Supplying `g/` directs you to `link STUDENT_INDEX GUARDIAN_INDEX` to set or replace a guardian link, or `unlink STUDENT_INDEX` to remove it, using indexes from the currently displayed list. If both prefixes are supplied, both explanations are shown. No part of the rejected edit is applied. The role specified with `add` applies only to the new contact.
 * `NAME`, `PHONE`, `EMAIL`, and `ADDRESS` follow the same validation and Unicode code-point length rules described for [`add`](#adding-a-contact-add).
 * Names, addresses and tags support the same quoting and strict prefix rules as [`add`](#adding-a-contact-add). `edit INDEX a/""` clears the address, just like `edit INDEX a/`; a blank quoted address is not stored.
 * `TAG` follows the same space-and-punctuation and optional quoting rules described for [`add`](#adding-a-contact-add).
