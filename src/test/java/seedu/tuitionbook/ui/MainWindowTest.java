@@ -32,6 +32,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.tuitionbook.commons.core.GuiSettings;
@@ -214,6 +215,46 @@ public class MainWindowTest {
             assertTrue(JavaFxTestUtil.waitForFxCondition(() -> pulseCount.incrementAndGet() >= 3));
         } finally {
             JavaFxTestUtil.runOnFxThread(stage::hide);
+        }
+    }
+
+    @Test
+    public void manualScroll_cancelsPendingAutomaticScroll() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                Event.fireEvent(fixture.personListView(), new ScrollEvent(ScrollEvent.SCROLL, 0, 0, 0, 0,
+                        false, false, false, false, true, false, 0, 1, 0, 1, 1, 1, null, 0, null, 0, 1, null));
+                fixture.personListView().scrollTo(0);
+            });
+
+            assertFalse(JavaFxTestUtil.callOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void navigationKey_cancelsPendingAutomaticScroll() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                Event.fireEvent(fixture.personListView(), new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.HOME,
+                        false, false, false, false));
+                fixture.personListView().scrollTo(0);
+            });
+
+            assertFalse(JavaFxTestUtil.callOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
         }
     }
 
@@ -469,7 +510,30 @@ public class MainWindowTest {
         return (ListView<Person>) mainWindow.getRoot().getScene().lookup("#personListView");
     }
 
+    private static ManualScrollFixture createScrollFixture(int contactCount) throws Exception {
+        return JavaFxTestUtil.callOnFxThread(() -> {
+            Person firstPerson = new PersonBuilder().withName("First Student").build();
+            Person addedPerson = new PersonBuilder().withName("Added Student").build();
+            FakeLogic logic = new FakeLogic(firstPerson);
+            IntStream.range(1, contactCount - 1)
+                    .mapToObj(index -> new PersonBuilder().withName("Existing Student " + index).build())
+                    .forEach(logic.people::add);
+            logic.people.add(addedPerson);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            stage.setWidth(400);
+            stage.setHeight(300);
+            mainWindow.show();
+            return new ManualScrollFixture(stage, mainWindow, getPersonListView(mainWindow), addedPerson);
+        });
+    }
+
     private record ScrollFixture(Stage stage, ListView<Person> personListView, TextField commandBox) {
+    }
+
+    private record ManualScrollFixture(Stage stage, MainWindow mainWindow, ListView<Person> personListView,
+                                       Person addedPerson) {
     }
 
     private static final class FakeLogic implements Logic {

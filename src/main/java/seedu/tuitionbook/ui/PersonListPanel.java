@@ -16,6 +16,10 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Region;
 import seedu.tuitionbook.commons.core.LogsCenter;
 import seedu.tuitionbook.model.person.Person;
@@ -28,9 +32,8 @@ public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
     /**
      * Number of JavaFX pulses for which a scroll request is retried while the list is laid out.
-     * A longer bounded window keeps scrolling reliable for large lists on slower platforms.
      */
-    private static final int SCROLL_RETRY_PULSE_COUNT = 60;
+    private static final int SCROLL_RETRY_PULSE_COUNT = 10;
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
     private final Map<UUID, Person> personsById = new HashMap<>();
     private final ObservableList<Person> allPersons;
@@ -57,6 +60,19 @@ public class PersonListPanel extends UiPart<Region> {
             personListView.refresh();
         });
         personListView.setCellFactory(listView -> new PersonListViewCell());
+        personListView.addEventFilter(ScrollEvent.ANY, unused -> stopScrollAnimation());
+        personListView.addEventFilter(MouseEvent.MOUSE_PRESSED, unused -> stopScrollAnimation());
+        personListView.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (isListNavigationKey(event.getCode())) {
+                stopScrollAnimation();
+            }
+        });
+    }
+
+    private boolean isListNavigationKey(KeyCode keyCode) {
+        return keyCode == KeyCode.UP || keyCode == KeyCode.DOWN
+                || keyCode == KeyCode.PAGE_UP || keyCode == KeyCode.PAGE_DOWN
+                || keyCode == KeyCode.HOME || keyCode == KeyCode.END;
     }
 
     private void rebuildPersonLookup(ObservableList<Person> allPersons) {
@@ -103,6 +119,16 @@ public class PersonListPanel extends UiPart<Region> {
             scrollAnimation.stop();
             scrollAnimation = null;
         }
+    }
+
+    /**
+     * Returns whether an automatic scroll retry is pending.
+     *
+     * <p>This package-private accessor supports deterministic UI tests without relying on
+     * platform-specific virtual-cell rendering.</p>
+     */
+    boolean hasPendingScrollAnimation() {
+        return scrollAnimation != null;
     }
 
     /**
