@@ -3,6 +3,10 @@ package seedu.tuitionbook.commons.util;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -24,6 +28,8 @@ import seedu.tuitionbook.commons.exceptions.DataLoadingException;
  */
 public class JsonUtil {
 
+    private static final byte[] UTF_8_BOM = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+
     private static final Logger logger = LogsCenter.getLogger(JsonUtil.class);
 
     private static ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules()
@@ -39,7 +45,21 @@ public class JsonUtil {
 
     static <T> T deserializeObjectFromJsonFile(Path jsonFile, Class<T> classOfObjectToDeserialize)
             throws IOException {
-        return fromJsonString(FileUtil.readFromFile(jsonFile), classOfObjectToDeserialize);
+        byte[] contents = Files.readAllBytes(jsonFile);
+        int jsonStart = hasUtf8Bom(contents) ? UTF_8_BOM.length : 0;
+        String json = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(contents, jsonStart, contents.length - jsonStart))
+                .toString();
+        return fromJsonString(json, classOfObjectToDeserialize);
+    }
+
+    private static boolean hasUtf8Bom(byte[] contents) {
+        return contents.length >= UTF_8_BOM.length
+                && contents[0] == UTF_8_BOM[0]
+                && contents[1] == UTF_8_BOM[1]
+                && contents[2] == UTF_8_BOM[2];
     }
 
     /**
@@ -94,12 +114,16 @@ public class JsonUtil {
      */
     public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
-            T result = objectMapper.readValue(parser, instanceClass);
-            if (parser.nextToken() != null) {
-                throw new IOException("Unexpected trailing JSON content.");
-            }
-            return result;
+            return fromJsonParser(parser, instanceClass);
         }
+    }
+
+    private static <T> T fromJsonParser(JsonParser parser, Class<T> instanceClass) throws IOException {
+        T result = objectMapper.readValue(parser, instanceClass);
+        if (parser.nextToken() != null) {
+            throw new IOException("Unexpected trailing JSON content.");
+        }
+        return result;
     }
 
     /**

@@ -121,9 +121,10 @@ public class MainApp extends Application {
             logger.warning("Data file at " + storage.getTuitionBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty TuitionBook.");
             initialData = new TuitionBook();
+            String guidance = e.getUserFacingGuidance();
             notice = Optional.of(e.getMalformedFileBackupPath()
-                    .map(StartupNotice::loadFailedBackedUp)
-                    .orElseGet(StartupNotice::loadFailedBackupFailed));
+                    .map(path -> StartupNotice.loadFailedBackedUp(path, guidance))
+                    .orElseGet(() -> StartupNotice.loadFailedBackupFailed(guidance)));
         }
 
         return new StartupState(new ModelManager(initialData, userPrefs), notice);

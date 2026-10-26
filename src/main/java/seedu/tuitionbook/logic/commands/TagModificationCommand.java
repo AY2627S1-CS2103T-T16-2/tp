@@ -2,7 +2,6 @@ package seedu.tuitionbook.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
-import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.HashSet;
 import java.util.List;
@@ -72,7 +71,6 @@ abstract class TagModificationCommand extends Command {
                 original.getName(), original.getPhone(), original.getEmail().orElse(null),
                 original.getAddress().orElse(null), updatedTags);
         model.setPerson(original, updated);
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         requiresSave = true;
         return new CommandResult(formatFeedback(original, true));
     }

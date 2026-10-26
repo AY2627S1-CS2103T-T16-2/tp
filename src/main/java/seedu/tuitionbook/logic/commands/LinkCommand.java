@@ -1,7 +1,6 @@
 package seedu.tuitionbook.logic.commands;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.List;
 
@@ -92,7 +91,6 @@ public class LinkCommand extends Command {
                 .orElse(null);
         model.setPerson(student, student.withGuardianId(guardian.getId()));
         requiresSave = true;
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
 
         if (previousGuardianName != null) {
             return new CommandResult(String.format(MESSAGE_RELINK_SUCCESS, student.getName(), guardian.getName(),

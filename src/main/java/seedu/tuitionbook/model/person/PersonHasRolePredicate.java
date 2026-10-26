@@ -20,6 +20,11 @@ public class PersonHasRolePredicate implements Predicate<Person> {
         this.role = role;
     }
 
+    /** Returns the role required by this query. */
+    public Role getRole() {
+        return role;
+    }
+
     @Override
     public boolean test(Person person) {
         return person.getRole() == role;
