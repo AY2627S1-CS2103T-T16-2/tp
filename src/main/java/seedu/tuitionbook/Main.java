@@ -40,10 +40,14 @@ public class Main {
     }
 
     private static void launchApplication(String[] args) {
+        launchApplication(args, Application::launch);
+    }
+
+    static void launchApplication(String[] args, ApplicationLauncher applicationLauncher) {
         Logger logger = LogsCenter.getLogger(Main.class);
         logger.warning("The warnings about a 'restricted method in java.lang.System' "
             + "and 'enabling native access' appearing below (if any) can be ignored.");
-        Application.launch(MainApp.class, args);
+        applicationLauncher.launch(MainApp.class, args);
     }
 
     /**
@@ -70,7 +74,11 @@ public class Main {
             return;
         }
 
-        try (instanceGuard) {
+        runGuardedStartup(instanceGuard::close, guardedStartup);
+    }
+
+    static void runGuardedStartup(GuardHandle guard, Runnable guardedStartup) {
+        try (guard) {
             guardedStartup.run();
         } catch (IOException e) {
             System.err.println("TuitionBook could not release its application-folder lock cleanly: " + e);
@@ -86,8 +94,12 @@ public class Main {
 
     /** Shows a startup failure without constructing {@link MainApp} or its storage. */
     private static void showStartupError(String title, String message) {
+        showStartupError(title, message, Platform::startup);
+    }
+
+    static void showStartupError(String title, String message, PlatformStarter platformStarter) {
         try {
-            Platform.startup(() -> {
+            platformStarter.start(() -> {
                 Alert alert = new Alert(AlertType.ERROR);
                 alert.setTitle(title);
                 alert.setHeaderText(title);
@@ -104,5 +116,21 @@ public class Main {
     @FunctionalInterface
     interface StartupErrorReporter {
         void show(String title, String message);
+    }
+
+    @FunctionalInterface
+    interface ApplicationLauncher {
+        void launch(Class<? extends Application> applicationClass, String... args);
+    }
+
+    @FunctionalInterface
+    interface GuardHandle extends AutoCloseable {
+        @Override
+        void close() throws IOException;
+    }
+
+    @FunctionalInterface
+    interface PlatformStarter {
+        void start(Runnable runnable);
     }
 }

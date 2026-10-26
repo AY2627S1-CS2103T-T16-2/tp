@@ -4,6 +4,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,6 +18,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -40,7 +42,11 @@ public class ApplicationInstanceGuardTest {
     @Test
     public void acquire_competingAcquisitionForSameFolder_isRejected() throws Exception {
         try (ApplicationInstanceGuard ignored = ApplicationInstanceGuard.acquire(testFolder)) {
-            assertThrows(AlreadyRunningException.class, () -> ApplicationInstanceGuard.acquire(testFolder));
+            AlreadyRunningException exception = assertThrows(AlreadyRunningException.class, () ->
+                    ApplicationInstanceGuard.acquire(testFolder));
+
+            assertEquals(testFolder.toAbsolutePath().normalize().resolve(ApplicationInstanceGuard.LOCK_FILE_NAME),
+                    exception.getLockFile());
         }
     }
 
@@ -87,6 +93,74 @@ public class ApplicationInstanceGuardTest {
         Path fileInsteadOfHome = Files.createFile(testFolder.resolve("not-a-directory"));
 
         assertThrows(IOException.class, () -> ApplicationInstanceGuard.acquire(fileInsteadOfHome));
+    }
+
+    @Test
+    public void acquire_accessDenied_wrapsSecurityExceptionAsIoFailure() {
+        SecurityException accessDenied = new SecurityException("simulated access denial");
+
+        IOException exception = assertThrows(IOException.class, () ->
+                ApplicationInstanceGuard.acquire(testFolder, lockFile -> {
+                    throw accessDenied;
+                }));
+
+        assertSame(accessDenied, exception.getCause());
+        assertTrue(exception.getMessage().contains(ApplicationInstanceGuard.LOCK_FILE_NAME));
+    }
+
+    @Test
+    public void closeAfterFailedAcquisition_closeFails_preservesOriginalFailure() {
+        IOException acquisitionFailure = new IOException("simulated acquisition failure");
+        IOException closeFailure = new IOException("simulated close failure");
+
+        ApplicationInstanceGuard.closeAfterFailedAcquisition(() -> {
+            throw closeFailure;
+        }, acquisitionFailure);
+
+        assertEquals(1, acquisitionFailure.getSuppressed().length);
+        assertSame(closeFailure, acquisitionFailure.getSuppressed()[0]);
+    }
+
+    @Test
+    public void closeResources_lockReleaseFails_stillClosesChannelAndReportsFailure() {
+        IOException releaseFailure = new IOException("simulated release failure");
+        AtomicBoolean channelWasClosed = new AtomicBoolean();
+
+        IOException exception = assertThrows(IOException.class, () -> ApplicationInstanceGuard.closeResources(() -> {
+            throw releaseFailure;
+        }, () -> channelWasClosed.set(true)));
+
+        assertSame(releaseFailure, exception);
+        assertTrue(channelWasClosed.get());
+    }
+
+    @Test
+    public void closeResources_channelCloseFails_reportsFailure() {
+        IOException closeFailure = new IOException("simulated close failure");
+
+        IOException exception = assertThrows(IOException.class, () -> ApplicationInstanceGuard.closeResources(() -> {
+            // Simulate a successful lock release.
+        }, () -> {
+            throw closeFailure;
+        }));
+
+        assertSame(closeFailure, exception);
+    }
+
+    @Test
+    public void closeResources_releaseAndCloseFail_suppressesCloseFailure() {
+        IOException releaseFailure = new IOException("simulated release failure");
+        IOException closeFailure = new IOException("simulated close failure");
+
+        IOException exception = assertThrows(IOException.class, () -> ApplicationInstanceGuard.closeResources(() -> {
+            throw releaseFailure;
+        }, () -> {
+            throw closeFailure;
+        }));
+
+        assertSame(releaseFailure, exception);
+        assertEquals(1, exception.getSuppressed().length);
+        assertSame(closeFailure, exception.getSuppressed()[0]);
     }
 
     @Test

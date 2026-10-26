@@ -34,11 +34,21 @@ public final class ApplicationInstanceGuard implements AutoCloseable {
      */
     public static ApplicationInstanceGuard acquire(Path applicationHome)
             throws AlreadyRunningException, IOException {
+        return acquire(applicationHome, lockFile -> FileChannel.open(lockFile, CREATE, WRITE));
+    }
+
+    /**
+     * Acquires the guard using {@code channelOpener}.
+     * The injectable opener keeps acquisition-error tests independent of platform file permissions.
+     */
+    static ApplicationInstanceGuard acquire(Path applicationHome, ChannelOpener channelOpener)
+            throws AlreadyRunningException, IOException {
         requireNonNull(applicationHome);
+        requireNonNull(channelOpener);
         Path lockFile = applicationHome.toAbsolutePath().normalize().resolve(LOCK_FILE_NAME);
         FileChannel channel = null;
         try {
-            channel = FileChannel.open(lockFile, CREATE, WRITE);
+            channel = channelOpener.open(lockFile);
             FileLock lock = channel.tryLock();
             if (lock == null) {
                 AlreadyRunningException exception = new AlreadyRunningException(lockFile);
@@ -65,8 +75,12 @@ public final class ApplicationInstanceGuard implements AutoCloseable {
         if (channel == null) {
             return;
         }
+        closeAfterFailedAcquisition(channel::close, failure);
+    }
+
+    static void closeAfterFailedAcquisition(IoAction closeAction, Throwable failure) {
         try {
-            channel.close();
+            closeAction.run();
         } catch (IOException closeException) {
             failure.addSuppressed(closeException);
         }
@@ -80,17 +94,23 @@ public final class ApplicationInstanceGuard implements AutoCloseable {
         }
         isClosed = true;
 
-        IOException releaseFailure = null;
-        try {
+        closeResources(() -> {
             if (lock.isValid()) {
                 lock.release();
             }
+        }, channel::close);
+    }
+
+    static void closeResources(IoAction releaseLock, IoAction closeChannel) throws IOException {
+        IOException releaseFailure = null;
+        try {
+            releaseLock.run();
         } catch (IOException e) {
             releaseFailure = e;
         }
 
         try {
-            channel.close();
+            closeChannel.run();
         } catch (IOException e) {
             if (releaseFailure == null) {
                 releaseFailure = e;
@@ -102,6 +122,16 @@ public final class ApplicationInstanceGuard implements AutoCloseable {
         if (releaseFailure != null) {
             throw releaseFailure;
         }
+    }
+
+    @FunctionalInterface
+    interface ChannelOpener {
+        FileChannel open(Path lockFile) throws IOException;
+    }
+
+    @FunctionalInterface
+    interface IoAction {
+        void run() throws IOException;
     }
 
     /** Indicates that the application home is already guarded by a running instance. */

@@ -1,11 +1,15 @@
 package seedu.tuitionbook;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,6 +29,21 @@ public class MainTest {
 
     @TempDir
     public Path testFolder;
+
+    @Test
+    public void launchApplication_delegatesToJavaFxLauncherWithMainAppAndArguments() {
+        String[] arguments = {"first", "second"};
+        AtomicReference<Class<?>> launchedClass = new AtomicReference<>();
+        AtomicReference<String[]> launchedArguments = new AtomicReference<>();
+
+        Main.launchApplication(arguments, (applicationClass, args) -> {
+            launchedClass.set(applicationClass);
+            launchedArguments.set(args);
+        });
+
+        assertEquals(MainApp.class, launchedClass.get());
+        assertArrayEquals(arguments, launchedArguments.get());
+    }
 
     @Test
     public void runWithInstanceGuard_competingInstance_rejectsBeforeStorageInitialization() throws Exception {
@@ -112,5 +131,42 @@ public class MainTest {
         try (ApplicationInstanceGuard ignored = ApplicationInstanceGuard.acquire(testFolder)) {
             assertTrue(Files.exists(testFolder.resolve(ApplicationInstanceGuard.LOCK_FILE_NAME)));
         }
+    }
+
+    @Test
+    public void runGuardedStartup_guardCloseFails_reportsCleanupFailure() {
+        AtomicBoolean startupWasRun = new AtomicBoolean();
+
+        String errorOutput = captureStandardError(() -> Main.runGuardedStartup(() -> {
+            throw new IOException("simulated close failure");
+        }, () -> startupWasRun.set(true)));
+
+        assertTrue(startupWasRun.get());
+        assertTrue(errorOutput.contains("could not release its application-folder lock cleanly"));
+        assertTrue(errorOutput.contains("simulated close failure"));
+    }
+
+    @Test
+    public void showStartupError_platformStartupFails_reportsFallbackError() {
+        RuntimeException platformFailure = new IllegalStateException("simulated JavaFX failure");
+
+        String errorOutput = captureStandardError(() -> Main.showStartupError("Title", "Message", runnable -> {
+            throw platformFailure;
+        }));
+
+        assertTrue(errorOutput.contains("graphical startup error could not be displayed"));
+        assertTrue(errorOutput.contains("simulated JavaFX failure"));
+    }
+
+    private static String captureStandardError(Runnable action) {
+        PrintStream originalError = System.err;
+        ByteArrayOutputStream capturedError = new ByteArrayOutputStream();
+        try (PrintStream replacementError = new PrintStream(capturedError, true, StandardCharsets.UTF_8)) {
+            System.setErr(replacementError);
+            action.run();
+        } finally {
+            System.setErr(originalError);
+        }
+        return capturedError.toString(StandardCharsets.UTF_8);
     }
 }
