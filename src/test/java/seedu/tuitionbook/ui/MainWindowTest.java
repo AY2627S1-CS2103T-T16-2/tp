@@ -248,6 +248,28 @@ public class MainWindowTest {
     }
 
     @Test
+    public void scrollToContactAboveViewport_scrollsBackUpUntilVisible() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(50);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            Person firstPerson = JavaFxTestUtil.callOnFxThread(() -> {
+                fixture.personListView().scrollTo(fixture.personListView().getItems().size() - 1);
+                return fixture.personListView().getItems().get(0);
+            });
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    !isPersonFullyVisible(fixture.personListView(), firstPerson)),
+                    "The first contact should leave the viewport before scrolling back to it");
+            JavaFxTestUtil.runOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().scrollToPerson(firstPerson.getId()));
+            assertTrue(waitForStablePersonVisibility(fixture.personListView(), firstPerson),
+                    "Automatic scrolling should bring a contact above the viewport back into view");
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
     public void manualScroll_cancelsPendingAutomaticScroll() throws Exception {
         ManualScrollFixture fixture = createScrollFixture(20);
         try {
@@ -313,9 +335,8 @@ public class MainWindowTest {
                 fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
                 Event.fireEvent(fixture.personListView(), new KeyEvent(KeyEvent.KEY_PRESSED, "a", "a", KeyCode.A,
                         false, false, false, false));
+                assertTrue(fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation());
             });
-            assertTrue(JavaFxTestUtil.callOnFxThread(() ->
-                    fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
         } finally {
             JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
         }

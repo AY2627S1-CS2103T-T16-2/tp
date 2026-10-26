@@ -19,8 +19,10 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
+import javafx.scene.control.IndexedCell;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -115,10 +117,9 @@ public class PersonListPanel extends UiPart<Region> {
 
             @Override
             public void handle(long now) {
-                if (!scrollToPersonOnce(personId)) {
-                    stopScrollAnimation();
-                    return;
-                }
+                // Timers run before this pulse's layout, so the visibility check reflects the
+                // settled layout of the previous pulse. Checking before issuing another scroll
+                // ensures the stop decision is never based on a frame with a scroll still pending.
                 if (isPersonFullyVisible(personId)) {
                     consecutiveVisiblePulseCount++;
                     if (consecutiveVisiblePulseCount >= REQUIRED_STABLE_VISIBLE_PULSE_COUNT) {
@@ -127,6 +128,10 @@ public class PersonListPanel extends UiPart<Region> {
                     }
                 } else {
                     consecutiveVisiblePulseCount = 0;
+                    if (!scrollTowardsPerson(personId)) {
+                        stopScrollAnimation();
+                        return;
+                    }
                 }
                 if (--remainingPulseCount == 0) {
                     stopScrollAnimation();
@@ -137,17 +142,53 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     private boolean scrollToPersonOnce(UUID personId) {
+        int index = indexOfPerson(personId);
+        if (index < 0) {
+            return false;
+        }
+        personListView.scrollTo(index);
+        return true;
+    }
+
+    /**
+     * Moves the viewport one step closer to the identified contact and reports whether the contact
+     * is still displayed.
+     *
+     * <p>{@code ListView#scrollTo(int)} only jumps to an estimated position when the target row has
+     * not been laid out yet, and retrying it can settle with the row still outside the viewport.
+     * Once rows are realised, this instead advances by exact pixel amounts towards the target until
+     * {@code scrollTo} can position the realised row precisely.</p>
+     */
+    private boolean scrollTowardsPerson(UUID personId) {
+        int index = indexOfPerson(personId);
+        if (index < 0) {
+            return false;
+        }
+        if (!(personListView.lookup(".virtual-flow") instanceof VirtualFlow<?> virtualFlow)) {
+            personListView.scrollTo(index);
+            return true;
+        }
+        IndexedCell<?> firstVisibleCell = virtualFlow.getFirstVisibleCell();
+        IndexedCell<?> lastVisibleCell = virtualFlow.getLastVisibleCell();
+        if (firstVisibleCell == null || lastVisibleCell == null) {
+            personListView.scrollTo(index);
+        } else if (index > lastVisibleCell.getIndex()) {
+            virtualFlow.scrollPixels(virtualFlow.getHeight());
+        } else if (index < firstVisibleCell.getIndex()) {
+            virtualFlow.scrollPixels(-virtualFlow.getHeight());
+        } else {
+            personListView.scrollTo(index);
+        }
+        return true;
+    }
+
+    private int indexOfPerson(UUID personId) {
         for (int index = 0; index < personListView.getItems().size(); index++) {
             if (personListView.getItems().get(index).getId().equals(personId)) {
-                personListView.scrollTo(index);
-                personListView.layout();
-                if (index > 0) {
-                    personListView.scrollTo(index - 1);
-                }
-                return true;
+                return index;
             }
         }
-        return false;
+        return -1;
     }
 
     private boolean isPersonFullyVisible(UUID personId) {
