@@ -148,6 +148,27 @@ public class CommandTextFieldTest {
         });
     }
 
+    @Test
+    public void paste_createsSeparateUndoStep() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            CommandTextField field = new CommandTextField();
+            field.setText("add r/student n/");
+            field.appendText("Sam");
+            field.positionCaret(field.getLength());
+
+            ClipboardContent pasted = new ClipboardContent();
+            pasted.putString(" Tan");
+            Clipboard.getSystemClipboard().clear();
+            assertTrue(Clipboard.getSystemClipboard().setContent(pasted));
+
+            field.paste();
+
+            assertEquals("add r/student n/Sam Tan", field.getText());
+            field.undo();
+            assertEquals("add r/student n/Sam", field.getText());
+        });
+    }
+
     // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/322.
     @Test
     public void replace_lineBreaksInQuotedName_normalizesBeforeParsingAndPersists() throws Exception {
