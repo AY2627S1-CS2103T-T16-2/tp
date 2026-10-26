@@ -1217,12 +1217,26 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Restore write access, then enter `edit 2 t/Science`, `unlink 2`, and `unlink 2` again.<br>
       Expected: The tag change and first unlink persist; the second unlink reports no linked guardian. Restart and verify that Sam has tag `Science` and no guardian link.
 
-1. Reloading corrected data without restarting
+1. Routine manual editing with the app closed
+
+   1. Launch TuitionBook in a fresh, disposable JAR folder. Enter `add r/student n/Alex Yeoh p/87438807`, then `find Nobody`, then `exit`.
+
+   1. Copy `data/tuitionbook.json` to a separate backup location. Change only Alex's `name` to `Manually Edited Alex` in the original file, preserve the `id` and other fields, and save it as valid UTF-8 JSON.
+
+   1. Relaunch TuitionBook.<br>
+      Expected: the full list contains Manually Edited Alex despite the previous empty filter. The contact keeps its original ID and phone number, the edited file is not rewritten on startup, and the separate backup still contains Alex Yeoh.
+
+   1. Enter `edit 1 n/Saved Alex`, then `exit` and relaunch.<br>
+      Expected: Saved Alex is loaded from the data file; the separate backup remains unchanged.
+
+1. Replacing contacts from a corrected file without restarting
 
    1. Launch TuitionBook with an empty, disposable data folder. Enter `add r/student n/Alex Yeoh p/87438807`, then `find Nobody`.
 
-   1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
-      Expected: the working set resets to the full loaded list containing Reloaded Alex, and the result reports one loaded contact. Reload does not rewrite the file.
+   1. Follow the UG's reload precautions: record any current contacts you need, copy `data/tuitionbook.json` to a separate safe location, and enter no contact-changing commands while editing the file. This is a controlled test of replacement; routine manual edits use the closed-app workflow above.
+
+   1. While the app stays open, change only Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid, then save it. Enter `reload`.<br>
+      Expected: the working set resets to the full loaded list containing Reloaded Alex, and the result reports one loaded contact. Alex Yeoh is replaced, not retained as a second contact. The contact ID is unchanged, reload does not rewrite the edited file, and the separate backup still contains Alex Yeoh.
 
    1. Enter `reload extra`.<br>
       Expected: invalid command format; contacts remain unchanged.
@@ -1244,8 +1258,8 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Replace the data file's contents with `{broken`. Configure permissions so the app can read the file but cannot move it to a backup, then launch TuitionBook. Permission controls differ by operating system; verify that the startup warning explicitly reports backup failure before continuing.<br>
       Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
 
-   1. While the app stays open, restore normal permissions and replace the malformed file with the saved valid copy. Enter `reload`.<br>
-      Expected: the working set resets to the full loaded list containing Alex Yeoh, and saving is enabled. Merely correcting the file without reloading would leave the write block set.
+   1. Enter `find Nobody`. While the app stays open, record any current contacts you need and copy the malformed file to a separate safe location. Enter no contact-changing commands during file recovery. Restore normal permissions and replace the malformed file with a copy of the saved valid file, keeping both separate copies. Enter `reload`.<br>
+      Expected: the empty working set resets to the full loaded list containing Alex Yeoh, and saving is enabled. Reload does not rewrite the restored file or either separate copy. Merely correcting the file without reloading would leave the write block set.
 
    1. Enter `edit 1 n/Updated Alex`, then close and relaunch TuitionBook.<br>
       Expected: the edit saves successfully and Updated Alex remains visible after restart.

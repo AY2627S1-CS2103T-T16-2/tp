@@ -14,6 +14,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Clarify separate workflows for routine manual file edits with TuitionBook closed and load recovery using `reload` while it stays open, including backup precautions, replacement of in-memory contacts, and filter reset; align the DG manual tests (#196).
 - Align the UG and DG descriptions of indexes, unchanged commands, reload and save-failure recovery with exact working-set membership, order and query; share the full-list refresh command across model, commands and UI.
 - Clarify that `list` locates hidden additions while rerunning the originating query only refreshes its working set; include ordered displayed UUIDs, query predicates and refresh text when comparing models.
 - Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
