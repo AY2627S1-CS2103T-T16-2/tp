@@ -235,6 +235,44 @@ public class MainWindowTest {
     }
 
     @Test
+    public void targetRemovedBeforeBecomingVisible_stopsRetryAnimation() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(1000);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.personListView().scrollTo(0);
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                fixture.personListView().getItems().remove(fixture.addedPerson());
+            });
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    !fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void listNeverLaidOut_retryAnimationStopsAfterBoundedRetries() throws Exception {
+        Person target = new PersonBuilder().withName("Unreachable Student").build();
+        FakeLogic logic = new FakeLogic(target);
+        PersonListPanel[] panel = new PersonListPanel[1];
+        JavaFxTestUtil.runOnFxThread(() -> {
+            logic.people.add(target);
+            MainWindow mainWindow = new MainWindow(new Stage(), logic, Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            panel[0] = mainWindow.getPersonListPanel();
+            panel[0].scrollToPerson(target.getId());
+            assertTrue(panel[0].hasPendingScrollAnimation());
+        });
+        boolean stopped = false;
+        for (int attempt = 0; attempt < 3 && !stopped; attempt++) {
+            stopped = JavaFxTestUtil.waitForFxCondition(() -> !panel[0].hasPendingScrollAnimation());
+        }
+        assertTrue(stopped, "Retries should stop after the bounded retry window even without layout");
+    }
+
+    @Test
     public void retryAnimation_stopsAfterTargetBecomesVisible() throws Exception {
         ManualScrollFixture fixture = createScrollFixture(20);
         try {
