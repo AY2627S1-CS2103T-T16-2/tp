@@ -283,6 +283,7 @@ Format: `untag INDEX t/TAG [t/TAG]...`
 
 * The index, tag validation, case sensitivity, prefix boundaries, saving, and working-set rules are the same as for `tag`.
 * Tag names must match exactly, including case and internal spacing. `untag 1 t/math` does not remove `Math`.
+* If an absent tag differs only in case from a tag on this contact, feedback suggests the stored spelling so you can retry. For example, `untag 1 t/math` reports `Tag "math" not found, did you mean "Math"?` when `Math` is the stored tag. If multiple case variants remain, all are listed in sorted order; suggestions exclude tags removed by the same command. Suggestions do not change or remove tags automatically.
 * Absent tags are skipped and listed in the feedback under `Tags not present:`. Names are shown in sorted order, enclosed in double quotes; literal quotes and backslashes are escaped in this display so tag boundaries are clear. If none of the requested tags is present, the command reports this without saving or changing the working set.
 * A mixture of present and absent tags removes the present tags. Removing the final tag leaves the contact with no tags.
 * A missing tag argument or an empty `t/` is rejected; use `edit INDEX t/` to clear the entire tag set.
