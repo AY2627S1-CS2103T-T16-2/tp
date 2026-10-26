@@ -8,6 +8,7 @@ import static seedu.tuitionbook.testutil.TypicalPersons.BENSON;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Phone;
 import seedu.tuitionbook.model.person.Role;
+import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
@@ -277,6 +279,14 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, invalidTags);
         assertThrows(IllegalValueException.class, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_paddedAndUnpaddedDuplicateTags_normalizesToOneTag() throws Exception {
+        List<JsonAdaptedTag> tags = List.of(new JsonAdaptedTag(" Math "), new JsonAdaptedTag("Math"));
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, tags);
+
+        assertEquals(Set.of(new Tag("Math")), person.toModelType().getTags());
     }
 
 }

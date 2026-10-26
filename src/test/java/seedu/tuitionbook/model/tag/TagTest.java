@@ -20,14 +20,20 @@ public class TagTest {
     }
 
     @Test
+    public void constructor_surroundingSpaces_trimsValue() {
+        assertEquals("Math", new Tag("  Math  ").tagName);
+    }
+
+    @Test
     public void constructor_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Tag(null));
     }
 
     @Test
     public void constructor_invalidTagName_throwsIllegalArgumentException() {
-        String invalidTagName = "";
-        assertThrows(IllegalArgumentException.class, () -> new Tag(invalidTagName));
+        for (String invalidTagName : List.of("", "   ", " Math\t ")) {
+            assertThrows(IllegalArgumentException.class, () -> new Tag(invalidTagName));
+        }
     }
 
     @Test
@@ -59,6 +65,7 @@ public class TagTest {
         assertTrue(Tag.isValidTagName("referred-by-Mrs-Lim"));
         assertTrue(Tag.isValidTagName("Sec-4"));
         assertTrue(Tag.isValidTagName("A1-B2"));
+        assertTrue(Tag.isValidTagName(" Math "));
         assertTrue(Tag.isValidTagName("A".repeat(1000))); // no tag-length limit
     }
 
