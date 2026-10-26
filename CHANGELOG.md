@@ -15,6 +15,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Clarified that `clear confirm` removes all contacts but not separately stored diagnostic logs, which may retain earlier command information and should be reviewed before sharing; no secure-erasure guarantee is made.
 - Align the UG and DG descriptions of indexes, unchanged commands, reload and save-failure recovery with exact working-set membership, order and query; share the full-list refresh command across model, commands and UI.
 - Clarify that `list` locates hidden additions while rerunning the originating query only refreshes its working set; include ordered displayed UUIDs, query predicates and refresh text when comparing models.
 - Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
@@ -22,6 +23,7 @@ The format is based on Keep a Changelog.
 - Documented save-failure rollback in the Delete use case, including restoration of the contact, guardian links, and active filter.
 - Added a Developer Guide use case for reloading contact data, including missing-file, repaired-link, successful-backup, and blocked-saving outcomes.
 - Reload now reports every repaired guardian link with the affected contact's UUID, guardian ID when present, and reason; load failures include cause-specific recovery guidance.
+- Expanded the Developer Guide use cases for combined role-and-tag filtering and confirmed clearing, including zero-match, invalid-request, hidden-contact, and save-failure outcomes.
 - Expanded the documented contact-field validation subset to support right curly apostrophes in names; phone groups separated by spaces, hyphens, or slashes, optional trailing phone annotations, and numeric extensions; apostrophes and punycode labels in email addresses; and explicitly single-line addresses.
 - Clarified that names accept ordinary ASCII spaces (U+0020), rather than every Unicode whitespace character.
 - Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
@@ -30,6 +32,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Recovered from a `null` `guiSettings` value in `preferences.json` by restoring and saving default window settings instead of failing during startup (#192).
 - Show the fatal startup error dialog when a packaged UI resource is missing or malformed, instead of raising a secondary null-window exception.
 - Rejected whitespace-, control-, or format-only and line-breaking addresses consistently when entered through commands or loaded from JSON.
 - Normalized phone spaces, hyphens, slashes, numeric-group parentheses, annotations, and equivalent extension markers during duplicate detection while retaining a leading `+` and extension digits.
@@ -48,6 +51,8 @@ The format is based on Keep a Changelog.
 - Show all repaired guardian links in a scrollable startup summary while retaining the existing in-memory repair and next-save behaviour.
 - Decode JSON files strictly as UTF-8 so UTF-8 BOMs are accepted while invalid UTF-8 and other encodings are rejected and preserved unchanged through recovery.
 - Report permission, encoding/JSON, invalid contact-value, and other file-system load failures with appropriate startup and reload recovery guidance.
+- Link the UG version notice directly to the v1.3 and v1.4 User Guides saved with those releases, whose release pages contain no guide link (#223).
+- Show `PersonListPanel`'s retained `Person` references as an association in the UI class diagram, and identify the architecture sequence diagram as a simplified view of the detailed `delete` sequence (#177).
 
 ## [v1.4] - 2026-10-22
 

@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide saved with that release: the [v1.4 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) or the [v1.3 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These open on GitHub, which does not show this website's navigation or styled note boxes. Commands added in later versions are not available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -374,6 +374,8 @@ This deletes every contact, including contacts outside the current working set. 
 * The confirmation keyword must be the exact lowercase word `confirm`.
 * `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
 
+Diagnostic log files are stored separately from the contact data file, so `clear confirm` does not remove them. For the packaged TuitionBook, these logs are in the same folder as the JAR. They are normally named `tuitionbook.log.0` through `tuitionbook.log.4`; only files that have already been created are present. The files may contain information entered in earlier commands, so review them before sharing them. To remove the logs, close TuitionBook, open the folder containing the JAR, and delete every existing numbered log file. Ordinary file deletion is not secure erasure, and TuitionBook does not provide a secure-erasure guarantee.
+
 ### Reloading contacts: `reload`
 
 Format: `reload`
@@ -467,7 +469,7 @@ Find the symptom below and try the suggested action. Error messages appear in th
 
 ### Reporting a problem or unclear instruction
 
-Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file.
+Check [Known issues](#known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file. Review diagnostic logs before sharing them because they may contain information entered during earlier commands.
 
 --------------------------------------------------------------------------------------------------------------------
 
