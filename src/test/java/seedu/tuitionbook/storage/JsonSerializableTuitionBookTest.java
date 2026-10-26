@@ -136,9 +136,31 @@ public class JsonSerializableTuitionBookTest {
 
         assertEquals(5, result.repairedGuardianLinkCount());
         assertEquals(5, result.tuitionBook().getPersonList().size());
+        assertEquals(List.of(
+                GuardianLinkRepair.Reason.SELF_LINK,
+                GuardianLinkRepair.Reason.MALFORMED_GUARDIAN_ID,
+                GuardianLinkRepair.Reason.NON_STUDENT_GUARDIAN_LINK,
+                GuardianLinkRepair.Reason.MISSING_GUARDIAN,
+                GuardianLinkRepair.Reason.STUDENT_GUARDIAN),
+                result.guardianLinkRepairs().stream().map(GuardianLinkRepair::reason).toList());
         for (Person person : result.tuitionBook().getPersonList()) {
             assertTrue(person.getGuardianId().isEmpty());
         }
+    }
+
+    @Test
+    public void toModelTypeWithResult_repairsFollowJsonOrder() throws Exception {
+        String missingId = "123e4567-e89b-12d3-a456-426614174099";
+        List<JsonAdaptedPerson> contacts = List.of(
+                person("123e4567-e89b-12d3-a456-426614174000", "student", missingId,
+                        "Missing First", "91234560"),
+                person("123e4567-e89b-12d3-a456-426614174001", "student", "not-a-uuid",
+                        "Malformed Second", "91234561"));
+
+        TuitionBookLoadResult result = new JsonSerializableTuitionBook(contacts).toModelTypeWithResult();
+
+        assertEquals(List.of("Missing First", "Malformed Second"),
+                result.guardianLinkRepairs().stream().map(GuardianLinkRepair::personName).toList());
     }
 
     private static JsonAdaptedPerson person(String id, String role, String guardianId, String name, String phone) {

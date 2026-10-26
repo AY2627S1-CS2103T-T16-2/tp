@@ -243,6 +243,17 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_guardianSelfReferentialGuardianId_reportsNonStudentLink() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_ID, "guardian", VALID_ID, VALID_NAME, VALID_PHONE,
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        JsonAdaptedPerson.PersonLoadResult result = person.toModelTypeWithResult();
+
+        assertEquals(GuardianLinkRepair.Reason.NON_STUDENT_GUARDIAN_LINK, result.repair().reason());
+        assertTrue(result.person().getGuardianId().isEmpty());
+    }
+
+    @Test
     public void toModelType_malformedGuardianId_dropsLink() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_ID, "student", "not-a-uuid", VALID_NAME,
                 VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
