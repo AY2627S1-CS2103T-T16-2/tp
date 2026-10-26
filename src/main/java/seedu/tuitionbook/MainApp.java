@@ -114,7 +114,7 @@ public class MainApp extends Application {
                 TuitionBookLoadResult result = tuitionBookOptional.get();
                 initialData = result.tuitionBook();
                 if (result.repairedGuardianLinkCount() > 0) {
-                    notice = Optional.of(StartupNotice.guardianLinksRepaired(result.repairedGuardianLinkCount()));
+                    notice = Optional.of(StartupNotice.guardianLinksRepaired(result.guardianLinkRepairs()));
                 }
             }
         } catch (DataLoadingException e) {

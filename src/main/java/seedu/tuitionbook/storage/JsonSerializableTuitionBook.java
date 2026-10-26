@@ -65,21 +65,19 @@ class JsonSerializableTuitionBook {
     }
 
     /**
-     * Returns the loaded contacts and the number of guardian links repaired during conversion.
+     * Returns the loaded contacts and diagnostics for guardian links repaired during conversion.
      */
     TuitionBookLoadResult toModelTypeWithResult() throws IllegalValueException {
         List<Person> loadedPersons = new ArrayList<>();
+        List<GuardianLinkRepair> parseRepairs = new ArrayList<>();
         Set<UUID> loadedIds = new HashSet<>();
-        int repairedGuardianLinkCount = 0;
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
             if (jsonAdaptedPerson == null) {
                 throw new IllegalValueException(MESSAGE_NULL_PERSON);
             }
             JsonAdaptedPerson.PersonLoadResult personResult = jsonAdaptedPerson.toModelTypeWithResult();
             Person person = personResult.person();
-            if (personResult.hasRepairedGuardianLink()) {
-                repairedGuardianLinkCount++;
-            }
+            parseRepairs.add(personResult.repair());
             // IDs must be unique before they can safely be used to resolve guardian links.
             if (!loadedIds.add(person.getId())) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_ID);
@@ -94,10 +92,20 @@ class JsonSerializableTuitionBook {
         }
 
         TuitionBook tuitionBook = new TuitionBook();
-        for (Person person : loadedPersons) {
+        List<GuardianLinkRepair> repairs = new ArrayList<>();
+        for (int index = 0; index < loadedPersons.size(); index++) {
+            Person person = loadedPersons.get(index);
+            GuardianLinkRepair repair = parseRepairs.get(index);
             Person resolvedPerson = resolveGuardianLink(person, personsById);
             if (resolvedPerson != person) {
-                repairedGuardianLinkCount++;
+                GuardianLinkRepair.Reason reason = personsById.containsKey(person.getGuardianId().orElseThrow())
+                        ? GuardianLinkRepair.Reason.STUDENT_GUARDIAN
+                        : GuardianLinkRepair.Reason.MISSING_GUARDIAN;
+                repair = new GuardianLinkRepair(person.getName().fullName, person.getId(),
+                        person.getGuardianId().map(UUID::toString).orElse(null), reason);
+            }
+            if (repair != null) {
+                repairs.add(repair);
             }
             // TuitionBook rejects manually introduced duplicate contact identities.
             if (tuitionBook.hasPerson(resolvedPerson)) {
@@ -105,7 +113,7 @@ class JsonSerializableTuitionBook {
             }
             tuitionBook.addPerson(resolvedPerson);
         }
-        return new TuitionBookLoadResult(tuitionBook, repairedGuardianLinkCount);
+        return new TuitionBookLoadResult(tuitionBook, repairs);
     }
 
     /**
