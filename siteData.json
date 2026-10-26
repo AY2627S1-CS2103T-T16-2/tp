@@ -82,6 +82,7 @@
         "unicode-duplicate-identity": "Unicode duplicate identity",
         "finding-contacts-by-name-substring": "Finding contacts by name substring",
         "editing-without-losing-scroll-position": "Editing without losing scroll position",
+        "persistent-query-and-contact-counts": "Persistent query and contact counts",
         "stable-indexes-across-contact-changes": "Stable indexes across contact changes",
         "removing-a-guardian-link": "Removing a guardian link",
         "adding-and-removing-individual-tags": "Adding and removing individual tags",
