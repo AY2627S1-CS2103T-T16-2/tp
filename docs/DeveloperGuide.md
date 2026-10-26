@@ -69,6 +69,8 @@ The *Sequence Diagram* below shows how the components interact with each other f
 
 <puml src="diagrams/ArchitectureSequenceDiagram.puml" width="574" />
 
+This is a simplified component-level view. It omits calls within a component's turn, such as resolving the displayed index, looking up linked students and snapshotting data for save-failure rollback. The [Logic component](#logic-component) shows the detailed `delete` sequence.
+
 Each of the four main components (also shown in the diagram above),
 
 * defines its *API* in an `interface` with the same name as the Component.
@@ -755,7 +757,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 1.  Private tutor submits a reload request.
 2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and resets the working set to all loaded contacts in contact-list order.
-3.  TuitionBook enables saving and reports the number of loaded contacts.
+3.  TuitionBook enables saving and reports the number of loaded contacts. If guardian links are repaired, it lists each affected contact's name, UUID, guardian ID when present, and repair reason.
 
     Use case ends.
 
@@ -770,6 +772,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 * 2b. The file contains invalid guardian links but all contacts are otherwise valid.
 
     * 2b1. TuitionBook loads the contacts without those links, resets the working set to all loaded contacts in contact-list order, and reports the number of links repaired in memory for the tutor to review before saving.
+    The result lists every affected contact, contact ID, guardian ID when present, and repair reason for the tutor to review before saving.
 
       Use case resumes from step 3.
 
@@ -838,7 +841,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning.
+7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
 
 ### Glossary
 
@@ -1304,6 +1307,9 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
       Expected: the working set resets to the full loaded list containing Reloaded Alex, and the result reports one loaded contact. Reload does not rewrite the file.
 
+   1. Replace the file with valid JSON containing a student whose `guardianId` refers to a missing contact, then enter `reload`.<br>
+      Expected: the student remains loaded, the result identifies the affected contact by name and UUID, includes the invalid guardian ID and explains that the referenced contact is missing. The file remains unchanged until a later successful save.
+
    1. Enter `reload extra`.<br>
       Expected: invalid command format; contacts remain unchanged.
 
@@ -1404,4 +1410,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. In a fresh, disposable folder, create a valid `data/tuitionbook.json` containing a student whose `guardianId` refers to a missing contact.
 
    1. Launch TuitionBook.<br>
-      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link.
+      Expected: The valid contact remains visible, its invalid guardian link is removed, and a warning reports one repaired guardian link. The scrollable details area identifies the student by name and UUID, shows the invalid `guardianId`, and explains that the referenced guardian is missing.
+
+   1. Close TuitionBook and repeat in another disposable folder with two or more students whose `guardianId` values are malformed, missing, self-referential, or refer to students.<br>
+      Expected: All valid contacts remain visible, all invalid links are removed, and the scrollable warning lists every affected contact in JSON order with its repair reason.

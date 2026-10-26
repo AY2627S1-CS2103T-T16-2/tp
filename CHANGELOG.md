@@ -11,6 +11,7 @@ The format is based on Keep a Changelog.
 ### Added
 
 - Support quoted addresses in `add` and `edit`, protecting complete addresses containing prefix-like text and using the same quote/backslash escapes as names and tags (#201).
+- Detailed guardian-link repair diagnostics in the startup warning, including every affected contact and repair reason.
 
 ### Changed
 
@@ -21,6 +22,7 @@ The format is based on Keep a Changelog.
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 - Documented save-failure rollback in the Delete use case, including restoration of the contact, guardian links, and active filter.
 - Added a Developer Guide use case for reloading contact data, including missing-file, repaired-link, successful-backup, and blocked-saving outcomes.
+- Reload now reports every repaired guardian link with the affected contact's UUID, guardian ID when present, and reason; load failures include cause-specific recovery guidance.
 - Expanded the Developer Guide use cases for combined role-and-tag filtering and confirmed clearing, including zero-match, invalid-request, hidden-contact, and save-failure outcomes.
 - Expanded the documented contact-field validation subset to support right curly apostrophes in names; phone groups separated by spaces, hyphens, or slashes, optional trailing phone annotations, and numeric extensions; apostrophes and punycode labels in email addresses; and explicitly single-line addresses.
 - Clarified that names accept ordinary ASCII spaces (U+0020), rather than every Unicode whitespace character.
@@ -47,8 +49,12 @@ The format is based on Keep a Changelog.
 - Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.
 - Reject JSON files containing trailing content or duplicate property names so that ambiguous data is preserved through the existing malformed-file recovery workflow instead of being silently discarded on the next save.
 - Continue startup with the unchanged legacy `addressbook.json` when permissions prevent migration to `tuitionbook.json`, allowing migration to be retried on a later launch.
+- Show all repaired guardian links in a scrollable startup summary while retaining the existing in-memory repair and next-save behaviour.
 - Decode JSON files strictly as UTF-8 so UTF-8 BOMs are accepted while invalid UTF-8 and other encodings are rejected and preserved unchanged through recovery.
 - Report permission, encoding/JSON, invalid contact-value, and other file-system load failures with appropriate startup and reload recovery guidance.
+- Made the UG's index-based examples runnable by adding shared sample contacts with their expected list, rebasing the command summary and the `view`, `edit`, `tag`, `untag`, `link`, `unlink`, `find`, `delete` and stable-index examples onto them, and marking which examples run in order (#195).
+- Link the UG version notice directly to the v1.3 and v1.4 User Guides saved with those releases, whose release pages contain no guide link (#223).
+- Show `PersonListPanel`'s retained `Person` references as an association in the UI class diagram, and identify the architecture sequence diagram as a simplified view of the detailed `delete` sequence (#177).
 
 ## [v1.4] - 2026-10-22
 

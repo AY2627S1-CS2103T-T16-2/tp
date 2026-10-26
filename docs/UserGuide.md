@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide saved with that release: the [v1.4 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) or the [v1.3 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These open on GitHub, which does not show this website's navigation or styled note boxes. Commands added in later versions are not available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -20,6 +20,8 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 --------------------------------------------------------------------------------------------------------------------
 
 ## Command summary
+
+Index examples refer to the [sample contacts](#sample-contacts-for-examples). Each example starts from the full sample list.
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -32,9 +34,9 @@ Action     | Format, Examples
 **Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
 **Help**   | `help`
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
-**List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/ACTIVE t/math`
+**List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/active t/MATH`
 **Tag**    | `tag INDEX t/TAG [t/TAG]...`<br> e.g., `tag 1 t/Math t/Sec 4`
-**Untag**  | `untag INDEX t/TAG [t/TAG]...`<br> e.g., `untag 1 t/Math`
+**Untag**  | `untag INDEX t/TAG [t/TAG]...`<br> e.g., `untag 3 t/Math`
 **Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
 **View**   | `view INDEX [v/]`<br> e.g., `view 1 v/`
 
@@ -62,7 +64,7 @@ Before you begin, install Java `25` or later and choose a folder where you can c
 1. Enter `help` to see the command summary. Close the Help window when you are done, then enter `exit` in the main window.<br>
    **Expected:** TuitionBook closes. Successful contact changes have already been saved; there is no separate Save command.
 1. Run the same terminal launch command again.<br>
-   **Expected:** John Doe is still present. You can now use the [Features](#features) reference or the [status-tag workflow](#organising-levels-subjects-and-status-with-tags).
+   **Expected:** John Doe is still present. To try the examples in [Features](#features), add the [sample contacts](#sample-contacts-for-examples) next. You can also follow the [status-tag workflow](#organising-levels-subjects-and-status-with-tags).
 
 The command box is where you enter instructions; the result area reports success or errors; the contact list shows your current [working set](#keeping-displayed-indexes-stable). The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
 
@@ -102,6 +104,29 @@ The command box is where you enter instructions; the result area reports success
 
 * Quote the complete name, address or tag when that text contains a literal prefix-like token: `n/"Muhammad s/o Ali"`, `a/"20 Main Road, c/o Rina a/p Kaur"` or `t/"Advanced Math/Science"`. Supported prefixes inside quotes also remain literal. Slashes that do not start such a space-separated token, as in `t/Math/Science`, still work without quotes. Quoting does not bypass field validation.
 </box>
+
+### Sample contacts for examples
+
+Index-based examples in this guide use the following sample contacts. Use a disposable folder, not one containing real contacts. Starting from an empty contact list, enter these commands in order. If you completed the [Quick start](#quick-start), John Doe already exists, so skip the first command.
+
+1. `add r/student n/John Doe p/98765432`
+1. `add r/guardian n/Betsy Crowe p/91234567 t/family`
+1. `add r/student n/Grace Tan p/87654321 t/Active t/Math t/Sec 4`
+1. `add r/guardian n/Bob Lim p/96543210`
+1. `add r/student n/Alex Yeoh p/87438807 t/Active`
+1. `link 1 2`
+
+Then enter `list`. The list should show:
+
+Index | Name | Role | Tags | Guardian link
+------|------|------|------|--------------
+1 | John Doe | Student | - | Betsy Crowe
+2 | Betsy Crowe | Guardian | `family` | -
+3 | Grace Tan | Student | `Active`, `Math`, `Sec 4` | -
+4 | Bob Lim | Guardian | - | -
+5 | Alex Yeoh | Student | `Active` | -
+
+Unless a section says otherwise, each example starts from this full list. Examples written as numbered steps continue from the previous step; enter them in order. Examples that change contacts, such as `edit` or `delete`, change the results of later examples. To start again, enter `clear confirm` **in your disposable folder only**, then re-enter the sample contacts.
 
 ### Viewing help: `help`
 
@@ -152,9 +177,9 @@ TuitionBook treats two contacts as duplicates only when both their normalized na
 A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the guardian's email may also be reused. The student and guardian remain distinct contacts because their names differ.
 </box>
 
-Examples:
-* `add r/student n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add r/guardian n/Betsy Crowe p/1234567 t/family`
+Examples (each adds a new contact after the existing ones, so the [sample contacts](#sample-contacts-for-examples) keep indexes 1 to 5 in an unfiltered list):
+* `add r/student n/Sam Lee p/98760001 e/samlee@example.com a/John street, block 123, #01-01`
+* `add r/guardian n/Mary Lee p/1234567 t/family`
 * `add r/student n/Alex Lim p/91234567 t/Sec-4 t/referred-by-Mrs-Lim`
 * `add r/student n/"Rina a/p Kaur" p/91234567 a/123 Main Street`
 
@@ -186,7 +211,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 
 Choose a consistent tag convention, for example `Sec4` for level, `AMath` for subject, and `Active` or `Inactive` for status. These are labels you choose, not dedicated fields or enforced categories. Tag filters ignore letter case but preserve internal spacing and punctuation.
 
-To try this workflow in a fresh, empty contact list:
+This workflow uses its own contact, Alex Tan, instead of the sample contacts. To try it, start a new, empty contact list in a separate disposable folder, then enter these steps in order:
 
 1. Enter `add r/student n/Alex Tan p/91234561 t/Active t/Sec4 t/AMath`.
 1. Enter `list r/student t/Sec4 t/AMath` to show students with both the level and subject tags.
@@ -203,9 +228,16 @@ Each `list` or `find` establishes a working set in normal contact-list order. `e
 
 Rerun the originating command, such as `list t/Active`, to refresh membership. Bare `list` deliberately shows all contacts. Matching additions append; nonmatching additions are saved without being displayed.
 
-With Alex (1) and John (2) selected by `list t/Active`, `untag 1 t/Active` followed by `tag 1 t/Inactive` both target Alex. Alex remains index 1 with a notice until you rerun `list t/Active`.
+To see this with the [sample contacts](#sample-contacts-for-examples), enter these steps in order:
 
-Deletion is the exception: after deleting Alex (1), John becomes index 1. Explicit queries, successful reload, clear and restart can also change indexes. Indexes are positions, not permanent contact identifiers. Reload and restart show the full list; clear resets to an empty, unfiltered working set. Working sets are not saved in the data file.
+1. `list t/Active`<br>
+   **Expected:** Grace Tan (1) and Alex Yeoh (2) are listed.
+1. `untag 1 t/Active`, then `tag 1 t/Inactive`<br>
+   **Expected:** Both commands change Grace Tan. She stays at index 1 with the notice **No longer matches the query**, and Alex Yeoh stays at index 2.
+1. `list t/Active`<br>
+   **Expected:** Only Alex Yeoh is listed, now at index 1.
+
+Deletion is the exception: deleting a row compacts the list. For example, if `list t/Active` shows Grace Tan (1) and Alex Yeoh (2), `delete 1` deletes Grace Tan and Alex Yeoh becomes index 1. Explicit queries, successful reload, clear and restart can also change indexes. Indexes are positions, not permanent contact identifiers. Reload and restart show the full list; clear resets to an empty, unfiltered working set. Working sets are not saved in the data file.
 
 ### Viewing a contact: `view`
 
@@ -219,19 +251,13 @@ Format: `view INDEX [v/]`
 * If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when they are outside the working set.
 * Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change contact data or the working set.
 
-To try the examples below from an empty contact list, enter these commands first:
+Examples using the [sample contacts](#sample-contacts-for-examples):
 
-1. `add r/student n/Alex Yeoh p/87438807`
-1. `add r/guardian n/Bernice Yu p/99272758`
-1. `link 1 2`
-
-Examples using the contacts created above (enter `list` first if you have applied a filter):
-
-* `view 1` replaces the contact list with Alex Yeoh's details and `Bernice Yu (99272758)` as his linked guardian.
-* `view 1 v/` also shows Bernice Yu's full contact details.
-* `view 2` replaces the contact list with Bernice Yu's details and lists `Alex Yeoh (87438807)` as a linked student.
-* `view 2 v/` also shows Alex Yeoh's full contact details.
-* `list r/student` followed by `view 1 v/` still shows Bernice Yu's details, although guardians are hidden from the list.
+* `view 1` replaces the contact list with John Doe's details and shows `Guardian: Betsy Crowe (91234567)`.
+* `view 1 v/` also shows Betsy Crowe's full contact details.
+* `view 2` replaces the contact list with Betsy Crowe's details and lists `John Doe (98765432)` as a linked student.
+* `view 2 v/` also shows John Doe's full contact details.
+* `list r/student` followed by `view 1 v/` still shows Betsy Crowe's details, although guardians are hidden from the list.
 
 <span id="editing-a-person-edit"></span>
 
@@ -241,7 +267,7 @@ Edits an existing contact in TuitionBook.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
-Names support the same optional double quotes as `add`. For example, `edit 1 n/"Rina a/p Kaur"` changes the complete name without interpreting `a/` as an address prefix.
+Names support the same optional double quotes as `add`. For example, `edit 1 n/"Rina a/p Kaur"` changes the first contact's complete name without interpreting `a/` as an address prefix.
 
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
@@ -255,9 +281,9 @@ Names support the same optional double quotes as `add`. For example, `edit 1 n/"
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * Editing preserves the working set and every surviving contact's index, even when its name or tags stop matching. Such contacts are marked until an explicit refresh.
 
-Examples:
-*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
-*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
+Examples using the [sample contacts](#sample-contacts-for-examples):
+*  `edit 1 p/91110000 e/johndoe@example.com` changes John Doe's phone number to `91110000` and adds the email address `johndoe@example.com`.
+*  `edit 2 n/Betsy Crower t/` renames Betsy Crowe to `Betsy Crower` and removes her `family` tag. John Doe stays linked to her.
 
 ### Adding tags to a contact: `tag`
 
@@ -273,7 +299,7 @@ Format: `tag INDEX t/TAG [t/TAG]...`
 * Only `t/` is supported as a field prefix by `tag` and `untag`. A space followed by `t/` starts another tag unless it is inside a quoted value; other space-separated letter prefixes are rejected. Use the same quoting and escape rules as `add`, `edit` and `list`: `tag 1 t/"study t/weekly"` adds one tag containing `t/weekly`, while `tag 1 t/"call p/next week"` preserves the literal `p/`. Enclosing quotes are not stored, and surrounding whitespace is trimmed even inside quotes.
 * Inside quoted tags, use `\"` for a literal double quote and `\\` for a literal backslash. For example, `tag 1 t/"\"Sec 4\""` adds the literal tag `"Sec 4"`, and `untag 1 t/"\"Sec 4\""` removes it. Missing closing quotes, extra text after the closing quote, and blank decoded tags are rejected before any tags change.
 
-Example: If contact 1 is Sam Student and has `Math` and `Sec 4`, `tag 1 t/Science t/Math` adds `Science` while keeping both existing tags and reports `Added tags to Sam Student: "Science".` Continue using `add` to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
+Example using the [sample contacts](#sample-contacts-for-examples): Grace Tan (3) has `Active`, `Math` and `Sec 4`. `tag 3 t/Science t/Math` adds `Science` while keeping her existing tags, and reports `Added tags to Grace Tan: "Science".` `Math` is not listed because it was already present. Continue using `add` to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
 
 ### Removing tags from a contact: `untag`
 
@@ -282,14 +308,15 @@ Removes only the specified tags while keeping the contact's other tags.
 Format: `untag INDEX t/TAG [t/TAG]...`
 
 * The index, tag validation, case sensitivity, prefix boundaries, saving, and working-set rules are the same as for `tag`.
-* Tag names must match exactly, including case and internal spacing. `untag 1 t/math` does not remove `Math`.
+* Tag names must match exactly, including case and internal spacing. With the sample contacts, `untag 3 t/math` does not remove Grace Tan's `Math` tag.
 * Absent tags are skipped and listed in the feedback under `Tags not present:`. Names are shown in sorted order, enclosed in double quotes; literal quotes and backslashes are escaped in this display so tag boundaries are clear. If none of the requested tags is present, the command reports this without saving or changing the working set.
 * A mixture of present and absent tags removes the present tags. Removing the final tag leaves the contact with no tags.
 * A missing tag argument or an empty `t/` is rejected; use `edit INDEX t/` to clear the entire tag set.
 
-Example: If contact 1 has `Math`, `Science`, and `Sec 4`, `untag 1 t/Math t/Science` leaves only `Sec 4`.
+Examples continuing from the [`tag` example](#adding-tags-to-a-contact-tag), where Grace Tan (3) has `Active`, `Math`, `Science` and `Sec 4`. Enter them in order:
 
-If contact 1 is Sam Student and has only `Math`, `untag 1 t/Math t/Science` removes `Math` and reports `Removed tags from Sam Student. Tags not present: "Science".`
+1. `untag 3 t/Math t/Science` removes both tags, leaving `Active` and `Sec 4`, and reports `Removed tags from Grace Tan.`
+1. `untag 3 t/Sec 4 t/Math` removes `Sec 4`, leaving only `Active`, and reports `Removed tags from Grace Tan. Tags not present: "Math".`
 
 ### Linking a student to a guardian: `link`
 
@@ -303,7 +330,11 @@ Format: `link STUDENT_INDEX GUARDIAN_INDEX`
 * Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already exists and makes no change.
 * Creating, replacing or repeating a link preserves the working set and indexes. Relationship summaries update immediately, including related contacts outside the working set.
 
-Example: `link 1 2` links the student at index 1 to the guardian at index 2.
+Examples using the [sample contacts](#sample-contacts-for-examples), entered in order:
+
+1. `link 5 4` links Alex Yeoh to Bob Lim and reports `Linked student Alex Yeoh to guardian Bob Lim.`
+1. `link 1 4` moves John Doe from Betsy Crowe to Bob Lim and reports `Linked student John Doe to guardian Bob Lim. Previous guardian unlinked: Betsy Crowe.`
+1. Entering `link 1 4` again reports `Student John Doe is already linked to guardian Bob Lim.` and makes no change.
 
 ### Removing a guardian link: `unlink`
 
@@ -316,7 +347,7 @@ Format: `unlink STUDENT_INDEX`
 * If the student has no linked guardian, TuitionBook reports this and makes no change. The working set and its indexes are preserved.
 * Removing a guardian link preserves the working set and indexes. Related contacts' relationship summaries update immediately.
 
-Example: `unlink 1` removes the guardian link of the student at index 1.
+Example using the [sample contacts](#sample-contacts-for-examples): `unlink 1` removes John Doe's link to Betsy Crowe and reports `Unlinked student John Doe from guardian Betsy Crowe.` Both contacts remain. Running `unlink 1` again reports `Student John Doe has no linked guardian.`
 
 <span id="locating-persons-by-name-find"></span>
 
@@ -332,10 +363,10 @@ Format: `find KEYWORD [MORE_KEYWORDS]...`
 * Keywords are treated as literal text, so punctuation is not interpreted as a search pattern.
 * Persons matching at least one keyword are returned (an `OR` search). A person is listed only once even if multiple keywords match their name.
 
-Examples:
-* `find gr`, `find rac`, `find ace`, and `find GRACE` each return `Grace Tan`.
-* `find rac bob` returns contacts whose names contain either `rac` or `bob`, such as `Grace Tan` and `Bob Lim`.
-* If your list contains `Alex Yeoh` and `David Li`, `find alex david` shows both. Any other contacts with `alex` or `david` anywhere in their names also appear. If no names match, the list is empty; use `list` to show every contact again.
+Examples using the [sample contacts](#sample-contacts-for-examples):
+* `find gr`, `find rac`, `find ace`, and `find GRACE` each list only Grace Tan.
+* `find rac bob` lists Grace Tan and Bob Lim, whose names contain `rac` or `bob`.
+* `find alex john` lists John Doe and Alex Yeoh. Any other contacts with `alex` or `john` anywhere in their names would also appear. If no names match, the list is empty; use `list` to show every contact again.
 
 <span id="deleting-a-person-delete"></span>
 
@@ -356,9 +387,9 @@ Format: `delete INDEX`
 * Deleting a guardian keeps their linked students, but clears those students' guardian links.
 * Deletion removes the targeted row and compacts the working set, preserving survivors' relative order. It does not rerun the query or reveal hidden contacts. Subsequent indexes may change; check the displayed list before another indexed command.
 
-Examples:
-* `list` followed by `delete 2` deletes the 2nd person in TuitionBook.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+Examples using the [sample contacts](#sample-contacts-for-examples). Each example starts from the full sample list:
+* `list` followed by `delete 2` deletes Betsy Crowe, the 2nd contact in the full list. Because she was John Doe's guardian, the result also reports that John Doe is no longer linked to a guardian. Grace Tan, Bob Lim and Alex Yeoh move up to indexes 2 to 4.
+* `find Betsy` followed by `delete 1` deletes Betsy Crowe, the 1st contact in the `find` results.
 
 ### Clearing all entries: `clear confirm`
 
@@ -383,6 +414,8 @@ Format: `reload`
 Reads the configured contact file again and resets the working set to all loaded contacts in contact-list order. Use this after correcting a file that could not be loaded and backed up. A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards. No arguments are accepted.
 
 If the file is missing, the contact list becomes empty and saving is enabled. Reloading does not save anything. If reading fails, the current contacts and exact working set (membership, order and originating query) are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the reported permission, encoding, JSON, or contact-value guidance before restoring the preserved file and reloading again. Reload replaces rather than merges contacts; preserve any external file edits you need before using it.
+
+When a reload succeeds but invalid guardian links are repaired, the result lists every affected contact's name, UUID, guardian ID when present, and reason. Valid contacts remain loaded, the links are removed in memory, and the next successful save removes those invalid links from the JSON file.
 
 ### Exiting the program: `exit`
 
@@ -415,7 +448,7 @@ The file must contain exactly one JSON value and each object must use every prop
 
 Data files created before these relationship fields were introduced remain supported. A contact that has none of `id`, `role`, or `guardianId` is loaded as an unlinked student and receives a generated `id`. The updated fields are written when TuitionBook next saves the data file.
 
-If a string `guardianId` is not a UUID, refers to a missing contact, refers to a student, or links a student to itself, TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present. An object or array `guardianId` cannot be interpreted as a link string, so the complete file follows the invalid-file recovery behavior instead of loading contacts and repairing only that link.
+If a string `guardianId` is not a UUID, refers to a missing contact, refers to a student, or links a student to itself, TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired and lists every affected contact, its UUID, guardian ID when present, and the reason for the repair in a scrollable summary. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present. An object or array `guardianId` cannot be interpreted as a link string, so the complete file follows the invalid-file recovery behavior instead of loading contacts and repairing only that link.
 
 <box type="warning" seamless>
 
