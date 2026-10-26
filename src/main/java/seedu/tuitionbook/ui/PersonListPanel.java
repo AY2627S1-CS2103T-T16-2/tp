@@ -44,7 +44,7 @@ public class PersonListPanel extends UiPart<Region> {
     /** Number of consecutive pulses for which the target must remain visible before stopping. */
     private static final int REQUIRED_STABLE_VISIBLE_PULSE_COUNT = 3;
     /** Tolerance for fractional layout differences at the viewport boundary. */
-    private static final double VIEWPORT_TOLERANCE = 1.0;
+    private static final double VIEWPORT_TOLERANCE = 2.0;
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
     private final Map<UUID, Person> personsById = new HashMap<>();
     private final ObservableList<Person> allPersons;
@@ -153,7 +153,6 @@ public class PersonListPanel extends UiPart<Region> {
         }
         for (Node node : personListView.lookupAll(".list-cell")) {
             if (!(node instanceof ListCell<?> cell)
-                    || !cell.isVisible()
                     || !(cell.getItem() instanceof Person person)
                     || !person.getId().equals(personId)) {
                 continue;
@@ -171,9 +170,9 @@ public class PersonListPanel extends UiPart<Region> {
                 && cellBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE;
         boolean fitsVertically = cellBounds.getMinY() >= viewportBounds.getMinY() - VIEWPORT_TOLERANCE
                 && cellBounds.getMaxY() <= viewportBounds.getMaxY() + VIEWPORT_TOLERANCE;
-        boolean coversViewport = cellBounds.getMinY() <= viewportBounds.getMinY() + VIEWPORT_TOLERANCE
-                && cellBounds.getMaxY() >= viewportBounds.getMaxY() - VIEWPORT_TOLERANCE;
-        return fitsHorizontally && (fitsVertically || coversViewport);
+        boolean isTallerThanViewport = cellBounds.getHeight() > viewportBounds.getHeight();
+        return fitsHorizontally && (fitsVertically
+                || (isTallerThanViewport && viewportBounds.intersects(cellBounds)));
     }
 
     private void stopScrollAnimation() {

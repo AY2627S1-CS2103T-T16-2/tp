@@ -3,6 +3,7 @@ package seedu.tuitionbook.ui;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -202,7 +203,8 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
             commandResult.getDetailsToShow().ifPresentOrElse(this::showDetails, () -> {
                 showPersonList();
-                commandResult.getPersonIdToScrollTo().ifPresent(personListPanel::scrollToPerson);
+                commandResult.getPersonIdToScrollTo().ifPresent(personId ->
+                        Platform.runLater(() -> personListPanel.scrollToPerson(personId)));
             });
 
             if (commandResult.isShowHelp()) {

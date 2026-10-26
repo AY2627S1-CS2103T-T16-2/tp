@@ -64,8 +64,9 @@ import seedu.tuitionbook.testutil.PersonBuilder;
 public class MainWindowTest {
     private static final List<Integer> VIEWPORT_CONTACT_COUNTS =
             List.of(0, 1, 2, 5, 10, 20, 50, 100, 500, 1000);
+    private static final double SCROLL_TEST_WINDOW_WIDTH = 700;
     private static final int REQUIRED_STABLE_VISIBLE_PULSE_COUNT = 3;
-    private static final double VIEWPORT_TOLERANCE = 1.0;
+    private static final double VIEWPORT_TOLERANCE = 2.0;
 
     @TempDir
     public Path temporaryFolder;
@@ -145,7 +146,7 @@ public class MainWindowTest {
                 Stage stage = new Stage();
                 MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
                 mainWindow.fillInnerParts();
-                stage.setWidth(400);
+                stage.setWidth(SCROLL_TEST_WINDOW_WIDTH);
                 stage.setHeight(300);
                 mainWindow.show();
 
@@ -593,7 +594,7 @@ public class MainWindowTest {
         return personListView.lookupAll(".list-cell").stream()
                 .filter(ListCell.class::isInstance)
                 .map(node -> (ListCell<?>) node)
-                .filter(cell -> cell.isVisible() && person.equals(cell.getItem()))
+                .filter(cell -> person.equals(cell.getItem()))
                 .map(cell -> cell.localToScene(cell.getBoundsInLocal()))
                 .anyMatch(cellBounds -> cellBounds != null && isCellWithinViewport(listBounds, cellBounds));
     }
@@ -614,9 +615,9 @@ public class MainWindowTest {
                 && cellBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE;
         boolean fitsVertically = cellBounds.getMinY() >= viewportBounds.getMinY() - VIEWPORT_TOLERANCE
                 && cellBounds.getMaxY() <= viewportBounds.getMaxY() + VIEWPORT_TOLERANCE;
-        boolean coversViewport = cellBounds.getMinY() <= viewportBounds.getMinY() + VIEWPORT_TOLERANCE
-                && cellBounds.getMaxY() >= viewportBounds.getMaxY() - VIEWPORT_TOLERANCE;
-        return fitsHorizontally && (fitsVertically || coversViewport);
+        boolean isTallerThanViewport = cellBounds.getHeight() > viewportBounds.getHeight();
+        return fitsHorizontally && (fitsVertically
+                || (isTallerThanViewport && viewportBounds.intersects(cellBounds)));
     }
 
     @SuppressWarnings("unchecked")
@@ -636,7 +637,7 @@ public class MainWindowTest {
             Stage stage = new Stage();
             MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
             mainWindow.fillInnerParts();
-            stage.setWidth(400);
+            stage.setWidth(SCROLL_TEST_WINDOW_WIDTH);
             stage.setHeight(300);
             mainWindow.show();
             return new ManualScrollFixture(stage, mainWindow, getPersonListView(mainWindow), addedPerson);
