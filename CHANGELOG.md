@@ -48,6 +48,8 @@ The format is based on Keep a Changelog.
 - Continue startup with the unchanged legacy `addressbook.json` when permissions prevent migration to `tuitionbook.json`, allowing migration to be retried on a later launch.
 - Decode JSON files strictly as UTF-8 so UTF-8 BOMs are accepted while invalid UTF-8 and other encodings are rejected and preserved unchanged through recovery.
 - Report permission, encoding/JSON, invalid contact-value, and other file-system load failures with appropriate startup and reload recovery guidance.
+- Link the UG version notice directly to the v1.3 and v1.4 User Guides saved with those releases, whose release pages contain no guide link (#223).
+- Show `PersonListPanel`'s retained `Person` references as an association in the UI class diagram, and identify the architecture sequence diagram as a simplified view of the detailed `delete` sequence (#177).
 
 ## [v1.4] - 2026-10-22
 

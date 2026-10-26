@@ -69,6 +69,8 @@ The *Sequence Diagram* below shows how the components interact with each other f
 
 <puml src="diagrams/ArchitectureSequenceDiagram.puml" width="574" />
 
+This is a simplified component-level view. It omits calls within a component's turn, such as resolving the displayed index, looking up linked students and snapshotting data for save-failure rollback. The [Logic component](#logic-component) shows the detailed `delete` sequence.
+
 Each of the four main components (also shown in the diagram above),
 
 * defines its *API* in an `interface` with the same name as the Component.
