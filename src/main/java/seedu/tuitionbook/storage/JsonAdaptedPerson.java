@@ -153,9 +153,9 @@ class JsonAdaptedPerson {
                     ? GuardianLinkRepair.Reason.MALFORMED_GUARDIAN_ID : null;
             if (modelGuardianId != null && (modelRole != Role.STUDENT || modelGuardianId.equals(modelId))) {
                 logger.warning("Discarding invalid guardian link for contact " + modelName);
-                repairReason = modelGuardianId.equals(modelId)
-                        ? GuardianLinkRepair.Reason.SELF_LINK
-                        : GuardianLinkRepair.Reason.NON_STUDENT_GUARDIAN_LINK;
+                repairReason = modelRole != Role.STUDENT
+                        ? GuardianLinkRepair.Reason.NON_STUDENT_GUARDIAN_LINK
+                        : GuardianLinkRepair.Reason.SELF_LINK;
                 modelGuardianId = null;
             }
         }
