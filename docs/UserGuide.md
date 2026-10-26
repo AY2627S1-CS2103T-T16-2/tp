@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
+**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide linked from its [release page](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases); commands added in v1.4 may not be available in older releases.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -64,7 +64,7 @@ Before you begin, install Java `25` or later and choose a folder where you can c
 1. Run the same terminal launch command again.<br>
    **Expected:** John Doe is still present. You can now use the [Features](#features) reference or the [status-tag workflow](#organising-levels-subjects-and-status-with-tags).
 
-The command box is where you enter instructions; the result area reports success or errors; the contact list shows the contacts selected by your current filter. The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
+The command box is where you enter instructions; the result area reports success or errors; the contact list shows your current [working set](#keeping-displayed-indexes-stable). The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -141,7 +141,7 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * Unquoted values keep their quotes and backslashes literally, unless the first non-whitespace character is `"`, which starts quoted syntax.
 * Decoded values still follow normal field validation: double quotes and backslashes are allowed in addresses and tags but not names.
 * `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
-* After a contact is added, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared so that the new contact is visible.
+* Matching additions append to the working set without changing existing indexes. Nonmatching additions are saved but stay hidden; feedback explains how to locate them with `list`.
 
 <box type="tip" seamless>
 
@@ -160,7 +160,7 @@ Examples:
 
 ### Listing contacts: `list`
 
-Shows all contacts, or only contacts matching a specified role and/or all specified tags. `list` clears any active name, role, or tag filter.
+Shows all contacts, or only contacts matching a specified role and/or all specified tags. Bare `list` replaces the working set with all contacts.
 
 Format: `list [r/ROLE] [t/TAG]...`
 
@@ -169,7 +169,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Spaces and punctuation are significant: `list t/SEC 4 t/math--science` requires both complete tags. `Sec  4` (two spaces) is different from `Sec 4`; `active!` does not match `inactive!` or `active`. In `list`, a space followed by `r/` or `t/` starts a new filter argument.
 * To search for a tag containing `r/` or `t/` after a space, quote the complete tag, for example `list t/"study r/student t/weekly"`.
 * Escaping works the same way in `add`, `edit`, `list`, `tag`, and `untag`: `list t/"\"Sec 4\""` matches the literal tag `"Sec 4"`, including one loaded from an existing JSON file.
-* A filtered `list` replaces any active name, role, or tag filter. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
+* A filtered `list` replaces the working set with contacts matching the supplied criteria. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
 * Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
 * `list r/student` shows only students; `list r/guardian` shows only guardians.
 * Other trailing text is rejected.
@@ -197,17 +197,27 @@ To try this workflow in a fresh, empty contact list:
 
 `Inactive` does not archive a contact or prevent editing, linking or deletion. Status labels do not change guardian relationships. There are no dedicated archive/restore commands. Use `tag INDEX t/TAG` and `untag INDEX t/TAG` to add or remove selected labels without replacing the other tags. These operations match stored tags case-sensitively, unlike `list` filters.
 
+### Keeping displayed indexes stable
+
+Each `list` or `find` establishes a working set in normal contact-list order. `edit`, `tag`, `untag`, `link` and `unlink` preserve all surviving displayed indexes, even when contacts stop matching the query. Those rows show **No longer matches the query** with a command to refresh. Matching again removes the notice without moving the row. An existing hidden contact that becomes a match stays hidden until an explicit query.
+
+Rerun the originating command, such as `list t/Active`, to refresh membership. Bare `list` deliberately shows all contacts. Matching additions append; nonmatching additions are saved without being displayed.
+
+With Alex (1) and John (2) selected by `list t/Active`, `untag 1 t/Active` followed by `tag 1 t/Inactive` both target Alex. Alex remains index 1 with a notice until you rerun `list t/Active`.
+
+Deletion is the exception: after deleting Alex (1), John becomes index 1. Explicit queries, successful reload, clear and restart can also change indexes. Indexes are positions, not permanent contact identifiers. Reload and restart show the full list; clear resets to an empty, unfiltered working set. Working sets are not saved in the data file.
+
 ### Viewing a contact: `view`
 
 Replaces the contact list with a contact's details and their recorded relationship. The next command other than `view` restores the contact list.
 
 Format: `view INDEX [v/]`
 
-* `INDEX` is the positive index shown in the current contact list. After `find` or `list r/ROLE`, it refers to the filtered list.
+* `INDEX` is the positive index shown in the current working set, including retained contacts that no longer match its query.
 * Without `v/`, each linked contact appears as `NAME (CONTACT_NUMBER)`. A student view shows its linked guardian, while a guardian view lists its linked students in contact-list order.
 * Add `v/` to show the linked guardian's or linked students' full contact details, including their role, phone, email, address, and tags.
-* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when the current filter hides them.
-* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change contact data or the active filter.
+* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when they are outside the working set.
+* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change contact data or the working set.
 
 To try the examples below from an empty contact list, enter these commands first:
 
@@ -243,7 +253,7 @@ Names support the same optional double quotes as `add`. For example, `edit 1 n/"
 * `TAG` follows the same space-and-punctuation and optional quoting rules described for [`add`](#adding-a-contact-add).
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
-* After a successful edit, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
+* Editing preserves the working set and every surviving contact's index, even when its name or tags stop matching. Such contacts are marked until an explicit refresh.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -258,8 +268,8 @@ Format: `tag INDEX t/TAG [t/TAG]...`
 * `INDEX` is a positive index in the currently displayed list, including after `find` or a filtered `list`. Both students and guardians can be tagged.
 * Supply at least one non-blank tag. Tags follow the same character and spacing rules as `add`. Repeating a tag in the command has the same effect as supplying it once.
 * Tag identity is case-sensitive: `Math` and `math` are separate stored tags, although `list` matches tags case-insensitively.
-* Existing tags are retained. Success feedback lists only newly added tags, in sorted order and enclosed in double quotes; literal quotes and backslashes are escaped for clarity. Already-present tags are omitted from this list. If every requested tag is already present, the command reports this without saving or changing the displayed filter.
-* When tags change, TuitionBook saves the contact and restores the full contact list. If saving fails, it restores the original contacts and filter.
+* Existing tags are retained. Success feedback lists only newly added tags, in sorted order and enclosed in double quotes; literal quotes and backslashes are escaped for clarity. Already-present tags are omitted from this list. If every requested tag is already present, the command reports this without saving or changing the working set.
+* Tag changes preserve the working set and indexes, including contacts that stop matching. If saving fails, the original contacts, exact working-set membership/order and query are restored.
 * Only `t/` is supported as a field prefix by `tag` and `untag`. A space followed by `t/` starts another tag unless it is inside a quoted value; other space-separated letter prefixes are rejected. Use the same quoting and escape rules as `add`, `edit` and `list`: `tag 1 t/"study t/weekly"` adds one tag containing `t/weekly`, while `tag 1 t/"call p/next week"` preserves the literal `p/`. Enclosing quotes are not stored, and surrounding whitespace is trimmed even inside quotes.
 * Inside quoted tags, use `\"` for a literal double quote and `\\` for a literal backslash. For example, `tag 1 t/"\"Sec 4\""` adds the literal tag `"Sec 4"`, and `untag 1 t/"\"Sec 4\""` removes it. Missing closing quotes, extra text after the closing quote, and blank decoded tags are rejected before any tags change.
 
@@ -271,9 +281,9 @@ Removes only the specified tags while keeping the contact's other tags.
 
 Format: `untag INDEX t/TAG [t/TAG]...`
 
-* The index, tag validation, case sensitivity, prefix boundaries, saving, and filter rules are the same as for `tag`.
+* The index, tag validation, case sensitivity, prefix boundaries, saving, and working-set rules are the same as for `tag`.
 * Tag names must match exactly, including case and internal spacing. `untag 1 t/math` does not remove `Math`.
-* Absent tags are skipped and listed in the feedback under `Tags not present:`. Names are shown in sorted order, enclosed in double quotes; literal quotes and backslashes are escaped in this display so tag boundaries are clear. If none of the requested tags is present, the command reports this without saving or changing the filter.
+* Absent tags are skipped and listed in the feedback under `Tags not present:`. Names are shown in sorted order, enclosed in double quotes; literal quotes and backslashes are escaped in this display so tag boundaries are clear. If none of the requested tags is present, the command reports this without saving or changing the working set.
 * A mixture of present and absent tags removes the present tags. Removing the final tag leaves the contact with no tags.
 * A missing tag argument or an empty `t/` is rejected; use `edit INDEX t/` to clear the entire tag set.
 
@@ -291,7 +301,7 @@ Format: `link STUDENT_INDEX GUARDIAN_INDEX`
 * Both indexes refer to positive index numbers in the currently displayed contact list. Both contacts must be visible. If a filter hides either contact, enter `list` to restore the full list before using `link`.
 * If the student already has a different guardian, the previous guardian is unlinked and the result identifies that previous guardian.
 * Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already exists and makes no change.
-* After a link is created or replaced, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared. Reporting an already-existing link makes no change, so the displayed list and its filter are preserved.
+* Creating, replacing or repeating a link preserves the working set and indexes. Relationship summaries update immediately, including related contacts outside the working set.
 
 Example: `link 1 2` links the student at index 1 to the guardian at index 2.
 
@@ -301,10 +311,10 @@ Removes a student contact's guardian link without deleting either contact.
 
 Format: `unlink STUDENT_INDEX`
 
-* `STUDENT_INDEX` is the positive index shown in the currently displayed contact list. After `find` or a filtered `list`, it refers to the filtered list.
+* `STUDENT_INDEX` is the positive index shown in the current working set, including retained contacts that no longer match its query.
 * The index must refer to a student.
-* If the student has no linked guardian, TuitionBook reports this and makes no change. The displayed list and any active filter are preserved.
-* After a guardian link is removed, TuitionBook shows the full contact list: any active name, role, or tag filter is cleared.
+* If the student has no linked guardian, TuitionBook reports this and makes no change. The working set and its indexes are preserved.
+* Removing a guardian link preserves the working set and indexes. Related contacts' relationship summaries update immediately.
 
 Example: `unlink 1` removes the guardian link of the student at index 1.
 
@@ -344,7 +354,7 @@ Format: `delete INDEX`
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, ...
 * Deleting a guardian keeps their linked students, but clears those students' guardian links.
-* Unlike `add`, `edit`, and `link`, `delete` does not clear an active name, role, or tag filter: the remaining contacts of the filtered view stay listed.
+* Deletion removes the targeted row and compacts the working set, preserving survivors' relative order. It does not rerun the query or reveal hidden contacts. Subsequent indexes may change; check the displayed list before another indexed command.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in TuitionBook.
@@ -352,13 +362,13 @@ Examples:
 
 ### Clearing all entries: `clear confirm`
 
-Clears all entries from TuitionBook, including contacts hidden by the current filter.
+Clears all entries from TuitionBook, including contacts outside the current working set.
 
 Format: `clear confirm`
 
 <box type="warning" seamless>
 
-This deletes every contact, including contacts hidden by a filter. There is no undo. Close the app and copy its data file to a safe location before reopening it if you need a backup.
+This deletes every contact, including contacts outside the current working set. There is no undo. Close the app and copy its data file to a safe location before reopening it if you need a backup.
 </box>
 
 * The confirmation keyword must be the exact lowercase word `confirm`.
@@ -368,9 +378,9 @@ This deletes every contact, including contacts hidden by a filter. There is no u
 
 Format: `reload`
 
-Reads the configured contact file again and replaces the current contact list, clearing any active filter. Use this after correcting a file that could not be loaded and backed up. A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards. No arguments are accepted.
+Reads the configured contact file again and resets the working set to all loaded contacts in contact-list order. Use this after correcting a file that could not be loaded and backed up. A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards. No arguments are accepted.
 
-If the file is missing, the contact list becomes empty and saving is enabled. Reloading does not save anything. If reading fails, the current contacts and filter are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the reported permission, encoding, JSON, or contact-value guidance before restoring the preserved file and reloading again. Reload replaces rather than merges contacts; preserve any external file edits you need before using it.
+If the file is missing, the contact list becomes empty and saving is enabled. Reloading does not save anything. If reading fails, the current contacts and exact working set (membership, order and originating query) are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the reported permission, encoding, JSON, or contact-value guidance before restoring the preserved file and reloading again. Reload replaces rather than merges contacts; preserve any external file edits you need before using it.
 
 ### Exiting the program: `exit`
 
@@ -382,7 +392,7 @@ Format: `exit`
 
 **Run only one copy of TuitionBook against the same data file at a time.** There is no single-instance guard: another copy can overwrite the first copy's saves. Close the app before copying or replacing its data file.
 
-TuitionBook attempts to save contact data after commands that change contacts or guardian links. Repeating an existing link, unlinking a student without a guardian, editing fields or tags to their existing values, or clearing an already-empty contact list does not attempt a save. A change to the displayed filter alone does not require saving. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores the contacts and active filter to their state before the command. You do not need to save manually.
+TuitionBook attempts to save contact data after commands that change contacts or guardian links. Repeating an existing link, unlinking a student without a guardian, editing fields or tags to their existing values, or clearing an already-empty contact list does not attempt a save. A change to the working set alone does not require saving. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores contacts, exact working-set membership/order and its query to their state before the command. You do not need to save manually.
 If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and run `reload` or restart the app.
 
 ### Editing the data file
@@ -424,8 +434,8 @@ The 100-character name limit and 200-character address limit also apply to value
 * **Contact**: A record representing either a student or a guardian, with a name, phone number, and optional email address, home address, and tags.
 * **Role**: Whether a contact is a `student` or a `guardian`. Entered in any casing; shown as a `STUDENT` or `GUARDIAN` badge on the contact card.
 * **Guardian link**: A recorded association from a student to a guardian. A student has at most one guardian link; a guardian can be linked to multiple students.
-* **Index**: A contact's position in the currently displayed list, starting from 1. Index-based commands such as `edit`, `delete`, and `view` use this displayed position, which changes when a filter is active.
-* **Filter**: A condition that restricts the displayed list, set by `find` (name) or `list` (role and/or tags). Applying a new filter replaces the previous one; bare `list` clears it.
+* **Index**: A contact's position in the current working set, starting from 1. Index-based commands such as `edit`, `delete`, and `view` use this displayed position. Indexes can change after deletion compacts the working set, an explicit `find` or `list` query, a successful reload, clear or restart.
+* **Working set**: The ordered contacts selected by the last `find` or `list`. Their details stay current, but edits do not automatically recompute membership. The originating query classifies additions and identifies retained contacts that no longer match. A new query replaces the working set; bare `list` shows all contacts.
 * **Tag**: An optional label you choose for a contact, such as `Sec4` or `AMath`, used for organising and filtering. Tags are not dedicated fields and are not validated against any category list.
 * **Home folder**: The folder containing the TuitionBook JAR. Data, preferences, and logs are stored relative to this folder.
 * **Data file**: The local JSON file (`data/tuitionbook.json`) that stores your contacts and guardian links between sessions.

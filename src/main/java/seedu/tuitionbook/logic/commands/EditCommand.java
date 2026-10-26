@@ -6,7 +6,6 @@ import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.tuitionbook.logic.parser.CliSyntax.PREFIX_TAG;
-import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -103,7 +102,6 @@ public class EditCommand extends Command {
             model.setPerson(personToEdit, editedPerson);
             requiresSave = true;
         }
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }
 

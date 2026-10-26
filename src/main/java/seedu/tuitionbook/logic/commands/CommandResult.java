@@ -56,6 +56,11 @@ public class CommandResult {
         return feedbackToUser;
     }
 
+    /** Returns the same requested UI actions with additional working-set feedback. */
+    public CommandResult withAdditionalFeedback(String feedback) {
+        return new CommandResult(feedbackToUser + "\n" + feedback, showHelp, exit, detailsToShow);
+    }
+
     public boolean isShowHelp() {
         return showHelp;
     }

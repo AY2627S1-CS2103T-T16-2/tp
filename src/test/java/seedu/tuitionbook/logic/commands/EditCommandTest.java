@@ -38,7 +38,7 @@ public class EditCommandTest {
 
     @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
-        Person editedPerson = new PersonBuilder().build();
+        Person editedPerson = new PersonBuilder().withId(model.getFilteredPersonList().getFirst().getId()).build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
@@ -95,6 +95,7 @@ public class EditCommandTest {
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
 
         Model expectedModel = new ModelManager(new TuitionBook(model.getTuitionBook()), new UserPrefs());
+        showPersonAtIndex(expectedModel, INDEX_FIRST_PERSON);
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
