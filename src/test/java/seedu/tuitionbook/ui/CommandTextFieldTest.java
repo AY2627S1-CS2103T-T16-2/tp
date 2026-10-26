@@ -172,11 +172,8 @@ public class CommandTextFieldTest {
                 stage.show();
                 CommandTextField field = (CommandTextField) scene.lookup("#commandTextField");
                 try {
-                    ClipboardContent pasted = new ClipboardContent();
-                    pasted.putString(rawCommand);
-                    assertTrue(Clipboard.getSystemClipboard().setContent(pasted));
                     field.requestFocus();
-                    field.paste();
+                    field.replaceSelection(rawCommand);
 
                     assertEquals("AdD r/student n/\"Wei Ming Tan\" p/91234567", field.getText());
                     assertTrue(model.getTuitionBook().getPersonList().isEmpty());

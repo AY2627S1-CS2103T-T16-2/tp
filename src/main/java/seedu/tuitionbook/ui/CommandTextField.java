@@ -1,6 +1,7 @@
 package seedu.tuitionbook.ui;
 
 import javafx.scene.control.TextField;
+import javafx.scene.input.Clipboard;
 
 /**
  * A command input field that preserves word boundaries in pasted text.
@@ -21,6 +22,15 @@ public final class CommandTextField extends TextField {
     @Override
     public void replaceText(int start, int end, String text) {
         super.replaceText(start, end, normalizeSeparators(text));
+    }
+
+    /** Pastes clipboard text after converting supported separators to spaces. */
+    @Override
+    public void paste() {
+        Clipboard clipboard = Clipboard.getSystemClipboard();
+        if (clipboard.hasString()) {
+            replaceSelection(normalizeSeparators(clipboard.getString()));
+        }
     }
 
     /**
