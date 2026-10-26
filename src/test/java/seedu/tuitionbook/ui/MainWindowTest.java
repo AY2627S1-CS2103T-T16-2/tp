@@ -65,6 +65,7 @@ public class MainWindowTest {
     private static final List<Integer> VIEWPORT_CONTACT_COUNTS =
             List.of(0, 1, 2, 5, 10, 20, 50, 100, 500, 1000);
     private static final double SCROLL_TEST_WINDOW_WIDTH = 700;
+    private static final double SCROLL_TEST_WINDOW_HEIGHT = 720;
     private static final int REQUIRED_STABLE_VISIBLE_PULSE_COUNT = 3;
     private static final double VIEWPORT_TOLERANCE = 2.0;
 
@@ -147,7 +148,7 @@ public class MainWindowTest {
                 MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
                 mainWindow.fillInnerParts();
                 stage.setWidth(SCROLL_TEST_WINDOW_WIDTH);
-                stage.setHeight(300);
+                stage.setHeight(SCROLL_TEST_WINDOW_HEIGHT);
                 mainWindow.show();
 
                 TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
@@ -218,12 +219,15 @@ public class MainWindowTest {
             Stage newStage = new Stage();
             MainWindow mainWindow = new MainWindow(newStage, logic, Path.of("synthetic.json"));
             mainWindow.fillInnerParts();
+            newStage.show();
             panel[0] = mainWindow.getPersonListPanel();
-            mainWindow.getPersonListPanel().scrollToPerson(target.getId());
-            logic.people.remove(target);
             return newStage;
         });
         try {
+            JavaFxTestUtil.runOnFxThread(() -> {
+                panel[0].scrollToPerson(target.getId());
+                logic.people.remove(target);
+            });
             assertTrue(JavaFxTestUtil.waitForFxCondition(() -> !panel[0].hasPendingScrollAnimation()));
         } finally {
             JavaFxTestUtil.runOnFxThread(stage::hide);
@@ -638,7 +642,7 @@ public class MainWindowTest {
             MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
             mainWindow.fillInnerParts();
             stage.setWidth(SCROLL_TEST_WINDOW_WIDTH);
-            stage.setHeight(300);
+            stage.setHeight(SCROLL_TEST_WINDOW_HEIGHT);
             mainWindow.show();
             return new ManualScrollFixture(stage, mainWindow, getPersonListView(mainWindow), addedPerson);
         });

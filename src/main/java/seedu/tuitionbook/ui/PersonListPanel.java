@@ -140,6 +140,10 @@ public class PersonListPanel extends UiPart<Region> {
         for (int index = 0; index < personListView.getItems().size(); index++) {
             if (personListView.getItems().get(index).getId().equals(personId)) {
                 personListView.scrollTo(index);
+                personListView.layout();
+                if (index > 0) {
+                    personListView.scrollTo(index - 1);
+                }
                 return true;
             }
         }
