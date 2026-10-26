@@ -1,7 +1,6 @@
 package seedu.tuitionbook.logic.commands;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.List;
 
@@ -69,7 +68,6 @@ public class UnlinkCommand extends Command {
         }
 
         model.setPerson(student, student.clearGuardian());
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         requiresSave = true;
         return new CommandResult(String.format(MESSAGE_UNLINK_SUCCESS, student.getName(), guardian.getName()));
     }

@@ -10,6 +10,9 @@ import seedu.tuitionbook.model.person.Person;
  * The API of the Model component.
  */
 public interface Model {
+    /** Refresh command for the full, unfiltered working set. */
+    String SHOW_ALL_PERSONS_REFRESH_COMMAND = "list";
+
     /** {@code Predicate} that always evaluates to true */
     Predicate<Person> PREDICATE_SHOW_ALL_PERSONS = unused -> true;
 
@@ -29,7 +32,7 @@ public interface Model {
     void setGuiSettings(GuiSettings guiSettings);
 
     /**
-     * Replaces TuitionBook data with the data in {@code tuitionBook}.
+     * Replaces TuitionBook data and resets the working set to the full, unfiltered book.
      */
     void setTuitionBook(ReadOnlyTuitionBook tuitionBook);
 
@@ -64,12 +67,21 @@ public interface Model {
     /** Returns an unmodifiable view of the filtered person list */
     ObservableList<Person> getFilteredPersonList();
 
-    /** Returns the predicate currently used to filter the displayed person list. */
-    Predicate<Person> getFilteredPersonListPredicate();
+    /**
+     * Returns the originating query predicate. Retained displayed contacts may fail this predicate;
+     * use {@link #getFilteredPersonList()} to inspect actual displayed membership.
+     */
+    Predicate<Person> getPersonListQueryPredicate();
+
+    /** Returns a snapshot of the displayed UUIDs, their order and the originating query. */
+    PersonListViewState getPersonListViewState();
+
+    /** Restores a working-set snapshot against the current contact data. */
+    void restorePersonListViewState(PersonListViewState state);
 
     /**
-     * Updates the filter of the filtered person list to filter by the given {@code predicate}.
-     * @throws NullPointerException if {@code predicate} is null.
+     * Replaces the working set and its equivalent refresh command together.
+     * Every query, including show-all, must supply its refresh command explicitly.
      */
-    void updateFilteredPersonList(Predicate<Person> predicate);
+    void updateFilteredPersonList(Predicate<Person> predicate, String refreshCommand);
 }

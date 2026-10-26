@@ -14,6 +14,8 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Align the UG and DG descriptions of indexes, unchanged commands, reload and save-failure recovery with exact working-set membership, order and query; share the full-list refresh command across model, commands and UI.
+- Clarify that `list` locates hidden additions while rerunning the originating query only refreshes its working set; include ordered displayed UUIDs, query predicates and refresh text when comparing models.
 - Accept command words in any letter case without changing field prefixes, values or the lowercase `confirm` keyword.
 - Acknowledged in the Developer Guide the bug reports from team T16-1's TAB project that were adapted, with that team's approval, as bug-finding test scenarios for TuitionBook.
 - Documented save-failure rollback in the Delete use case, including restoration of the contact, guardian links, and active filter.
@@ -21,6 +23,7 @@ The format is based on Keep a Changelog.
 - Expanded the documented contact-field validation subset to support right curly apostrophes in names; phone groups separated by spaces, hyphens, or slashes, optional trailing phone annotations, and numeric extensions; apostrophes and punycode labels in email addresses; and explicitly single-line addresses.
 - Clarified that names accept ordinary ASCII spaces (U+0020), rather than every Unicode whitespace character.
 - Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
+- Preserve an ordered contact working set across edit, tag, untag, link and unlink; retain and mark contacts that stop matching with canonical refresh commands, append matching additions, explain hidden additions, and warn when deletion compacts indexes. Explicit queries refresh membership; reload, clear and restart reset it. Save failures restore exact membership, order and query (#187).
 - Clarified the supported `guardianId` JSON value types and the difference between link repair and whole-file recovery.
 
 ### Fixed
