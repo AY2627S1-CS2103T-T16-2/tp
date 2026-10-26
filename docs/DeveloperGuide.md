@@ -946,6 +946,13 @@ Use a fresh, disposable folder with an empty contact list.
    1. Press <kbd>F1</kbd>.<br>
       Expected: The Help window opens.
 
+1. Fatal startup error handling
+
+   1. Make a disposable copy of the downloaded JAR and remove `view/MainWindow.fxml` from the copy without changing the original JAR.
+
+   1. Launch the modified copy with `java -jar`.<br>
+      Expected: TuitionBook shows a fatal startup error dialog containing the original resource-loading error and then exits cleanly. No secondary `NullPointerException` about an uninitialized main window is shown.
+
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
