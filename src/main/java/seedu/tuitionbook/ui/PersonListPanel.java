@@ -35,8 +35,11 @@ import seedu.tuitionbook.model.person.Role;
  */
 public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
-    /** Number of JavaFX pulses for which a scroll request is retried while the list is laid out. */
-    private static final int SCROLL_RETRY_PULSE_COUNT = 10;
+    /**
+     * Number of JavaFX pulses for which a scroll request is retried while the list is laid out.
+     * A longer bounded window keeps scrolling reliable for large lists on slower platforms.
+     */
+    private static final int SCROLL_RETRY_PULSE_COUNT = 60;
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
     private final Map<UUID, Person> personsById = new HashMap<>();
     private final ObservableList<Person> allPersons;

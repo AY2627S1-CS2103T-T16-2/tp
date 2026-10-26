@@ -162,7 +162,8 @@ public class MainWindowTest {
                 });
                 assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
                         isPersonVisible(fixture.personListView(), fixture.addedPerson())),
-                        "Added contact should be visible after the add command");
+                        "Added contact should be visible after the add command for "
+                                + existingContactCount + " existing contacts");
                 assertNull(JavaFxTestUtil.callOnFxThread(() ->
                         fixture.personListView().getSelectionModel().getSelectedItem()));
             } finally {
@@ -228,7 +229,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void retryAnimation_stopsAfterTenPulses() throws Exception {
+    public void retryAnimation_stopsAfterTargetBecomesVisible() throws Exception {
         ManualScrollFixture fixture = createScrollFixture(20);
         try {
             JavaFxTestUtil.runOnFxThread(() ->
