@@ -62,7 +62,7 @@ public class FindCommandTest {
         String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 0);
         NameContainsKeywordsPredicate predicate = preparePredicate(" ");
         FindCommand command = new FindCommand(predicate);
-        expectedModel.updateFilteredPersonList(predicate);
+        expectedModel.updateFilteredPersonList(predicate, "find " + String.join(" ", predicate.getKeywords()));
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
         assertEquals(List.of(), model.getFilteredPersonList());
     }
@@ -72,7 +72,7 @@ public class FindCommandTest {
         String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 3);
         NameContainsKeywordsPredicate predicate = preparePredicate("Kurz Elle Kunz");
         FindCommand command = new FindCommand(predicate);
-        expectedModel.updateFilteredPersonList(predicate);
+        expectedModel.updateFilteredPersonList(predicate, "find " + String.join(" ", predicate.getKeywords()));
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
         assertEquals(List.of(CARL, ELLE, FIONA), model.getFilteredPersonList());
     }
@@ -85,7 +85,7 @@ public class FindCommandTest {
         Model substringModel = modelWith(grace, bob, alice);
         Model expectedSubstringModel = modelWith(grace, bob, alice);
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("rac", "BOB"));
-        expectedSubstringModel.updateFilteredPersonList(predicate);
+        expectedSubstringModel.updateFilteredPersonList(predicate, "find " + String.join(" ", predicate.getKeywords()));
 
         FindCommand command = new FindCommand(predicate);
         String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 2);
@@ -101,7 +101,7 @@ public class FindCommandTest {
         Model unicodeModel = modelWith(isik, alice);
         Model expectedUnicodeModel = modelWith(isik, alice);
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("ışı"));
-        expectedUnicodeModel.updateFilteredPersonList(predicate);
+        expectedUnicodeModel.updateFilteredPersonList(predicate, "find " + String.join(" ", predicate.getKeywords()));
 
         FindCommand command = new FindCommand(predicate);
         String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
@@ -118,7 +118,7 @@ public class FindCommandTest {
         Model unicodeModel = modelWith(street, gross, alice);
         Model expectedUnicodeModel = modelWith(street, gross, alice);
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("STRASSE", "GROẞ"));
-        expectedUnicodeModel.updateFilteredPersonList(predicate);
+        expectedUnicodeModel.updateFilteredPersonList(predicate, "find " + String.join(" ", predicate.getKeywords()));
 
         FindCommand command = new FindCommand(predicate);
         String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 2);
@@ -136,7 +136,8 @@ public class FindCommandTest {
         Model singlePersonModel = modelWith(grace);
         Model expectedSinglePersonModel = modelWith(grace);
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("gr", "rac", "ace"));
-        expectedSinglePersonModel.updateFilteredPersonList(predicate);
+        expectedSinglePersonModel.updateFilteredPersonList(predicate,
+                "find " + String.join(" ", predicate.getKeywords()));
 
         FindCommand command = new FindCommand(predicate);
         String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
@@ -148,13 +149,15 @@ public class FindCommandTest {
     @Test
     public void execute_replacesExistingFilter_listRestoresAllPersons() {
         NameContainsKeywordsPredicate firstPredicate = new NameContainsKeywordsPredicate(List.of("Ali"));
-        expectedModel.updateFilteredPersonList(firstPredicate);
+        expectedModel.updateFilteredPersonList(firstPredicate,
+                "find " + String.join(" ", firstPredicate.getKeywords()));
         assertCommandSuccess(new FindCommand(firstPredicate), model,
                 String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 1), expectedModel);
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
 
         NameContainsKeywordsPredicate replacementPredicate = new NameContainsKeywordsPredicate(List.of("Geo"));
-        expectedModel.updateFilteredPersonList(replacementPredicate);
+        expectedModel.updateFilteredPersonList(replacementPredicate,
+                "find " + String.join(" ", replacementPredicate.getKeywords()));
         assertCommandSuccess(new FindCommand(replacementPredicate), model,
                 String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 1), expectedModel);
         assertEquals(List.of(GEORGE), model.getFilteredPersonList());

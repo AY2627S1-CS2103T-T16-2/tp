@@ -25,6 +25,11 @@ public class NameContainsKeywordsPredicate implements Predicate<Person> {
                 .toList();
     }
 
+    /** Returns the immutable keywords used to establish this query. */
+    public List<String> getKeywords() {
+        return keywords;
+    }
+
     @Override
     public boolean test(Person person) {
         String comparisonName = NameComparisonUtil.toUnicodeComparisonForm(person.getName().fullName);

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
+import java.util.function.IntConsumer;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -209,6 +210,109 @@ public class UiManagerStartupTest {
             });
             assertTrue(typingReachedCommandField.get());
             assertFalse(JavaFxTestUtil.callOnFxThread(() -> isHelpStageShowing(owner)));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(owner::close);
+        }
+    }
+
+    @Test
+    public void fatalStartupError_beforeMainWindowExists_showsUnownedErrorDialogAndRequestsShutdown()
+            throws Exception {
+        Stage owner = JavaFxTestUtil.callOnFxThread(Stage::new);
+        IllegalStateException startupFailure = new IllegalStateException("MainWindow.fxml is missing");
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicBoolean platformExitRequested = new AtomicBoolean();
+        AtomicReference<Integer> systemExitStatus = new AtomicReference<>();
+        CountDownLatch inspected = new CountDownLatch(1);
+        CountDownLatch shutdownRequested = new CountDownLatch(1);
+        Runnable platformExit = () -> platformExitRequested.set(true);
+        IntConsumer systemExit = exitStatus -> {
+            systemExitStatus.set(exitStatus);
+            shutdownRequested.countDown();
+        };
+
+        try {
+            Platform.runLater(() -> {
+                try {
+                    UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty(), platformExit,
+                            systemExit);
+                    uiManager.showFatalErrorDialogAndShutdown(owner, "Fatal error during initializing",
+                            startupFailure);
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                    shutdownRequested.countDown();
+                }
+            });
+            Platform.runLater(() -> {
+                try {
+                    DialogPane pane = findDialogPane();
+                    Stage dialogStage = (Stage) pane.getScene().getWindow();
+                    assertEquals("Fatal error during initializing", dialogStage.getTitle());
+                    assertNull(dialogStage.getOwner());
+                    assertEquals("MainWindow.fxml is missing", pane.getHeaderText());
+                    TextArea details = (TextArea) pane.getContent();
+                    assertEquals(startupFailure.toString(), details.getText());
+                    assertFalse(details.isEditable());
+                    assertTrue(details.isWrapText());
+                    assertTrue(pane.getStyleClass().contains("error"));
+                    pane.getScene().getWindow().hide();
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                } finally {
+                    inspected.countDown();
+                }
+            });
+
+            assertTrue(inspected.await(10, TimeUnit.SECONDS), "Fatal startup dialog was not inspected in time");
+            assertTrue(shutdownRequested.await(10, TimeUnit.SECONDS), "Fatal startup shutdown was not requested");
+            if (failure.get() != null) {
+                throw new AssertionError(failure.get());
+            }
+            assertTrue(platformExitRequested.get());
+            assertEquals(1, systemExitStatus.get());
+        } finally {
+            JavaFxTestUtil.runOnFxThread(owner::close);
+        }
+    }
+
+    @Test
+    public void fatalStartupError_withoutExceptionMessage_showsExceptionType() throws Exception {
+        Stage owner = JavaFxTestUtil.callOnFxThread(Stage::new);
+        NullPointerException startupFailure = new NullPointerException();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        CountDownLatch inspected = new CountDownLatch(1);
+
+        try {
+            Platform.runLater(() -> {
+                try {
+                    UiManager uiManager = new UiManager(logic(), dataFilePath(), Optional.empty());
+                    uiManager.showFatalErrorDialog(null, "Fatal error during initializing", startupFailure);
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                }
+            });
+            Platform.runLater(() -> {
+                try {
+                    DialogPane pane = findDialogPane();
+                    Stage dialogStage = (Stage) pane.getScene().getWindow();
+                    assertNull(dialogStage.getOwner());
+                    assertEquals("NullPointerException", pane.getHeaderText());
+                    TextArea details = (TextArea) pane.getContent();
+                    assertEquals(startupFailure.toString(), details.getText());
+                    assertFalse(details.isEditable());
+                    assertTrue(details.isWrapText());
+                    pane.getScene().getWindow().hide();
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                } finally {
+                    inspected.countDown();
+                }
+            });
+
+            assertTrue(inspected.await(10, TimeUnit.SECONDS), "Fatal startup dialog was not inspected in time");
+            if (failure.get() != null) {
+                throw new AssertionError(failure.get());
+            }
         } finally {
             JavaFxTestUtil.runOnFxThread(owner::close);
         }

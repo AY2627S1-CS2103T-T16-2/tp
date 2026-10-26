@@ -9,6 +9,7 @@ import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.tuitionbook.testutil.TypicalPersons.getTypicalTuitionBook;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -87,7 +88,7 @@ public class ListCommandTest {
         Model expectedRoleModel = modelWith(student, guardian);
 
         PersonHasRolePredicate predicate = new PersonHasRolePredicate(Role.GUARDIAN);
-        expectedRoleModel.updateFilteredPersonList(predicate);
+        expectedRoleModel.updateFilteredPersonList(predicate, "list r/guardian");
         String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
 
         assertCommandSuccess(new ListCommand(predicate), roleModel, expectedMessage, expectedRoleModel);
@@ -101,7 +102,7 @@ public class ListCommandTest {
         Model expectedStudentOnlyModel = modelWith(student);
 
         PersonHasRolePredicate predicate = new PersonHasRolePredicate(Role.GUARDIAN);
-        expectedStudentOnlyModel.updateFilteredPersonList(predicate);
+        expectedStudentOnlyModel.updateFilteredPersonList(predicate, "list r/guardian");
         String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 0);
 
         assertCommandSuccess(new ListCommand(predicate), studentOnlyModel, expectedMessage,
@@ -118,7 +119,7 @@ public class ListCommandTest {
 
         PersonMatchesListFilterPredicate predicate =
                 new PersonMatchesListFilterPredicate(null, List.of("ACTIVE"));
-        expectedTagModel.updateFilteredPersonList(predicate);
+        expectedTagModel.updateFilteredPersonList(predicate, "list t/ACTIVE");
         String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
 
         assertCommandSuccess(new ListCommand(predicate), tagModel, expectedMessage, expectedTagModel);
@@ -138,7 +139,7 @@ public class ListCommandTest {
 
         PersonMatchesListFilterPredicate predicate =
                 new PersonMatchesListFilterPredicate(null, List.of("ACTIVE", "MATH"));
-        expectedTagModel.updateFilteredPersonList(predicate);
+        expectedTagModel.updateFilteredPersonList(predicate, "list t/ACTIVE t/MATH");
         String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
 
         assertCommandSuccess(new ListCommand(predicate), tagModel, expectedMessage, expectedTagModel);
@@ -156,7 +157,7 @@ public class ListCommandTest {
 
         PersonMatchesListFilterPredicate predicate =
                 new PersonMatchesListFilterPredicate(null, List.of("ACTIVE", "active"));
-        expectedTagModel.updateFilteredPersonList(predicate);
+        expectedTagModel.updateFilteredPersonList(predicate, "list t/ACTIVE t/active");
         String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
 
         assertCommandSuccess(new ListCommand(predicate), tagModel, expectedMessage, expectedTagModel);
@@ -178,7 +179,7 @@ public class ListCommandTest {
 
         PersonMatchesListFilterPredicate predicate = new PersonMatchesListFilterPredicate(
                 Role.STUDENT, List.of("ACTIVE", "INACTIVE", "MATH"));
-        expectedFilterModel.updateFilteredPersonList(predicate);
+        expectedFilterModel.updateFilteredPersonList(predicate, "list r/student t/ACTIVE t/INACTIVE t/MATH");
         String expectedMessage = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, 1);
 
         assertCommandSuccess(new ListCommand(predicate), filterModel, expectedMessage, expectedFilterModel);
@@ -205,17 +206,19 @@ public class ListCommandTest {
                 .withTags("active").build();
         Person anotherStudent = new PersonBuilder().withName("Sue Student").withRole(Role.STUDENT)
                 .withTags("active").build();
-        List<Predicate<Person>> initialFilters = List.of(
-                new NameContainsKeywordsPredicate(List.of("Sam")), new PersonHasRolePredicate(Role.STUDENT));
+        Map<String, Predicate<Person>> initialFilters = Map.of(
+                "find Sam", new NameContainsKeywordsPredicate(List.of("Sam")),
+                "list r/student", new PersonHasRolePredicate(Role.STUDENT));
 
-        for (Predicate<Person> initialFilter : initialFilters) {
+        for (Map.Entry<String, Predicate<Person>> initialQuery : initialFilters.entrySet()) {
+            Predicate<Person> initialFilter = initialQuery.getValue();
             Model actual = modelWith(student, guardian, anotherStudent);
-            actual.updateFilteredPersonList(initialFilter);
+            actual.updateFilteredPersonList(initialFilter, initialQuery.getKey());
             assertFalse(actual.getFilteredPersonList().contains(guardian));
             Model expected = modelWith(student, guardian, anotherStudent);
             PersonMatchesListFilterPredicate tagFilter =
                     new PersonMatchesListFilterPredicate(null, List.of("ACTIVE"));
-            expected.updateFilteredPersonList(tagFilter);
+            expected.updateFilteredPersonList(tagFilter, "list t/ACTIVE");
 
             assertCommandSuccess(new ListCommand(tagFilter), actual, "2 person(s) listed!", expected);
             assertEquals(List.of(guardian, anotherStudent), actual.getFilteredPersonList());
@@ -231,7 +234,7 @@ public class ListCommandTest {
         Model actual = modelWith(person);
         Model expected = modelWith(person);
         PersonMatchesListFilterPredicate filter = new PersonMatchesListFilterPredicate(null, List.of("active"));
-        expected.updateFilteredPersonList(filter);
+        expected.updateFilteredPersonList(filter, "list t/active");
         assertCommandSuccess(new ListCommand(filter), actual, "0 person(s) listed!", expected);
         assertTrue(actual.getFilteredPersonList().isEmpty());
         assertEquals(List.of(person), actual.getTuitionBook().getPersonList());

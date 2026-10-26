@@ -2,6 +2,7 @@ package seedu.tuitionbook.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
+import static seedu.tuitionbook.model.Model.SHOW_ALL_PERSONS_REFRESH_COMMAND;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +46,7 @@ public class ReloadCommand extends Command {
                     + " " + guidance + recovery, exception);
         }
         model.setTuitionBook(result.tuitionBook());
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, SHOW_ALL_PERSONS_REFRESH_COMMAND);
         String message = String.format(MESSAGE_SUCCESS, model.getFilteredPersonList().size());
         if (result.repairedGuardianLinkCount() > 0) {
             message += " Removed " + result.repairedGuardianLinkCount()

@@ -33,7 +33,8 @@ deactivate DeleteCommand
 
 note right of LogicManager
 Copy the TuitionBook and retain
-the active filter for rollback.
+ordered working-set UUIDs,
+query and predicate for rollback.
 end note
 
 LogicManager -> DeleteCommand : execute(m, s)
@@ -88,7 +89,8 @@ end
 
 note right of LogicManager
 If saving fails, restore the saved
-contacts and filter, then throw a
+contacts and exact working set,
+then throw a
 CommandException. Calls are omitted.
 end note
 
