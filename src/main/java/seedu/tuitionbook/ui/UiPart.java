@@ -82,7 +82,10 @@ public abstract class UiPart<T> {
         requireNonNull(fxmlFileName);
         String fxmlFileNameWithFolder = FXML_FILE_FOLDER + fxmlFileName;
         URL fxmlFileUrl = MainApp.class.getResource(fxmlFileNameWithFolder);
-        return requireNonNull(fxmlFileUrl);
+        if (fxmlFileUrl == null) {
+            throw new IllegalStateException("Missing UI resource: " + fxmlFileNameWithFolder);
+        }
+        return fxmlFileUrl;
     }
 
 }

@@ -5,6 +5,7 @@ import seedu.tuitionbook.commons.core.GuiSettings;
 import seedu.tuitionbook.logic.commands.CommandResult;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
+import seedu.tuitionbook.model.PersonListViewState;
 import seedu.tuitionbook.model.person.Person;
 
 /**
@@ -25,6 +26,9 @@ public interface Logic {
 
     /** Returns an unmodifiable view of all persons, independent of the active filter. */
     ObservableList<Person> getPersonList();
+
+    /** Returns the current working set and originating query for retained-row presentation. */
+    PersonListViewState getPersonListViewState();
 
     /**
      * Returns the user prefs' GUI settings.

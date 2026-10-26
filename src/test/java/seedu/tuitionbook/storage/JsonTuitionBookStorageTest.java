@@ -82,7 +82,7 @@ public class JsonTuitionBookStorageTest {
         assertEquals(original, restored.getTuitionBook());
         assertEquals(person.getTags(), restored.getTuitionBook().getPersonList().getFirst().getTags());
         restored.updateFilteredPersonList(new PersonMatchesListFilterPredicate(Role.STUDENT,
-                List.of("math  science", "\"QUOTES\"", "c:\\NOTES")));
+                List.of("math  science", "\"QUOTES\"", "c:\\NOTES")), "list r/student");
         assertEquals(List.of(person), restored.getFilteredPersonList());
     }
 
@@ -138,6 +138,57 @@ public class JsonTuitionBookStorageTest {
         assertMalformedDataIsBackedUpAndSavingIsAllowed("""
                 {"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}
                 """);
+    }
+
+    @Test
+    public void readTuitionBook_utf8Bom_loadsNormally() throws Exception {
+        Path filePath = testFolder.resolve("BomTuitionBook.json");
+        byte[] contents = ("\uFEFF" + CONFLICTING_TUITION_BOOK_JSON.replace("alice", "Alicia"))
+                .getBytes(StandardCharsets.UTF_8);
+        Files.write(filePath, contents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        ReadOnlyTuitionBook tuitionBook = storage.readTuitionBook().orElseThrow();
+
+        assertEquals(3, tuitionBook.getPersonList().size());
+        assertArrayEquals(contents, Files.readAllBytes(filePath));
+        assertFalse(Files.exists(filePath.resolveSibling(filePath.getFileName() + ".backup")));
+    }
+
+    @Test
+    public void readTuitionBook_invalidUtf8_movesOriginalBytesToBackupAndAllowsSaving() throws Exception {
+        // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/196
+        Path filePath = testFolder.resolve("InvalidUtf8TuitionBook.json");
+        String json = "{\"persons\":[{\"name\":\"Valid Name\",\"phone\":\"81234567\","
+                + "\"address\":\"X\",\"tags\":[]}]}";
+        byte[] originalContents = json.getBytes(StandardCharsets.UTF_8);
+        originalContents[json.indexOf('X')] = (byte) 0x80;
+        Files.write(filePath, originalContents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
+        assertFalse(Files.exists(filePath));
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+        storage.saveTuitionBook(new TuitionBook());
+        assertEquals(new TuitionBook(), new TuitionBook(storage.readTuitionBook().orElseThrow()));
+    }
+
+    @Test
+    public void readTuitionBook_utf16_movesOriginalBytesToBackupAndAllowsSaving() throws Exception {
+        Path filePath = testFolder.resolve("Utf16TuitionBook.json");
+        byte[] originalContents = "{\"persons\":[]}".getBytes(StandardCharsets.UTF_16);
+        Files.write(filePath, originalContents);
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+
+        Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
+        assertFalse(Files.exists(filePath));
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+        storage.saveTuitionBook(new TuitionBook());
+        assertEquals(new TuitionBook(), new TuitionBook(storage.readTuitionBook().orElseThrow()));
     }
 
     @Test
@@ -400,6 +451,16 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readTuitionBook_guardianIdObject_preservesWholeFile() throws Exception {
+        assertUnsupportedGuardianIdTypeIsBackedUp("{\"unexpected\":\"value\"}");
+    }
+
+    @Test
+    public void readTuitionBook_guardianIdArray_preservesWholeFile() throws Exception {
+        assertUnsupportedGuardianIdTypeIsBackedUp("[]");
+    }
+
+    @Test
     public void readTuitionBook_invalidUnrelatedFile_doesNotBlockConfiguredFile() throws Exception {
         Path configuredFilePath = testFolder.resolve("ConfiguredTuitionBook.json");
         Path unrelatedFilePath = testFolder.resolve("UnrelatedTuitionBook.json");
@@ -487,6 +548,16 @@ public class JsonTuitionBookStorageTest {
                   } ]
                 }
                 """.formatted(name, address).getBytes(StandardCharsets.UTF_8);
+    }
+
+    private void assertUnsupportedGuardianIdTypeIsBackedUp(String guardianIdJson) throws Exception {
+        String contents = """
+                {"persons":[
+                  {"id":"123e4567-e89b-12d3-a456-426614174000","role":"STUDENT",
+                   "guardianId":%s,"name":"Sam Student","phone":"91234567","tags":[]}
+                ]}
+                """.formatted(guardianIdJson);
+        assertMalformedDataIsBackedUpAndSavingIsAllowed(contents);
     }
 
     private void assertMalformedDataIsBackedUpAndSavingIsAllowed(String contents) throws Exception {

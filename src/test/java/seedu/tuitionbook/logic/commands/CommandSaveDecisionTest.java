@@ -47,10 +47,10 @@ public class CommandSaveDecisionTest {
         EditCommand command = new EditCommand(INDEX_FIRST_PERSON, descriptor);
         command.execute(model);
         assertTrue(command.requiresSave());
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         assertThrows(CommandException.class, () -> command.execute(model));
         assertFalse(command.requiresSave());
-        model.updateFilteredPersonList(person -> true);
+        model.updateFilteredPersonList(person -> true, "list");
         command.execute(model);
         assertFalse(command.requiresSave());
     }
@@ -64,7 +64,7 @@ public class CommandSaveDecisionTest {
         command.execute(model);
         assertFalse(command.requiresSave());
         model.addPerson(new PersonBuilder().build());
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         command.execute(model);
         assertTrue(command.requiresSave());
         assertTrue(model.getTuitionBook().getPersonList().isEmpty());
@@ -76,10 +76,10 @@ public class CommandSaveDecisionTest {
         LinkCommand command = new LinkCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON);
         command.execute(model);
         assertTrue(command.requiresSave());
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         assertThrows(CommandException.class, () -> command.execute(model));
         assertFalse(command.requiresSave());
-        model.updateFilteredPersonList(person -> true);
+        model.updateFilteredPersonList(person -> true, "list");
         command.execute(model);
         assertFalse(command.requiresSave());
     }
@@ -91,10 +91,10 @@ public class CommandSaveDecisionTest {
         UnlinkCommand command = new UnlinkCommand(INDEX_FIRST_PERSON);
         command.execute(model);
         assertTrue(command.requiresSave());
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         assertThrows(CommandException.class, () -> command.execute(model));
         assertFalse(command.requiresSave());
-        model.updateFilteredPersonList(person -> true);
+        model.updateFilteredPersonList(person -> true, "list");
         command.execute(model);
         assertFalse(command.requiresSave());
     }

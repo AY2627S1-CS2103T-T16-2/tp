@@ -43,7 +43,7 @@ public class ClearCommandTest {
         Model model = new ModelManager(new TuitionBook(), new UserPrefs());
         model.addPerson(guardian);
         model.addPerson(student);
-        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
 
         CommandResult result = new ClearCommand().execute(model);
 

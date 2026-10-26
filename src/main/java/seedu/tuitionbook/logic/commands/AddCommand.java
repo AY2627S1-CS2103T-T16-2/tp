@@ -83,7 +83,15 @@ public class AddCommand extends Command {
 
         model.addPerson(toAdd);
         requiresSave = true;
-        return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
+        CommandResult result = new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
+        boolean isDisplayed = model.getFilteredPersonList().stream()
+                .anyMatch(person -> person.getId().equals(toAdd.getId()));
+        if (!isDisplayed) {
+            result = result.withAdditionalFeedback("The new contact is saved but does not match this working set. "
+                    + "Use list to locate it. To refresh the current working set, rerun: "
+                    + model.getPersonListViewState().refreshCommand());
+        }
+        return result;
     }
 
     @Override
