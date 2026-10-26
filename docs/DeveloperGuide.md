@@ -1000,6 +1000,16 @@ Use a fresh, disposable folder with an empty contact list.
    1. Relaunch the app using the same terminal command.<br>
        Expected: The most recent window size and location are retained.
 
+1. Recovering from null window preferences
+
+   1. Close TuitionBook. In the folder containing the JAR, replace the contents of `preferences.json` with `{"guiSettings": null}`.
+
+   1. Relaunch the app using the same terminal command.<br>
+      Expected: TuitionBook opens using the default window settings without a `NullPointerException`. Existing contacts remain unchanged.
+
+   1. Close TuitionBook and inspect `preferences.json`.<br>
+      Expected: `guiSettings` contains saved window settings instead of `null`.
+
 ### Getting help
 
 1. Click the top-level `Help` control once.<br>
