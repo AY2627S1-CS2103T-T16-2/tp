@@ -18,6 +18,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
+import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
@@ -40,6 +41,10 @@ public class PersonListPanel extends UiPart<Region> {
      * A longer bounded window keeps scrolling reliable for large lists on slower platforms.
      */
     private static final int SCROLL_RETRY_PULSE_COUNT = 60;
+    /** Number of consecutive pulses for which the target must remain visible before stopping. */
+    private static final int REQUIRED_STABLE_VISIBLE_PULSE_COUNT = 3;
+    /** Tolerance for fractional layout differences at the viewport boundary. */
+    private static final double VIEWPORT_TOLERANCE = 1.0;
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
     private final Map<UUID, Person> personsById = new HashMap<>();
     private final ObservableList<Person> allPersons;
@@ -106,10 +111,24 @@ public class PersonListPanel extends UiPart<Region> {
 
         scrollAnimation = new AnimationTimer() {
             private int remainingPulseCount = SCROLL_RETRY_PULSE_COUNT;
+            private int consecutiveVisiblePulseCount;
 
             @Override
             public void handle(long now) {
-                if (!scrollToPersonOnce(personId) || isPersonVisible(personId) || --remainingPulseCount == 0) {
+                if (!scrollToPersonOnce(personId)) {
+                    stopScrollAnimation();
+                    return;
+                }
+                if (isPersonFullyVisible(personId)) {
+                    consecutiveVisiblePulseCount++;
+                    if (consecutiveVisiblePulseCount >= REQUIRED_STABLE_VISIBLE_PULSE_COUNT) {
+                        stopScrollAnimation();
+                        return;
+                    }
+                } else {
+                    consecutiveVisiblePulseCount = 0;
+                }
+                if (--remainingPulseCount == 0) {
                     stopScrollAnimation();
                 }
             }
@@ -127,14 +146,34 @@ public class PersonListPanel extends UiPart<Region> {
         return false;
     }
 
-    private boolean isPersonVisible(UUID personId) {
+    private boolean isPersonFullyVisible(UUID personId) {
         Bounds listBounds = personListView.localToScene(personListView.getBoundsInLocal());
-        return personListView.lookupAll(".list-cell").stream()
-                .filter(node -> node instanceof ListCell<?> cell
-                        && cell.getItem() instanceof Person person
-                        && person.getId().equals(personId))
-                .map(node -> node.localToScene(node.getBoundsInLocal()))
-                .anyMatch(listBounds::intersects);
+        if (listBounds == null) {
+            return false;
+        }
+        for (Node node : personListView.lookupAll(".list-cell")) {
+            if (!(node instanceof ListCell<?> cell)
+                    || !cell.isVisible()
+                    || !(cell.getItem() instanceof Person person)
+                    || !person.getId().equals(personId)) {
+                continue;
+            }
+            Bounds cellBounds = cell.localToScene(cell.getBoundsInLocal());
+            if (cellBounds != null && isCellWithinViewport(listBounds, cellBounds)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isCellWithinViewport(Bounds viewportBounds, Bounds cellBounds) {
+        boolean fitsHorizontally = cellBounds.getMinX() >= viewportBounds.getMinX() - VIEWPORT_TOLERANCE
+                && cellBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE;
+        boolean fitsVertically = cellBounds.getMinY() >= viewportBounds.getMinY() - VIEWPORT_TOLERANCE
+                && cellBounds.getMaxY() <= viewportBounds.getMaxY() + VIEWPORT_TOLERANCE;
+        boolean coversViewport = cellBounds.getMinY() <= viewportBounds.getMinY() + VIEWPORT_TOLERANCE
+                && cellBounds.getMaxY() >= viewportBounds.getMaxY() - VIEWPORT_TOLERANCE;
+        return fitsHorizontally && (fitsVertically || coversViewport);
     }
 
     private void stopScrollAnimation() {

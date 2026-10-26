@@ -64,6 +64,8 @@ import seedu.tuitionbook.testutil.PersonBuilder;
 public class MainWindowTest {
     private static final List<Integer> VIEWPORT_CONTACT_COUNTS =
             List.of(0, 1, 2, 5, 10, 20, 50, 100, 500, 1000);
+    private static final int REQUIRED_STABLE_VISIBLE_PULSE_COUNT = 3;
+    private static final double VIEWPORT_TOLERANCE = 1.0;
 
     @TempDir
     public Path temporaryFolder;
@@ -160,8 +162,7 @@ public class MainWindowTest {
                     fixture.personListView().scrollTo(0);
                     execute(fixture.commandBox(), "add");
                 });
-                assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
-                        isPersonVisible(fixture.personListView(), fixture.addedPerson())),
+                assertTrue(waitForStablePersonVisibility(fixture.personListView(), fixture.addedPerson()),
                         "Added contact should be visible after the add command for "
                                 + existingContactCount + " existing contacts");
                 assertNull(JavaFxTestUtil.callOnFxThread(() ->
@@ -323,15 +324,14 @@ public class MainWindowTest {
                     fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
             JavaFxTestUtil.runOnFxThread(() ->
                     fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId()));
-            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
-                    isPersonVisible(fixture.personListView(), fixture.addedPerson())),
+            assertTrue(waitForStablePersonVisibility(fixture.personListView(), fixture.addedPerson()),
                     "Automatic scroll should make the target contact visible");
 
             JavaFxTestUtil.runOnFxThread(() -> fixture.personListView().scrollTo(0));
             AtomicInteger pulses = new AtomicInteger();
             assertTrue(JavaFxTestUtil.waitForFxCondition(() -> pulses.incrementAndGet() >= 3));
             assertFalse(JavaFxTestUtil.callOnFxThread(() ->
-                    isPersonVisible(fixture.personListView(), fixture.addedPerson())),
+                    isPersonFullyVisible(fixture.personListView(), fixture.addedPerson())),
                     "Manual scrolling should not be overridden by automatic retries");
         } finally {
             JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
@@ -585,14 +585,38 @@ public class MainWindowTest {
         assertEquals(detailVisible, detailText.getParent().isVisible());
     }
 
-    private static boolean isPersonVisible(ListView<Person> personListView, Person person) {
+    private static boolean isPersonFullyVisible(ListView<Person> personListView, Person person) {
         Bounds listBounds = personListView.localToScene(personListView.getBoundsInLocal());
+        if (listBounds == null) {
+            return false;
+        }
         return personListView.lookupAll(".list-cell").stream()
                 .filter(ListCell.class::isInstance)
                 .map(node -> (ListCell<?>) node)
-                .filter(cell -> person.equals(cell.getItem()))
+                .filter(cell -> cell.isVisible() && person.equals(cell.getItem()))
                 .map(cell -> cell.localToScene(cell.getBoundsInLocal()))
-                .anyMatch(listBounds::intersects);
+                .anyMatch(cellBounds -> cellBounds != null && isCellWithinViewport(listBounds, cellBounds));
+    }
+
+    private static boolean waitForStablePersonVisibility(ListView<Person> personListView, Person person) {
+        AtomicInteger consecutiveVisiblePulses = new AtomicInteger();
+        return JavaFxTestUtil.waitForFxCondition(() -> {
+            if (isPersonFullyVisible(personListView, person)) {
+                return consecutiveVisiblePulses.incrementAndGet() >= REQUIRED_STABLE_VISIBLE_PULSE_COUNT;
+            }
+            consecutiveVisiblePulses.set(0);
+            return false;
+        });
+    }
+
+    private static boolean isCellWithinViewport(Bounds viewportBounds, Bounds cellBounds) {
+        boolean fitsHorizontally = cellBounds.getMinX() >= viewportBounds.getMinX() - VIEWPORT_TOLERANCE
+                && cellBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE;
+        boolean fitsVertically = cellBounds.getMinY() >= viewportBounds.getMinY() - VIEWPORT_TOLERANCE
+                && cellBounds.getMaxY() <= viewportBounds.getMaxY() + VIEWPORT_TOLERANCE;
+        boolean coversViewport = cellBounds.getMinY() <= viewportBounds.getMinY() + VIEWPORT_TOLERANCE
+                && cellBounds.getMaxY() >= viewportBounds.getMaxY() - VIEWPORT_TOLERANCE;
+        return fitsHorizontally && (fitsVertically || coversViewport);
     }
 
     @SuppressWarnings("unchecked")
