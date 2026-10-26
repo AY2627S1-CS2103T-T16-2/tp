@@ -32,6 +32,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Made equal `Index` values produce the same hash code, including equivalent one-based and zero-based indexes (#212).
 - Recovered from a `null` `guiSettings` value in `preferences.json` by restoring and saving default window settings instead of failing during startup (#192).
 - Show the fatal startup error dialog when a packaged UI resource is missing or malformed, instead of raising a secondary null-window exception.
 - Rejected whitespace-, control-, or format-only and line-breaking addresses consistently when entered through commands or loaded from JSON.
