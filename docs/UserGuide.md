@@ -225,6 +225,8 @@ This workflow uses its own contact, Alex Tan, instead of the sample contacts. To
 
 ### Keeping displayed indexes stable
 
+The indicator above the contact list stays visible even when later commands replace the result message or open contact details. An unfiltered view shows `All contacts: 42`. A filtered view shows its query, for example `Query: list t/Active`, and `Shown: 3 of 42 contacts · Matching: 2 · Retained: 1`. `Shown` is the working-set size, and the total includes hidden contacts. `Matching` counts only displayed contacts that currently satisfy the query; `Retained` counts displayed contacts that no longer match. Hidden contacts are not included in either of these two counts. The query remains identified even when it matches every contact or no contacts. A long query is shortened on screen; hover over it to read the complete command.
+
 Each `list` or `find` establishes a working set in normal contact-list order. `edit`, `tag`, `untag`, `link` and `unlink` preserve all surviving displayed indexes, even when contacts stop matching the query. Those rows show **No longer matches the query** with a command to refresh. Matching again removes the notice without moving the row. An existing hidden contact that becomes a match stays hidden until an explicit query.
 
 Rerun the originating command, such as `list t/Active`, to refresh membership. Bare `list` deliberately shows all contacts. Matching additions append; nonmatching additions are saved without being displayed.
@@ -274,7 +276,7 @@ Names support the same optional double quotes as `add`. For example, `edit 1 n/"
 * At least one of the optional fields must be provided.
 * To remove an existing email or address, use `e/` or `a/` with no value respectively.
 * Existing values will be updated to the input values.
-* `edit` cannot change a person's role or guardian link. Use `link` or `unlink` to change a student's guardian link. The role specified with `add` applies only to the new contact.
+* `edit` cannot change a person's role or guardian link. Supplying `r/` reports that a contact's role cannot be changed after it is added. Supplying `g/` directs you to `link STUDENT_INDEX GUARDIAN_INDEX` to set or replace a guardian link, or `unlink STUDENT_INDEX` to remove it, using indexes from the currently displayed list. If both prefixes are supplied, both explanations are shown. No part of the rejected edit is applied. The role specified with `add` applies only to the new contact.
 * `NAME`, `PHONE`, `EMAIL`, and `ADDRESS` follow the same validation and Unicode code-point length rules described for [`add`](#adding-a-contact-add).
 * Names, addresses and tags support the same quoting and strict prefix rules as [`add`](#adding-a-contact-add). `edit INDEX a/""` clears the address, just like `edit INDEX a/`; a blank quoted address is not stored.
 * `TAG` follows the same space-and-punctuation and optional quoting rules described for [`add`](#adding-a-contact-add).
@@ -309,7 +311,8 @@ Removes only the specified tags while keeping the contact's other tags.
 Format: `untag INDEX t/TAG [t/TAG]...`
 
 * The index, tag validation, case sensitivity, prefix boundaries, saving, and working-set rules are the same as for `tag`.
-* Tag names must match exactly, including case and internal spacing. With the sample contacts, `untag 3 t/math` does not remove Grace Tan's `Math` tag.
+* Tag names must match exactly, including case and internal spacing. `untag 1 t/math` does not remove `Math`.
+* If an absent tag differs only in case from a tag on this contact, feedback suggests the stored spelling so you can retry. For example, `untag 1 t/math` reports `Tag "math" not found, did you mean "Math"?` when `Math` is the stored tag. If multiple case variants remain, all are listed in sorted order; suggestions exclude tags removed by the same command. Suggestions do not change or remove tags automatically.
 * Absent tags are skipped and listed in the feedback under `Tags not present:`. Names are shown in sorted order, enclosed in double quotes; literal quotes and backslashes are escaped in this display so tag boundaries are clear. If none of the requested tags is present, the command reports this without saving or changing the working set.
 * A mixture of present and absent tags removes the present tags. Removing the final tag leaves the contact with no tags.
 * A missing tag argument or an empty `t/` is rejected; use `edit INDEX t/` to clear the entire tag set.

@@ -216,6 +216,8 @@ This section describes some noteworthy details on how certain features are imple
 
 `TagCommand` compares requested tags with the original contact's tag set to report only newly added tags in its success message. `UntagCommand` uses the same comparison to report every absent tag, both when other tags are removed and when nothing changes. Shared feedback formatting sorts names and encloses them in double quotes, escaping literal quotes and backslashes for unambiguous display. This formatting does not change tag matching or command parsing. The difference is recomputed on each execution rather than retained as command state.
 
+For each absent tag, `UntagCommand` also compares its spelling case-insensitively with tags remaining on the selected contact. It suggests every matching stored spelling in sorted order, excluding exact tags removed by this execution. Suggestions use the same quoting and escaping as missing-tag feedback and are recomputed on reuse. Tag identity, removal and persistence remain case-sensitive; suggestions do not request a save when nothing changed.
+
 ### Viewing contact relationships
 
 `ViewCommandParser` parses `view INDEX [v/]` with the same positive-index rule as other index-based commands. The optional empty `v/` prefix selects full details for linked contacts; the parser rejects duplicate prefixes and values after `v/`.
@@ -235,6 +237,8 @@ The working set preserves indexes across non-deleting mutations and compacts the
 `PersonListViewState` copies UUID membership/order and retains the predicate and query. On an actual save failure, `LogicManager` restores contacts, then this snapshot, preserving appended rows and retained exceptions exactly. Every query supplies explicit refresh text; there is no implicit show-all fallback for arbitrary predicates. The query accessor is named `getPersonListQueryPredicate()` because retained displayed contacts may no longer match it. Actual membership comes from the displayed list or snapshot UUIDs. The JSON schema is unchanged and contains no working-set state. Refreshing displayed values requires an O(n) UUID lookup; no constant-time or benchmark claim is made.
 
 `PersonListPanel` supplies each card with a notice when its current values fail the originating predicate. Match status is derived from current data, so it clears when a contact matches again and is correct after rollback. Mutating-command feedback gives the query to refresh; hidden additions explain how to locate the saved contact. Deletion warns that subsequent indexes may have changed.
+
+`MainWindow` also keeps a query/count indicator above the shared list/detail area. It reads the canonical refresh command from `Logic#getPersonListViewState()`, the working set from `Logic#getFilteredPersonList()` and the total from `Logic#getPersonList()`. The shared full-list refresh command identifies the unfiltered state; equal displayed and total counts do not imply that a query is inactive. Matching and retained counts partition only the displayed working set, using its originating predicate against current contact values. The indicator is initialized with the window contents and updated in `executeCommand`'s `finally` block, after success, rejection or save-failure rollback has finished. It does not change query membership, storage or focus. Query text stays on one line with a wrapped full-command tooltip, while the count line wraps at narrow widths.
 
 ### Contact field validation
 
@@ -861,7 +865,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
 * **Working set**: Ordered contact UUIDs displayed with their current values, together with the originating query and canonical refresh command. Matching additions append, nonmatching additions stay hidden, and edits preserve membership and indexes. Deletion compacts survivors; an explicit query replaces membership. Successful reload, clear and restart reset the working set.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON retains the plain tag string without migration. `Tag.equals` and `hashCode` remain case-sensitive; only list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `find` remains name-only.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON retains the plain tag string without migration. `Tag.equals` and `hashCode` remain case-sensitive; list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `untag` suggests case variants for absent tags without changing its case-sensitive removal rule. `find` remains name-only.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -1171,10 +1175,46 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `find`, then enter `find` followed only by spaces.<br>
    Expected: Each command reports an invalid-command format message containing the updated `find` usage, including `Parameters: KEYWORD [MORE_KEYWORDS]...` and `Example: find rac bob`, and does not change the displayed list.
 
+### Feedback for unsupported role and guardian edits
+
+Use an empty disposable book.
+
+1. Enter `add r/student n/Alex Student p/90000001`, `add r/guardian n/Grace Guardian p/90000002`, then `link 1 2`.
+1. Enter `list r/student`, then `edit 1 r/guardian`.<br>
+   Expected: The result explains that a contact's role cannot be changed after it is added. Alex remains a student linked to Grace; the student-only working set stays unchanged.
+1. Enter `edit 1 g/2`.<br>
+   Expected: The result directs you to `link STUDENT_INDEX GUARDIAN_INDEX` or `unlink STUDENT_INDEX`, using displayed indexes. No contact or link changes. To use `link`, first show both contacts with `list`; Grace is hidden in the current student-only list.
+1. Enter `edit 1 n/Changed r/guardian g/2`.<br>
+   Expected: Both explanations appear. Alex's name, role, guardian link and the displayed working set remain unchanged; no partial edit is saved.
+1. Enter `edit 1 t/"call r/guardian g/2"`.<br>
+   Expected: The quoted text is saved as a literal tag; no unsupported-edit error is shown. Restart and check that Alex still has the original name, student role and guardian link, and the new tag.
+
 ### Editing without losing scroll position
 
 Use at least 120 synthetic contacts in disposable storage. Scroll near the bottom so that contact 91 is visible and note the first visible contact and scrollbar position. Enter `edit 91 p/98888888`.<br>
 Expected: the phone updates in place and the viewport stays at the same part of the list. Repeat with another visible contact. Explicit queries, deletion compaction and adding a contact are separate view operations; this check concerns edits that keep the same working-set membership and card height.
+
+### Persistent query and contact counts
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Confirm the indicator above the contact list says `All contacts: 0`.
+1. Enter `add r/student n/Alex Student p/90000001 t/Active`, `add r/student n/John Student p/90000002 t/Active`, then `list r/student`.<br>
+   Expected: The indicator shows `Query: list r/student` and `Shown: 2 of 2 contacts · Matching: 2 · Retained: 0`. A query remains active even when every contact matches.
+1. Enter `add r/guardian n/Grace Guardian p/90000003`, then `list t/Active`.<br>
+   Expected: The indicator shows `Query: list t/Active` and `Shown: 2 of 3 contacts · Matching: 2 · Retained: 0`.
+1. Enter `untag 1 t/Active`, then `view 1`.<br>
+   Expected: The indicator remains visible above the details and shows `Shown: 2 of 3 contacts · Matching: 1 · Retained: 1`. Alex is retained rather than counted as a query match.
+1. Enter `tag 1 t/Active`, then `add r/student n/Eve Student p/90000004 t/Active`.<br>
+   Expected: The list returns and the indicator shows `Shown: 3 of 4 contacts · Matching: 3 · Retained: 0`.
+1. Enter `delete 2`, then `edit 99 n/Missing Student`.<br>
+   Expected: After deletion, `Shown: 2 of 3 contacts · Matching: 2 · Retained: 0` is displayed. The rejected edit changes neither the query nor its counts.
+1. Enter `find Missing`, then `reload`.<br>
+   Expected: The empty query result shows `Query: find Missing` and `Shown: 0 of 3 contacts · Matching: 0 · Retained: 0`. Successful reload resets the indicator to `All contacts: 3`.
+1. Enter `clear confirm`, then restart.<br>
+   Expected: Both clearing and restarting show `All contacts: 0`. No query state is persisted.
+
+The automated `ContactViewStatusTest` also injects save failures and a failed reload, verifying that the indicator describes the restored contacts and working set rather than an unsuccessful attempted change. It checks a long query at a narrow window width without hiding the counts.
 
 ### Stable indexes across contact changes
 
@@ -1219,7 +1259,7 @@ Use an empty contact list in disposable storage.
 1. Enter `list r/student`, then `untag 1 t/Math t/absent`.<br>
    Expected: Sam has only `Sec 4` and `Science`; feedback includes `Tags not present: "absent".` and only Sam stays displayed at index 1.
 1. Enter `find Sam`, then `tag 1 t/Science` and `untag 1 t/science`.<br>
-   Expected: Both commands report no change, only Sam stays displayed, and no save is attempted. The differently cased `science` does not remove `Science`; `untag` feedback includes `Tags not present: "science".`
+   Expected: Both commands report no change, only Sam stays displayed, and no save is attempted. The differently cased `science` does not remove `Science`; `untag` feedback includes `Tags not present: "science". Tag "science" not found, did you mean "Science"?`
 1. Enter `tag 1 t/New t/` and `untag 1 t/Science t/`.<br>
    Expected: Both commands report tag constraint errors; no tags are added or removed.
 1. Restart, then enter `view 2`.<br>

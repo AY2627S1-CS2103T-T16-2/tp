@@ -117,7 +117,8 @@ public class LogicManagerTest {
         for (String input : List.of("help extra", "exit extra", "reload extra", "HELP extra", "EXIT extra",
                 "RELOAD extra", "CLEAR CONFIRM", "ADD R/student n/Bad p/123", "delete\u00a01",
                 "delete 1\u3000", "edit 1\u00a0 n/Changed", "link 1\u30002", "clear confirm\u2028",
-                "edit 1 n/Changed\u2029", "\nclear confirm")) {
+                "edit 1 n/Changed\u2029", "\nclear confirm", "edit 1 r/guardian", "edit 1 g/2",
+                "edit 1 n/Changed r/guardian g/2")) {
             assertThrows(ParseException.class, () -> logic.execute(input));
             assertEquals(original, model.getTuitionBook());
             assertEquals(original.getPersonList().stream().map(Person::getId).toList(),
@@ -285,7 +286,8 @@ public class LogicManagerTest {
         assertEquals(String.format(TagCommand.MESSAGE_NO_CHANGE, student.getName()),
                 logic.execute("tag 1 t/Math t/Math").getFeedbackToUser());
         assertEquals(String.format(UntagCommand.MESSAGE_NO_CHANGE, student.getName())
-                + " Tags not present: \"absent\", \"math\".",
+                + " Tags not present: \"absent\", \"math\"."
+                + " Tag \"math\" not found, did you mean \"Math\"?",
                 logic.execute("untag 1 t/math t/absent").getFeedbackToUser());
         assertEquals(0, fileStorage.getSaveCallCount());
         assertEquals(List.of(student), logic.getFilteredPersonList());
