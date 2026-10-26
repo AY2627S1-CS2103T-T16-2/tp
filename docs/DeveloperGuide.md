@@ -697,20 +697,55 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 **MSS**
 
-1.  Private tutor requests contacts with a specified role.
-2.  TuitionBook displays contacts with that role and reports the number of matches.
+1.  User requests contacts with a specified role.
+2.  TuitionBook replaces the active filter, displays only contacts with that role, and reports the number of matches.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The requested role is invalid.
+* 1a. The request is malformed, or the supplied role is invalid.
 
-    * 1a1. TuitionBook shows an error message describing the invalid request.
+    * 1a1. TuitionBook shows an error message describing the invalid request and retains the active filter.
 
       Use case ends.
 
-**Use case: UC09 Reload contact data**
+* 2a. No contact has the specified role.
+
+    * 2a1. TuitionBook displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
+
+      Use case ends.
+
+**Use case: UC09 Filter contacts by tags**
+
+**MSS**
+
+1.  User requests contacts tagged with both `Sec4` and `AMath`, for example by entering `list t/Sec4 t/AMath`.
+2.  TuitionBook replaces the active filter, displays only contacts that match every supplied tag by complete name case-insensitively and, if specified, the role, and reports the number of matches.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. User also specifies a role, for example by entering `list r/student t/Sec4 t/AMath`.
+
+    * 1a1. TuitionBook applies the role together with every supplied tag as the new filter.
+
+      Use case resumes from step 2.
+
+* 1b. The request is malformed, or a supplied tag or role is invalid.
+
+    * 1b1. TuitionBook shows an error message describing the invalid request and retains the active filter.
+
+      Use case ends.
+
+* 2a. No contact matches every supplied criterion.
+
+    * 2a1. TuitionBook displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
+
+      Use case ends.
+
+**Use case: UC10 Reload contact data**
 
 **MSS**
 
@@ -748,7 +783,38 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
-**Role-filter command rule**
+**Use case: UC11 Clear all contacts**
+
+**Preconditions**
+
+* At least one contact is stored. The active filter may hide some contacts.
+
+**Guarantee**
+
+* On success, no contacts remain. TuitionBook does not provide an undo operation for a successful clear.
+
+**MSS**
+
+1.  User requests to clear all contacts using the exact confirmation keyword, by entering `clear confirm`.
+2.  TuitionBook removes every stored contact, including contacts hidden by the active filter, saves the empty contact list, and reports completion.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The confirmation keyword is missing or incorrect, or the request contains other arguments.
+
+    * 1a1. TuitionBook shows the required `clear confirm` format and retains all contacts and the active filter.
+
+      Use case ends.
+
+* 2a. TuitionBook cannot save the cleared contact list.
+
+    * 2a1. TuitionBook shows a storage error, restores all contacts and guardian links, retains the previously active filter, and does not report a successful clear.
+
+      Use case ends.
+
+**List-filter command rule**
 
 Each `list` query replaces the working set: bare `list` displays all contacts, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria in contact-list order. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
@@ -933,6 +999,16 @@ Use a fresh, disposable folder with an empty contact list.
 
    1. Relaunch the app using the same terminal command.<br>
        Expected: The most recent window size and location are retained.
+
+1. Recovering from null window preferences
+
+   1. Close TuitionBook. In the folder containing the JAR, replace the contents of `preferences.json` with `{"guiSettings": null}`.
+
+   1. Relaunch the app using the same terminal command.<br>
+      Expected: TuitionBook opens using the default window settings without a `NullPointerException`. Existing contacts remain unchanged.
+
+   1. Close TuitionBook and inspect `preferences.json`.<br>
+      Expected: `guiSettings` contains saved window settings instead of `null`.
 
 ### Getting help
 
