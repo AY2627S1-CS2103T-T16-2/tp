@@ -81,6 +81,7 @@
         "viewing-a-contact": "Viewing a contact",
         "unicode-duplicate-identity": "Unicode duplicate identity",
         "finding-contacts-by-name-substring": "Finding contacts by name substring",
+        "feedback-for-unsupported-role-and-guardian-edits": "Feedback for unsupported role and guardian edits",
         "editing-without-losing-scroll-position": "Editing without losing scroll position",
         "persistent-query-and-contact-counts": "Persistent query and contact counts",
         "stable-indexes-across-contact-changes": "Stable indexes across contact changes",
