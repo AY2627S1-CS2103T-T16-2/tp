@@ -10,6 +10,7 @@ The format is based on Keep a Changelog.
 
 ### Added
 
+- Show the active query and persistent displayed, matching and retained contact counts above the contact list, including after detail views, reload and save-failure rollback (#188).
 - Support quoted addresses in `add` and `edit`, protecting complete addresses containing prefix-like text and using the same quote/backslash escapes as names and tags (#201).
 - Detailed guardian-link repair diagnostics in the startup warning, including every affected contact and repair reason.
 
