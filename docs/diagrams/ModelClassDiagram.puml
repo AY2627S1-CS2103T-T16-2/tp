@@ -9,6 +9,7 @@ Class "<<interface>>\nReadOnlyTuitionBook" as ReadOnlyTuitionBook
 Class "<<interface>>\nReadOnlyUserPrefs" as ReadOnlyUserPrefs
 Class "<<interface>>\nModel" as Model
 Class TuitionBook
+Class PersonListViewState
 Class ModelManager
 Class UserPrefs
 
@@ -54,7 +55,8 @@ Name -[hidden]right-> Phone
 Phone -[hidden]right-> Address
 Address -[hidden]right-> Email
 
-ModelManager --> "~* filtered" Person
+ModelManager --> "~* displayed" Person
+ModelManager ..> PersonListViewState : snapshots / restores
 
 legend bottom
   Every Person has an internal UUID id. A student's guardian link is

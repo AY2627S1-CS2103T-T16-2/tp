@@ -66,7 +66,8 @@ public class DeleteCommandTest {
 
         Model expectedModel = new ModelManager(model.getTuitionBook(), new UserPrefs());
         expectedModel.deletePerson(personToDelete);
-        showNoPerson(expectedModel);
+        expectedModel.updateFilteredPersonList(model.getPersonListQueryPredicate(),
+                model.getPersonListViewState().refreshCommand());
 
         assertCommandSuccess(deleteCommand, model, expectedMessage, expectedModel);
     }
@@ -135,7 +136,8 @@ public class DeleteCommandTest {
 
         DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
         Model expectedModel = modelWith(student.clearGuardian(), otherStudent);
-        showNoPerson(expectedModel);
+        expectedModel.updateFilteredPersonList(model.getPersonListQueryPredicate(),
+                model.getPersonListViewState().refreshCommand());
         String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(guardian))
                 + String.format(DeleteCommand.MESSAGE_GUARDIAN_LINKS_CLEARED, 1, "Sam Student");
 
@@ -199,15 +201,6 @@ public class DeleteCommandTest {
         DeleteCommand deleteCommand = new DeleteCommand(targetIndex);
         String expected = DeleteCommand.class.getCanonicalName() + "{targetIndex=" + targetIndex + "}";
         assertEquals(expected, deleteCommand.toString());
-    }
-
-    /**
-     * Updates {@code model}'s filtered list to show no one.
-     */
-    private void showNoPerson(Model model) {
-        model.updateFilteredPersonList(p -> false);
-
-        assertTrue(model.getFilteredPersonList().isEmpty());
     }
 
     private Model modelWith(Person... persons) {

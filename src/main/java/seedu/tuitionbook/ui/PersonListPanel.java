@@ -1,11 +1,15 @@
 package seedu.tuitionbook.ui;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.CollectionUtil.requireAllNonNull;
+import static seedu.tuitionbook.model.Model.PREDICATE_SHOW_ALL_PERSONS;
+import static seedu.tuitionbook.model.Model.SHOW_ALL_PERSONS_REFRESH_COMMAND;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -16,6 +20,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Region;
 import seedu.tuitionbook.commons.core.LogsCenter;
+import seedu.tuitionbook.model.PersonListViewState;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
 
@@ -27,6 +32,7 @@ public class PersonListPanel extends UiPart<Region> {
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
     private final Map<UUID, Person> personsById = new HashMap<>();
     private final ObservableList<Person> allPersons;
+    private final Supplier<PersonListViewState> viewState;
 
     @FXML
     private ListView<Person> personListView;
@@ -35,13 +41,22 @@ public class PersonListPanel extends UiPart<Region> {
      * Creates a {@code PersonListPanel} using the filtered persons for display and all persons for
      * relationship lookup.
      *
-     * @param filteredPersons persons selected by the active filter
+     * @param filteredPersons persons in the displayed working set
      * @param allPersons all persons available for relationship lookup
      */
     public PersonListPanel(ObservableList<Person> filteredPersons, ObservableList<Person> allPersons) {
+        this(filteredPersons, allPersons, () -> new PersonListViewState(
+                filteredPersons.stream().map(Person::getId).toList(),
+                PREDICATE_SHOW_ALL_PERSONS, SHOW_ALL_PERSONS_REFRESH_COMMAND));
+    }
+
+    /** Creates a panel that can mark retained contacts against the originating query. */
+    public PersonListPanel(ObservableList<Person> filteredPersons, ObservableList<Person> allPersons,
+            Supplier<PersonListViewState> viewState) {
         super(FXML);
         requireAllNonNull(filteredPersons, allPersons);
         this.allPersons = allPersons;
+        this.viewState = requireNonNull(viewState);
         personListView.setItems(filteredPersons);
         rebuildPersonLookup(allPersons);
         allPersons.addListener((ListChangeListener<Person>) unused -> {
@@ -110,7 +125,10 @@ public class PersonListPanel extends UiPart<Region> {
                 String relationshipSummary = person.getRole() == Role.STUDENT
                         ? resolveGuardianSummary(person, personsById)
                         : resolveLinkedStudentNames(person, allPersons);
-                setGraphic(new PersonCard(person, getIndex() + 1, relationshipSummary).getRoot());
+                PersonListViewState state = viewState.get();
+                String notice = state.predicate().test(person) ? ""
+                        : "No longer matches the query. Refresh with: " + state.refreshCommand();
+                setGraphic(new PersonCard(person, getIndex() + 1, relationshipSummary, notice).getRoot());
             }
         }
     }

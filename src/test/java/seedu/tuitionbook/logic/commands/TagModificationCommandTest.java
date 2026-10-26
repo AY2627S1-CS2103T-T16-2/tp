@@ -32,15 +32,15 @@ public class TagModificationCommandTest {
         Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian)
                 .withTags("Math").build();
         Model model = modelWith(guardian, student);
-        model.updateFilteredPersonList(person -> person.getId().equals(student.getId()));
+        model.updateFilteredPersonList(person -> person.getId().equals(student.getId()), "list r/student");
         TagCommand command = new TagCommand(INDEX_FIRST_PERSON, tags("Math", "Science", "math"));
 
         CommandResult result = command.execute(model);
 
         Person expected = new PersonBuilder(student).withTags("Math", "Science", "math").build();
         assertEquals("Added tags to Sam Student: \"Science\", \"math\".", result.getFeedbackToUser());
-        assertEquals(List.of(guardian, expected), model.getFilteredPersonList());
-        assertEquals(student.getId(), model.getFilteredPersonList().get(1).getId());
+        assertEquals(List.of(expected), model.getFilteredPersonList());
+        assertEquals(student.getId(), model.getFilteredPersonList().getFirst().getId());
         assertTrue(command.requiresSave());
     }
 
@@ -50,7 +50,7 @@ public class TagModificationCommandTest {
                 .withTags("Math", "math", "Sec 4").build();
         Person student = new PersonBuilder().withName("Sam Student").withGuardian(guardian).build();
         Model model = modelWith(student, guardian);
-        model.updateFilteredPersonList(person -> person.getRole() == Role.GUARDIAN);
+        model.updateFilteredPersonList(person -> person.getRole() == Role.GUARDIAN, "list r/guardian");
         UntagCommand command = new UntagCommand(INDEX_FIRST_PERSON, tags("Math", "absent"));
 
         CommandResult result = command.execute(model);
@@ -58,8 +58,8 @@ public class TagModificationCommandTest {
         Person expected = new PersonBuilder(guardian).withTags("math", "Sec 4").build();
         assertEquals(String.format(UntagCommand.MESSAGE_SUCCESS, guardian.getName())
                 + " Tags not present: \"absent\".", result.getFeedbackToUser());
-        assertEquals(List.of(student, expected), model.getFilteredPersonList());
-        assertEquals(guardian.getId(), model.getFilteredPersonList().get(1).getId());
+        assertEquals(List.of(expected), model.getFilteredPersonList());
+        assertEquals(guardian.getId(), model.getFilteredPersonList().getFirst().getId());
         assertTrue(command.requiresSave());
     }
 
@@ -68,7 +68,7 @@ public class TagModificationCommandTest {
         Person person = new PersonBuilder().withTags("Math").build();
         Model model = modelWith(person);
         Predicate<Person> filter = contact -> true;
-        model.updateFilteredPersonList(filter);
+        model.updateFilteredPersonList(filter, "list r/student");
         TagCommand tag = new TagCommand(INDEX_FIRST_PERSON, tags("Math"));
         UntagCommand untag = new UntagCommand(INDEX_FIRST_PERSON, tags("math"));
 
@@ -79,7 +79,7 @@ public class TagModificationCommandTest {
         assertFalse(tag.requiresSave());
         assertFalse(untag.requiresSave());
         assertEquals(List.of(person), model.getTuitionBook().getPersonList());
-        assertSame(filter, model.getFilteredPersonListPredicate());
+        assertSame(filter, model.getPersonListQueryPredicate());
     }
 
     @Test
@@ -151,7 +151,7 @@ public class TagModificationCommandTest {
         Model model = modelWith(new PersonBuilder().build());
         assertCommandFailure(new TagCommand(INDEX_SECOND_PERSON, tags("Math")), model,
                 Messages.getInvalidPersonDisplayedIndexMessage(1));
-        model.updateFilteredPersonList(person -> false);
+        model.updateFilteredPersonList(person -> false, "find Missing");
         assertCommandFailure(new UntagCommand(INDEX_FIRST_PERSON, tags("Math")), model,
                 Messages.getInvalidPersonDisplayedIndexMessage(0));
     }
