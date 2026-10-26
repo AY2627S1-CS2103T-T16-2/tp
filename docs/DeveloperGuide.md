@@ -192,7 +192,7 @@ The `Storage` component,
 
 `DataLoadingException` walks its cause chain to produce bounded user guidance for permission denial, invalid contact values, invalid UTF-8 or JSON, and other file-system failures. It does not expose exception types, paths from the cause, or stack traces. `MainApp` carries this guidance through `StartupNotice`; `UiManager` combines it with the actual backup outcome. `ReloadCommand` uses the same guidance while retaining the current contacts and filter after a failed read.
 
-`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
+`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, log rotation files, and the instance lock file therefore share the same application home.
 
 At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it attempts to move the legacy `addressbook.json` to that current path. A failed move is logged without aborting initialization: the unchanged legacy path is passed to storage for that run, and migration is retried on a later launch. This preserves readable contacts when directory permissions prevent renaming. If the same permissions also prevent saving, the normal command save-failure rollback restores contacts and the exact working set (membership, order and originating query).
 
@@ -482,9 +482,13 @@ Tag length is deliberately unbounded. The validator uses a linear scan, and card
 
 #### Single-instance operation and manual file editing
 
-Run only one TuitionBook instance against a data file. The application does not lock the file against another instance or an external editor; each save writes the current in-memory contacts and can overwrite another writer's changes. Atomic saving protects replacement of an individual file, not coordination between independent writers.
+`Main` acquires an `ApplicationInstanceGuard` before it first accesses `LogsCenter` or launches JavaFX. The guard opens `.tuitionbook.lock` in the application home with `FileChannel` and calls `tryLock()`. It retains both the channel and `FileLock` around the blocking `Application.launch(...)` call, so the lock covers preference and contact loading, legacy migration, recovery and backups, normal file logging, UI operation, and shutdown preference saving. The try-with-resources boundary also releases the guard if JavaFX initialization or application startup fails; `close()` is idempotent and closes the channel even if lock release reports an I/O failure.
 
-A lock-file guard was considered and deferred from v1.x because cross-platform locking and stale-lock recovery add risks in the final iteration. The supported manual-editing workflow is to close TuitionBook, back up and edit the file, then reopen it. The implemented `reload` command remains an explicit recovery option: it replaces in-memory contacts rather than merging concurrent changes. Single-instance enforcement is a deferred improvement, not an implemented safeguard or promised release feature.
+Both a `null` result from `tryLock()` and `OverlappingFileLockException` mean that the same application home is already guarded. `Main` writes a message to standard error and shows a minimal JavaFX error dialog without constructing `MainApp`, `Storage`, or the normal logger. Other I/O or permission failures produce separate actionable guidance and also prevent startup; they do not claim that another instance exists.
+
+The lock file is intentionally retained on shutdown. File existence is not evidence of a running instance: a pre-existing unlocked file is opened and locked normally. Not deleting it avoids a replacement race in which different processes could lock different file objects at the same path. Because each application home has its own lock file, packaged copies in separate folders can run independently.
+
+This guard coordinates only versions of TuitionBook that implement it. It does not protect against external editors or older application versions, merge concurrent changes, or extend to arbitrary external files. The supported manual-editing workflow remains: close TuitionBook, back up and edit the data file, then reopen it. The `reload` command remains an explicit recovery option and replaces in-memory contacts rather than merging changes. Atomic saving protects replacement of an individual data file; it is separate from instance coordination.
 
 #### Startup and unnecessary writes
 
@@ -846,6 +850,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
 7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
+8.  TuitionBook shall allow at most one guarded application instance per application home directory while allowing application copies in separate home directories to run independently.
 
 ### Glossary
 
@@ -980,6 +985,32 @@ Use a fresh, disposable folder with an empty contact list.
    Expected: The contact list remains empty.
 
 ### Launch and shutdown
+
+Use the packaged JAR in disposable folders for every scenario in this section. Keep any synthetic contacts in those folders only.
+
+1. Duplicate launch from one application home
+
+   1. Put the JAR in an empty folder, launch it with `java -jar "tuitionbook.jar"`, dismiss the empty-data notice, and add `add r/student n/Alex Lock Test p/91234567`.
+
+   1. Keep the first window open. From a second terminal, run the same launch command against the same JAR.<br>
+      Expected: The second launch promptly prints that TuitionBook is already running and shows an error telling you to use or close the existing window. It does not open a normal TuitionBook window. The first window remains usable, and its contact and window preferences are unchanged.
+
+1. Relaunch after normal exit
+
+   1. Close the first window normally or enter `exit`, then run the same launch command again.<br>
+      Expected: TuitionBook opens normally with Alex Lock Test present. `.tuitionbook.lock` may remain in the JAR folder; its presence does not block startup and it is not necessary to delete it.
+
+1. Relaunch after forced termination
+
+   1. With TuitionBook running, terminate its Java process using the operating system's task manager or force-quit control. Do not delete `.tuitionbook.lock`.
+
+   1. Run the same launch command again.<br>
+      Expected: TuitionBook opens normally because the operating system released the process's file lock. Data from commands that completed successfully before termination remains available; no guarantee is made for an operation interrupted during the forced termination.
+
+1. Independent application homes
+
+   1. Create two empty folders, copy the JAR into each one, and launch both copies while keeping both windows open.<br>
+      Expected: Both instances open normally. Adding a synthetic contact in one does not add it to the other; each folder has its own `.tuitionbook.lock`, `preferences.json`, and `data/tuitionbook.json`.
 
 1. Initial launch
 
