@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assumptions;
@@ -24,7 +25,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.TextArea;
@@ -128,7 +131,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void addToLongList_doesNotSelectAddedPerson() throws Exception {
+    public void addToLongList_scrollsToAddedPersonWithoutSelectingIt() throws Exception {
         for (int existingContactCount : VIEWPORT_CONTACT_COUNTS) {
             ScrollFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
                 Person addedPerson = new PersonBuilder().withName("Viewport Student").withPhone("99999999").build();
@@ -146,7 +149,7 @@ public class MainWindowTest {
 
                 TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
                 ListView<Person> personListView = getPersonListView(mainWindow);
-                return new ScrollFixture(stage, personListView, commandBox);
+                return new ScrollFixture(stage, personListView, commandBox, addedPerson);
             });
 
             try {
@@ -157,6 +160,9 @@ public class MainWindowTest {
                     fixture.personListView().scrollTo(0);
                     execute(fixture.commandBox(), "add");
                 });
+                assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                        isPersonVisible(fixture.personListView(), fixture.addedPerson())),
+                        "Added contact should be visible after the add command");
                 assertNull(JavaFxTestUtil.callOnFxThread(() ->
                         fixture.personListView().getSelectionModel().getSelectedItem()));
             } finally {
@@ -303,6 +309,29 @@ public class MainWindowTest {
             });
             assertTrue(JavaFxTestUtil.callOnFxThread(() ->
                     fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void manualScrollAfterTargetBecomesVisible_isNotOverridden() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            JavaFxTestUtil.runOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId()));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    isPersonVisible(fixture.personListView(), fixture.addedPerson())),
+                    "Automatic scroll should make the target contact visible");
+
+            JavaFxTestUtil.runOnFxThread(() -> fixture.personListView().scrollTo(0));
+            AtomicInteger pulses = new AtomicInteger();
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> pulses.incrementAndGet() >= 3));
+            assertFalse(JavaFxTestUtil.callOnFxThread(() ->
+                    isPersonVisible(fixture.personListView(), fixture.addedPerson())),
+                    "Manual scrolling should not be overridden by automatic retries");
         } finally {
             JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
         }
@@ -555,6 +584,16 @@ public class MainWindowTest {
         assertEquals(detailVisible, detailText.getParent().isVisible());
     }
 
+    private static boolean isPersonVisible(ListView<Person> personListView, Person person) {
+        Bounds listBounds = personListView.localToScene(personListView.getBoundsInLocal());
+        return personListView.lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(node -> (ListCell<?>) node)
+                .filter(cell -> person.equals(cell.getItem()))
+                .map(cell -> cell.localToScene(cell.getBoundsInLocal()))
+                .anyMatch(listBounds::intersects);
+    }
+
     @SuppressWarnings("unchecked")
     private static ListView<Person> getPersonListView(MainWindow mainWindow) {
         return (ListView<Person>) mainWindow.getRoot().getScene().lookup("#personListView");
@@ -579,7 +618,8 @@ public class MainWindowTest {
         });
     }
 
-    private record ScrollFixture(Stage stage, ListView<Person> personListView, TextField commandBox) {
+    private record ScrollFixture(Stage stage, ListView<Person> personListView, TextField commandBox,
+                                 Person addedPerson) {
     }
 
     private record ManualScrollFixture(Stage stage, MainWindow mainWindow, ListView<Person> personListView,

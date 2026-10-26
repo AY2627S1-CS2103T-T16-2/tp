@@ -38,7 +38,7 @@ The format is based on Keep a Changelog.
 - Allowed contact cards to grow and shrink with wrapped tag rows, preventing tags from obscuring contact details or neighbouring cards at narrow widths.
 - Split the dense delete sequence diagram into focused parsing and execution diagrams that remain readable at normal browser zoom.
 - Reject unknown space-separated ASCII-letter prefixes in `add`, `edit`, `list`, `tag` and `untag` rather than silently absorbing mistyped prefixes into field values; intentional literal text must be quoted (#193). Stored values, field validation, tag identity and whitespace trimming are unchanged.
-- Scroll the contact list to a newly added contact so it remains visible when the list extends beyond the viewport.
+- Scroll the contact list to a newly added contact until it is visible, then stop retrying so manual scrolling is not overridden.
 - Use locale-independent, case-insensitive alphabetical ordering for tags in contact cards and detailed views.
 - Render detailed-view tags with brackets and escape literal backslashes and square brackets.
 - Keep the current screen visible when a command fails instead of forcing a return to the contact list.

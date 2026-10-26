@@ -17,6 +17,7 @@ import javafx.animation.AnimationTimer;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
@@ -105,7 +106,7 @@ public class PersonListPanel extends UiPart<Region> {
 
             @Override
             public void handle(long now) {
-                if (!scrollToPersonOnce(personId) || --remainingPulseCount == 0) {
+                if (!scrollToPersonOnce(personId) || isPersonVisible(personId) || --remainingPulseCount == 0) {
                     stopScrollAnimation();
                 }
             }
@@ -121,6 +122,16 @@ public class PersonListPanel extends UiPart<Region> {
             }
         }
         return false;
+    }
+
+    private boolean isPersonVisible(UUID personId) {
+        Bounds listBounds = personListView.localToScene(personListView.getBoundsInLocal());
+        return personListView.lookupAll(".list-cell").stream()
+                .filter(node -> node instanceof ListCell<?> cell
+                        && cell.getItem() instanceof Person person
+                        && person.getId().equals(personId))
+                .map(node -> node.localToScene(node.getBoundsInLocal()))
+                .anyMatch(listBounds::intersects);
     }
 
     private void stopScrollAnimation() {
