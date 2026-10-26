@@ -57,6 +57,49 @@ public class EditCommandParserTest {
     private EditCommandParser parser = new EditCommandParser();
 
     @Test
+    public void parse_roleEdit_reportsRoleImmutability() {
+        for (String input : List.of("1 r/guardian", "1 r/student", "1 r/", "1 r/anyRole",
+                "1 n/Updated r/guardian")) {
+            assertParseFailure(parser, input, "A contact's role cannot be changed after it is added.");
+        }
+    }
+
+    @Test
+    public void parse_guardianEdit_reportsLinkAndUnlinkGuidance() {
+        for (String input : List.of("1 g/2", "1 g/", "1 g/Ben Dover", "1 n/Updated g/2")) {
+            assertParseFailure(parser, input,
+                    "Use link STUDENT_INDEX GUARDIAN_INDEX to set or replace a student's guardian link, "
+                            + "or unlink STUDENT_INDEX to remove it. Use indexes from the currently displayed list.");
+        }
+    }
+
+    @Test
+    public void parse_roleAndGuardianEdit_reportsBothRestrictions() {
+        for (String input : List.of("1 r/guardian g/2", "1 g/2 r/guardian")) {
+            assertParseFailure(parser, input, "A contact's role cannot be changed after it is added.\n"
+                    + "Use link STUDENT_INDEX GUARDIAN_INDEX to set or replace a student's guardian link, "
+                    + "or unlink STUDENT_INDEX to remove it. Use indexes from the currently displayed list.");
+        }
+    }
+
+    @Test
+    public void parse_unsupportedEditWithInvalidIndexOrDuplicatePrefix_keepsExistingErrors() {
+        assertParseFailure(parser, "0 r/guardian", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1 r/student r/guardian",
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ROLE));
+        assertParseFailure(parser, "1 g/2 g/3",
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_GUARDIAN));
+    }
+
+    @Test
+    public void parse_quotedRoleAndGuardianPrefixes_remainLiteralValues() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withAddress("12 Road r/guardian g/2").withTags("call r/guardian g/2").build();
+        assertParseSuccess(parser, "1 a/\"12 Road r/guardian g/2\" t/\"call r/guardian g/2\"",
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
     public void parse_missingParts_failure() {
         // no index specified
         assertParseFailure(parser, VALID_NAME_AMY, MESSAGE_INVALID_FORMAT);
@@ -103,9 +146,6 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1" + INVALID_NAME_DESC + INVALID_EMAIL_DESC + VALID_ADDRESS_AMY + VALID_PHONE_AMY,
                 Name.MESSAGE_CONSTRAINTS);
 
-        // Do not allow r/ and g/ prefixes in edit command
-        assertParseFailure(parser, "1 r/anyRole", MESSAGE_INVALID_FORMAT);
-        assertParseFailure(parser, "1 g/Ben Dover", MESSAGE_INVALID_FORMAT);
     }
 
     @Test
