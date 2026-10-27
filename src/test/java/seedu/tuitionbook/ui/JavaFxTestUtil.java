@@ -22,7 +22,7 @@ import javafx.application.Platform;
  * alive for the whole test process; individual test classes must not call
  * {@link Platform#exit()}.</p>
  */
-final class JavaFxTestUtil {
+public final class JavaFxTestUtil {
     private static final long TIMEOUT_SECONDS = 10;
     private static final long CONDITION_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(3);
     private static final Object INITIALIZATION_LOCK = new Object();
@@ -34,7 +34,7 @@ final class JavaFxTestUtil {
     /**
      * Starts the shared JavaFX toolkit, unless another UI test has already done so.
      */
-    static void initialize() {
+    public static void initialize() {
         Assumptions.assumeFalse(isHeadlessEnvironment(),
                 "JavaFX tests require a graphical display");
 
@@ -71,7 +71,7 @@ final class JavaFxTestUtil {
     /**
      * Runs an action on the JavaFX application thread and propagates failures to the test thread.
      */
-    static void runOnFxThread(ThrowingRunnable action) throws Exception {
+    public static void runOnFxThread(ThrowingRunnable action) throws Exception {
         initialize();
 
         CountDownLatch finished = new CountDownLatch(1);
@@ -162,8 +162,9 @@ final class JavaFxTestUtil {
         }
     }
 
+    /** An operation that can throw while running on the JavaFX application thread. */
     @FunctionalInterface
-    interface ThrowingRunnable {
+    public interface ThrowingRunnable {
         void run() throws Exception;
     }
 }

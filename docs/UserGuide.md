@@ -44,7 +44,7 @@ Action     | Format, Examples
 
 ## Quick start
 
-Before you begin, install Java `25` or later and choose a folder where you can create files. TuitionBook saves its data beside the application JAR. To try the sample contacts without mixing them with real contacts, use a new, empty folder. Run only one copy of TuitionBook against that folder.
+Before you begin, install Java `25` or later and choose a folder where you can create files. TuitionBook saves its data beside the application JAR. To try the sample contacts without mixing them with real contacts, use a new, empty folder. TuitionBook enforces one running copy per folder.
 
 1. Check Java by opening a terminal (Terminal on macOS/Linux, or PowerShell on Windows) and entering `java -version`.<br>
    **Expected:** The version starts with `25` or a later number. If Java is missing or older, follow the [Java installation guide](https://se-education.org/guides/tutorials/javaInstallation.html) before continuing. **Mac users:** Follow the [macOS Java instructions](https://se-education.org/guides/tutorials/javaInstallationMac.html).
@@ -437,7 +437,11 @@ Format: `exit`
 
 ### Saving the data
 
-**Run only one copy of TuitionBook against the same data file at a time.** There is no single-instance guard: another copy can overwrite the first copy's saves. For routine manual edits or backup restoration, close the app first. The [reload recovery workflow](#reloading-contacts-reload) explains how to recover while keeping it open.
+TuitionBook allows one running instance for each home folder. If you launch the JAR again from a folder already used by a running instance, the second launch shows an error and exits before reading or changing contacts, preferences, recovery files, or normal logs. Close or use the existing window. Copies in separate folders have separate guards and can run independently with their own data and preferences.
+
+TuitionBook uses `.tuitionbook.lock` in the home folder for this check. The file normally remains after TuitionBook closes or is forcibly terminated; an unlocked leftover file is harmless and does not block the next launch. Do not delete this file while TuitionBook is running, because replacing a locked file can defeat coordination between launches. The guard is honoured only by this TuitionBook version; it does not lock out external editors or older versions.
+
+For routine manual edits or backup restoration, close TuitionBook first. The [reload recovery workflow](#reloading-contacts-reload) explains how to recover while keeping it open.
 
 TuitionBook attempts to save contact data after commands that change contacts or guardian links. Repeating an existing link, unlinking a student without a guardian, editing fields or tags to their existing values, or clearing an already-empty contact list does not attempt a save. A change to the working set alone does not require saving. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores contacts, exact working-set membership/order and its query to their state before the command. You do not need to save manually.
 If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and run `reload` or restart the app.
@@ -491,7 +495,7 @@ The 100-character name limit and 200-character address limit also apply to value
 * **Index**: A contact's position in the current working set, starting from 1. Index-based commands such as `edit`, `delete`, and `view` use this displayed position. Indexes can change after deletion compacts the working set, an explicit `find` or `list` query, a successful reload, clear or restart.
 * **Working set**: The ordered contacts selected by the last `find` or `list`. Their details stay current, but edits do not automatically recompute membership. The originating query classifies additions and identifies retained contacts that no longer match. A new query replaces the working set; bare `list` shows all contacts.
 * **Tag**: An optional label you choose for a contact, such as `Sec4` or `AMath`, used for organising and filtering. Tags are not dedicated fields and are not validated against any category list.
-* **Home folder**: The folder containing the TuitionBook JAR. Data, preferences, and logs are stored relative to this folder.
+* **Home folder**: The folder containing the TuitionBook JAR. Data, preferences, logs, and the single-instance lock file are stored relative to this folder.
 * **Data file**: The local JSON file (`data/tuitionbook.json`) that stores your contacts and guardian links between sessions.
 
 --------------------------------------------------------------------------------------------------------------------
@@ -504,6 +508,8 @@ Find the symptom below and try the suggested action. Error messages appear in th
 |---|---|---|
 | The terminal cannot find `java`, or reports an unsupported Java version | Java is missing, too old, or a different installation is being used | Run `java -version` in that terminal and follow the Java installation links in [Quick start](#quick-start). |
 | `Unable to access jarfile` | The path or filename in the launch command is wrong | Check the downloaded file's location and name. Put the full path in straight double quotes. |
+| `TuitionBook is already running` | A TuitionBook instance from the same home folder holds the instance lock | Use or close the existing window. If you intentionally need an independent instance, copy the JAR to a separate folder and launch that copy. Do not delete `.tuitionbook.lock` while the first instance is running. |
+| `TuitionBook could not start safely` | The app could not create or lock `.tuitionbook.lock`, for example because the home folder is not writable | Check that the JAR's folder exists and that your account can create and lock files there, then retry. This message does not mean that another instance is known to be running. |
 | `Unknown command.` | A misspelled or unsupported command word | Use a command word from the [Command summary](#command-summary), without the backticks shown in this guide. Command-word letter case does not matter. |
 | `Invalid command format!` | A required value is missing or a positional argument is misplaced | Read the usage shown with the error. Supply the required index first, then the relevant prefixed fields. For `link`, supply the student index followed by the guardian index. |
 | `Commands must be entered on a single line.` | A raw line break reached the parser without command-box conversion; the error identifies its character code | Remove the indicated line break or replace it with a normal space (`U+0020`); quotation marks do not bypass this rule. Normal GUI pasting converts tabs and line separators to spaces before parsing instead. |
