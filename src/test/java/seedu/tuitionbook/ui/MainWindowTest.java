@@ -3,6 +3,7 @@ package seedu.tuitionbook.ui;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,7 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,12 +25,18 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.tuitionbook.commons.core.GuiSettings;
@@ -46,11 +56,18 @@ import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
+import seedu.tuitionbook.testutil.PersonBuilder;
 
 /**
  * Tests main window command interactions and view transitions.
  */
 public class MainWindowTest {
+    private static final List<Integer> VIEWPORT_CONTACT_COUNTS =
+            List.of(0, 1, 2, 5, 10, 20, 50, 100, 500, 1000);
+    private static final double SCROLL_TEST_WINDOW_WIDTH = 700;
+    private static final double SCROLL_TEST_WINDOW_HEIGHT = 720;
+    private static final int REQUIRED_STABLE_VISIBLE_PULSE_COUNT = 3;
+    private static final double VIEWPORT_TOLERANCE = 2.0;
 
     @TempDir
     public Path temporaryFolder;
@@ -91,9 +108,298 @@ public class MainWindowTest {
 
             execute(commandBox, "view 1");
             execute(commandBox, "invalid");
-            assertListVisible(mainWindow, detailText, true, false);
+            assertListVisible(mainWindow, detailText, false, true);
             assertEquals("Invalid command", resultText.getText());
         });
+    }
+
+    @Test
+    public void failedCommands_preserveDetailsView() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            MainWindow mainWindow = new MainWindow(new Stage(), new FakeLogic(), Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+
+            TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+            TextArea detailText = (TextArea) mainWindow.getRoot().getScene().lookup("#detailDisplay");
+            execute(commandBox, "view 1");
+
+            List<String> failedCommands = List.of(
+                    "", "   ", "unknown", "view", "view 0", "view 99", "view 1 extra",
+                    "view 1 v/details", "view 1 v/ v/", "save-failure");
+            for (String failedCommand : failedCommands) {
+                execute(commandBox, failedCommand);
+                assertListVisible(mainWindow, detailText, false, true);
+                assertEquals("Name: Alex Lim", detailText.getText());
+            }
+        });
+    }
+
+    @Test
+    public void addToLongList_scrollsToAddedPersonWithoutSelectingIt() throws Exception {
+        for (int existingContactCount : VIEWPORT_CONTACT_COUNTS) {
+            ScrollFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
+                Person addedPerson = new PersonBuilder().withName("Viewport Student").withPhone("99999999").build();
+                FakeLogic logic = new FakeLogic(addedPerson);
+                IntStream.range(0, existingContactCount)
+                        .mapToObj(index -> new PersonBuilder().withName("Existing Student " + index)
+                                .withPhone(String.format("8%07d", index)).build())
+                        .forEach(logic.people::add);
+                Stage stage = new Stage();
+                MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+                mainWindow.fillInnerParts();
+                stage.setWidth(SCROLL_TEST_WINDOW_WIDTH);
+                stage.setHeight(SCROLL_TEST_WINDOW_HEIGHT);
+                mainWindow.show();
+
+                TextField commandBox = (TextField) mainWindow.getRoot().getScene().lookup("#commandTextField");
+                ListView<Person> personListView = getPersonListView(mainWindow);
+                return new ScrollFixture(stage, personListView, commandBox, addedPerson);
+            });
+
+            try {
+                assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                        fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0),
+                        "Contact list should finish layout before adding a contact");
+                JavaFxTestUtil.runOnFxThread(() -> {
+                    fixture.personListView().scrollTo(0);
+                    execute(fixture.commandBox(), "add");
+                });
+                assertTrue(waitForStablePersonVisibility(fixture.personListView(), fixture.addedPerson()),
+                        "Added contact should be visible after the add command for "
+                                + existingContactCount + " existing contacts");
+                assertNull(JavaFxTestUtil.callOnFxThread(() ->
+                        fixture.personListView().getSelectionModel().getSelectedItem()));
+            } finally {
+                JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+            }
+        }
+    }
+
+    @Test
+    public void missingScrollTarget_keepsListUnselected() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            MainWindow mainWindow = new MainWindow(new Stage(), new FakeLogic(), Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            ListView<Person> personListView = getPersonListView(mainWindow);
+
+            mainWindow.getPersonListPanel().scrollToPerson(UUID.randomUUID());
+
+            assertNull(personListView.getSelectionModel().getSelectedItem());
+        });
+    }
+
+    @Test
+    public void repeatedScrollRequests_cancelPreviousAnimation() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Person firstPerson = new PersonBuilder().withName("First Student").build();
+            Person secondPerson = new PersonBuilder().withName("Second Student").build();
+            FakeLogic logic = new FakeLogic(firstPerson);
+            logic.people.add(secondPerson);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+            try {
+                mainWindow.fillInnerParts();
+
+                mainWindow.getPersonListPanel().scrollToPerson(firstPerson.getId());
+                mainWindow.getPersonListPanel().scrollToPerson(secondPerson.getId());
+
+                assertNull(getPersonListView(mainWindow).getSelectionModel().getSelectedItem());
+            } finally {
+                stage.hide();
+            }
+        });
+    }
+
+    @Test
+    public void removedScrollTarget_stopsRetryAnimation() throws Exception {
+        Person target = new PersonBuilder().withName("Temporary Student").build();
+        FakeLogic logic = new FakeLogic(target);
+        PersonListPanel[] panel = new PersonListPanel[1];
+        Stage stage = JavaFxTestUtil.callOnFxThread(() -> {
+            Stage newStage = new Stage();
+            MainWindow mainWindow = new MainWindow(newStage, logic, Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            newStage.show();
+            panel[0] = mainWindow.getPersonListPanel();
+            return newStage;
+        });
+        try {
+            JavaFxTestUtil.runOnFxThread(() -> {
+                panel[0].scrollToPerson(target.getId());
+                logic.people.remove(target);
+            });
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> !panel[0].hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(stage::hide);
+        }
+    }
+
+    @Test
+    public void targetRemovedBeforeBecomingVisible_stopsRetryAnimation() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(1000);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.personListView().scrollTo(0);
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                fixture.personListView().getItems().remove(fixture.addedPerson());
+            });
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    !fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void listNeverLaidOut_retryAnimationStopsAfterBoundedRetries() throws Exception {
+        Person target = new PersonBuilder().withName("Unreachable Student").build();
+        FakeLogic logic = new FakeLogic(target);
+        PersonListPanel[] panel = new PersonListPanel[1];
+        JavaFxTestUtil.runOnFxThread(() -> {
+            logic.people.add(target);
+            MainWindow mainWindow = new MainWindow(new Stage(), logic, Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            panel[0] = mainWindow.getPersonListPanel();
+            panel[0].scrollToPerson(target.getId());
+            assertTrue(panel[0].hasPendingScrollAnimation());
+        });
+        boolean stopped = false;
+        for (int attempt = 0; attempt < 3 && !stopped; attempt++) {
+            stopped = JavaFxTestUtil.waitForFxCondition(() -> !panel[0].hasPendingScrollAnimation());
+        }
+        assertTrue(stopped, "Retries should stop after the bounded retry window even without layout");
+    }
+
+    @Test
+    public void retryAnimation_stopsAfterTargetBecomesVisible() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            JavaFxTestUtil.runOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId()));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    !fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void scrollToContactAboveViewport_scrollsBackUpUntilVisible() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(50);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            Person firstPerson = JavaFxTestUtil.callOnFxThread(() -> {
+                fixture.personListView().scrollTo(fixture.personListView().getItems().size() - 1);
+                return fixture.personListView().getItems().get(0);
+            });
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    !isPersonFullyVisible(fixture.personListView(), firstPerson)),
+                    "The first contact should leave the viewport before scrolling back to it");
+            JavaFxTestUtil.runOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().scrollToPerson(firstPerson.getId()));
+            assertTrue(waitForStablePersonVisibility(fixture.personListView(), firstPerson),
+                    "Automatic scrolling should bring a contact above the viewport back into view");
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void manualScroll_cancelsPendingAutomaticScroll() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                Event.fireEvent(fixture.personListView(), new ScrollEvent(ScrollEvent.SCROLL, 0, 0, 0, 0,
+                        false, false, false, false, true, false, 0, 1, 0, 1, 1, 1, null, 0, null, 0, 1, null));
+                fixture.personListView().scrollTo(0);
+            });
+
+            assertFalse(JavaFxTestUtil.callOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void navigationKey_cancelsPendingAutomaticScroll() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            JavaFxTestUtil.runOnFxThread(() -> {
+                for (KeyCode keyCode : List.of(KeyCode.UP, KeyCode.DOWN, KeyCode.PAGE_UP,
+                        KeyCode.PAGE_DOWN, KeyCode.HOME, KeyCode.END)) {
+                    fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                    Event.fireEvent(fixture.personListView(), new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
+                            false, false, false, false));
+                    assertFalse(fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation());
+                }
+                fixture.personListView().scrollTo(0);
+            });
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void mousePress_cancelsPendingAutomaticScroll() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                Event.fireEvent(fixture.personListView(), new MouseEvent(MouseEvent.MOUSE_PRESSED,
+                        0, 0, 0, 0, MouseButton.PRIMARY, 1, false, false, false, false,
+                        false, false, false, false, false, false, null));
+            });
+            assertFalse(JavaFxTestUtil.callOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation()));
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void nonNavigationKey_doesNotCancelPendingAutomaticScroll() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            JavaFxTestUtil.runOnFxThread(() -> {
+                fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId());
+                Event.fireEvent(fixture.personListView(), new KeyEvent(KeyEvent.KEY_PRESSED, "a", "a", KeyCode.A,
+                        false, false, false, false));
+                assertTrue(fixture.mainWindow().getPersonListPanel().hasPendingScrollAnimation());
+            });
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
+    }
+
+    @Test
+    public void manualScrollAfterTargetBecomesVisible_isNotOverridden() throws Exception {
+        ManualScrollFixture fixture = createScrollFixture(20);
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() ->
+                    fixture.personListView().getSkin() != null && fixture.personListView().getHeight() > 0));
+            JavaFxTestUtil.runOnFxThread(() ->
+                    fixture.mainWindow().getPersonListPanel().scrollToPerson(fixture.addedPerson().getId()));
+            assertTrue(waitForStablePersonVisibility(fixture.personListView(), fixture.addedPerson()),
+                    "Automatic scroll should make the target contact visible");
+
+            JavaFxTestUtil.runOnFxThread(() -> fixture.personListView().scrollTo(0));
+            AtomicInteger pulses = new AtomicInteger();
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> pulses.incrementAndGet() >= 3));
+            assertFalse(JavaFxTestUtil.callOnFxThread(() ->
+                    isPersonFullyVisible(fixture.personListView(), fixture.addedPerson())),
+                    "Manual scrolling should not be overridden by automatic retries");
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::hide);
+        }
     }
 
     @Test
@@ -343,9 +649,84 @@ public class MainWindowTest {
         assertEquals(detailVisible, detailText.getParent().isVisible());
     }
 
+    private static boolean isPersonFullyVisible(ListView<Person> personListView, Person person) {
+        Bounds listBounds = personListView.localToScene(personListView.getBoundsInLocal());
+        if (listBounds == null) {
+            return false;
+        }
+        return personListView.lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(node -> (ListCell<?>) node)
+                .filter(cell -> person.equals(cell.getItem()))
+                .map(cell -> cell.localToScene(cell.getBoundsInLocal()))
+                .anyMatch(cellBounds -> cellBounds != null && isCellWithinViewport(listBounds, cellBounds));
+    }
+
+    private static boolean waitForStablePersonVisibility(ListView<Person> personListView, Person person) {
+        AtomicInteger consecutiveVisiblePulses = new AtomicInteger();
+        return JavaFxTestUtil.waitForFxCondition(() -> {
+            if (isPersonFullyVisible(personListView, person)) {
+                return consecutiveVisiblePulses.incrementAndGet() >= REQUIRED_STABLE_VISIBLE_PULSE_COUNT;
+            }
+            consecutiveVisiblePulses.set(0);
+            return false;
+        });
+    }
+
+    private static boolean isCellWithinViewport(Bounds viewportBounds, Bounds cellBounds) {
+        boolean fitsHorizontally = cellBounds.getMinX() >= viewportBounds.getMinX() - VIEWPORT_TOLERANCE
+                && cellBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE;
+        boolean fitsVertically = cellBounds.getMinY() >= viewportBounds.getMinY() - VIEWPORT_TOLERANCE
+                && cellBounds.getMaxY() <= viewportBounds.getMaxY() + VIEWPORT_TOLERANCE;
+        boolean isTallerThanViewport = cellBounds.getHeight() > viewportBounds.getHeight();
+        return fitsHorizontally && (fitsVertically
+                || (isTallerThanViewport && viewportBounds.intersects(cellBounds)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ListView<Person> getPersonListView(MainWindow mainWindow) {
+        return (ListView<Person>) mainWindow.getRoot().getScene().lookup("#personListView");
+    }
+
+    private static ManualScrollFixture createScrollFixture(int contactCount) throws Exception {
+        return JavaFxTestUtil.callOnFxThread(() -> {
+            Person firstPerson = new PersonBuilder().withName("First Student").build();
+            Person addedPerson = new PersonBuilder().withName("Added Student").build();
+            FakeLogic logic = new FakeLogic(firstPerson);
+            IntStream.range(1, contactCount - 1)
+                    .mapToObj(index -> new PersonBuilder().withName("Existing Student " + index).build())
+                    .forEach(logic.people::add);
+            logic.people.add(addedPerson);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            stage.setWidth(SCROLL_TEST_WINDOW_WIDTH);
+            stage.setHeight(SCROLL_TEST_WINDOW_HEIGHT);
+            mainWindow.show();
+            return new ManualScrollFixture(stage, mainWindow, getPersonListView(mainWindow), addedPerson);
+        });
+    }
+
+    private record ScrollFixture(Stage stage, ListView<Person> personListView, TextField commandBox,
+                                 Person addedPerson) {
+    }
+
+    private record ManualScrollFixture(Stage stage, MainWindow mainWindow, ListView<Person> personListView,
+                                       Person addedPerson) {
+    }
+
     private static final class FakeLogic implements Logic {
         private final ObservableList<Person> people = FXCollections.observableArrayList();
+        private final Person personToAdd;
         private GuiSettings guiSettings = new GuiSettings();
+
+        private FakeLogic() {
+            this(new PersonBuilder().withName("Added Student").withPhone("98888888").build());
+        }
+
+        private FakeLogic(Person personToAdd) {
+            this.personToAdd = personToAdd;
+        }
 
         @Override
         public PersonListViewState getPersonListViewState() {
@@ -356,8 +737,13 @@ public class MainWindowTest {
         @Override
         public CommandResult execute(String commandText) throws CommandException, ParseException {
             return switch (commandText) {
+                case "add" -> {
+                    people.add(personToAdd);
+                    yield new CommandResult("New person added", personToAdd.getId());
+                }
                 case "view 1" -> new CommandResult("Viewing contact: Alex Lim", "Name: Alex Lim");
                 case "list" -> new CommandResult("Listed all contacts");
+                case "save-failure" -> throw new CommandException("Save failed");
                 default -> throw new ParseException("Invalid command");
             };
         }

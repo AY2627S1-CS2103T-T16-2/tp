@@ -5,6 +5,7 @@ import static seedu.tuitionbook.model.Model.SHOW_ALL_PERSONS_REFRESH_COMMAND;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
@@ -238,7 +239,11 @@ public class MainWindow extends UiPart<Stage> {
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
-            commandResult.getDetailsToShow().ifPresentOrElse(this::showDetails, this::showPersonList);
+            commandResult.getDetailsToShow().ifPresentOrElse(this::showDetails, () -> {
+                showPersonList();
+                commandResult.getPersonIdToScrollTo().ifPresent(personId ->
+                        Platform.runLater(() -> personListPanel.scrollToPerson(personId)));
+            });
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -252,7 +257,6 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException e) {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
-            showPersonList();
             throw e;
         } finally {
             // All post-startup view mutations currently use this command-box callback. Any future

@@ -201,6 +201,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Before linking a student to a guardian after applying a filter, enter `list` to restore the full list so that both contacts can be selected.
 * Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
 * Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
+* Tags on contact cards use locale-independent, case-insensitive alphabetical order; original spelling breaks ties when tags differ only in case.
 * Student cards display a `Guardian:` line with the linked guardian's name and contact number, or `-` when no guardian is linked.
 * Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
@@ -243,15 +244,15 @@ Deletion is the exception: deleting a row compacts the list. For example, if `li
 
 ### Viewing a contact: `view`
 
-Replaces the contact list with a contact's details and their recorded relationship. The next command other than `view` restores the contact list.
+Replaces the contact list with a contact's details and their recorded relationship. A successful command other than `view` restores the contact list. If a command fails, the current screen remains visible so that you can correct the command without losing the details you were reading.
 
 Format: `view INDEX [v/]`
 
 * `INDEX` is the positive index shown in the current working set, including retained contacts that no longer match its query.
 * Without `v/`, each linked contact appears as `NAME (CONTACT_NUMBER)`. A student view shows its linked guardian, while a guardian view lists its linked students in contact-list order.
 * Add `v/` to show the linked guardian's or linked students' full contact details, including their role, phone, email, address, and tags.
-* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when they are outside the working set.
-* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change contact data or the working set.
+* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when the current filter hides them.
+* Missing optional email, address, or tags are shown as `-`. Tags appear in locale-independent, case-insensitive alphabetical order; tags that differ only in case use their original spelling as a deterministic tie-breaker. In `view` output, each tag is enclosed in brackets; literal backslashes and square brackets inside a tag are escaped with a backslash. `view` does not change contact data or the active filter.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 
@@ -406,7 +407,7 @@ This deletes every contact, including contacts outside the current working set. 
 </box>
 
 * The confirmation keyword must be the exact lowercase word `confirm`.
-* `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
+* Bare or whitespace-only `clear` reports `Confirmation required: enter "clear confirm" to clear all contacts.` Any nonblank argument other than exact lowercase `confirm` reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Neither error deletes contacts.
 
 Diagnostic log files are stored separately from the contact data file, so `clear confirm` does not remove them. For the packaged TuitionBook, these logs are in the same folder as the JAR. They are normally named `tuitionbook.log.0` through `tuitionbook.log.4`; only files that have already been created are present. The files may contain information entered in earlier commands, so review them before sharing them. To remove the logs, close TuitionBook, open the folder containing the JAR, and delete every existing numbered log file. Ordinary file deletion is not secure erasure, and TuitionBook does not provide a secure-erasure guarantee.
 

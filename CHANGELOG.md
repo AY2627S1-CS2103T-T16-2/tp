@@ -49,6 +49,11 @@ The format is based on Keep a Changelog.
 - Allowed contact cards to grow and shrink with wrapped tag rows, preventing tags from obscuring contact details or neighbouring cards at narrow widths.
 - Split the dense delete sequence diagram into focused parsing and execution diagrams that remain readable at normal browser zoom.
 - Reject unknown space-separated ASCII-letter prefixes in `add`, `edit`, `list`, `tag` and `untag` rather than silently absorbing mistyped prefixes into field values; intentional literal text must be quoted (#193). Stored values, field validation, tag identity and whitespace trimming are unchanged.
+- Scroll the contact list to a newly added contact until it is visible, then stop retrying so manual scrolling is not overridden.
+- Use locale-independent, case-insensitive alphabetical ordering for tags in contact cards and detailed views.
+- Render detailed-view tags with brackets and escape literal backslashes and square brackets.
+- Keep the current screen visible when a command fails instead of forcing a return to the contact list.
+- Give bare and invalid `clear` confirmations distinct guidance without changing `clear confirm` behaviour.
 - Reject extra arguments to `help` and `exit`, consistently with `reload`, rather than opening Help or exiting unexpectedly.
 - Report raw line-break code points and correction guidance when input reaches the parser without command-box conversion, and diagnose non-breaking/full-width spaces in command words and indexes without normalising those characters in field values.
 - Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.

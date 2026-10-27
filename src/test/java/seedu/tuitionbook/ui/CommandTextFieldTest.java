@@ -171,7 +171,7 @@ public class CommandTextFieldTest {
 
     // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/322.
     @Test
-    public void paste_lineBreaksInQuotedName_normalizesBeforeParsingAndPersists() throws Exception {
+    public void replace_lineBreaksInQuotedName_normalizesBeforeParsingAndPersists() throws Exception {
         JavaFxTestUtil.runOnFxThread(() -> {
             int separatorIndex = 0;
             for (String separator : List.of("\n", "\r", "\r\n", "\u000B", "\u000C",
@@ -194,7 +194,7 @@ public class CommandTextFieldTest {
                 CommandTextField field = (CommandTextField) scene.lookup("#commandTextField");
                 try {
                     field.requestFocus();
-                    field.replaceSelection(rawCommand);
+                    field.replaceText(0, field.getLength(), rawCommand);
 
                     assertEquals("AdD r/student n/\"Wei Ming Tan\" p/91234567", field.getText());
                     assertTrue(model.getTuitionBook().getPersonList().isEmpty());

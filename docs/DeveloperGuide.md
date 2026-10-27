@@ -224,9 +224,9 @@ For each absent tag, `UntagCommand` also compares its spelling case-insensitivel
 
 `ViewCommand` selects the contact from `Model#getFilteredPersonList()`, then reads the full TuitionBook to resolve relationships by persistent contact ID. Thus, the working set determines the selected index but cannot hide a linked guardian or student from the result. The command does not change contact data or the working set.
 
-Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in contact-list order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags are sorted alphabetically.
+Without `v/`, the command displays each linked contact as `NAME (CONTACT_NUMBER)`: the linked guardian for a student or linked students in contact-list order for a guardian. With `v/`, it displays each linked contact's full details. It displays `No guardian linked.` or `No students linked.` when the selected contact has no relationship. Missing optional fields use `-`, and tags use one locale-independent, case-insensitive alphabetical order; original spelling breaks ties. Each displayed tag is enclosed in brackets, with literal backslashes and square brackets escaped for unambiguous boundaries.
 
-`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. Executing a command that has no detail text, including an invalid command, restores `PersonListPanel`. The working set remains in the model while the detail view is visible.
+`ViewCommand` returns a `CommandResult` containing a short feedback message and the formatted detail text. `MainWindow` shows that text in `DetailDisplay`, which replaces `PersonListPanel` in the main content area. A successful command that has no detail text restores `PersonListPanel`; parse, command, index, and save failures leave the currently visible screen unchanged. The list and its active filter remain in the model while the detail view is visible.
 
 ### Stable contact working sets
 
@@ -256,7 +256,7 @@ Phone identity removes ASCII spaces, hyphens, slashes, and numeric-group parenth
 
 After tokenization and duplicate-prefix checks, `AddCommandParser` collects absent mandatory prefixes in the fixed order `r/ROLE`, `n/NAME`, `p/PHONE`. A structurally valid command with any absent prefixes reports all of them followed by `AddCommand.MESSAGE_USAGE`; malformed preambles and tokenizer failures retain their existing format or parsing errors. Empty supplied values remain field-validation errors, so the parser does not duplicate model validation.
 
-`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in alphabetical order.
+`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in locale-independent, case-insensitive alphabetical order, with original spelling as the tie-breaker.
 
 <a id="quoted-name-and-tag-parsing"></a>
 
@@ -972,11 +972,11 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `add r/guardian n/Grace Guardian p/90000001`, then enter `add r/student n/Sam Student p/90000002`.
 1. Enter `list r/student`.<br>
    Expected: Only Sam Student is visible; Grace Guardian remains stored but hidden by the active filter.
-1. Enter `clear`, `clear CONFIRM`, and `clear confirm extra` one at a time.<br>
-   Expected: Each command reports the valid `clear confirm` format. Neither contact is deleted, and the student filter remains active.
-1. Enter `clear confirm`.<br>
+1. Enter `clear`, `clear   `, `clear CONFIRM`, `clear Confirm`, `clear confirm confirm`, `clear confirm extra`, `clear yes`, `clearconfirm`, `clear confirmation`, and `clear\tno` one at a time.<br>
+   Expected: Bare or whitespace-only `clear` reports `Confirmation required: enter "clear confirm" to clear all contacts.` Each other nonblank argument reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Neither contact is deleted, and the student filter remains active.
+2. Enter `clear confirm`.<br>
    Expected: All contacts are deleted, including Grace Guardian, who was hidden by the filter. The result states that contacts hidden by the current filter were also cleared.
-1. Exit and restart TuitionBook.<br>
+3. Exit and restart TuitionBook.<br>
    Expected: The contact list remains empty.
 
 ### Launch and shutdown
@@ -1107,7 +1107,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data. Enter these commands to create the contacts used below:
 
-1. `add r/student n/Alex Yeoh p/87438807`
+1. `add r/student n/Alex Yeoh p/87438807 t/zebra t/Alpha t/alpha t/10 t/!tag t/"Math, Science" t/"C:\\Math\\"`
 1. `add r/guardian n/Bernice Yu p/99272758`
 1. `link 1 2`
 1. `add r/student n/Charlotte Oliveiro p/93210283`
@@ -1116,7 +1116,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `view 1`.<br>
    Expected: The contact list is replaced by Alex Yeoh's details and `Bernice Yu (99272758)`. The result area displays `Viewing contact: Alex Yeoh`.
 1. Enter `view 1 v/`.<br>
-   Expected: Bernice Yu's full guardian details appear after Alex Yeoh's details.
+   Expected: Bernice Yu's full guardian details appear after Alex Yeoh's details. Alex's tags appear as `[!tag], [10], [Alpha], [alpha], [C:\\\\Math\\\\], [Math, Science], [zebra]`, regardless of the system locale. The tag containing a comma remains one bracketed tag, and backslashes are escaped.
 1. Enter `view 2`.<br>
    Expected: The detail view shows Bernice Yu's details, followed by `Alex Yeoh (87438807)` under linked students.
 1. Enter `view 2 v/`.<br>
@@ -1124,9 +1124,9 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `view 3`, then `view 4`.<br>
    Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports `No students linked.`
 1. Enter `list r/student`, then `view 1 v/`.<br>
-   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored list remains filtered to students. The same working set is shown when returning from details; only an explicit query/reset or successful deletion changes existing membership or indexes.
-1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, `view 1 v/details`, and `view 1 v/ v/`.<br>
-   Expected: Each command restores the contact list and reports an index or format error; no contact data changes.
+   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list` and `find` replace it, so they are unsuitable for this check.
+1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, and `view 1 v/details` while the detail view is visible.<br>
+   Expected: Each command reports an index or format error and leaves the detail view visible; no contact data changes.
 
 ### Unicode duplicate identity
 

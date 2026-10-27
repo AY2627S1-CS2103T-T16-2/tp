@@ -44,7 +44,7 @@ public class ViewCommandTest {
                 + "Phone: 81234567\n"
                 + "Email: -\n"
                 + "Address: -\n"
-                + "Tags: friends, math\n\n"
+                + "Tags: [friends], [math]\n\n"
                 + "Guardian: Grace Tan (91234567)";
         assertViewWithoutMutation(model, FIRST_INDEX, expected);
     }
@@ -64,15 +64,71 @@ public class ViewCommandTest {
                 + "Phone: 81234567\n"
                 + "Email: -\n"
                 + "Address: -\n"
-                + "Tags: friends, math\n\n"
+                + "Tags: [friends], [math]\n\n"
                 + "Guardian details:\n"
                 + "Name: Grace Tan\n"
                 + "Role: GUARDIAN\n"
                 + "Phone: 91234567\n"
                 + "Email: amy@gmail.com\n"
                 + "Address: 123, Jurong West Ave 6, #08-111\n"
-                + "Tags: family";
+                + "Tags: [family]";
         assertViewWithoutMutation(model, FIRST_INDEX, true, expected);
+    }
+
+    @Test
+    public void execute_mixedCaseAndPunctuationTags_usesDisplayOrder() throws CommandException {
+        Person student = new PersonBuilder().withName("Sam Tan").withRole(Role.STUDENT)
+                .withTags("zebra", "Alpha", "alpha", "10", "!tag").build();
+        Model model = modelWith(student);
+
+        String expected = "Name: Sam Tan\n"
+                + "Role: STUDENT\n"
+                + "Phone: 85355255\n"
+                + "Email: amy@gmail.com\n"
+                + "Address: 123, Jurong West Ave 6, #08-111\n"
+                + "Tags: [!tag], [10], [Alpha], [alpha], [zebra]\n\n"
+                + ViewCommand.MESSAGE_NO_GUARDIAN;
+        assertViewWithoutMutation(model, FIRST_INDEX, expected);
+    }
+
+    @Test
+    public void execute_tagDisplay_usesBracketsAndEscapesAmbiguousCharacters() throws CommandException {
+        List<List<String>> tagSets = List.of(
+                List.<String>of(),
+                List.of("-"),
+                List.of("Math, Science"),
+                List.of("["),
+                List.of("]"),
+                List.of("[Math]"),
+                List.of("C:\\Math\\"),
+                List.of("Math", "Science"),
+                List.of("a\\b", "c[d]"),
+                List.of("one,two", "three"));
+        List<String> expectedTagsLines = List.of(
+                "Tags: -",
+                "Tags: [-]",
+                "Tags: [Math, Science]",
+                "Tags: [\\[]",
+                "Tags: [\\]]",
+                "Tags: [\\[Math\\]]",
+                "Tags: [C:\\\\Math\\\\]",
+                "Tags: [Math], [Science]",
+                "Tags: [a\\\\b], [c\\[d\\]]",
+                "Tags: [one,two], [three]");
+
+        for (int index = 0; index < tagSets.size(); index++) {
+            Person person = new PersonBuilder()
+                    .withTags(tagSets.get(index).toArray(new String[0]))
+                    .build();
+            String details = new ViewCommand(FIRST_INDEX).execute(modelWith(person))
+                    .getDetailsToShow().orElseThrow();
+            String tagsLine = details.lines()
+                    .filter(line -> line.startsWith("Tags: "))
+                    .findFirst()
+                    .orElseThrow();
+
+            assertEquals(expectedTagsLines.get(index), tagsLine, "Unexpected tag display for case " + index);
+        }
     }
 
     @Test
@@ -154,7 +210,7 @@ public class ViewCommandTest {
                 + "Phone: 81234567\n"
                 + "Email: -\n"
                 + "Address: -\n"
-                + "Tags: science\n\n"
+                + "Tags: [science]\n\n"
                 + "Name: Amy Tan\n"
                 + "Role: STUDENT\n"
                 + "Phone: 82345678\n"
