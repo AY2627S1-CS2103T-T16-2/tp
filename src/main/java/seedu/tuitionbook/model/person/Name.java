@@ -14,7 +14,7 @@ public class Name {
     public static final String MESSAGE_TOO_LONG = "Names must be at most " + MAX_LENGTH + " characters.";
     public static final String MESSAGE_INVALID_START = "Names must start with a letter or number.";
     public static final String MESSAGE_INVALID_CHARACTERS = "Names may only contain letters, numbers, accent marks, "
-            + "spaces, periods (.), apostrophes (' or \u2019), forward slashes (/), and hyphens (-).";
+            + "spaces, periods (.), apostrophes ('), forward slashes (/), and hyphens (-).";
 
     /*
      * The first character must be a Unicode letter or number. Subsequent characters may also be
