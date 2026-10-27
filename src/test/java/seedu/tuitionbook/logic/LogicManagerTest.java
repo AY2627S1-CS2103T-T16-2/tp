@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.tuitionbook.logic.Messages.getInvalidPersonDisplayedIndexMessage;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -520,11 +519,19 @@ public class LogicManagerTest {
         List<Person> expectedPersons = List.of(visibleStudent, hiddenGuardian);
         List<Person> expectedFilteredPersons = List.of(visibleStudent);
         Predicate<Person> expectedFilter = model.getPersonListQueryPredicate();
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
-
-        for (String command : List.of("clear", "clear CONFIRM", "clear confirm extra")) {
-            assertThrows(ParseException.class, expectedMessage, () -> logic.execute(command));
-
+        List<String> confirmationCommands = List.of(
+                "clear", "clear   ", "clear CONFIRM", "clear Confirm", "clear confirm confirm",
+                "clear confirm extra", "clear yes", "clear confirmno", "clear confirmation", "clear\tno");
+        for (String command : confirmationCommands) {
+            String expectedMessage = command.trim().equals("clear")
+                    ? ClearCommand.MESSAGE_CONFIRMATION_REQUIRED
+                    : ClearCommand.MESSAGE_INVALID_CONFIRMATION;
+            try {
+                logic.execute(command);
+                throw new AssertionError("Expected clear confirmation to be rejected: " + command);
+            } catch (ParseException exception) {
+                assertEquals(expectedMessage, exception.getMessage());
+            }
             assertEquals(expectedPersons, logic.getPersonList());
             assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());
             assertSame(expectedFilter, model.getPersonListQueryPredicate());
