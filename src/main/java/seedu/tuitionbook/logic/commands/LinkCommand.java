@@ -29,6 +29,8 @@ public class LinkCommand extends Command {
     public static final String MESSAGE_STUDENT_REQUIRED = "The first index must refer to a student.";
     public static final String MESSAGE_GUARDIAN_REQUIRED = "The second index must refer to a guardian.";
 
+    private boolean hasExecuted;
+
     private final Index studentIndex;
     private final Index guardianIndex;
     private boolean requiresSave;
@@ -44,6 +46,7 @@ public class LinkCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        assert hasExecuted : "execute() must be called before requiresSave()";
         return requiresSave;
     }
 
@@ -54,6 +57,7 @@ public class LinkCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        hasExecuted = true;
         requireNonNull(model);
         requiresSave = false;
         List<Person> persons = model.getFilteredPersonList();

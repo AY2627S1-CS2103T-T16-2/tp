@@ -25,6 +25,8 @@ public class UnlinkCommand extends Command {
     public static final String MESSAGE_INVALID_STUDENT_INDEX = "Student index: %1$s";
     public static final String MESSAGE_STUDENT_REQUIRED = "The index must refer to a student.";
 
+    private boolean hasExecuted;
+
     private final Index studentIndex;
     private boolean requiresSave;
 
@@ -35,6 +37,7 @@ public class UnlinkCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        assert hasExecuted : "execute() must be called before requiresSave()";
         return requiresSave;
     }
 
@@ -45,6 +48,7 @@ public class UnlinkCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        hasExecuted = true;
         requireNonNull(model);
         requiresSave = false;
         List<Person> persons = model.getFilteredPersonList();

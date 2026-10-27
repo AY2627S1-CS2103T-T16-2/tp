@@ -34,7 +34,9 @@ public abstract class Command {
 
     /**
      * Returns whether the latest execution changed contact data that must be saved.
-     * Mutating commands start with false, reset this decision at the start of each execution, and set it to true
+     * Commands with an execution-dependent save decision require an execution attempt first,
+     * which may have thrown a CommandException.
+     * Mutating commands reset this decision at the start of each execution, and set it to true
      * only after a successful change. Read-only and reload commands always return false.
      */
     public abstract boolean requiresSave();
@@ -46,10 +48,9 @@ public abstract class Command {
      * command completes without making a change.</p>
      *
      * <p>Commands with an execution-dependent save decision must override this method to return true regardless
-     * of the latest save decision, so LogicManager captures a rollback snapshot before execution.</p>
+     * of the latest save decision, so LogicManager captures a rollback snapshot before execution.
+     * Commands that cannot change contact data return false.</p>
      */
-    public boolean canMutate() {
-        return requiresSave();
-    }
+    public abstract boolean canMutate();
 
 }

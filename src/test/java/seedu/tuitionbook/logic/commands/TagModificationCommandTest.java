@@ -190,7 +190,6 @@ public class TagModificationCommandTest {
         UntagCommand untag = new UntagCommand(INDEX_FIRST_PERSON, tags("Math"));
         assertTrue(tag.canMutate());
         assertTrue(untag.canMutate());
-        assertFalse(tag.requiresSave());
         assertEquals(String.format(TagCommand.MESSAGE_SUCCESS,
                 model.getFilteredPersonList().getFirst().getName(), "\"Math\""),
                 tag.execute(model).getFeedbackToUser());

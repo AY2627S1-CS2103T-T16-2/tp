@@ -6,16 +6,18 @@ The format is based on Keep a Changelog.
 
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 
-## [Unreleased]
+## [v1.5] - 2026-10-28
 
 ### Added
 
+- Enforce one running TuitionBook instance per application home using an operating-system file lock, while allowing copies in separate folders to run independently (#256).
 - Show the active query and persistent displayed, matching and retained contact counts above the contact list, including after detail views, reload and save-failure rollback (#188).
 - Support quoted addresses in `add` and `edit`, protecting complete addresses containing prefix-like text and using the same quote/backslash escapes as names and tags (#201).
 - Detailed guardian-link repair diagnostics in the startup warning, including every affected contact and repair reason.
 
 ### Changed
 
+- Added assertions that execution-dependent save decisions are queried only after a command execution attempt and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
 - Clarify separate workflows for routine manual file edits with TuitionBook closed and load recovery using `reload` while it stays open, including backup precautions, replacement of in-memory contacts, and filter reset; align the DG manual tests (#196).
 - Clarify that rollback snapshot creation performs quadratic pairwise duplicate validation alongside linear reference copying, including the cost for commands that ultimately make no change (#224).
 - Clarified that `clear confirm` removes all contacts but not separately stored diagnostic logs, which may retain earlier command information and should be reviewed before sharing; no secure-erasure guarantee is made.
