@@ -3,6 +3,10 @@
 skinparam arrowThickness 1.1
 skinparam arrowColor UI_COLOR_T4
 skinparam classBackgroundColor UI_COLOR
+skinparam ClassFontSize 17
+skinparam PackageFontSize 18
+skinparam ArrowFontSize 14
+skinparam ArrowFontStyle plain
 
 package UI <<Rectangle>> {
     class "<<interface>>\nUi" as Ui
@@ -53,7 +57,7 @@ MainWindow *-down-> "0..1" ResultDisplay
 MainWindow ..> CommandBox : <<create>>
 CommandBox ..> CommandTextField : <<uses in FXML>>
 MainWindow ..> StatusBarFooter : <<create>>
-MainWindow -left-> "1" Logic : commands and lists
+MainWindow -left-> Logic : commands and lists
 
 PersonListPanel ..> PersonCard : <<create>> via ListCell
 PersonListPanel --> "*" Person : working set and\ncomplete list
@@ -65,17 +69,4 @@ HelpWindow -[hidden]left- CommandBox
 CommandBox -[hidden]left- ResultDisplay
 ResultDisplay -[hidden]left- DetailDisplay
 DetailDisplay -[hidden]left- StatusBarFooter
-
-legend bottom
-  MainWindow installs CommandBox and StatusBarFooter roots in FXML placeholders;
-  it retains the other four parts as fields. PersonListPanel and DetailDisplay
-  share a placeholder and alternate visibility based on CommandResult details.
-  CommandTextField normalizes pasted separators before JavaFX filters them.
-  CommandBox invokes a CommandExecutor bound to MainWindow::executeCommand.
-  PersonListPanel's nested PersonListViewCell creates cards for nonempty cells;
-  PersonListPanel retains the complete list and a lookup of Person objects by ID,
-  which supply linked contact summaries for contacts outside the working set.
-  HelpWindow opens the User Guide through DesktopAdapter's Browser callback
-  on a background Executor, or copies its URL to the clipboard.
-endlegend
 @enduml
