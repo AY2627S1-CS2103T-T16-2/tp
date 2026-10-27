@@ -270,7 +270,7 @@ This deliberately changes some unquoted commands: `n/Muhammad s/o Ali` and `t/Ad
 
 Inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Other backslash sequences and all unquoted values are preserved. The closing-quote scan and decoding use the same escape predicate, so an escaped quote cannot end a value or expose embedded prefixes. An escaped final quote without a subsequent closing quote is rejected. Surrounding whitespace is trimmed as before, and decoded values pass through the existing domain validators; escaping does not widen name validation.
 
-Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`, and `a/"\"Block A\""` enters an address with literal quotes around it. Existing addresses and tags are not stripped or normalised on loading. Surrounding whitespace continues to be trimmed even inside quoted values; this change does not resolve the padded-JSON-tag issue #185 or change tag case identity.
+Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`, and `a/"\"Block A\""` enters an address with literal quotes around it. Existing addresses are not stripped or normalised on loading. `Tag` removes surrounding ASCII spaces from every tag, including JSON-loaded values, while preserving internal spacing and case-sensitive identity; this makes a stored `" Math "` tag addressable as `Math` without changing quoted-value parsing.
 
 ### \[Historical proposal\] Undo/redo feature
 
@@ -476,9 +476,9 @@ US18/US19 needs are supported through generic tags: `t/Sec4 t/AMath` records a l
 
 #### Tag identity and compatibility
 
-[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Parsing trims surrounding whitespace, including inside quoted values, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
+[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. `Tag` trims surrounding ASCII spaces for both command and JSON construction, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
 
-Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Once broader tags are saved, narrowing validation or normalising existing tag identities requires an explicit compatibility or migration plan.
+Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Surrounding ASCII spaces are trimmed when tags are loaded; tags that differ only by that padding are merged into one, and the merged value is written on the next save. Any other narrowing of validation or identity still requires an explicit compatibility plan.
 
 #### Single-instance operation and manual file editing
 
@@ -870,7 +870,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
 * **Working set**: Ordered contact UUIDs displayed with their current values, together with the originating query and canonical refresh command. Matching additions append, nonmatching additions stay hidden, and edits preserve membership and indexes. Deletion compacts survivors; an explicit query replaces membership. Successful reload, clear and restart reset the working set.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON retains the plain tag string without migration. `Tag.equals` and `hashCode` remain case-sensitive; list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `untag` suggests case variants for absent tags without changing its case-sensitive removal rule. `find` remains name-only.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression, and trims surrounding ASCII spaces at construction. Internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON-loaded tags use the same normalization, so padding-only duplicates collapse and the normalized set is written on the next successful contact save. `Tag.equals` and `hashCode` remain case-sensitive; list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `untag` suggests case variants for absent tags without changing its case-sensitive removal rule. `find` remains name-only.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -1346,7 +1346,12 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: The command is rejected with the tag constraint message; contacts are unchanged.
 1. Close and relaunch the application.<br>
    Expected: Alex Lim still has the tags `Sec 4`, `Math/Science`, and `C++`. Enter `list r/student t/sec 4 t/c++` and verify that Alex appears.
-1. Enter `list`, then `edit 1 t/first t/second`.<br>
+1. Close TuitionBook. Open `data/tuitionbook.json` in the disposable folder, replace Alex's `tags` array with `[" Math ", "Math", " Sec  4 "]`, save the file, and relaunch TuitionBook.
+1. Enter `list t/Math`.<br>
+   Expected: Alex appears with one `Math` tag and one `Sec  4` tag. The padded and unpadded `Math` values normalize to the same tag, while its internal spacing is retained.
+1. Enter `untag 1 t/Math`, then close TuitionBook and inspect Alex's tags in `data/tuitionbook.json`.<br>
+   Expected: `Math` is removed. The remaining tag is stored as `Sec  4` without surrounding spaces.
+1. Relaunch TuitionBook, enter `list`, then `edit 1 t/first t/second`.<br>
    Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
 1. Enter `edit 1 t/`.<br>
    Expected: All of Alex's tags are cleared, as before.

@@ -184,6 +184,24 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_paddedQuotedTags_normalizesAcrossCommandsAndPreservesCaseIdentity() throws Exception {
+        logic.execute("add r/student n/Alex Lim p/91234567 t/\" Math \"");
+        assertEquals(Set.of(new Tag("Math")), logic.getPersonList().getFirst().getTags());
+
+        logic.execute("tag 1 t/\" math \"");
+        assertEquals(Set.of(new Tag("Math"), new Tag("math")), logic.getPersonList().getFirst().getTags());
+
+        logic.execute("list t/\" MATH \"");
+        assertEquals(1, logic.getFilteredPersonList().size());
+
+        logic.execute("edit 1 t/\" Science \"");
+        assertEquals(Set.of(new Tag("Science")), logic.getPersonList().getFirst().getTags());
+
+        logic.execute("untag 1 t/\" Science \"");
+        assertTrue(logic.getPersonList().getFirst().getTags().isEmpty());
+    }
+
+    @Test
     public void execute_invalidTags_preservesContactsAndFilter() throws Exception {
         logic.execute("add r/student n/Alex Lim p/91234567 t/Sec 4");
         logic.execute("list t/missing");
