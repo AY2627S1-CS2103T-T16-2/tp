@@ -46,7 +46,9 @@ public class Tag {
 
     /**
      * Returns true if the name contains only printable ASCII characters and is not blank.
-     * Internal spaces and punctuation are preserved; surrounding ASCII spaces are trimmed.
+     * When a {@code Tag} is constructed, surrounding ASCII spaces are trimmed before this
+     * validation and storage, so the stored value can differ from the constructor argument.
+     * Internal spaces and punctuation are preserved.
      */
     public static boolean isValidTagName(String test) {
         requireNonNull(test);

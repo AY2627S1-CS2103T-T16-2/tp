@@ -110,7 +110,7 @@ public class TagTest {
                 List.of("100", "20", "3", "Z"),
                 List.of("SCHOOL", "School", "school", "science"),
                 List.of("[tag]", "tag", "tag!", "{tag}"),
-                List.of(" tag", "0", "A", "a", "z"));
+                List.of("0", "A", "a", "tag", "z"));
         List<Locale> locales = List.of(Locale.ROOT, Locale.ENGLISH,
                 Locale.forLanguageTag("tr"), Locale.forLanguageTag("az"));
         Locale originalLocale = Locale.getDefault();
