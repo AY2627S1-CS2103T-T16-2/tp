@@ -13,6 +13,7 @@ import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
+import seedu.tuitionbook.model.tag.Tag;
 
 /**
  * Displays a contact and their guardian or linked students without changing TuitionBook.
@@ -82,8 +83,8 @@ public class ViewCommand extends Command {
 
     private static void appendContactDetails(StringBuilder result, Person person) {
         String tags = person.getTags().stream()
-                .map(tag -> tag.tagName)
-                .sorted()
+                .sorted(Tag.DISPLAY_COMPARATOR)
+                .map(tag -> formatTagForDetails(tag.tagName))
                 .collect(Collectors.joining(", "));
         result.append("Name: ").append(person.getName()).append('\n')
                 .append("Role: ").append(person.getRole().name()).append('\n')
@@ -91,6 +92,13 @@ public class ViewCommand extends Command {
                 .append("Email: ").append(person.getEmail().map(Object::toString).orElse("-")).append('\n')
                 .append("Address: ").append(person.getAddress().map(Object::toString).orElse("-")).append('\n')
                 .append("Tags: ").append(tags.isEmpty() ? "-" : tags);
+    }
+
+    private static String formatTagForDetails(String tagName) {
+        String escapedTagName = tagName.replace("\\", "\\\\")
+                .replace("[", "\\[")
+                .replace("]", "\\]");
+        return "[" + escapedTagName + "]";
     }
 
     private static void appendGuardianDetails(StringBuilder result, Person student, List<Person> allPersons,

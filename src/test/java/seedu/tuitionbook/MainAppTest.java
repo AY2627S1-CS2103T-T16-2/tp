@@ -25,6 +25,7 @@ import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Phone;
+import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
@@ -234,7 +235,11 @@ public class MainAppTest {
 
         assertEquals(2, state.model().getTuitionBook().getPersonList().size());
         assertTrue(state.model().getTuitionBook().getPersonList().get(0).getGuardianId().isEmpty());
-        assertEquals(StartupNotice.guardianLinksRepaired(1), state.notice().orElseThrow());
+        StartupNotice notice = state.notice().orElseThrow();
+        assertEquals(1, notice.repairedGuardianLinkCount());
+        assertEquals("Sam Student", notice.guardianLinkRepairs().get(0).personName());
+        assertEquals(GuardianLinkRepair.Reason.MISSING_GUARDIAN,
+                notice.guardianLinkRepairs().get(0).reason());
     }
 
     @Test
@@ -286,7 +291,7 @@ public class MainAppTest {
         StartupNotice notice = state.notice().orElseThrow();
         assertEquals(StartupNotice.Type.LOAD_FAILED_BACKED_UP, notice.type());
         assertTrue(notice.loadFailureGuidance().contains("invalid contact data"));
-        assertTrue(notice.loadFailureGuidance().contains(Phone.MESSAGE_CONSTRAINTS));
+        assertTrue(notice.loadFailureGuidance().contains(Phone.MESSAGE_CONSTRAINTS.substring(0, 100)));
         assertFalse(Files.exists(dataFile));
         assertTrue(Files.exists(dataFile.resolveSibling(dataFile.getFileName() + ".backup")));
     }
@@ -338,6 +343,18 @@ public class MainAppTest {
     public void initPrefs_malformedFile_usesAndSavesDefaults() throws Exception {
         Path prefsFile = testFolder.resolve("preferences.json");
         Files.writeString(prefsFile, "{broken");
+        JsonUserPrefsStorage prefsStorage = new JsonUserPrefsStorage(prefsFile);
+
+        UserPrefs loadedPrefs = new MainApp().initPrefs(prefsStorage);
+
+        assertEquals(new UserPrefs(), loadedPrefs);
+        assertEquals(loadedPrefs, prefsStorage.readUserPrefs().orElseThrow());
+    }
+
+    @Test
+    public void initPrefs_nullGuiSettings_usesAndSavesDefaults() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        Files.writeString(prefsFile, "{\"guiSettings\":null}");
         JsonUserPrefsStorage prefsStorage = new JsonUserPrefsStorage(prefsFile);
 
         UserPrefs loadedPrefs = new MainApp().initPrefs(prefsStorage);

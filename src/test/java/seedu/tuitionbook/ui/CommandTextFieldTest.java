@@ -148,9 +148,30 @@ public class CommandTextFieldTest {
         });
     }
 
+    @Test
+    public void paste_createsSeparateUndoStep() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            CommandTextField field = new CommandTextField();
+            field.setText("add r/student n/");
+            field.appendText("Sam");
+            field.positionCaret(field.getLength());
+
+            ClipboardContent pasted = new ClipboardContent();
+            pasted.putString(" Tan");
+            Clipboard.getSystemClipboard().clear();
+            assertTrue(Clipboard.getSystemClipboard().setContent(pasted));
+
+            field.paste();
+
+            assertEquals("add r/student n/Sam Tan", field.getText());
+            field.undo();
+            assertEquals("add r/student n/Sam", field.getText());
+        });
+    }
+
     // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/322.
     @Test
-    public void paste_lineBreaksInQuotedName_normalizesBeforeParsingAndPersists() throws Exception {
+    public void replace_lineBreaksInQuotedName_normalizesBeforeParsingAndPersists() throws Exception {
         JavaFxTestUtil.runOnFxThread(() -> {
             int separatorIndex = 0;
             for (String separator : List.of("\n", "\r", "\r\n", "\u000B", "\u000C",
@@ -172,11 +193,8 @@ public class CommandTextFieldTest {
                 stage.show();
                 CommandTextField field = (CommandTextField) scene.lookup("#commandTextField");
                 try {
-                    ClipboardContent pasted = new ClipboardContent();
-                    pasted.putString(rawCommand);
-                    assertTrue(Clipboard.getSystemClipboard().setContent(pasted));
                     field.requestFocus();
-                    field.paste();
+                    field.replaceText(0, field.getLength(), rawCommand);
 
                     assertEquals("AdD r/student n/\"Wei Ming Tan\" p/91234567", field.getText());
                     assertTrue(model.getTuitionBook().getPersonList().isEmpty());

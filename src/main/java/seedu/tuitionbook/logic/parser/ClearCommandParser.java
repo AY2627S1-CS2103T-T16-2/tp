@@ -1,7 +1,5 @@
 package seedu.tuitionbook.logic.parser;
 
-import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
-
 import seedu.tuitionbook.logic.commands.ClearCommand;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 
@@ -16,8 +14,12 @@ public class ClearCommandParser implements Parser<ClearCommand> {
      * @throws ParseException if the user input does not contain only the required confirmation keyword
      */
     public ClearCommand parse(String args) throws ParseException {
-        if (!args.trim().equals(ClearCommand.CONFIRMATION_KEYWORD)) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE));
+        String trimmedArgs = args.trim();
+        if (trimmedArgs.isEmpty()) {
+            throw new ParseException(ClearCommand.MESSAGE_CONFIRMATION_REQUIRED);
+        }
+        if (!trimmedArgs.equals(ClearCommand.CONFIRMATION_KEYWORD)) {
+            throw new ParseException(ClearCommand.MESSAGE_INVALID_CONFIRMATION);
         }
 
         return new ClearCommand();

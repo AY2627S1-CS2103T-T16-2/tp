@@ -59,6 +59,14 @@ public class IndexTest {
     }
 
     @Test
+    public void hashCode_equalIndexes_sameHashCode() {
+        Index oneBasedIndex = Index.fromOneBased(5);
+        Index zeroBasedIndex = Index.fromZeroBased(4);
+
+        assertEquals(oneBasedIndex.hashCode(), zeroBasedIndex.hashCode());
+    }
+
+    @Test
     public void toStringMethod() {
         Index index = Index.fromZeroBased(0);
         String expected = Index.class.getCanonicalName() + "{zeroBasedIndex=" + index.getZeroBased() + "}";

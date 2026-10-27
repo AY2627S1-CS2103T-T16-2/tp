@@ -74,7 +74,8 @@ public class TagModificationCommandTest {
 
         assertEquals(String.format(TagCommand.MESSAGE_NO_CHANGE, person.getName()),
                 tag.execute(model).getFeedbackToUser());
-        assertEquals(String.format(UntagCommand.MESSAGE_NO_CHANGE, person.getName()) + " Tags not present: \"math\".",
+        assertEquals(String.format(UntagCommand.MESSAGE_NO_CHANGE, person.getName()) + " Tags not present: \"math\"."
+                        + " Tag \"math\" not found, did you mean \"Math\"?",
                 untag.execute(model).getFeedbackToUser());
         assertFalse(tag.requiresSave());
         assertFalse(untag.requiresSave());
@@ -102,6 +103,64 @@ public class TagModificationCommandTest {
         Model model = modelWith(person);
         assertEquals(String.format(UntagCommand.MESSAGE_SUCCESS, person.getName()),
                 new UntagCommand(INDEX_FIRST_PERSON, tags("Math")).execute(model).getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_untagWrongCase_suggestsAllStoredVariantsInSortedOrder() throws Exception {
+        Person person = new PersonBuilder().withName("Sam Student").withTags("Math", "MATH", "Science").build();
+        Model model = modelWith(person);
+        UntagCommand command = new UntagCommand(INDEX_FIRST_PERSON, tags("science", "math"));
+
+        assertEquals("None of the specified tags are present on Sam Student. Tags not present: \"math\", \"science\"."
+                + " Tag \"math\" not found, did you mean \"MATH\", \"Math\"?"
+                + " Tag \"science\" not found, did you mean \"Science\"?",
+                command.execute(model).getFeedbackToUser());
+        assertEquals(List.of(person), model.getFilteredPersonList());
+        assertFalse(command.requiresSave());
+    }
+
+    @Test
+    public void execute_untagPartialRemoval_suggestsOnlyTagsStillPresent() throws Exception {
+        Person person = new PersonBuilder().withName("Sam Student").withTags("Math", "SCIENCE").build();
+        Model model = modelWith(person);
+        UntagCommand command = new UntagCommand(INDEX_FIRST_PERSON, tags("Math", "math", "science"));
+
+        assertEquals("Removed tags from Sam Student. Tags not present: \"math\", \"science\"."
+                + " Tag \"science\" not found, did you mean \"SCIENCE\"?",
+                command.execute(model).getFeedbackToUser());
+        assertEquals(tags("SCIENCE"), model.getFilteredPersonList().getFirst().getTags());
+        assertTrue(command.requiresSave());
+    }
+
+    @Test
+    public void execute_untagWrongCase_escapesSuggestedSpellings() throws Exception {
+        Person person = new PersonBuilder().withName("Sam Student").withTags("A\"B", "C\\D").build();
+        Model model = modelWith(person);
+        assertEquals("None of the specified tags are present on Sam Student. Tags not present: \"a\\\"b\", \"c\\\\d\"."
+                + " Tag \"a\\\"b\" not found, did you mean \"A\\\"B\"?"
+                + " Tag \"c\\\\d\" not found, did you mean \"C\\\\D\"?",
+                new UntagCommand(INDEX_FIRST_PERSON, tags("a\"b", "c\\d")).execute(model).getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_untagNoCaseMatch_doesNotSuggestOtherContactsOrDifferentSpacing() throws Exception {
+        Person target = new PersonBuilder().withName("Sam Student").withTags("Maths", "Sec 4").build();
+        Person other = new PersonBuilder().withName("Other Student").withTags("Math", "Sec  4").build();
+        Model model = modelWith(target, other);
+        assertEquals("None of the specified tags are present on Sam Student. Tags not present: \"math\", \"sec  4\".",
+                new UntagCommand(INDEX_FIRST_PERSON, tags("math", "sec  4")).execute(model).getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_untagReused_recomputesCaseSuggestions() throws Exception {
+        Person person = new PersonBuilder().withTags("Math").build();
+        Model model = modelWith(person);
+        UntagCommand command = new UntagCommand(INDEX_FIRST_PERSON, tags("math"));
+        assertTrue(command.execute(model).getFeedbackToUser().endsWith("did you mean \"Math\"?"));
+
+        model.setPerson(person, new PersonBuilder(person).withTags("MATH").build());
+        assertTrue(command.execute(model).getFeedbackToUser().endsWith("did you mean \"MATH\"?"));
+        assertFalse(command.requiresSave());
     }
 
     @Test

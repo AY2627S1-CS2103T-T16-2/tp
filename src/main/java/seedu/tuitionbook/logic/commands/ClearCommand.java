@@ -18,6 +18,10 @@ public class ClearCommand extends Command {
             + "Example: " + COMMAND_WORD + " " + CONFIRMATION_KEYWORD;
     public static final String MESSAGE_SUCCESS =
             "All contacts have been cleared, including contacts hidden by the current filter.";
+    public static final String MESSAGE_CONFIRMATION_REQUIRED =
+            "Confirmation required: enter \"clear confirm\" to clear all contacts.";
+    public static final String MESSAGE_INVALID_CONFIRMATION =
+            "Invalid confirmation: enter \"clear confirm\" to clear all contacts.";
 
     private boolean hasExecuted;
 

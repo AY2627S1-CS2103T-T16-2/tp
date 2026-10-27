@@ -52,6 +52,11 @@ public class EditCommand extends Command {
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
+    public static final String MESSAGE_ROLE_NOT_EDITABLE =
+            "A contact's role cannot be changed after it is added.";
+    public static final String MESSAGE_GUARDIAN_NOT_EDITABLE =
+            "Use link STUDENT_INDEX GUARDIAN_INDEX to set or replace a student's guardian link, "
+                    + "or unlink STUDENT_INDEX to remove it. Use indexes from the currently displayed list.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in TuitionBook.";
 
     private boolean hasExecuted;

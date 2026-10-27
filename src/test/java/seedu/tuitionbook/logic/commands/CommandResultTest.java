@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 
 public class CommandResultTest {
@@ -36,6 +38,9 @@ public class CommandResultTest {
 
         // different detailsToShow value -> returns false
         assertFalse(commandResult.equals(new CommandResult("feedback", "details")));
+
+        // different personIdToScrollTo value -> returns false
+        assertFalse(commandResult.equals(new CommandResult("feedback", UUID.randomUUID())));
     }
 
     @Test
@@ -56,6 +61,9 @@ public class CommandResultTest {
 
         // different detailsToShow value -> returns different hashcode
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", "details").hashCode());
+
+        // different personIdToScrollTo value -> returns different hashcode
+        assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", UUID.randomUUID()).hashCode());
     }
 
     @Test
@@ -66,11 +74,20 @@ public class CommandResultTest {
     }
 
     @Test
+    public void getPersonIdToScrollTo() {
+        UUID personId = UUID.randomUUID();
+
+        assertEquals(personId, new CommandResult("feedback", personId).getPersonIdToScrollTo().orElseThrow());
+        assertTrue(new CommandResult("feedback").getPersonIdToScrollTo().isEmpty());
+    }
+
+    @Test
     public void toStringMethod() {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
-                + ", exit=" + commandResult.isExit() + ", detailsToShow=null}";
+                + ", exit=" + commandResult.isExit()
+                + ", detailsToShow=null, personIdToScrollTo=null}";
         assertEquals(expected, commandResult.toString());
     }
 }

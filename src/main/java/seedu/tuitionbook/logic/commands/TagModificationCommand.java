@@ -92,8 +92,13 @@ abstract class TagModificationCommand extends Command {
                 .filter(tag -> !original.getTags().contains(tag))
                 .map(tag -> tag.tagName)
                 .sorted()
-                .map(name -> "\"" + name.replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
+                .map(TagModificationCommand::quoteTagName)
                 .collect(Collectors.joining(", "));
+    }
+
+    /** Quotes a tag name and escapes literal quotes and backslashes for unambiguous feedback. */
+    protected static String quoteTagName(String name) {
+        return "\"" + name.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
     /**
