@@ -42,6 +42,11 @@ public class EmailTest {
     }
 
     @Test
+    public void getConstraintMessage_validEmail_failsAssertion() {
+        assertThrows(AssertionError.class, () -> Email.getConstraintMessage("peter@example.com"));
+    }
+
+    @Test
     public void isValidEmail() {
         // null email
         assertThrows(NullPointerException.class, () -> Email.isValidEmail(null));

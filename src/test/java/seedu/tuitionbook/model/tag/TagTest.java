@@ -49,6 +49,11 @@ public class TagTest {
     }
 
     @Test
+    public void getConstraintMessage_validTagName_failsAssertion() {
+        assertThrows(AssertionError.class, () -> Tag.getConstraintMessage("Math"));
+    }
+
+    @Test
     public void constructor_longMultiSegmentTag_preservesExactValue() {
         String longMultiSegmentTag = "A-".repeat(5000) + "B";
 

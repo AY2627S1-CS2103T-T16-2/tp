@@ -12,6 +12,8 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.core.JsonParseException;
+
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.testutil.SerializableTestClass;
 import seedu.tuitionbook.testutil.TestUtil;
@@ -98,6 +100,14 @@ public class JsonUtilTest {
 
         assertThrows(IOException.class, () ->
                 JsonUtil.fromJsonString(jsonWithTrailingObject, SerializableTestClass.class));
+    }
+
+    @Test
+    public void fromJsonString_trailingJsonValue_throwsJsonParseException() {
+        for (String trailingValue : new String[] {" {}", " []", " 1"}) {
+            assertThrows(JsonParseException.class, () -> JsonUtil.fromJsonString(
+                    SerializableTestClass.JSON_STRING_REPRESENTATION + trailingValue, SerializableTestClass.class));
+        }
     }
 
     //TODO: @Test jsonUtil_writeThenReadObjectToJson_correctObject()

@@ -83,6 +83,11 @@ public class NameTest {
     }
 
     @Test
+    public void getConstraintMessage_validName_failsAssertion() {
+        assertThrows(AssertionError.class, () -> Name.getConstraintMessage("Amy Bee"));
+    }
+
+    @Test
     public void constructor_invalidName_reportsSpecificMessage() {
         assertThrows(IllegalArgumentException.class, Name.MESSAGE_INVALID_START, () -> new Name("-Amy"));
     }

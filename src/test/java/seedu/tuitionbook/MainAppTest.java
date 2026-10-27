@@ -37,8 +37,9 @@ import seedu.tuitionbook.ui.StartupNotice;
  */
 public class MainAppTest {
 
-    private static final String INVALID_JSON_GUIDANCE = "The data file is not valid UTF-8 JSON. Correct the encoding "
-            + "or JSON syntax in the preserved file before trying again.";
+    private static final String INVALID_JSON_GUIDANCE = "The data file is not in a format TuitionBook can read. "
+            + "Check the preserved file for mistakes such as a missing comma, quote or bracket, and save it as UTF-8 "
+            + "text before trying again.";
 
     @TempDir
     public Path testFolder;
@@ -291,7 +292,7 @@ public class MainAppTest {
         StartupNotice notice = state.notice().orElseThrow();
         assertEquals(StartupNotice.Type.LOAD_FAILED_BACKED_UP, notice.type());
         assertTrue(notice.loadFailureGuidance().contains("invalid contact data"));
-        assertTrue(notice.loadFailureGuidance().contains(Phone.MESSAGE_CONSTRAINTS.substring(0, 100)));
+        assertTrue(notice.loadFailureGuidance().contains("Contact 1 in the file: " + Phone.MESSAGE_CONSTRAINTS));
         assertFalse(Files.exists(dataFile));
         assertTrue(Files.exists(dataFile.resolveSibling(dataFile.getFileName() + ".backup")));
     }

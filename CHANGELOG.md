@@ -34,12 +34,14 @@ The format is based on Keep a Changelog.
 - Clarified that names accept ordinary ASCII spaces (U+0020), rather than every Unicode whitespace character.
 - Shortened invalid name, phone, email, address and tag errors into user-facing messages that report the specific rule broken, and removed quoted-value guidance from the `add`, `edit`, `list`, `tag` and `untag` usage messages (#269).
 - Reworded unknown-field, repeated-field, quote, unusual-space, line-break, `g/` in `add`, `find` usage and save-failure messages in plain language without character codes; save failures now explain that the command was undone instead of showing raw system errors (#269).
+- Data-file load errors now name the affected contact by its position in the file, use the file's own key names such as `"name"` and `"tags"`, and describe unreadable JSON in plain language (#269).
 - Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
 - Preserve an ordered contact working set across edit, tag, untag, link and unlink; retain and mark contacts that stop matching with canonical refresh commands, append matching additions, explain hidden additions, and warn when deletion compacts indexes. Explicit queries refresh membership; reload, clear and restart reset it. Save failures restore exact membership, order and query (#187).
 - Clarified the supported `guardianId` JSON value types and the difference between link repair and whole-file recovery.
 
 ### Fixed
 
+- Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#269).
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
 - Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).
 - Trim surrounding ASCII spaces from tags loaded from JSON, making previously padded tags addressable through `list`, `tag`, and `untag` while preserving significant internal spaces; tags that differ only by surrounding spaces are merged into one (#185).

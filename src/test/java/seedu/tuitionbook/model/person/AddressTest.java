@@ -99,6 +99,11 @@ public class AddressTest {
     }
 
     @Test
+    public void getConstraintMessage_validAddress_failsAssertion() {
+        assertThrows(AssertionError.class, () -> Address.getConstraintMessage("123 Main Street"));
+    }
+
+    @Test
     public void constructor_invalidAddress_reportsSpecificMessage() {
         assertThrows(IllegalArgumentException.class, Address.MESSAGE_MULTIPLE_LINES, () -> new Address("A\nB"));
     }
