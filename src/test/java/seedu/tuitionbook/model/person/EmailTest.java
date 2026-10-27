@@ -1,5 +1,6 @@
 package seedu.tuitionbook.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
@@ -18,6 +19,26 @@ public class EmailTest {
         // A missing email is represented by the absence of an Email object, not a blank Email value.
         String invalidEmail = "";
         assertThrows(IllegalArgumentException.class, () -> new Email(invalidEmail));
+    }
+
+    @Test
+    public void getConstraintMessage_reportsFirstViolatedConstraint() {
+        assertEquals(Email.MESSAGE_FORMAT, Email.getConstraintMessage(""));
+        assertEquals(Email.MESSAGE_FORMAT, Email.getConstraintMessage("example.com"));
+        assertEquals(Email.MESSAGE_FORMAT, Email.getConstraintMessage("@example.com"));
+        assertEquals(Email.MESSAGE_FORMAT, Email.getConstraintMessage("peter@"));
+        assertEquals(Email.MESSAGE_FORMAT, Email.getConstraintMessage("a@b@example.com"));
+        assertEquals(Email.MESSAGE_INVALID_NAME_CHARACTERS, Email.getConstraintMessage("peter jack@example.com"));
+        assertEquals(Email.MESSAGE_INVALID_NAME_CHARACTERS, Email.getConstraintMessage("-peter!@example.com"));
+        assertEquals(Email.MESSAGE_INVALID_NAME_EDGE, Email.getConstraintMessage(".peter@example.com"));
+        assertEquals(Email.MESSAGE_INVALID_NAME_EDGE, Email.getConstraintMessage("peter-@example.com"));
+        assertEquals(Email.MESSAGE_CONSECUTIVE_PERIODS, Email.getConstraintMessage("peter..jack@example.com"));
+        assertEquals(Email.MESSAGE_INVALID_DOMAIN, Email.getConstraintMessage("peter@example.c"));
+        assertEquals(Email.MESSAGE_INVALID_DOMAIN, Email.getConstraintMessage("peter@-example.com"));
+        assertEquals(Email.MESSAGE_INVALID_DOMAIN, Email.getConstraintMessage("peter@example..com"));
+        assertEquals(Email.MESSAGE_INVALID_DOMAIN, Email.getConstraintMessage("peter@exa_mple.com"));
+        assertThrows(IllegalArgumentException.class, Email.MESSAGE_CONSECUTIVE_PERIODS, ()
+                -> new Email("peter..jack@example.com"));
     }
 
     @Test

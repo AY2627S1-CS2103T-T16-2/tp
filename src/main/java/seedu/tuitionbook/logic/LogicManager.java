@@ -16,13 +16,18 @@ import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.PersonListViewState;
 import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.storage.SaveBlockedException;
 import seedu.tuitionbook.storage.Storage;
 
 /**
  * The main LogicManager of the app.
  */
 public class LogicManager implements Logic {
-    public static final String FILE_OPS_ERROR_FORMAT = "Could not save data due to the following error: %s";
+    public static final String FILE_OPS_ERROR_MESSAGE = "Could not save your changes, so the command was undone. "
+            + "Check that the data folder can be written to and has free space, then try again.";
+
+    public static final String FILE_OPS_BLOCKED_ERROR_FORMAT = "Could not save your changes, so the command was "
+            + "undone. %s";
 
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
             "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
@@ -62,9 +67,13 @@ public class LogicManager implements Logic {
             } catch (AccessDeniedException e) {
                 restoreModel(originalTuitionBook, originalView);
                 throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-            } catch (IOException ioe) {
+            } catch (SaveBlockedException sbe) {
                 restoreModel(originalTuitionBook, originalView);
-                throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+                throw new CommandException(String.format(FILE_OPS_BLOCKED_ERROR_FORMAT, sbe.getMessage()), sbe);
+            } catch (IOException ioe) {
+                logger.warning("Could not save data: " + ioe);
+                restoreModel(originalTuitionBook, originalView);
+                throw new CommandException(FILE_OPS_ERROR_MESSAGE, ioe);
             }
         }
 

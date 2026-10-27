@@ -41,8 +41,8 @@ public class AddCommand extends Command {
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in TuitionBook.";
     public static final String MESSAGE_MISSING_REQUIRED_FIELDS = "Missing required field(s): %1$s\n%2$s";
-    public static final String MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED = "`g/` cannot be used when adding a contact. "
-            + "Add the contact first, then link the student to a guardian using the guardian-linking command.";
+    public static final String MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED = "g/ cannot be used when adding a contact. "
+            + "Add the contact first, then use link STUDENT_INDEX GUARDIAN_INDEX.";
 
     private boolean hasExecuted;
 

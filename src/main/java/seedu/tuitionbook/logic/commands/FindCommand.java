@@ -15,9 +15,8 @@ public class FindCommand extends Command {
 
     public static final String COMMAND_WORD = "find";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds persons whose names contain any specified "
-            + "literal substring (case-insensitive). Each keyword matches anywhere in the name; keywords use OR, "
-            + "and only names are searched.\n"
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds contacts whose names contain any of the "
+            + "given words, ignoring case. Only names are searched.\n"
             + "Parameters: KEYWORD [MORE_KEYWORDS]...\n"
             + "Example: " + COMMAND_WORD + " rac bob";
 

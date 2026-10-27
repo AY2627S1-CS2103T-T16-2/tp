@@ -59,6 +59,7 @@ import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
+import seedu.tuitionbook.storage.SaveBlockedException;
 import seedu.tuitionbook.storage.StorageManager;
 import seedu.tuitionbook.storage.TuitionBookLoadResult;
 import seedu.tuitionbook.testutil.PersonBuilder;
@@ -741,8 +742,14 @@ public class LogicManagerTest {
 
     @Test
     public void execute_storageThrowsIoException_throwsCommandException() {
-        assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
+        assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, LogicManager.FILE_OPS_ERROR_MESSAGE);
+    }
+
+    @Test
+    public void execute_storageBlocksSaving_showsBlockedReason() {
+        SaveBlockedException blocked = new SaveBlockedException("Saving is disabled.");
+        assertCommandFailureForExceptionFromStorage(blocked,
+                String.format(LogicManager.FILE_OPS_BLOCKED_ERROR_FORMAT, blocked.getMessage()));
     }
 
     @Test

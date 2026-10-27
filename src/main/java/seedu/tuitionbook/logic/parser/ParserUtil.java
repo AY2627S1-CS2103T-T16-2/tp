@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 
 import seedu.tuitionbook.commons.core.index.Index;
@@ -23,8 +22,8 @@ import seedu.tuitionbook.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
-    public static final String MESSAGE_UNSUPPORTED_SPACE = "Unexpected %s (U+%04X). "
-            + "Retype the command separator or index using normal spaces (U+0020).";
+    public static final String MESSAGE_UNSUPPORTED_SPACE = "Your command contains an unusual space character, "
+            + "often from copied text. Retype the spaces using the spacebar.";
 
     /**
      * Diagnoses known lookalike spaces in command syntax, without normalising user data.
@@ -35,9 +34,7 @@ public class ParserUtil {
         for (int i = 0; i < input.length(); i++) {
             char space = input.charAt(i);
             if (space == '\u00a0' || space == '\u3000') {
-                String description = space == '\u00a0' ? "non-breaking space" : "full-width space";
-                throw new ParseException(String.format(Locale.ROOT, MESSAGE_UNSUPPORTED_SPACE,
-                        description, (int) space));
+                throw new ParseException(MESSAGE_UNSUPPORTED_SPACE);
             }
         }
     }
@@ -111,7 +108,7 @@ public class ParserUtil {
         requireNonNull(email);
         String trimmedEmail = email.trim();
         if (!Email.isValidEmail(trimmedEmail)) {
-            throw new ParseException(Email.MESSAGE_CONSTRAINTS);
+            throw new ParseException(Email.getConstraintMessage(trimmedEmail));
         }
         return new Email(trimmedEmail);
     }

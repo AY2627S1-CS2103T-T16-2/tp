@@ -123,7 +123,7 @@ class JsonAdaptedPerson {
         final Phone modelPhone = new Phone(phone);
 
         if (email != null && !Email.isValidEmail(email)) {
-            throw new IllegalValueException(Email.MESSAGE_CONSTRAINTS);
+            throw new IllegalValueException(Email.getConstraintMessage(email));
         }
         final Email modelEmail = email == null ? null : new Email(email);
 
