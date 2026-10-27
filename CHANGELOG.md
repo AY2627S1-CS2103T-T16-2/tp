@@ -16,7 +16,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
-- Added assertions that execution-dependent save decisions are queried only after a command execution attempt, enabled application assertions in the executable JAR, and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
+- Added assertions that execution-dependent save decisions are queried only after a command execution attempt and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
 - Clarify separate workflows for routine manual file edits with TuitionBook closed and load recovery using `reload` while it stays open, including backup precautions, replacement of in-memory contacts, and filter reset; align the DG manual tests (#196).
 - Clarify that rollback snapshot creation performs quadratic pairwise duplicate validation alongside linear reference copying, including the cost for commands that ultimately make no change (#224).
 - Clarified that `clear confirm` removes all contacts but not separately stored diagnostic logs, which may retain earlier command information and should be reviewed before sharing; no secure-erasure guarantee is made.
