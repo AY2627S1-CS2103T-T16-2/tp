@@ -18,17 +18,42 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javafx.application.Platform;
+import javafx.scene.control.DialogPane;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 import seedu.tuitionbook.commons.core.ApplicationInstanceGuard;
 import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
 import seedu.tuitionbook.storage.StorageManager;
+import seedu.tuitionbook.ui.JavaFxTestUtil;
 
 public class MainTest {
 
     @TempDir
     public Path testFolder;
+
+    @Test
+    public void start_acquiresGuardAndLaunchesMainAppWithArguments() throws Exception {
+        String[] arguments = {"first", "second"};
+        AtomicReference<Class<?>> launchedClass = new AtomicReference<>();
+        AtomicReference<String[]> launchedArguments = new AtomicReference<>();
+
+        Main.start(testFolder, arguments, (applicationClass, args) -> {
+            launchedClass.set(applicationClass);
+            launchedArguments.set(args);
+        }, (title, message) -> {
+            throw new AssertionError("Acquisition should have succeeded");
+        });
+
+        assertEquals(MainApp.class, launchedClass.get());
+        assertArrayEquals(arguments, launchedArguments.get());
+        try (ApplicationInstanceGuard ignored = ApplicationInstanceGuard.acquire(testFolder)) {
+            assertTrue(Files.exists(testFolder.resolve(ApplicationInstanceGuard.LOCK_FILE_NAME)));
+        }
+    }
 
     @Test
     public void launchApplication_delegatesToJavaFxLauncherWithMainAppAndArguments() {
@@ -156,6 +181,54 @@ public class MainTest {
 
         assertTrue(errorOutput.contains("graphical startup error could not be displayed"));
         assertTrue(errorOutput.contains("simulated JavaFX failure"));
+    }
+
+    @Test
+    public void showStartupError_existingToolkit_reportsFallbackError() {
+        JavaFxTestUtil.initialize();
+
+        String errorOutput = captureStandardError(() -> Main.showStartupError("Title", "Message"));
+
+        assertTrue(errorOutput.contains("graphical startup error could not be displayed"));
+        assertTrue(errorOutput.contains("IllegalStateException"));
+    }
+
+    @Test
+    public void showStartupError_validDialog_displaysConfiguredAlertAndExits() throws Exception {
+        String title = "Unique startup error title";
+        String message = "Unique startup error message";
+        AtomicBoolean dialogWasShown = new AtomicBoolean();
+        AtomicBoolean platformExitWasRun = new AtomicBoolean();
+        AtomicReference<String> observedTitle = new AtomicReference<>();
+        AtomicReference<String> observedHeader = new AtomicReference<>();
+        AtomicReference<String> observedContent = new AtomicReference<>();
+        AtomicBoolean observedResizable = new AtomicBoolean();
+
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Platform.runLater(() -> Window.getWindows().stream()
+                    .filter(Window::isShowing)
+                    .filter(window -> window instanceof Stage && title.equals(((Stage) window).getTitle()))
+                    .filter(window -> window.getScene() != null
+                            && window.getScene().getRoot() instanceof DialogPane)
+                    .findFirst()
+                    .ifPresent(window -> {
+                        DialogPane dialogPane = (DialogPane) window.getScene().getRoot();
+                        dialogWasShown.set(true);
+                        observedTitle.set(((Stage) window).getTitle());
+                        observedHeader.set(dialogPane.getHeaderText());
+                        observedContent.set(dialogPane.getContentText());
+                        observedResizable.set(((Stage) window).isResizable());
+                        window.hide();
+                    }));
+            Main.showStartupError(title, message, Runnable::run, () -> platformExitWasRun.set(true));
+        });
+
+        assertTrue(dialogWasShown.get());
+        assertEquals(title, observedTitle.get());
+        assertEquals(title, observedHeader.get());
+        assertEquals(message, observedContent.get());
+        assertTrue(observedResizable.get());
+        assertTrue(platformExitWasRun.get());
     }
 
     private static String captureStandardError(Runnable action) {

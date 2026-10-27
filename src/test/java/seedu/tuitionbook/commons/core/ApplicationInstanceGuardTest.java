@@ -1,5 +1,7 @@
 package seedu.tuitionbook.commons.core;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.WRITE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -10,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -161,6 +165,17 @@ public class ApplicationInstanceGuardTest {
         assertSame(releaseFailure, exception);
         assertEquals(1, exception.getSuppressed().length);
         assertSame(closeFailure, exception.getSuppressed()[0]);
+    }
+
+    @Test
+    public void releaseLock_alreadyReleased_doesNothing() throws Exception {
+        Path lockFile = testFolder.resolve("released.lock");
+        try (FileChannel channel = FileChannel.open(lockFile, CREATE, WRITE)) {
+            FileLock lock = channel.lock();
+            lock.release();
+
+            assertDoesNotThrow(() -> ApplicationInstanceGuard.releaseLock(lock));
+        }
     }
 
     @Test

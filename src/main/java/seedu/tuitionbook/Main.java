@@ -35,12 +35,12 @@ public class Main {
     static final String LOCK_FAILED_TITLE = "TuitionBook could not start safely";
 
     public static void main(String[] args) {
-        runWithInstanceGuard(ApplicationPaths.getApplicationHome(), () -> launchApplication(args),
-                Main::showStartupError);
+        start(ApplicationPaths.getApplicationHome(), args, Application::launch, Main::showStartupError);
     }
 
-    private static void launchApplication(String[] args) {
-        launchApplication(args, Application::launch);
+    static void start(Path applicationHome, String[] args, ApplicationLauncher applicationLauncher,
+            StartupErrorReporter errorReporter) {
+        runWithInstanceGuard(applicationHome, () -> launchApplication(args, applicationLauncher), errorReporter);
     }
 
     static void launchApplication(String[] args, ApplicationLauncher applicationLauncher) {
@@ -93,11 +93,16 @@ public class Main {
     }
 
     /** Shows a startup failure without constructing {@link MainApp} or its storage. */
-    private static void showStartupError(String title, String message) {
-        showStartupError(title, message, Platform::startup);
+    static void showStartupError(String title, String message) {
+        showStartupError(title, message, Platform::startup, Platform::exit);
     }
 
     static void showStartupError(String title, String message, PlatformStarter platformStarter) {
+        showStartupError(title, message, platformStarter, Platform::exit);
+    }
+
+    static void showStartupError(String title, String message, PlatformStarter platformStarter,
+            Runnable platformExit) {
         try {
             platformStarter.start(() -> {
                 Alert alert = new Alert(AlertType.ERROR);
@@ -106,7 +111,7 @@ public class Main {
                 alert.setContentText(message);
                 alert.setResizable(true);
                 alert.showAndWait();
-                Platform.exit();
+                platformExit.run();
             });
         } catch (RuntimeException e) {
             System.err.println("The graphical startup error could not be displayed: " + e);

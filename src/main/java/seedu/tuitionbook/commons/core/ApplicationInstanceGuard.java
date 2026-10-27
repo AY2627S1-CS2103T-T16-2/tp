@@ -94,11 +94,13 @@ public final class ApplicationInstanceGuard implements AutoCloseable {
         }
         isClosed = true;
 
-        closeResources(() -> {
-            if (lock.isValid()) {
-                lock.release();
-            }
-        }, channel::close);
+        closeResources(() -> releaseLock(lock), channel::close);
+    }
+
+    static void releaseLock(FileLock lock) throws IOException {
+        if (lock.isValid()) {
+            lock.release();
+        }
     }
 
     static void closeResources(IoAction releaseLock, IoAction closeChannel) throws IOException {
