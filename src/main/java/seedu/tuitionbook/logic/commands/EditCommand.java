@@ -59,6 +59,8 @@ public class EditCommand extends Command {
                     + "or unlink STUDENT_INDEX to remove it. Use indexes from the currently displayed list.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in TuitionBook.";
 
+    private boolean hasExecuted;
+
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
     private boolean requiresSave;
@@ -77,6 +79,7 @@ public class EditCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        assert hasExecuted : "execute() must be called before requiresSave()";
         return requiresSave;
     }
 
@@ -87,6 +90,7 @@ public class EditCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        hasExecuted = true;
         requireNonNull(model);
         requiresSave = false;
         List<Person> lastShownList = model.getFilteredPersonList();

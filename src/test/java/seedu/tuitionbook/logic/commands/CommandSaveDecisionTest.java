@@ -6,8 +6,6 @@ import static seedu.tuitionbook.testutil.Assert.assertThrows;
 import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
@@ -20,17 +18,6 @@ import seedu.tuitionbook.testutil.PersonBuilder;
 
 /** Verifies save decisions describe the latest execution, including when command objects are reused. */
 public class CommandSaveDecisionTest {
-    @Test
-    public void beforeExecution_mutatingCommands_allowSnapshotsWithoutRequestingSave() {
-        for (Command command : List.of(new AddCommand(new PersonBuilder().build()),
-                new DeleteCommand(INDEX_FIRST_PERSON), new EditCommand(INDEX_FIRST_PERSON,
-                        new EditCommand.EditPersonDescriptor()), new ClearCommand(),
-                new LinkCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON), new UnlinkCommand(INDEX_FIRST_PERSON))) {
-            assertTrue(command.canMutate());
-            assertFalse(command.requiresSave());
-        }
-    }
-
     @Test
     public void execute_addThenDuplicate_resetsSaveDecisionOnFailure() throws Exception {
         Model model = new ModelManager();

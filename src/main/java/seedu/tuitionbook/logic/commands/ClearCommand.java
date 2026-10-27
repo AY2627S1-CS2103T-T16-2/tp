@@ -23,10 +23,13 @@ public class ClearCommand extends Command {
     public static final String MESSAGE_INVALID_CONFIRMATION =
             "Invalid confirmation: enter \"clear confirm\" to clear all contacts.";
 
+    private boolean hasExecuted;
+
     private boolean requiresSave;
 
     @Override
     public boolean requiresSave() {
+        assert hasExecuted : "execute() must be called before requiresSave()";
         return requiresSave;
     }
 
@@ -37,6 +40,7 @@ public class ClearCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) {
+        hasExecuted = true;
         requireNonNull(model);
         requiresSave = false;
         boolean hasContacts = !model.getTuitionBook().getPersonList().isEmpty();

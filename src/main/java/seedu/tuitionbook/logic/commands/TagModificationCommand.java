@@ -19,6 +19,8 @@ import seedu.tuitionbook.model.tag.Tag;
 /** Shared execution for incremental tag changes, preserving all other contact data. */
 abstract class TagModificationCommand extends Command {
     protected final Set<Tag> tags;
+    private boolean hasExecuted;
+
     private final Index index;
     private final String successMessage;
     private final String noChangeMessage;
@@ -47,11 +49,13 @@ abstract class TagModificationCommand extends Command {
 
     @Override
     public boolean requiresSave() {
+        assert hasExecuted : "execute() must be called before requiresSave()";
         return requiresSave;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        hasExecuted = true;
         requireNonNull(model);
         requiresSave = false;
         List<Person> displayedPersons = model.getFilteredPersonList();
