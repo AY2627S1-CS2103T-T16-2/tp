@@ -415,9 +415,17 @@ Diagnostic log files are stored separately from the contact data file, so `clear
 
 Format: `reload`
 
-Reads the configured contact file again and resets the working set to all loaded contacts in contact-list order. Use this after correcting a file that could not be loaded and backed up. A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards. No arguments are accepted.
+Reads the configured contact file again and resets the working set to all loaded contacts in contact-list order, clearing the current filter. **Reload replaces the contacts currently in memory; it does not merge them with the file.** No arguments are accepted.
 
-If the file is missing, the contact list becomes empty and saving is enabled. Reloading does not save anything. If reading fails, the current contacts and exact working set (membership, order and originating query) are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the reported permission, encoding, JSON, or contact-value guidance before restoring the preserved file and reloading again. Reload replaces rather than merges contacts; preserve any external file edits you need before using it.
+For routine manual edits, follow [Editing the data file](#editing-the-data-file) and restart the app. To recover without restarting after a load failure, you may keep TuitionBook open and use this workflow:
+
+1. Stop entering contact-changing commands until recovery is complete: a save can overwrite external edits. Record any current contacts or changes you need to keep, including contacts added after an earlier recovery. Copy the current data file (if present) and any preserved `.backup` file to a separate safe location before editing or replacing either file.
+1. Follow the error's permission, encoding, JSON, or contact-value guidance. Correct the configured data file, or restore a corrected copy of the preserved file to that path. Use the path reported by the app; it may still be `data/addressbook.json` if migration failed.
+1. Save your file edits, then enter `reload`. Check the loaded contacts before entering another contact-changing command. Contacts recorded in step 1 that are absent from the restored file must be re-entered manually.
+
+A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards.
+
+If the file is missing, the contact list becomes empty and saving is enabled; only move it away if you intend to start with no contacts. Reloading does not save anything. If reading fails, the current contacts and exact working set (membership, order and originating query) are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the recovery steps above before trying again.
 
 When a reload succeeds but invalid guardian links are repaired, the result lists every affected contact's name, UUID, guardian ID when present, and reason. Valid contacts remain loaded, the links are removed in memory, and the next successful save removes those invalid links from the JSON file.
 
@@ -429,14 +437,21 @@ Format: `exit`
 
 ### Saving the data
 
-**Run only one copy of TuitionBook against the same data file at a time.** There is no single-instance guard: another copy can overwrite the first copy's saves. Close the app before copying or replacing its data file.
+**Run only one copy of TuitionBook against the same data file at a time.** There is no single-instance guard: another copy can overwrite the first copy's saves. For routine manual edits or backup restoration, close the app first. The [reload recovery workflow](#reloading-contacts-reload) explains how to recover while keeping it open.
 
 TuitionBook attempts to save contact data after commands that change contacts or guardian links. Repeating an existing link, unlinking a student without a guardian, editing fields or tags to their existing values, or clearing an already-empty contact list does not attempt a save. A change to the working set alone does not require saving. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores contacts, exact working-set membership/order and its query to their state before the command. You do not need to save manually.
 If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and run `reload` or restart the app.
 
 ### Editing the data file
 
-**Close TuitionBook before editing or replacing its data file.** Make a backup first, edit the file, then reopen the app. An open instance keeps its own copy in memory and can overwrite external edits on the next save. `reload` is available for the recovery workflow described above, but it replaces contacts rather than merging changes.
+For routine manual editing:
+
+1. Close TuitionBook.
+1. Copy the data file to a separate safe location as a backup.
+1. Edit or replace the data file, keeping it valid UTF-8 JSON and following the field rules below. Save your edits.
+1. Reopen TuitionBook and check the loaded contacts before entering contact-changing commands. Restart shows the full list and clears the previous filter.
+
+An open instance keeps its own copy in memory and can overwrite external edits on the next save. If recovering from a load failure while keeping the app open, use the separate [reload recovery workflow](#reloading-contacts-reload).
 
 TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder from which it is launched. Contact data is saved automatically as a UTF-8 JSON file `[JAR file location]/data/tuitionbook.json`. A UTF-8 byte-order mark (BOM) at the start is accepted. Invalid UTF-8 byte sequences make the file invalid rather than being replaced silently. Advanced users are welcome to update data directly by editing that data file. On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path. If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged. If permissions prevent the move, TuitionBook continues using the unchanged `addressbook.json` for that run and retries migration on a later launch. Contact-changing commands can still report a save error and roll back if the legacy file's folder is not writable.
 
@@ -457,7 +472,7 @@ If a string `guardianId` is not a UUID, refers to a missing contact, refers to a
 <box type="warning" seamless>
 
 **Caution:** If TuitionBook cannot read the data file, it starts with an empty contact list and shows a warning at the next run. It moves the unreadable file unchanged to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`; the warning names the exact backup path and distinguishes permission failures, invalid UTF-8 or JSON, invalid contact values, and other file-system errors. The backup is kept unchanged, and TuitionBook can then save new contact data to `tuitionbook.json`.<br>
-To restore the original data, follow the warning's guidance: for example, restore read permission, correct invalid UTF-8 or JSON, or correct the reported contact value. Then rename the preserved file to `tuitionbook.json`, replacing the new file, and restart TuitionBook. Contacts added after recovery are stored in the new file and must be re-entered because TuitionBook cannot merge the two files automatically. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves; resolve the reported problem or move the file, then run `reload` or restart TuitionBook. Still, we recommend backing up the file before editing it.<br>
+To restore the original data, close TuitionBook and copy both the current data file (if present) and the preserved backup to a separate safe location. Follow the warning's guidance: for example, restore read permission, correct invalid UTF-8 or JSON, or correct the reported contact value in a copy of the preserved file. Restore that corrected copy to the configured data path, replacing the new file, then restart TuitionBook. Contacts added after recovery are stored in the new file and must be re-entered because TuitionBook cannot merge the two files automatically. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves. Resolve the reported problem before restarting, or follow the [reload recovery workflow](#reloading-contacts-reload) to keep the app open.<br>
 Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 
 The 100-character name limit and 200-character address limit also apply to values edited directly in the data file. A file containing a longer value is invalid and follows the recovery behavior above: TuitionBook moves it unchanged to an unused sibling backup and allows new data to be saved; if that backup cannot be created, TuitionBook leaves the original file in place and blocks saves.
