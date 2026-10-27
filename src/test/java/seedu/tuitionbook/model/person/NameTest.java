@@ -70,8 +70,21 @@ public class NameTest {
     }
 
     @Test
-    public void messageConstraints_nameSpacing_identifiesAsciiSpace() {
-        assertTrue(Name.MESSAGE_CONSTRAINTS.contains("ASCII spaces (U+0020)"));
+    public void getConstraintMessage_reportsFirstViolatedConstraint() {
+        assertEquals(Name.MESSAGE_BLANK, Name.getConstraintMessage(""));
+        assertEquals(Name.MESSAGE_BLANK, Name.getConstraintMessage("   "));
+        assertEquals(Name.MESSAGE_TOO_LONG, Name.getConstraintMessage("A".repeat(Name.MAX_LENGTH + 1)));
+        assertEquals(Name.MESSAGE_TOO_LONG, Name.getConstraintMessage("@" + "A".repeat(Name.MAX_LENGTH)));
+        assertEquals(Name.MESSAGE_INVALID_START, Name.getConstraintMessage("-Amy"));
+        assertEquals(Name.MESSAGE_INVALID_START, Name.getConstraintMessage(" Amy"));
+        assertEquals(Name.MESSAGE_INVALID_START, Name.getConstraintMessage("\u0301Amy"));
+        assertEquals(Name.MESSAGE_INVALID_CHARACTERS, Name.getConstraintMessage("R@chel"));
+        assertEquals(Name.MESSAGE_INVALID_CHARACTERS, Name.getConstraintMessage("Amy\u2003Bee"));
+    }
+
+    @Test
+    public void constructor_invalidName_reportsSpecificMessage() {
+        assertThrows(IllegalArgumentException.class, Name.MESSAGE_INVALID_START, () -> new Name("-Amy"));
     }
 
     @Test

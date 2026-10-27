@@ -1,7 +1,6 @@
 package seedu.tuitionbook.model.tag;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
 
 import java.util.Comparator;
 
@@ -11,8 +10,9 @@ import java.util.Comparator;
  */
 public class Tag {
 
-    public static final String MESSAGE_CONSTRAINTS = "Tag names must not be blank and may contain only "
-            + "ASCII letters, digits, spaces, and printable punctuation";
+    public static final String MESSAGE_BLANK = "Tag names must not be blank.";
+    public static final String MESSAGE_INVALID_CHARACTERS =
+            "Tag names may contain only English letters, digits, spaces, and punctuation.";
     /** Orders tags by case-insensitive names, then by their original names. */
     public static final Comparator<Tag> DISPLAY_COMPARATOR = Comparator
             .comparing((Tag tag) -> tag.tagName, String.CASE_INSENSITIVE_ORDER)
@@ -28,7 +28,9 @@ public class Tag {
     public Tag(String tagName) {
         requireNonNull(tagName);
         String normalizedTagName = trimSurroundingSpaces(tagName);
-        checkArgument(isValidTagName(normalizedTagName), MESSAGE_CONSTRAINTS);
+        if (!isValidTagName(normalizedTagName)) {
+            throw new IllegalArgumentException(getConstraintMessage(normalizedTagName));
+        }
         this.tagName = normalizedTagName;
     }
 
@@ -52,16 +54,20 @@ public class Tag {
      */
     public static boolean isValidTagName(String test) {
         requireNonNull(test);
+        return hasOnlyPrintableAscii(test) && test.chars().anyMatch(character -> character != ' ');
+    }
 
-        boolean hasNonSpace = false;
-        for (int i = 0; i < test.length(); i++) {
-            char character = test.charAt(i);
-            if (character < ' ' || character > '~') {
-                return false;
-            }
-            hasNonSpace |= character != ' ';
-        }
-        return hasNonSpace;
+    /**
+     * Returns the message describing the constraint that the given invalid tag name violates.
+     */
+    public static String getConstraintMessage(String invalidTagName) {
+        requireNonNull(invalidTagName);
+        assert !isValidTagName(invalidTagName);
+        return hasOnlyPrintableAscii(invalidTagName) ? MESSAGE_BLANK : MESSAGE_INVALID_CHARACTERS;
+    }
+
+    private static boolean hasOnlyPrintableAscii(String test) {
+        return test.chars().allMatch(character -> character >= ' ' && character <= '~');
     }
 
     @Override

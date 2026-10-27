@@ -380,10 +380,10 @@ public class LogicManagerTest {
         Person originalPerson = new PersonBuilder().withName("Original Name").withAddress("Original Address").build();
         model.addPerson(originalPerson);
 
-        assertParseException("edit 1 n/" + "A".repeat(Name.MAX_LENGTH + 1), Name.MESSAGE_CONSTRAINTS);
+        assertParseException("edit 1 n/" + "A".repeat(Name.MAX_LENGTH + 1), Name.MESSAGE_TOO_LONG);
         assertContactIsUnchanged(originalPerson);
 
-        assertParseException("edit 1 a/" + "A".repeat(Address.MAX_LENGTH + 1), Address.MESSAGE_CONSTRAINTS);
+        assertParseException("edit 1 a/" + "A".repeat(Address.MAX_LENGTH + 1), Address.MESSAGE_TOO_LONG);
         assertContactIsUnchanged(originalPerson);
     }
 

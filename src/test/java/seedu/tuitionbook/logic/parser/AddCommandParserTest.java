@@ -146,7 +146,7 @@ public class AddCommandParserTest {
     public void parse_nonAsciiTag_reportsTagConstraints() {
         for (String tag : new String[] {"caf\u00e9", "\u6570\u5b66", "\ud83d\ude00", "Sec\u00a04"}) {
             assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " t/" + tag,
-                    Tag.MESSAGE_CONSTRAINTS);
+                    Tag.MESSAGE_INVALID_CHARACTERS);
         }
     }
 
@@ -154,7 +154,7 @@ public class AddCommandParserTest {
     public void parse_internalTabTag_failure() {
         String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
 
-        assertParseFailure(parser, mandatoryFields + " " + PREFIX_TAG + "Ma\tth", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, mandatoryFields + " " + PREFIX_TAG + "Ma\tth", Tag.MESSAGE_INVALID_CHARACTERS);
     }
 
     @Test
@@ -210,10 +210,10 @@ public class AddCommandParserTest {
     @Test
     public void parse_quotedAddress_followsNormalFieldValidation() {
         String required = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
-        assertParseFailure(parser, required + " a/\"\"", Address.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, required + " a/\"   \"", Address.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, required + " a/\"\"", Address.MESSAGE_BLANK);
+        assertParseFailure(parser, required + " a/\"   \"", Address.MESSAGE_BLANK);
         assertParseFailure(parser, required + " a/\"" + "X".repeat(Address.MAX_LENGTH + 1) + "\"",
-                Address.MESSAGE_CONSTRAINTS);
+                Address.MESSAGE_TOO_LONG);
         Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withoutEmail()
                 .withAddress("X".repeat(Address.MAX_LENGTH)).withTags().build();
         assertParseSuccess(parser, required + " a/\"" + "X".repeat(Address.MAX_LENGTH) + "\"",
@@ -269,7 +269,7 @@ public class AddCommandParserTest {
         assertParseSuccess(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + maximumLengthName + PHONE_DESC_BOB,
                 new AddCommand(expectedPerson));
         assertParseFailure(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + overLengthName + PHONE_DESC_BOB,
-                Name.MESSAGE_CONSTRAINTS);
+                Name.MESSAGE_TOO_LONG);
     }
 
     @Test
@@ -279,9 +279,9 @@ public class AddCommandParserTest {
         String overLengthAddress = "A".repeat(Address.MAX_LENGTH + 1);
 
         assertParseFailure(parser, ROLE_DESC_STUDENT + " " + PREFIX_NAME + overLengthName + PHONE_DESC_BOB,
-                Name.MESSAGE_CONSTRAINTS);
+                Name.MESSAGE_TOO_LONG);
         assertParseFailure(parser, mandatoryFields + " " + PREFIX_ADDRESS + overLengthAddress,
-                Address.MESSAGE_CONSTRAINTS);
+                Address.MESSAGE_TOO_LONG);
     }
 
     @Test
@@ -380,17 +380,18 @@ public class AddCommandParserTest {
         String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
 
         assertParseFailure(parser, INVALID_ROLE_DESC + NAME_DESC_BOB + PHONE_DESC_BOB, Role.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, ROLE_DESC_STUDENT + INVALID_NAME_DESC + PHONE_DESC_BOB, Name.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, ROLE_DESC_STUDENT + INVALID_NAME_DESC + PHONE_DESC_BOB,
+                Name.MESSAGE_INVALID_CHARACTERS);
         assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, mandatoryFields + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
         // An empty e/ is rejected; omit e/ entirely to add a contact without an email.
         assertParseFailure(parser, mandatoryFields + EMPTY_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, mandatoryFields + EMPTY_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, mandatoryFields + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, mandatoryFields + EMPTY_ADDRESS_DESC, Address.MESSAGE_BLANK);
+        assertParseFailure(parser, mandatoryFields + INVALID_TAG_DESC, Tag.MESSAGE_INVALID_CHARACTERS);
 
         // When two values are invalid, the first parsed error is reported.
         assertParseFailure(parser, ROLE_DESC_STUDENT + INVALID_NAME_DESC + PHONE_DESC_BOB + INVALID_EMAIL_DESC,
-                Name.MESSAGE_CONSTRAINTS);
+                Name.MESSAGE_INVALID_CHARACTERS);
 
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + mandatoryFields,
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));

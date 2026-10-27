@@ -70,7 +70,7 @@ public class JsonAdaptedPersonTest {
     public void toModelType_invalidName_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(INVALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
-        String expectedMessage = Name.MESSAGE_CONSTRAINTS;
+        String expectedMessage = Name.MESSAGE_INVALID_CHARACTERS;
         assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
     }
 
@@ -79,7 +79,7 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson("A".repeat(Name.MAX_LENGTH + 1), VALID_PHONE,
                 VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
 
-        assertThrows(IllegalValueException.class, Name.MESSAGE_CONSTRAINTS, person::toModelType);
+        assertThrows(IllegalValueException.class, Name.MESSAGE_TOO_LONG, person::toModelType);
     }
 
     @Test
@@ -122,7 +122,7 @@ public class JsonAdaptedPersonTest {
     public void toModelType_blankAddress_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, BLANK_ADDRESS, VALID_TAGS);
-        String expectedMessage = Address.MESSAGE_CONSTRAINTS;
+        String expectedMessage = Address.MESSAGE_BLANK;
         assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
     }
 
@@ -131,7 +131,7 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, "\u2003", VALID_TAGS);
 
-        assertThrows(IllegalValueException.class, Address.MESSAGE_CONSTRAINTS, person::toModelType);
+        assertThrows(IllegalValueException.class, Address.MESSAGE_BLANK, person::toModelType);
     }
 
     @Test
@@ -139,7 +139,7 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL,
                 "\u200B\uFEFF\u2060\u200E", VALID_TAGS);
 
-        assertThrows(IllegalValueException.class, Address.MESSAGE_CONSTRAINTS, person::toModelType);
+        assertThrows(IllegalValueException.class, Address.MESSAGE_BLANK, person::toModelType);
     }
 
     @Test
@@ -156,7 +156,7 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, "123 Main Street\nUnit 2", VALID_TAGS);
 
-        assertThrows(IllegalValueException.class, Address.MESSAGE_CONSTRAINTS, person::toModelType);
+        assertThrows(IllegalValueException.class, Address.MESSAGE_MULTIPLE_LINES, person::toModelType);
     }
 
     @Test
@@ -164,7 +164,7 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL,
                 "A".repeat(Address.MAX_LENGTH + 1), VALID_TAGS);
 
-        assertThrows(IllegalValueException.class, Address.MESSAGE_CONSTRAINTS, person::toModelType);
+        assertThrows(IllegalValueException.class, Address.MESSAGE_TOO_LONG, person::toModelType);
     }
 
     @Test

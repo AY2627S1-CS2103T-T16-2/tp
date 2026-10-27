@@ -66,7 +66,7 @@ public class ParserUtil {
         requireNonNull(name);
         String trimmedName = name.trim();
         if (!Name.isValidName(trimmedName)) {
-            throw new ParseException(Name.MESSAGE_CONSTRAINTS);
+            throw new ParseException(Name.getConstraintMessage(trimmedName));
         }
         return new Name(trimmedName);
     }
@@ -96,7 +96,7 @@ public class ParserUtil {
         requireNonNull(address);
         String trimmedAddress = address.trim();
         if (!Address.isValidAddress(trimmedAddress)) {
-            throw new ParseException(Address.MESSAGE_CONSTRAINTS);
+            throw new ParseException(Address.getConstraintMessage(trimmedAddress));
         }
         return new Address(trimmedAddress);
     }
@@ -141,7 +141,7 @@ public class ParserUtil {
         requireNonNull(tag);
         String trimmedTag = tag.trim();
         if (!Tag.isValidTagName(trimmedTag)) {
-            throw new ParseException(Tag.MESSAGE_CONSTRAINTS);
+            throw new ParseException(Tag.getConstraintMessage(trimmedTag));
         }
         return new Tag(trimmedTag);
     }

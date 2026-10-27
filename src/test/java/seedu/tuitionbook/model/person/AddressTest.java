@@ -88,6 +88,22 @@ public class AddressTest {
     }
 
     @Test
+    public void getConstraintMessage_reportsFirstViolatedConstraint() {
+        assertEquals(Address.MESSAGE_BLANK, Address.getConstraintMessage(""));
+        assertEquals(Address.MESSAGE_BLANK, Address.getConstraintMessage("\u200B\u2003"));
+        assertEquals(Address.MESSAGE_BLANK, Address.getConstraintMessage(" \n "));
+        assertEquals(Address.MESSAGE_MULTIPLE_LINES, Address.getConstraintMessage("123 Main Street\nUnit 2"));
+        assertEquals(Address.MESSAGE_MULTIPLE_LINES,
+                Address.getConstraintMessage("A".repeat(Address.MAX_LENGTH) + "\nB"));
+        assertEquals(Address.MESSAGE_TOO_LONG, Address.getConstraintMessage("A".repeat(Address.MAX_LENGTH + 1)));
+    }
+
+    @Test
+    public void constructor_invalidAddress_reportsSpecificMessage() {
+        assertThrows(IllegalArgumentException.class, Address.MESSAGE_MULTIPLE_LINES, () -> new Address("A\nB"));
+    }
+
+    @Test
     public void equals() {
         Address address = new Address("Valid Address");
 

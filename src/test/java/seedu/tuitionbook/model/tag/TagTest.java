@@ -39,6 +39,16 @@ public class TagTest {
     }
 
     @Test
+    public void getConstraintMessage_distinguishesBlankFromInvalidCharacters() {
+        assertEquals(Tag.MESSAGE_BLANK, Tag.getConstraintMessage(""));
+        assertEquals(Tag.MESSAGE_BLANK, Tag.getConstraintMessage("   "));
+        assertEquals(Tag.MESSAGE_INVALID_CHARACTERS, Tag.getConstraintMessage("Ma\tth"));
+        assertEquals(Tag.MESSAGE_INVALID_CHARACTERS, Tag.getConstraintMessage("caf\u00e9"));
+        assertEquals(Tag.MESSAGE_INVALID_CHARACTERS, Tag.getConstraintMessage("\t"));
+        assertThrows(IllegalArgumentException.class, Tag.MESSAGE_BLANK, () -> new Tag("   "));
+    }
+
+    @Test
     public void constructor_longMultiSegmentTag_preservesExactValue() {
         String longMultiSegmentTag = "A-".repeat(5000) + "B";
 
