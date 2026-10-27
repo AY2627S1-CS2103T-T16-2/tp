@@ -17,6 +17,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Consolidated the Developer Guide's AI acknowledgement to identify Codex and Claude, their extensive use in TuitionBook-specific development, and human oversight through team code review (#149).
 - Added assertions that execution-dependent save decisions are queried only after a command execution attempt and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
 - Clarify separate workflows for routine manual file edits with TuitionBook closed and load recovery using `reload` while it stays open, including backup precautions, replacement of in-memory contacts, and filter reset; align the DG manual tests (#196).
 - Clarify that rollback snapshot creation performs quadratic pairwise duplicate validation alongside linear reference copying, including the cost for commands that ultimately make no change (#224).
