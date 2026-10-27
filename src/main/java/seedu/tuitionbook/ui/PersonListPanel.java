@@ -158,8 +158,10 @@ public class PersonListPanel extends UiPart<Region> {
      * not been laid out yet, and retrying it can settle with the row still outside the viewport.
      * Once rows are realised, this instead advances by exact pixel amounts towards the target until
      * {@code scrollTo} can position the realised row precisely.</p>
+     *
+     * <p>Package-private so deterministic UI tests can exercise each stepping branch.</p>
      */
-    private boolean scrollTowardsPerson(UUID personId) {
+    boolean scrollTowardsPerson(UUID personId) {
         int index = indexOfPerson(personId);
         if (index < 0) {
             return false;
@@ -170,11 +172,9 @@ public class PersonListPanel extends UiPart<Region> {
         }
         IndexedCell<?> firstVisibleCell = virtualFlow.getFirstVisibleCell();
         IndexedCell<?> lastVisibleCell = virtualFlow.getLastVisibleCell();
-        if (firstVisibleCell == null || lastVisibleCell == null) {
-            personListView.scrollTo(index);
-        } else if (index > lastVisibleCell.getIndex()) {
+        if (lastVisibleCell != null && index > lastVisibleCell.getIndex()) {
             virtualFlow.scrollPixels(virtualFlow.getHeight());
-        } else if (index < firstVisibleCell.getIndex()) {
+        } else if (firstVisibleCell != null && index < firstVisibleCell.getIndex()) {
             virtualFlow.scrollPixels(-virtualFlow.getHeight());
         } else {
             personListView.scrollTo(index);
@@ -191,11 +191,16 @@ public class PersonListPanel extends UiPart<Region> {
         return -1;
     }
 
-    private boolean isPersonFullyVisible(UUID personId) {
+    /**
+     * Returns whether the identified contact's row currently counts as visible in the viewport.
+     *
+     * <p>Package-private so deterministic UI tests can verify partial-visibility handling.</p>
+     *
+     * @param personId id of the contact to look for
+     * @return whether the contact's row is visible within the viewport
+     */
+    boolean isPersonFullyVisible(UUID personId) {
         Bounds listBounds = personListView.localToScene(personListView.getBoundsInLocal());
-        if (listBounds == null) {
-            return false;
-        }
         for (Node node : personListView.lookupAll(".list-cell")) {
             if (!(node instanceof ListCell<?> cell)
                     || !(cell.getItem() instanceof Person person)
@@ -203,14 +208,22 @@ public class PersonListPanel extends UiPart<Region> {
                 continue;
             }
             Bounds cellBounds = cell.localToScene(cell.getBoundsInLocal());
-            if (cellBounds != null && isCellWithinViewport(listBounds, cellBounds)) {
+            if (isCellWithinViewport(listBounds, cellBounds)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean isCellWithinViewport(Bounds viewportBounds, Bounds cellBounds) {
+    /**
+     * Returns whether the cell lies fully inside the viewport, within {@link #VIEWPORT_TOLERANCE};
+     * a cell taller than the viewport only needs to overlap it.
+     *
+     * @param viewportBounds viewport bounds in scene coordinates
+     * @param cellBounds cell bounds in scene coordinates
+     * @return whether the cell counts as visible within the viewport
+     */
+    static boolean isCellWithinViewport(Bounds viewportBounds, Bounds cellBounds) {
         boolean fitsHorizontally = cellBounds.getMinX() >= viewportBounds.getMinX() - VIEWPORT_TOLERANCE
                 && cellBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE;
         boolean fitsVertically = cellBounds.getMinY() >= viewportBounds.getMinY() - VIEWPORT_TOLERANCE
