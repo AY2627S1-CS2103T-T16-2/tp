@@ -201,6 +201,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Before linking a student to a guardian after applying a filter, enter `list` to restore the full list so that both contacts can be selected.
 * Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
 * Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
+* Tags on contact cards use locale-independent, case-insensitive alphabetical order; original spelling breaks ties when tags differ only in case.
 * Student cards display a `Guardian:` line with the linked guardian's name and contact number, or `-` when no guardian is linked.
 * Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
 * Missing email addresses and home addresses display as `Email: -` and `Address: -`.
@@ -224,6 +225,8 @@ This workflow uses its own contact, Alex Tan, instead of the sample contacts. To
 
 ### Keeping displayed indexes stable
 
+The indicator above the contact list stays visible even when later commands replace the result message or open contact details. An unfiltered view shows `All contacts: 42`. A filtered view shows its query, for example `Query: list t/Active`, and `Shown: 3 of 42 contacts · Matching: 2 · Retained: 1`. `Shown` is the working-set size, and the total includes hidden contacts. `Matching` counts only displayed contacts that currently satisfy the query; `Retained` counts displayed contacts that no longer match. Hidden contacts are not included in either of these two counts. The query remains identified even when it matches every contact or no contacts. A long query is shortened on screen; hover over it to read the complete command.
+
 Each `list` or `find` establishes a working set in normal contact-list order. `edit`, `tag`, `untag`, `link` and `unlink` preserve all surviving displayed indexes, even when contacts stop matching the query. Those rows show **No longer matches the query** with a command to refresh. Matching again removes the notice without moving the row. An existing hidden contact that becomes a match stays hidden until an explicit query.
 
 Rerun the originating command, such as `list t/Active`, to refresh membership. Bare `list` deliberately shows all contacts. Matching additions append; nonmatching additions are saved without being displayed.
@@ -241,15 +244,15 @@ Deletion is the exception: deleting a row compacts the list. For example, if `li
 
 ### Viewing a contact: `view`
 
-Replaces the contact list with a contact's details and their recorded relationship. The next command other than `view` restores the contact list.
+Replaces the contact list with a contact's details and their recorded relationship. A successful command other than `view` restores the contact list. If a command fails, the current screen remains visible so that you can correct the command without losing the details you were reading.
 
 Format: `view INDEX [v/]`
 
 * `INDEX` is the positive index shown in the current working set, including retained contacts that no longer match its query.
 * Without `v/`, each linked contact appears as `NAME (CONTACT_NUMBER)`. A student view shows its linked guardian, while a guardian view lists its linked students in contact-list order.
 * Add `v/` to show the linked guardian's or linked students' full contact details, including their role, phone, email, address, and tags.
-* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when they are outside the working set.
-* Missing optional email, address, or tags are shown as `-`. Tags appear in alphabetical order. `view` does not change contact data or the working set.
+* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when the current filter hides them.
+* Missing optional email, address, or tags are shown as `-`. Tags appear in locale-independent, case-insensitive alphabetical order; tags that differ only in case use their original spelling as a deterministic tie-breaker. In `view` output, each tag is enclosed in brackets; literal backslashes and square brackets inside a tag are escaped with a backslash. `view` does not change contact data or the active filter.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 
@@ -273,7 +276,7 @@ Names support the same optional double quotes as `add`. For example, `edit 1 n/"
 * At least one of the optional fields must be provided.
 * To remove an existing email or address, use `e/` or `a/` with no value respectively.
 * Existing values will be updated to the input values.
-* `edit` cannot change a person's role or guardian link. Use `link` or `unlink` to change a student's guardian link. The role specified with `add` applies only to the new contact.
+* `edit` cannot change a person's role or guardian link. Supplying `r/` reports that a contact's role cannot be changed after it is added. Supplying `g/` directs you to `link STUDENT_INDEX GUARDIAN_INDEX` to set or replace a guardian link, or `unlink STUDENT_INDEX` to remove it, using indexes from the currently displayed list. If both prefixes are supplied, both explanations are shown. No part of the rejected edit is applied. The role specified with `add` applies only to the new contact.
 * `NAME`, `PHONE`, `EMAIL`, and `ADDRESS` follow the same validation and Unicode code-point length rules described for [`add`](#adding-a-contact-add).
 * Names, addresses and tags support the same quoting and strict prefix rules as [`add`](#adding-a-contact-add). `edit INDEX a/""` clears the address, just like `edit INDEX a/`; a blank quoted address is not stored.
 * `TAG` follows the same space-and-punctuation and optional quoting rules described for [`add`](#adding-a-contact-add).
@@ -308,7 +311,8 @@ Removes only the specified tags while keeping the contact's other tags.
 Format: `untag INDEX t/TAG [t/TAG]...`
 
 * The index, tag validation, case sensitivity, prefix boundaries, saving, and working-set rules are the same as for `tag`.
-* Tag names must match exactly, including case and internal spacing. With the sample contacts, `untag 3 t/math` does not remove Grace Tan's `Math` tag.
+* Tag names must match exactly, including case and internal spacing. `untag 1 t/math` does not remove `Math`.
+* If an absent tag differs only in case from a tag on this contact, feedback suggests the stored spelling so you can retry. For example, `untag 1 t/math` reports `Tag "math" not found, did you mean "Math"?` when `Math` is the stored tag. If multiple case variants remain, all are listed in sorted order; suggestions exclude tags removed by the same command. Suggestions do not change or remove tags automatically.
 * Absent tags are skipped and listed in the feedback under `Tags not present:`. Names are shown in sorted order, enclosed in double quotes; literal quotes and backslashes are escaped in this display so tag boundaries are clear. If none of the requested tags is present, the command reports this without saving or changing the working set.
 * A mixture of present and absent tags removes the present tags. Removing the final tag leaves the contact with no tags.
 * A missing tag argument or an empty `t/` is rejected; use `edit INDEX t/` to clear the entire tag set.
@@ -403,7 +407,7 @@ This deletes every contact, including contacts outside the current working set. 
 </box>
 
 * The confirmation keyword must be the exact lowercase word `confirm`.
-* `clear`, `clear CONFIRM`, and any other trailing text are rejected without deleting contacts.
+* Bare or whitespace-only `clear` reports `Confirmation required: enter "clear confirm" to clear all contacts.` Any nonblank argument other than exact lowercase `confirm` reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Neither error deletes contacts.
 
 Diagnostic log files are stored separately from the contact data file, so `clear confirm` does not remove them. For the packaged TuitionBook, these logs are in the same folder as the JAR. They are normally named `tuitionbook.log.0` through `tuitionbook.log.4`; only files that have already been created are present. The files may contain information entered in earlier commands, so review them before sharing them. To remove the logs, close TuitionBook, open the folder containing the JAR, and delete every existing numbered log file. Ordinary file deletion is not secure erasure, and TuitionBook does not provide a secure-erasure guarantee.
 
@@ -411,9 +415,17 @@ Diagnostic log files are stored separately from the contact data file, so `clear
 
 Format: `reload`
 
-Reads the configured contact file again and resets the working set to all loaded contacts in contact-list order. Use this after correcting a file that could not be loaded and backed up. A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards. No arguments are accepted.
+Reads the configured contact file again and resets the working set to all loaded contacts in contact-list order, clearing the current filter. **Reload replaces the contacts currently in memory; it does not merge them with the file.** No arguments are accepted.
 
-If the file is missing, the contact list becomes empty and saving is enabled. Reloading does not save anything. If reading fails, the current contacts and exact working set (membership, order and originating query) are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the reported permission, encoding, JSON, or contact-value guidance before restoring the preserved file and reloading again. Reload replaces rather than merges contacts; preserve any external file edits you need before using it.
+For routine manual edits, follow [Editing the data file](#editing-the-data-file) and restart the app. To recover without restarting after a load failure, you may keep TuitionBook open and use this workflow:
+
+1. Stop entering contact-changing commands until recovery is complete: a save can overwrite external edits. Record any current contacts or changes you need to keep, including contacts added after an earlier recovery. Copy the current data file (if present) and any preserved `.backup` file to a separate safe location before editing or replacing either file.
+1. Follow the error's permission, encoding, JSON, or contact-value guidance. Correct the configured data file, or restore a corrected copy of the preserved file to that path. Use the path reported by the app; it may still be `data/addressbook.json` if migration failed.
+1. Save your file edits, then enter `reload`. Check the loaded contacts before entering another contact-changing command. Contacts recorded in step 1 that are absent from the restored file must be re-entered manually.
+
+A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards.
+
+If the file is missing, the contact list becomes empty and saving is enabled; only move it away if you intend to start with no contacts. Reloading does not save anything. If reading fails, the current contacts and exact working set (membership, order and originating query) are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the recovery steps above before trying again.
 
 When a reload succeeds but invalid guardian links are repaired, the result lists every affected contact's name, UUID, guardian ID when present, and reason. Valid contacts remain loaded, the links are removed in memory, and the next successful save removes those invalid links from the JSON file.
 
@@ -425,14 +437,21 @@ Format: `exit`
 
 ### Saving the data
 
-**Run only one copy of TuitionBook against the same data file at a time.** There is no single-instance guard: another copy can overwrite the first copy's saves. Close the app before copying or replacing its data file.
+**Run only one copy of TuitionBook against the same data file at a time.** There is no single-instance guard: another copy can overwrite the first copy's saves. For routine manual edits or backup restoration, close the app first. The [reload recovery workflow](#reloading-contacts-reload) explains how to recover while keeping it open.
 
 TuitionBook attempts to save contact data after commands that change contacts or guardian links. Repeating an existing link, unlinking a student without a guardian, editing fields or tags to their existing values, or clearing an already-empty contact list does not attempt a save. A change to the working set alone does not require saving. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores contacts, exact working-set membership/order and its query to their state before the command. You do not need to save manually.
 If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and run `reload` or restart the app.
 
 ### Editing the data file
 
-**Close TuitionBook before editing or replacing its data file.** Make a backup first, edit the file, then reopen the app. An open instance keeps its own copy in memory and can overwrite external edits on the next save. `reload` is available for the recovery workflow described above, but it replaces contacts rather than merging changes.
+For routine manual editing:
+
+1. Close TuitionBook.
+1. Copy the data file to a separate safe location as a backup.
+1. Edit or replace the data file, keeping it valid UTF-8 JSON and following the field rules below. Save your edits.
+1. Reopen TuitionBook and check the loaded contacts before entering contact-changing commands. Restart shows the full list and clears the previous filter.
+
+An open instance keeps its own copy in memory and can overwrite external edits on the next save. If recovering from a load failure while keeping the app open, use the separate [reload recovery workflow](#reloading-contacts-reload).
 
 TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder from which it is launched. Contact data is saved automatically as a UTF-8 JSON file `[JAR file location]/data/tuitionbook.json`. A UTF-8 byte-order mark (BOM) at the start is accepted. Invalid UTF-8 byte sequences make the file invalid rather than being replaced silently. Advanced users are welcome to update data directly by editing that data file. On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path. If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged. If permissions prevent the move, TuitionBook continues using the unchanged `addressbook.json` for that run and retries migration on a later launch. Contact-changing commands can still report a save error and roll back if the legacy file's folder is not writable.
 
@@ -455,7 +474,7 @@ If a string `guardianId` is not a UUID, refers to a missing contact, refers to a
 <box type="warning" seamless>
 
 **Caution:** If TuitionBook cannot read the data file, it starts with an empty contact list and shows a warning at the next run. It moves the unreadable file unchanged to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`; the warning names the exact backup path and distinguishes permission failures, invalid UTF-8 or JSON, invalid contact values, and other file-system errors. The backup is kept unchanged, and TuitionBook can then save new contact data to `tuitionbook.json`.<br>
-To restore the original data, follow the warning's guidance: for example, restore read permission, correct invalid UTF-8 or JSON, or correct the reported contact value. Then rename the preserved file to `tuitionbook.json`, replacing the new file, and restart TuitionBook. Contacts added after recovery are stored in the new file and must be re-entered because TuitionBook cannot merge the two files automatically. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves; resolve the reported problem or move the file, then run `reload` or restart TuitionBook. Still, we recommend backing up the file before editing it.<br>
+To restore the original data, close TuitionBook and copy both the current data file (if present) and the preserved backup to a separate safe location. Follow the warning's guidance: for example, restore read permission, correct invalid UTF-8 or JSON, or correct the reported contact value in a copy of the preserved file. Restore that corrected copy to the configured data path, replacing the new file, then restart TuitionBook. Contacts added after recovery are stored in the new file and must be re-entered because TuitionBook cannot merge the two files automatically. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves. Resolve the reported problem before restarting, or follow the [reload recovery workflow](#reloading-contacts-reload) to keep the app open.<br>
 Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 
 The 100-character name limit and 200-character address limit also apply to values edited directly in the data file. A file containing a longer value is invalid and follows the recovery behavior above: TuitionBook moves it unchanged to an unused sibling backup and allows new data to be saved; if that backup cannot be created, TuitionBook leaves the original file in place and blocks saves.

@@ -79,7 +79,7 @@ public class AddCommand extends Command {
 
         model.addPerson(toAdd);
         requiresSave = true;
-        CommandResult result = new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
+        CommandResult result = new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)), toAdd.getId());
         boolean isDisplayed = model.getFilteredPersonList().stream()
                 .anyMatch(person -> person.getId().equals(toAdd.getId()));
         if (!isDisplayed) {

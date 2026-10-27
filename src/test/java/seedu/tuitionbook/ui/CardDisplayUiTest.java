@@ -128,6 +128,29 @@ public class CardDisplayUiTest {
     }
 
     @Test
+    public void personCard_tags_useLocaleIndependentCaseInsensitiveOrder() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            Locale originalLocale = Locale.getDefault();
+            try {
+                for (Locale locale : List.of(Locale.ROOT, Locale.ENGLISH,
+                        Locale.forLanguageTag("tr"), Locale.forLanguageTag("az"))) {
+                    Locale.setDefault(locale);
+                    Person person = new PersonBuilder()
+                            .withTags("zebra", "Alpha", "alpha", "10", "!tag")
+                            .build();
+                    PersonCard card = new PersonCard(person, 1, "-");
+
+                    assertEquals(List.of("!tag", "10", "Alpha", "alpha", "zebra"), getTagNames(card),
+                            "Unexpected tag order in locale " + locale);
+                }
+            } finally {
+                Locale.setDefault(originalLocale);
+            }
+            return null;
+        });
+    }
+
+    @Test
     public void personCard_studentWithoutOptionalDetails_displaysPlaceholders() throws Exception {
         JavaFxTestUtil.callOnFxThread(() -> {
             Person student = new PersonBuilder().withoutEmail().withoutAddress().build();

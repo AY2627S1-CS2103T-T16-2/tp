@@ -1,7 +1,6 @@
 package seedu.tuitionbook.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.parser.CommandParserTestUtil.assertParseFailure;
 
 import org.junit.jupiter.api.Test;
@@ -20,12 +19,10 @@ public class ClearCommandParserTest {
 
     @Test
     public void parse_invalidArguments_throwsParseException() {
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
-
-        assertParseFailure(parser, "", expectedMessage);
-        assertParseFailure(parser, "   ", expectedMessage);
-        assertParseFailure(parser, "3", expectedMessage);
-        assertParseFailure(parser, "confirm extra", expectedMessage);
-        assertParseFailure(parser, "CONFIRM", expectedMessage);
+        assertParseFailure(parser, "", ClearCommand.MESSAGE_CONFIRMATION_REQUIRED);
+        assertParseFailure(parser, "   ", ClearCommand.MESSAGE_CONFIRMATION_REQUIRED);
+        assertParseFailure(parser, "3", ClearCommand.MESSAGE_INVALID_CONFIRMATION);
+        assertParseFailure(parser, "confirm extra", ClearCommand.MESSAGE_INVALID_CONFIRMATION);
+        assertParseFailure(parser, "CONFIRM", ClearCommand.MESSAGE_INVALID_CONFIRMATION);
     }
 }

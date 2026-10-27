@@ -3,6 +3,8 @@ package seedu.tuitionbook.model.tag;
 import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
 
+import java.util.Comparator;
+
 /**
  * Represents a Tag in TuitionBook.
  * Guarantees: immutable; name is valid as declared in {@link #isValidTagName(String)}
@@ -11,6 +13,10 @@ public class Tag {
 
     public static final String MESSAGE_CONSTRAINTS = "Tag names must not be blank and may contain only "
             + "ASCII letters, digits, spaces, and printable punctuation";
+    /** Orders tags by case-insensitive names, then by their original names. */
+    public static final Comparator<Tag> DISPLAY_COMPARATOR = Comparator
+            .comparing((Tag tag) -> tag.tagName, String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(tag -> tag.tagName);
 
     public final String tagName;
 

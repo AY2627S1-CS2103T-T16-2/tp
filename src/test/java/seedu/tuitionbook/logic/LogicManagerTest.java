@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static seedu.tuitionbook.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.tuitionbook.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.tuitionbook.logic.Messages.getInvalidPersonDisplayedIndexMessage;
 import static seedu.tuitionbook.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -118,7 +117,8 @@ public class LogicManagerTest {
         for (String input : List.of("help extra", "exit extra", "reload extra", "HELP extra", "EXIT extra",
                 "RELOAD extra", "CLEAR CONFIRM", "ADD R/student n/Bad p/123", "delete\u00a01",
                 "delete 1\u3000", "edit 1\u00a0 n/Changed", "link 1\u30002", "clear confirm\u2028",
-                "edit 1 n/Changed\u2029", "\nclear confirm")) {
+                "edit 1 n/Changed\u2029", "\nclear confirm", "edit 1 r/guardian", "edit 1 g/2",
+                "edit 1 n/Changed r/guardian g/2")) {
             assertThrows(ParseException.class, () -> logic.execute(input));
             assertEquals(original, model.getTuitionBook());
             assertEquals(original.getPersonList().stream().map(Person::getId).toList(),
@@ -304,7 +304,8 @@ public class LogicManagerTest {
         assertEquals(String.format(TagCommand.MESSAGE_NO_CHANGE, student.getName()),
                 logic.execute("tag 1 t/Math t/Math").getFeedbackToUser());
         assertEquals(String.format(UntagCommand.MESSAGE_NO_CHANGE, student.getName())
-                + " Tags not present: \"absent\", \"math\".",
+                + " Tags not present: \"absent\", \"math\"."
+                + " Tag \"math\" not found, did you mean \"Math\"?",
                 logic.execute("untag 1 t/math t/absent").getFeedbackToUser());
         assertEquals(0, fileStorage.getSaveCallCount());
         assertEquals(List.of(student), logic.getFilteredPersonList());
@@ -536,11 +537,19 @@ public class LogicManagerTest {
         List<Person> expectedPersons = List.of(visibleStudent, hiddenGuardian);
         List<Person> expectedFilteredPersons = List.of(visibleStudent);
         Predicate<Person> expectedFilter = model.getPersonListQueryPredicate();
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE);
-
-        for (String command : List.of("clear", "clear CONFIRM", "clear confirm extra")) {
-            assertThrows(ParseException.class, expectedMessage, () -> logic.execute(command));
-
+        List<String> confirmationCommands = List.of(
+                "clear", "clear   ", "clear CONFIRM", "clear Confirm", "clear confirm confirm",
+                "clear confirm extra", "clear yes", "clear confirmno", "clear confirmation", "clear\tno");
+        for (String command : confirmationCommands) {
+            String expectedMessage = command.trim().equals("clear")
+                    ? ClearCommand.MESSAGE_CONFIRMATION_REQUIRED
+                    : ClearCommand.MESSAGE_INVALID_CONFIRMATION;
+            try {
+                logic.execute(command);
+                throw new AssertionError("Expected clear confirmation to be rejected: " + command);
+            } catch (ParseException exception) {
+                assertEquals(expectedMessage, exception.getMessage());
+            }
             assertEquals(expectedPersons, logic.getPersonList());
             assertEquals(expectedFilteredPersons, logic.getFilteredPersonList());
             assertSame(expectedFilter, model.getPersonListQueryPredicate());
