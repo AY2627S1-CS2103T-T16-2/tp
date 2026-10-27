@@ -27,13 +27,28 @@ public class Tag {
      */
     public Tag(String tagName) {
         requireNonNull(tagName);
-        checkArgument(isValidTagName(tagName), MESSAGE_CONSTRAINTS);
-        this.tagName = tagName;
+        String normalizedTagName = trimSurroundingSpaces(tagName);
+        checkArgument(isValidTagName(normalizedTagName), MESSAGE_CONSTRAINTS);
+        this.tagName = normalizedTagName;
+    }
+
+    private static String trimSurroundingSpaces(String tagName) {
+        int start = 0;
+        int end = tagName.length();
+        while (start < end && tagName.charAt(start) == ' ') {
+            start++;
+        }
+        while (end > start && tagName.charAt(end - 1) == ' ') {
+            end--;
+        }
+        return tagName.substring(start, end);
     }
 
     /**
      * Returns true if the name contains only printable ASCII characters and is not blank.
-     * Spaces and punctuation are preserved; command parsers trim surrounding whitespace.
+     * When a {@code Tag} is constructed, surrounding ASCII spaces are trimmed before this
+     * validation and storage, so the stored value can differ from the constructor argument.
+     * Internal spaces and punctuation are preserved.
      */
     public static boolean isValidTagName(String test) {
         requireNonNull(test);

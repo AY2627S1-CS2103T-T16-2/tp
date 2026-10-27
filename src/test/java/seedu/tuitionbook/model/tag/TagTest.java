@@ -22,14 +22,20 @@ public class TagTest {
     }
 
     @Test
+    public void constructor_surroundingSpaces_trimsValue() {
+        assertEquals("Math", new Tag("  Math  ").tagName);
+    }
+
+    @Test
     public void constructor_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Tag(null));
     }
 
     @Test
     public void constructor_invalidTagName_throwsIllegalArgumentException() {
-        String invalidTagName = "";
-        assertThrows(IllegalArgumentException.class, () -> new Tag(invalidTagName));
+        for (String invalidTagName : List.of("", "   ", " Math\t ")) {
+            assertThrows(IllegalArgumentException.class, () -> new Tag(invalidTagName));
+        }
     }
 
     @Test
@@ -61,6 +67,7 @@ public class TagTest {
         assertTrue(Tag.isValidTagName("referred-by-Mrs-Lim"));
         assertTrue(Tag.isValidTagName("Sec-4"));
         assertTrue(Tag.isValidTagName("A1-B2"));
+        assertTrue(Tag.isValidTagName(" Math "));
         assertTrue(Tag.isValidTagName("A".repeat(1000))); // no tag-length limit
     }
 
@@ -103,7 +110,7 @@ public class TagTest {
                 List.of("100", "20", "3", "Z"),
                 List.of("SCHOOL", "School", "school", "science"),
                 List.of("[tag]", "tag", "tag!", "{tag}"),
-                List.of(" tag", "0", "A", "a", "z"));
+                List.of("0", "A", "a", "tag", "z"));
         List<Locale> locales = List.of(Locale.ROOT, Locale.ENGLISH,
                 Locale.forLanguageTag("tr"), Locale.forLanguageTag("az"));
         Locale originalLocale = Locale.getDefault();

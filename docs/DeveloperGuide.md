@@ -192,7 +192,7 @@ The `Storage` component,
 
 `DataLoadingException` walks its cause chain to produce bounded user guidance for permission denial, invalid contact values, invalid UTF-8 or JSON, and other file-system failures. It does not expose exception types, paths from the cause, or stack traces. `MainApp` carries this guidance through `StartupNotice`; `UiManager` combines it with the actual backup outcome. `ReloadCommand` uses the same guidance while retaining the current contacts and filter after a failed read.
 
-`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, and log rotation/lock files therefore share the same application home.
+`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, log rotation files, and the instance lock file therefore share the same application home.
 
 At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it attempts to move the legacy `addressbook.json` to that current path. A failed move is logged without aborting initialization: the unchanged legacy path is passed to storage for that run, and migration is retried on a later launch. This preserves readable contacts when directory permissions prevent renaming. If the same permissions also prevent saving, the normal command save-failure rollback restores contacts and the exact working set (membership, order and originating query).
 
@@ -270,7 +270,7 @@ This deliberately changes some unquoted commands: `n/Muhammad s/o Ali` and `t/Ad
 
 Inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Other backslash sequences and all unquoted values are preserved. The closing-quote scan and decoding use the same escape predicate, so an escaped quote cannot end a value or expose embedded prefixes. An escaped final quote without a subsequent closing quote is rejected. Surrounding whitespace is trimmed as before, and decoded values pass through the existing domain validators; escaping does not widen name validation.
 
-Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`, and `a/"\"Block A\""` enters an address with literal quotes around it. Existing addresses and tags are not stripped or normalised on loading. Surrounding whitespace continues to be trimmed even inside quoted values; this change does not resolve the padded-JSON-tag issue #185 or change tag case identity.
+Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`, and `a/"\"Block A\""` enters an address with literal quotes around it. Existing addresses are not stripped or normalised on loading. `Tag` removes surrounding ASCII spaces from every tag, including JSON-loaded values, while preserving internal spacing and case-sensitive identity; this makes a stored `" Math "` tag addressable as `Math` without changing quoted-value parsing.
 
 ### \[Historical proposal\] Undo/redo feature
 
@@ -475,21 +475,25 @@ US18/US19 needs are supported through generic tags: `t/Sec4 t/AMath` records a l
 
 #### Tag identity and compatibility
 
-[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. Parsing trims surrounding whitespace, including inside quoted values, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
+[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. `Tag` trims surrounding ASCII spaces for both command and JSON construction, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
 
-Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Once broader tags are saved, narrowing validation or normalising existing tag identities requires an explicit compatibility or migration plan.
+Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Surrounding ASCII spaces are trimmed when tags are loaded; tags that differ only by that padding are merged into one, and the merged value is written on the next save. Any other narrowing of validation or identity still requires an explicit compatibility plan.
 
 #### Single-instance operation and manual file editing
 
-Run only one TuitionBook instance against a data file. The application does not lock the file against another instance or an external editor; each save writes the current in-memory contacts and can overwrite another writer's changes. Atomic saving protects replacement of an individual file, not coordination between independent writers.
+`Main` acquires an `ApplicationInstanceGuard` before it first accesses `LogsCenter` or launches JavaFX. The guard opens `.tuitionbook.lock` in the application home with `FileChannel` and calls `tryLock()`. It retains both the channel and `FileLock` around the blocking `Application.launch(...)` call, so the lock covers preference and contact loading, legacy migration, recovery and backups, normal file logging, UI operation, and shutdown preference saving. The try-with-resources boundary also releases the guard if JavaFX initialization or application startup fails; `close()` is idempotent and closes the channel even if lock release reports an I/O failure.
 
-A lock-file guard was considered and deferred from v1.x because cross-platform locking and stale-lock recovery add risks in the final iteration. The supported manual-editing workflow is to close TuitionBook, back up and edit the file, then reopen it. The implemented `reload` command remains an explicit recovery option: it replaces in-memory contacts rather than merging concurrent changes. Single-instance enforcement is a deferred improvement, not an implemented safeguard or promised release feature.
+Both a `null` result from `tryLock()` and `OverlappingFileLockException` mean that the same application home is already guarded. `Main` writes a message to standard error and shows a minimal JavaFX error dialog without constructing `MainApp`, `Storage`, or the normal logger. Other I/O or permission failures produce separate actionable guidance and also prevent startup; they do not claim that another instance exists.
+
+The lock file is intentionally retained on shutdown. File existence is not evidence of a running instance: a pre-existing unlocked file is opened and locked normally. Not deleting it avoids a replacement race in which different processes could lock different file objects at the same path. Because each application home has its own lock file, packaged copies in separate folders can run independently.
+
+This guard coordinates only versions of TuitionBook that implement it. It does not protect against external editors or older application versions, merge concurrent changes, or extend to arbitrary external files. The supported manual-editing workflow remains: close TuitionBook, back up and edit the data file, then reopen it. The `reload` command remains an explicit recovery option and replaces in-memory contacts rather than merging changes. Atomic saving protects replacement of an individual data file; it is separate from instance coordination.
 
 #### Startup and unnecessary writes
 
 US47's Week-5 sample-data status is superseded by [#109](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/109): a missing data file starts with an empty contact list, and a valid file containing an empty contact list stays empty. The application does not insert sample contacts on startup.
 
-Saving is skipped for repeated links, unchanged edits and clearing an empty contact list. Together with `unlink` and the incremental tag commands, contact-changing commands report their actual mutation through `requiresSave()`. Commands that leave contact data unchanged do not attempt a save; filter changes alone do not require saving. Changed and unchanged `edit`, `link`, `unlink`, `tag` and `untag` preserve the working set. Rollback snapshots remain in place for commands that can mutate data, and actual changes retain normal save-failure rollback. Snapshot creation still copies O(n) contact references; no constant-time execution or measured speedup is claimed. See [Saving data](#saving-data) for the contract and manual checks.
+Saving is skipped for repeated links, unchanged edits and clearing an empty contact list. Together with `unlink` and the incremental tag commands, contact-changing commands report their actual mutation through `requiresSave()`. Commands that leave contact data unchanged do not attempt a save; filter changes alone do not require saving. Changed and unchanged `edit`, `link`, `unlink`, `tag` and `untag` preserve the working set. Rollback snapshots remain in place for commands that can mutate data, and actual changes retain normal save-failure rollback. Snapshot creation includes quadratic pairwise duplicate validation in addition to O(n) reference copying, so it takes O(n²) time for fixed contact-field sizes. This cost is incurred before execution even when the command ultimately makes no change. No constant-time execution or measured speedup is claimed. See [Saving data](#saving-data) for the full cost explanation, contract and manual checks.
 
 ### Use cases
 
@@ -845,6 +849,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
 7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
+8.  TuitionBook shall allow at most one guarded application instance per application home directory while allowing application copies in separate home directories to run independently.
 
 ### Glossary
 
@@ -864,7 +869,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Role**: A contact classification. Users may enter `student` or `guardian` in any casing; TuitionBook stores and displays the corresponding `STUDENT` or `GUARDIAN` role.
 * **Student**: A contact with the `student` role who may be linked to one guardian.
 * **Working set**: Ordered contact UUIDs displayed with their current values, together with the originating query and canonical refresh command. Matching additions append, nonmatching additions stay hidden, and edits preserve membership and indexes. Deletion compacts survivors; an explicit query replaces membership. Successful reload, clear and restart reset the working set.
-* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression. Command parsing trims surrounding whitespace; internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON retains the plain tag string without migration. `Tag.equals` and `hashCode` remain case-sensitive; list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `untag` suggests case variants for absent tags without changing its case-sensitive removal rule. `find` remains name-only.
+* **Tag**: An optional user-defined label attached to a contact for categorisation or filtering. Its name is non-blank printable ASCII (U+0020 to U+007E), including spaces and punctuation. `Tag` validates with a linear scan, without a length limit or recursive regular expression, and trims surrounding ASCII spaces at construction. Internal spacing and spelling are preserved. Optional enclosing quotes protect recognised command prefixes and are removed before validation. JSON-loaded tags use the same normalization, so padding-only duplicates collapse and the normalized set is written on the next successful contact save. `Tag.equals` and `hashCode` remain case-sensitive; list filtering uses exact case-insensitive comparison, requiring every requested tag and the optional role to match. `untag` suggests case variants for absent tags without changing its case-sensitive removal rule. `find` remains name-only.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -979,6 +984,32 @@ Use a fresh, disposable folder with an empty contact list.
    Expected: The contact list remains empty.
 
 ### Launch and shutdown
+
+Use the packaged JAR in disposable folders for every scenario in this section. Keep any synthetic contacts in those folders only.
+
+1. Duplicate launch from one application home
+
+   1. Put the JAR in an empty folder, launch it with `java -jar "tuitionbook.jar"`, dismiss the empty-data notice, and add `add r/student n/Alex Lock Test p/91234567`.
+
+   1. Keep the first window open. From a second terminal, run the same launch command against the same JAR.<br>
+      Expected: The second launch promptly prints that TuitionBook is already running and shows an error telling you to use or close the existing window. It does not open a normal TuitionBook window. The first window remains usable, and its contact and window preferences are unchanged.
+
+1. Relaunch after normal exit
+
+   1. Close the first window normally or enter `exit`, then run the same launch command again.<br>
+      Expected: TuitionBook opens normally with Alex Lock Test present. `.tuitionbook.lock` may remain in the JAR folder; its presence does not block startup and it is not necessary to delete it.
+
+1. Relaunch after forced termination
+
+   1. With TuitionBook running, terminate its Java process using the operating system's task manager or force-quit control. Do not delete `.tuitionbook.lock`.
+
+   1. Run the same launch command again.<br>
+      Expected: TuitionBook opens normally because the operating system released the process's file lock. Data from commands that completed successfully before termination remains available; no guarantee is made for an operation interrupted during the forced termination.
+
+1. Independent application homes
+
+   1. Create two empty folders, copy the JAR into each one, and launch both copies while keeping both windows open.<br>
+      Expected: Both instances open normally. Adding a synthetic contact in one does not add it to the other; each folder has its own `.tuitionbook.lock`, `preferences.json`, and `data/tuitionbook.json`.
 
 1. Initial launch
 
@@ -1314,7 +1345,12 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: The command is rejected with the tag constraint message; contacts are unchanged.
 1. Close and relaunch the application.<br>
    Expected: Alex Lim still has the tags `Sec 4`, `Math/Science`, and `C++`. Enter `list r/student t/sec 4 t/c++` and verify that Alex appears.
-1. Enter `list`, then `edit 1 t/first t/second`.<br>
+1. Close TuitionBook. Open `data/tuitionbook.json` in the disposable folder, replace Alex's `tags` array with `[" Math ", "Math", " Sec  4 "]`, save the file, and relaunch TuitionBook.
+1. Enter `list t/Math`.<br>
+   Expected: Alex appears with one `Math` tag and one `Sec  4` tag. The padded and unpadded `Math` values normalize to the same tag, while its internal spacing is retained.
+1. Enter `untag 1 t/Math`, then close TuitionBook and inspect Alex's tags in `data/tuitionbook.json`.<br>
+   Expected: `Math` is removed. The remaining tag is stored as `Sec  4` without surrounding spaces.
+1. Relaunch TuitionBook, enter `list`, then `edit 1 t/first t/second`.<br>
    Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
 1. Enter `edit 1 t/`.<br>
    Expected: All of Alex's tags are cleared, as before.
@@ -1325,7 +1361,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 `link` requests saving only after creating or replacing a relationship; `unlink` only after removing one. `edit` compares the selected contact's stored values with its proposed replacement and requests saving only when they differ; the replacement preserves the persistent ID. An unchanged edit preserves the working set, as do other unchanged mutations. `clear` checks whether the complete book contains any contacts, including hidden contacts. Successful additions and deletions always request saving. Filter changes alone do not trigger saving. Actual changes retain the existing save-failure rollback.
 
-**Performance:** The save decision no longer scans all contacts: it uses the command's mutation outcome, an emptiness check for `clear`, or a comparison of the selected contact for `edit`. Comparing that contact's fields and tags still depends on their sizes. Creating the rollback snapshot still copies O(n) contact references; this change does not make overall command execution constant-time. No benchmark has established a user-visible speedup.
+**Performance:** The save decision no longer scans all contacts: it uses the command's mutation outcome, an emptiness check for `clear`, or a comparison of the selected contact for `edit`. Comparing that contact's fields and tags still depends on their sizes. Before executing a command for which `canMutate()` is true, `LogicManager` creates a rollback snapshot through `new TuitionBook(existingBook)` → `resetData` → `setPersons(List)` → `personsAreUnique`. For a valid book of n distinct contacts, this validation performs `n(n - 1) / 2` pairwise identity comparisons: 499,500 for 1,000 contacts. Each comparison normalizes and compares names, and also normalizes and compares phone numbers when the normalized names match. Snapshot creation therefore takes O(n²) time for fixed contact-field sizes, in addition to its O(n) reference copying; the comparison costs also depend on field lengths. The snapshot is created even when the command ultimately makes no change and skips saving. Avoiding unnecessary saves does not remove this cost or make overall command execution constant-time. No benchmark has established a user-visible speedup, and this complexity analysis alone does not establish whether the two-second performance NFR is met.
 
 Run each scenario below independently in a fresh, disposable folder. An ordinary save failure rolls back the attempted change but does not set the storage write block: restore write access and repeat the failed command. A failed load whose backup also fails does set the write block: correct or move the file and use `reload` (or restart) before retrying contact-changing commands. If backing up an unreadable file succeeds, saving is already enabled and no reload is required. Reload reads the file; it does not save or replay a failed command.
 
@@ -1339,12 +1375,26 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Restore write access, then enter `edit 2 t/Science`, `unlink 2`, and `unlink 2` again.<br>
       Expected: The tag change and first unlink persist; the second unlink reports no linked guardian. Restart and verify that Sam has tag `Science` and no guardian link.
 
-1. Reloading corrected data without restarting
+1. Routine manual editing with the app closed
+
+   1. Launch TuitionBook in a fresh, disposable JAR folder. Enter `add r/student n/Alex Yeoh p/87438807`, then `find Nobody`, then `exit`.
+
+   1. Copy `data/tuitionbook.json` to a separate backup location. Change only Alex's `name` to `Manually Edited Alex` in the original file, preserve the `id` and other fields, and save it as valid UTF-8 JSON.
+
+   1. Relaunch TuitionBook.<br>
+      Expected: the full list contains Manually Edited Alex despite the previous empty filter. The contact keeps its original ID and phone number, the edited file is not rewritten on startup, and the separate backup still contains Alex Yeoh.
+
+   1. Enter `edit 1 n/Saved Alex`, then `exit` and relaunch.<br>
+      Expected: Saved Alex is loaded from the data file; the separate backup remains unchanged.
+
+1. Replacing contacts from a corrected file without restarting
 
    1. Launch TuitionBook with an empty, disposable data folder. Enter `add r/student n/Alex Yeoh p/87438807`, then `find Nobody`.
 
-   1. While the app stays open, change Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid. Enter `reload`.<br>
-      Expected: the working set resets to the full loaded list containing Reloaded Alex, and the result reports one loaded contact. Reload does not rewrite the file.
+   1. Follow the UG's reload precautions: record any current contacts you need, copy `data/tuitionbook.json` to a separate safe location, and enter no contact-changing commands while editing the file. This is a controlled test of replacement; routine manual edits use the closed-app workflow above.
+
+   1. While the app stays open, change only Alex's name in `data/tuitionbook.json` to `Reloaded Alex`, keeping the JSON valid, then save it. Enter `reload`.<br>
+      Expected: the working set resets to the full loaded list containing Reloaded Alex, and the result reports one loaded contact. Alex Yeoh is replaced, not retained as a second contact. The contact ID is unchanged, reload does not rewrite the edited file, and the separate backup still contains Alex Yeoh.
 
    1. Replace the file with valid JSON containing a student whose `guardianId` refers to a missing contact, then enter `reload`.<br>
       Expected: the student remains loaded, the result identifies the affected contact by name and UUID, includes the invalid guardian ID and explains that the referenced contact is missing. The file remains unchanged until a later successful save.
@@ -1369,8 +1419,8 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Replace the data file's contents with `{broken`. Configure permissions so the app can read the file but cannot move it to a backup, then launch TuitionBook. Permission controls differ by operating system; verify that the startup warning explicitly reports backup failure before continuing.<br>
       Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
 
-   1. While the app stays open, restore normal permissions and replace the malformed file with the saved valid copy. Enter `reload`.<br>
-      Expected: the working set resets to the full loaded list containing Alex Yeoh, and saving is enabled. Merely correcting the file without reloading would leave the write block set.
+   1. Enter `find Nobody`. While the app stays open, record any current contacts you need and copy the malformed file to a separate safe location. Enter no contact-changing commands during file recovery. Restore normal permissions and replace the malformed file with a copy of the saved valid file, keeping both separate copies. Enter `reload`.<br>
+      Expected: the empty working set resets to the full loaded list containing Alex Yeoh, and saving is enabled. Reload does not rewrite the restored file or either separate copy. Merely correcting the file without reloading would leave the write block set.
 
    1. Enter `edit 1 n/Updated Alex`, then close and relaunch TuitionBook.<br>
       Expected: the edit saves successfully and Updated Alex remains visible after restart.

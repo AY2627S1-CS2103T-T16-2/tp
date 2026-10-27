@@ -6,10 +6,11 @@ The format is based on Keep a Changelog.
 
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 
-## [Unreleased]
+## [v1.5] - 2026-10-28
 
 ### Added
 
+- Enforce one running TuitionBook instance per application home using an operating-system file lock, while allowing copies in separate folders to run independently (#256).
 - Show the active query and persistent displayed, matching and retained contact counts above the contact list, including after detail views, reload and save-failure rollback (#188).
 - Support quoted addresses in `add` and `edit`, protecting complete addresses containing prefix-like text and using the same quote/backslash escapes as names and tags (#201).
 - Detailed guardian-link repair diagnostics in the startup warning, including every affected contact and repair reason.
@@ -17,6 +18,9 @@ The format is based on Keep a Changelog.
 ### Changed
 
 - Consolidated the Developer Guide's AI acknowledgement to identify Codex and Claude, their extensive use in TuitionBook-specific development, and human oversight through team code review (#149).
+- Added assertions that execution-dependent save decisions are queried only after a command execution attempt and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
+- Clarify separate workflows for routine manual file edits with TuitionBook closed and load recovery using `reload` while it stays open, including backup precautions, replacement of in-memory contacts, and filter reset; align the DG manual tests (#196).
+- Clarify that rollback snapshot creation performs quadratic pairwise duplicate validation alongside linear reference copying, including the cost for commands that ultimately make no change (#224).
 - Clarified that `clear confirm` removes all contacts but not separately stored diagnostic logs, which may retain earlier command information and should be reviewed before sharing; no secure-erasure guarantee is made.
 - Align the UG and DG descriptions of indexes, unchanged commands, reload and save-failure recovery with exact working-set membership, order and query; share the full-list refresh command across model, commands and UI.
 - Clarify that `list` locates hidden additions while rerunning the originating query only refreshes its working set; include ordered displayed UUIDs, query predicates and refresh text when comparing models.
@@ -36,6 +40,7 @@ The format is based on Keep a Changelog.
 
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
 - Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).
+- Trim surrounding ASCII spaces from tags loaded from JSON, making previously padded tags addressable through `list`, `tag`, and `untag` while preserving significant internal spaces; tags that differ only by surrounding spaces are merged into one (#185).
 - Made equal `Index` values produce the same hash code, including equivalent one-based and zero-based indexes (#212).
 - Recovered from a `null` `guiSettings` value in `preferences.json` by restoring and saving default window settings instead of failing during startup (#192).
 - Show the fatal startup error dialog when a packaged UI resource is missing or malformed, instead of raising a secondary null-window exception.
