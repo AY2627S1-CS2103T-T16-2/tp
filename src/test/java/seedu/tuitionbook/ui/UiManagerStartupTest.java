@@ -851,11 +851,21 @@ public class UiManagerStartupTest {
     }
 
     private String describeWindowAgainstBounds(Stage stage, Rectangle2D visualBounds) {
+        DialogPane pane = (DialogPane) stage.getScene().getRoot();
+        TitledPane recoveryDetails = (TitledPane) pane.lookup("#recoveryDetails");
+        ScrollPane scroller = (ScrollPane) recoveryDetails.getContent();
         return String.format("visual bounds %s: stage=[x=%.2f,y=%.2f,width=%.2f,height=%.2f,"
-                        + "minHeight=%.2f,maxHeight=%.2f], scene=[width=%.2f,height=%.2f]",
+                        + "minHeight=%.2f,maxHeight=%.2f], scene=[width=%.2f,height=%.2f], "
+                        + "decorations=[width=%s,height=%s], panePref=[%.2f@sceneWidth], expanded=%s, "
+                        + "scroller=[min=%.2f,pref=%.2f,max=%.2f,height=%.2f]",
                 format(visualBounds), stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight(),
                 stage.getMinHeight(), stage.getMaxHeight(),
-                stage.getScene().getWidth(), stage.getScene().getHeight());
+                stage.getScene().getWidth(), stage.getScene().getHeight(),
+                stage.getProperties().get("loadFailureDecorationWidth"),
+                stage.getProperties().get("loadFailureDecorationHeight"),
+                pane.prefHeight(stage.getScene().getWidth()), recoveryDetails.isExpanded(),
+                scroller.getMinHeight(), scroller.getPrefViewportHeight(), scroller.getMaxHeight(),
+                scroller.getHeight());
     }
 
     private void assertNodeWithinScene(Node node, DialogPane pane) {
