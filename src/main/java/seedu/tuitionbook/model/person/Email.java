@@ -10,6 +10,11 @@ import java.util.Arrays;
  */
 public class Email {
 
+    public static final String MESSAGE_TOO_LONG = "Emails must be at most 254 characters long.";
+    public static final String MESSAGE_NAME_TOO_LONG =
+            "The part of an email before the @ must be at most 64 characters long.";
+    public static final String MESSAGE_DOMAIN_PART_TOO_LONG =
+            "Each part of an email's domain between periods must be at most 63 characters long.";
     public static final String MESSAGE_FORMAT = "Emails must be in the format name@example.com.";
     public static final String MESSAGE_INVALID_NAME_CHARACTERS = "The part of an email before the @ may only "
             + "contain English letters, digits (0-9), periods (.), plus signs (+), underscores (_), hyphens (-), "
@@ -27,6 +32,10 @@ public class Email {
     public static final String MESSAGE_SHORT_DOMAIN_ENDING =
             "The last part of an email's domain must be at least 2 characters long, as in .com or .sg.";
     private static final String LOCAL_PART_SPECIAL_CHARACTERS = ".+_-'";
+    // Accepted characters are ASCII, so character counts equal byte counts for these SMTP/DNS limits.
+    private static final int MAX_LENGTH = 254;
+    private static final int MAX_LOCAL_PART_LENGTH = 64;
+    private static final int MAX_DOMAIN_LABEL_LENGTH = 63;
 
     public final String value;
 
@@ -48,7 +57,7 @@ public class Email {
      */
     public static boolean isValidEmail(String test) {
         requireNonNull(test);
-        if (!hasSingleAtSignBetweenParts(test)) {
+        if (test.length() > MAX_LENGTH || !hasSingleAtSignBetweenParts(test)) {
             return false;
         }
 
@@ -64,10 +73,16 @@ public class Email {
     public static String getConstraintMessage(String invalidEmail) {
         requireNonNull(invalidEmail);
         assert !isValidEmail(invalidEmail);
+        if (invalidEmail.length() > MAX_LENGTH) {
+            return MESSAGE_TOO_LONG;
+        }
         if (!hasSingleAtSignBetweenParts(invalidEmail)) {
             return MESSAGE_FORMAT;
         }
         String localPart = invalidEmail.substring(0, invalidEmail.indexOf('@'));
+        if (localPart.length() > MAX_LOCAL_PART_LENGTH) {
+            return MESSAGE_NAME_TOO_LONG;
+        }
         if (!hasOnlyLocalPartCharacters(localPart)) {
             return MESSAGE_INVALID_NAME_CHARACTERS;
         }
@@ -88,6 +103,9 @@ public class Email {
         if (!hasAlphanumericLabelEdges(labels)) {
             return MESSAGE_DOMAIN_PART_EDGE;
         }
+        if (!hasValidLabelLengths(labels)) {
+            return MESSAGE_DOMAIN_PART_TOO_LONG;
+        }
         return MESSAGE_SHORT_DOMAIN_ENDING;
     }
 
@@ -97,7 +115,8 @@ public class Email {
     }
 
     private static boolean isValidLocalPart(String localPart) {
-        return hasOnlyLocalPartCharacters(localPart) && hasAlphanumericEdges(localPart) && !localPart.contains("..");
+        return localPart.length() <= MAX_LOCAL_PART_LENGTH && hasOnlyLocalPartCharacters(localPart)
+                && hasAlphanumericEdges(localPart) && !localPart.contains("..");
     }
 
     private static boolean hasOnlyLocalPartCharacters(String localPart) {
@@ -114,7 +133,7 @@ public class Email {
             return false;
         }
         String[] labels = splitDomainLabels(domain);
-        return hasNoEmptyLabels(labels) && hasAlphanumericLabelEdges(labels)
+        return hasNoEmptyLabels(labels) && hasAlphanumericLabelEdges(labels) && hasValidLabelLengths(labels)
                 && labels[labels.length - 1].length() >= 2;
     }
 
@@ -129,6 +148,10 @@ public class Email {
 
     private static boolean hasNoEmptyLabels(String[] labels) {
         return Arrays.stream(labels).noneMatch(String::isEmpty);
+    }
+
+    private static boolean hasValidLabelLengths(String[] labels) {
+        return Arrays.stream(labels).allMatch(label -> label.length() <= MAX_DOMAIN_LABEL_LENGTH);
     }
 
     private static boolean hasAlphanumericLabelEdges(String[] labels) {

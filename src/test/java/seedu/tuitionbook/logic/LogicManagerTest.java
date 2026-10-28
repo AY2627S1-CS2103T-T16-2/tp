@@ -85,6 +85,45 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_overlengthEmails_rejectWithoutChangingContactsFilterOrFile() throws Exception {
+        logic.execute("add r/student n/Amy p/91234567 e/amy@example.com");
+        logic.execute("find Amy");
+        TuitionBook original = new TuitionBook(model.getTuitionBook());
+        Predicate<Person> filter = model.getPersonListQueryPredicate();
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(file);
+        String[] emails = {"a".repeat(65) + "@example.com", "a@" + "b".repeat(64) + ".com",
+            "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62)};
+        String[] messages = {"The part of an email before the @ must be at most 64 characters long.",
+            "Each part of an email's domain between periods must be at most 63 characters long.",
+            "Emails must be at most 254 characters long."};
+
+        for (int i = 0; i < emails.length; i++) {
+            String email = emails[i];
+            assertThrows(ParseException.class, messages[i], ()
+                    -> logic.execute("add r/student n/Other p/98765432 e/" + email));
+            assertThrows(ParseException.class, messages[i], ()
+                    -> logic.execute("edit 1 n/Changed e/" + email));
+            assertEquals(original, model.getTuitionBook());
+            assertEquals(original.getPersonList(), model.getFilteredPersonList());
+            assertSame(filter, model.getPersonListQueryPredicate());
+            assertArrayEquals(originalBytes, Files.readAllBytes(file));
+        }
+    }
+
+    @Test
+    public void execute_emailLengthBoundaries_addEditAndReloadPreserveEmail() throws Exception {
+        String email = "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(61);
+        logic.execute("add r/student n/Amy p/91234567 e/" + email);
+        logic.execute("reload");
+        assertEquals(email, model.getTuitionBook().getPersonList().getFirst().getEmail().orElseThrow().value);
+        logic.execute("edit 1 e/other@example.com");
+        logic.execute("edit 1 e/" + email);
+        logic.execute("reload");
+        assertEquals(email, model.getTuitionBook().getPersonList().getFirst().getEmail().orElseThrow().value);
+    }
+
+    @Test
     public void execute_mixedCaseCommands_preserveValuesAndPersistChanges() throws Exception {
         logic.execute("AdD r/student n/Case Sensitive p/91234567 a/Blk\u00a012\u3000Road"
                 + " t/Math t/\"call p/Next Week\"");

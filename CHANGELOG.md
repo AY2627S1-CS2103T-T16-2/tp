@@ -43,6 +43,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Reject email addresses exceeding 254 characters overall, 64 before the `@`, or 63 in any domain part, with specific errors shared by add, edit and JSON loading; existing invalid files follow the current recovery flow without migration.
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).
 - Allowed a student and guardian to share the same normalized name and phone number while retaining duplicate rejection within each role (#271).
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).

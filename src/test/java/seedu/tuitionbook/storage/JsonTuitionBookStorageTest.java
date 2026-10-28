@@ -66,6 +66,25 @@ public class JsonTuitionBookStorageTest {
     public Path testFolder;
 
     @Test
+    public void readTuitionBook_overlengthEmails_preservesOriginalThroughExistingRecovery() throws Exception {
+        String[] emails = {"a".repeat(65) + "@example.com", "a@" + "b".repeat(64) + ".com",
+            "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62)};
+        for (int i = 0; i < emails.length; i++) {
+            Path file = testFolder.resolve("overlength-email-" + i + ".json");
+            JsonTuitionBookStorage storage = new JsonTuitionBookStorage(file);
+            TuitionBook book = new TuitionBook();
+            book.addPerson(new PersonBuilder().withEmail("valid@example.com").build());
+            storage.saveTuitionBook(book);
+            Files.writeString(file, Files.readString(file).replace("valid@example.com", emails[i]));
+            byte[] originalBytes = Files.readAllBytes(file);
+
+            assertThrows(DataLoadingException.class, storage::readTuitionBook);
+            assertFalse(Files.exists(file));
+            assertArrayEquals(originalBytes, Files.readAllBytes(file.resolveSibling(file.getFileName() + ".backup")));
+        }
+    }
+
+    @Test
     public void readTuitionBook_nullFilePath_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> readTuitionBook(null));
     }

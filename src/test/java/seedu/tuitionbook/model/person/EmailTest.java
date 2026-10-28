@@ -111,6 +111,43 @@ public class EmailTest {
     }
 
     @Test
+    public void isValidEmail_localPartLengthBoundary() {
+        assertTrue(Email.isValidEmail("a".repeat(63) + "@example.com"));
+        assertTrue(Email.isValidEmail("a".repeat(64) + "@example.com"));
+        String tooLong = "a".repeat(65) + "@example.com";
+        assertFalse(Email.isValidEmail(tooLong));
+        assertThrows(IllegalArgumentException.class,
+                "The part of an email before the @ must be at most 64 characters long.", () -> new Email(tooLong));
+    }
+
+    @Test
+    public void isValidEmail_domainLabelLengthBoundary() {
+        for (String prefix : new String[]{"a@", "a@sub."}) {
+            for (String suffix : new String[]{"", ".com"}) {
+                assertTrue(Email.isValidEmail(prefix + "b".repeat(62) + suffix));
+                assertTrue(Email.isValidEmail(prefix + "b".repeat(63) + suffix));
+                String tooLong = prefix + "b".repeat(64) + suffix;
+                assertFalse(Email.isValidEmail(tooLong));
+                assertThrows(IllegalArgumentException.class,
+                        "Each part of an email's domain between periods must be at most 63 characters long.", ()
+                        -> new Email(tooLong));
+            }
+        }
+    }
+
+    @Test
+    public void isValidEmail_totalLengthBoundary() {
+        String prefix = "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + ".";
+        assertEquals(193, prefix.length());
+        assertTrue(Email.isValidEmail(prefix + "d".repeat(60))); // 253 characters
+        assertTrue(Email.isValidEmail(prefix + "d".repeat(61))); // 254 characters
+        String tooLong = prefix + "d".repeat(62); // All individual parts still meet their limits.
+        assertFalse(Email.isValidEmail(tooLong));
+        assertThrows(IllegalArgumentException.class, "Emails must be at most 254 characters long.", ()
+                -> new Email(tooLong));
+    }
+
+    @Test
     public void equals() {
         Email email = new Email("valid@email");
 

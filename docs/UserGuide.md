@@ -163,8 +163,9 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
   * can end with an extension written as `x123`, `ext 123` or `ext. 123`.
   * is displayed exactly as you type it. For example, `+65 (9123) 4567 (HP) ext. 89` is accepted.
 * `EMAIL` must look like `name@example.com`:
-  * Before the `@`: English letters, digits (0-9), periods (`.`), plus signs (`+`), underscores (`_`), hyphens (`-`) and apostrophes (`'`). It must start and end with a letter or digit, and cannot have two periods in a row.
-  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part must start and end with a letter or digit, and the last part must be at least 2 characters long.
+  * The whole email can be up to 254 characters long, including the `@` and periods.
+  * Before the `@`: up to 64 characters, using English letters, digits (0-9), periods (`.`), plus signs (`+`), underscores (`_`), hyphens (`-`) and apostrophes (`'`). It must start and end with a letter or digit, and cannot have two periods in a row.
+  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part can be up to 63 characters long, must start and end with a letter or digit, and the last part must be at least 2 characters long.
 * `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
 * Each `TAG`:
   * may contain English letters, digits (0-9), spaces, and punctuation and symbols from a standard English keyboard, for example `Sec 4`, `Math--Science`, `C++`, `$50/hr` or `Mrs. Lim's`. Letters with accents, other languages and other symbols (such as `—`) are not allowed.
