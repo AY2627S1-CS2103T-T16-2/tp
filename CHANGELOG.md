@@ -44,6 +44,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Reject unrecognised fields in the contact data file and preserve the original file through load recovery, preventing misspelled or incorrectly cased field names from silently discarding values (#292).
 - Report when `edit` leaves all contact values unchanged instead of claiming the contact was edited, including repeated values, clearing already-empty fields, and reordered identical tag sets; unchanged edits continue to skip saving.
 - Split the dense Developer Guide parser diagram into focused dispatch and utility views, moving explanatory notes and command inheritance into prose (#225).
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).

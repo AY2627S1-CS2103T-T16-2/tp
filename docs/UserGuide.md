@@ -490,6 +490,7 @@ If you are fixing the file after a problem and want to keep TuitionBook open, us
   * `role`: `STUDENT` or `GUARDIAN`.
   * `guardianId`: for a student, the `id` of their guardian, written in double quotes. It can be left out or set to `null` if the student has no guardian. Any other kind of value, such as a list, makes the file unreadable.
 * Two contacts with the same role, name and phone number count as duplicates, even if their `id`s differ, and make the file unreadable. A student and a guardian can share a name and phone number.
+* Use only the root field `persons` and the contact fields `id`, `role`, `guardianId`, `name`, `phone`, `email`, `address` and `tags`. Field names use the exact letter case shown here. An unrecognised field such as `Email` makes the file unreadable, so a typing mistake cannot silently discard a value.
 * The file must contain one set of contacts only. Extra text after the final `}`, or the same field name used twice in one contact, makes the file unreadable.
 * Spaces at the start or end of a tag are removed when the file is loaded, so `" Math "` becomes `"Math"`. Spaces inside a tag are kept.
 * Don't put a backslash before a space (for example `"\ Math"`). This is not valid JSON and makes the whole file unreadable.

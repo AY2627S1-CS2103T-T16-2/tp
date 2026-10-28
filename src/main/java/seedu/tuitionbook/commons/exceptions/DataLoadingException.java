@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 
 /**
  * Represents an error during loading of data from a file.
@@ -51,6 +52,10 @@ public class DataLoadingException extends Exception {
             String detail = causeMessage(IllegalValueException.class);
             return "The file contains invalid contact data. " + detail
                     + (detail.endsWith(".") ? "" : ".");
+        }
+        if (hasCause(UnrecognizedPropertyException.class)) {
+            return "The data file contains a field TuitionBook does not recognise. Check that every field name uses "
+                    + "the spelling and letter case shown in the User Guide before trying again.";
         }
         if (hasCause(CharacterCodingException.class) || hasCause(JsonProcessingException.class)
                 || hasCauseWithMessage(IOException.class, "JSON root value must not be null.")) {
