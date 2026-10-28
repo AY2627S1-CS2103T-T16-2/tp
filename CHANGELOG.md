@@ -17,6 +17,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Accept the full unquoted ASCII email local-part character set, including punctuation at either end, while rejecting leading, trailing and consecutive periods, spaces and double quotes; retain the email length limits and domain rules, and clarify how emails containing field-like text such as `t/` are entered.
 - Consolidated the Developer Guide's AI acknowledgement to identify Codex and Claude, their extensive use in TuitionBook-specific development, and human oversight through team code review (#149).
 - Added assertions that execution-dependent save decisions are queried only after a command execution attempt and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
 - Clarify separate workflows for routine manual file edits with TuitionBook closed and load recovery using `reload` while it stays open, including backup precautions, replacement of in-memory contacts, and filter reset; align the DG manual tests (#196).
@@ -45,6 +46,9 @@ The format is based on Keep a Changelog.
 ### Fixed
 
 - Reject unrecognised fields in the contact data file and preserve the original file through load recovery, preventing misspelled or incorrectly cased field names from silently discarding values (#292).
+- Reject lookalike and invisible characters at command-syntax boundaries: non-ASCII digits are no longer accepted as indexes (so `delete １` no longer deletes contact 1), a Kelvin-sign `linK` no longer runs `link`, `ſtudent`/`guardıan` are no longer accepted as roles, and every Unicode or zero-width space in command words and indexes now shows the unusual-space hint (#142).
+- Reject addresses containing unpaired surrogates, which were silently saved as `?`, or embedded control characters other than tabs, and stop treating combining marks alone as visible address content (#142).
+- Reject hidden control characters before command trimming and preserve them through field and role validation, preventing control-padded indexes from executing and control-only optional fields from being cleared; ordinary whitespace and intentionally empty fields retain their existing behavior (#142).
 - Report when `edit` leaves all contact values unchanged instead of claiming the contact was edited, including repeated values, clearing already-empty fields, and reordered identical tag sets; unchanged edits continue to skip saving.
 - Split the dense Developer Guide parser diagram into focused dispatch and utility views, moving explanatory notes and command inheritance into prose (#225).
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).

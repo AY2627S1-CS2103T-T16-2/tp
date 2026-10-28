@@ -57,6 +57,26 @@ public class AddCommandParserTest {
     private final AddCommandParser parser = new AddCommandParser();
 
     @Test
+    public void parse_slashEmails_doNotIntroduceAdditionalFields() {
+        for (String prefix : new String[]{"t/", "n/", "p/", "e/", "a/", "r/", "g/", "zz/"}) {
+            for (String localPart : new String[]{prefix + "user", "alice." + prefix + "user",
+                "alice/" + prefix, "alice//" + prefix + "user"}) {
+                String email = localPart + "@example.com";
+                String input = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " e/" + email;
+                Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withEmail(email)
+                        .withoutAddress().withTags().build();
+
+                // Exact command equality verifies that no name, phone, role, address or tag was injected.
+                assertParseSuccess(parser, input, new AddCommand(expected));
+
+                Person expectedWithFields = new PersonBuilder(expected).withAddress("123 Road")
+                        .withTags("Math").build();
+                assertParseSuccess(parser, input + " a/123 Road t/Math", new AddCommand(expectedWithFields));
+            }
+        }
+    }
+
+    @Test
     public void parse_allFieldsPresent_success() {
         Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withTags(VALID_TAG_FRIEND).build();
 
@@ -403,6 +423,36 @@ public class AddCommandParserTest {
                 AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
         assertParseFailure(parser, ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " g/",
                 AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
+    }
+
+    @Test
+    public void parse_lookalikePrefixes_notRecognizedAsFields() {
+        // Lookalike prefixes are not field markers, so the required field they imitate is reported missing.
+        String roleAndName = ROLE_DESC_STUDENT + NAME_DESC_BOB;
+        for (String phonePrefix : new String[] {"\u0440/", "\uFF50/", "p\uFF0F", "p\u2215", "p\u2044"}) {
+            assertParseFailure(parser, roleAndName + " " + phonePrefix + VALID_PHONE_BOB,
+                    missingFieldsMessage("p/PHONE"));
+        }
+        assertParseFailure(parser, ROLE_DESC_STUDENT + " n\uFF0F" + VALID_NAME_BOB + PHONE_DESC_BOB,
+                missingFieldsMessage("n/NAME"));
+    }
+
+    @Test
+    public void parse_lookalikeRole_failure() {
+        for (String role : new String[] {"\u017Ftudent", "guard\u0131an", "\uFB06udent"}) {
+            assertParseFailure(parser, " " + PREFIX_ROLE + role + NAME_DESC_BOB + PHONE_DESC_BOB,
+                    Role.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
+    public void parse_brokenUnicodeAddress_failure() {
+        String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
+        for (String address : new String[] {"Blk\uD800 1", "Blk\u0000 1", "\"Blk\uDC00 1\""}) {
+            assertParseFailure(parser, mandatoryFields + " " + PREFIX_ADDRESS + address,
+                    Address.MESSAGE_INVALID_CHARACTERS);
+        }
+        assertParseFailure(parser, mandatoryFields + " " + PREFIX_ADDRESS + "\u0301", Address.MESSAGE_BLANK);
     }
 
     private static String missingFieldsMessage(String missingFields) {

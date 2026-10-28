@@ -57,6 +57,26 @@ public class EditCommandParserTest {
     private EditCommandParser parser = new EditCommandParser();
 
     @Test
+    public void parse_slashEmails_doNotIntroduceAdditionalEdits() {
+        for (String prefix : new String[]{"t/", "n/", "p/", "e/", "a/", "r/", "g/", "zz/"}) {
+            for (String localPart : new String[]{prefix + "user", "alice." + prefix + "user",
+                "alice/" + prefix, "alice//" + prefix + "user"}) {
+                String email = localPart + "@example.com";
+                String input = "1 e/" + email;
+                EditPersonDescriptor emailOnly = new EditPersonDescriptorBuilder().withEmail(email).build();
+
+                // Exact descriptor equality verifies that the email introduces no additional edits.
+                assertParseSuccess(parser, input, new EditCommand(INDEX_FIRST_PERSON, emailOnly));
+
+                EditPersonDescriptor withFields = new EditPersonDescriptorBuilder().withEmail(email)
+                        .withAddress("123 Road").withTags("Math").build();
+                assertParseSuccess(parser, input + " a/123 Road t/Math",
+                        new EditCommand(INDEX_FIRST_PERSON, withFields));
+            }
+        }
+    }
+
+    @Test
     public void parse_roleEdit_reportsRoleImmutability() {
         for (String input : List.of("1 r/guardian", "1 r/student", "1 r/", "1 r/anyRole",
                 "1 n/Updated r/guardian")) {
