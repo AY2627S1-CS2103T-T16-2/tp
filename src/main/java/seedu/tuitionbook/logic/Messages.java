@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 
 import seedu.tuitionbook.logic.parser.Prefix;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.tag.Tag;
 
 /**
  * Container for user visible messages.
@@ -61,8 +62,19 @@ public class Messages {
                 .append("; Address: ")
                 .append(person.getAddress().map(Object::toString).orElse("-"))
                 .append("; Tags: ");
-        person.getTags().forEach(builder::append);
+        person.getTags().forEach(tag -> builder.append(formatTag(tag)));
         return builder.toString();
+    }
+
+    /**
+     * Formats {@code tag} in brackets, escaping backslashes and brackets in its name so that adjacent tags
+     * remain distinguishable from a single tag containing brackets.
+     */
+    public static String formatTag(Tag tag) {
+        String escapedTagName = tag.tagName.replace("\\", "\\\\")
+                .replace("[", "\\[")
+                .replace("]", "\\]");
+        return "[" + escapedTagName + "]";
     }
 
 }

@@ -132,16 +132,26 @@ How the `Logic` component works:
 1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. The second diagram shows the successful save path. If saving throws an `IOException` or `AccessDeniedException`, `LogicManager` restores the contacts and exact working set that existed before the command, then throws a `CommandException`; those rollback calls are deliberately omitted from the diagram.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
-Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
+The following partial class diagram focuses on parser dispatch and command creation. Argument-parsing utilities are shown separately below; command inheritance is omitted.
 
-<puml src="diagrams/ParserClasses.puml" alt="Representative parser classes and their dependencies"/>
+<puml src="diagrams/ParserClasses.puml" alt="Parser dispatch, command creation and delegation to the tag parsing helper"/>
 
-How the parsing works:
+*Parser dispatch and command creation.*
+
 * `TuitionBookParser` creates a command-specific parser for `add`, `edit`, `tag`, `untag`, `delete`, `clear`, `find`, `list`, `link`, `unlink`, and `view`. Each implements `Parser<T extends Command>` for its command type. The diagram shows `AddCommandParser` and `TagCommandParser` as representative examples; the remaining command-specific parsers are omitted.
-* `AddCommandParser` uses `ArgumentTokenizer`, `ArgumentMultimap`, the `Prefix` constants in `CliSyntax`, and `ParserUtil` to parse arguments and construct an `AddCommand`. `EditCommandParser`, `ListCommandParser`, and `ViewCommandParser` also use these utilities. Other parsers use only the helpers they need; for example, `DeleteCommandParser`, `LinkCommandParser`, and `UnlinkCommandParser` use `ParserUtil` to parse indexes.
 * `TagCommandParser` and `UntagCommandParser` delegate argument parsing to the package-private `TagModificationCommandParser` helper, passing their respective command constructor references. The helper uses the same tokenization and validation utilities and invokes the supplied constructor after parsing. It does not implement `Parser`.
-* `ArgumentTokenizer` creates an `ArgumentMultimap`, which stores argument values keyed by `Prefix`. `CliSyntax` defines the recognized prefix constants; `ParserUtil` parses values and indexes without depending on `Prefix`.
+* All commands inherit from `Command`. `AddCommand` extends it directly, while `TagCommand` and `UntagCommand` extend the abstract `TagModificationCommand`.
 * `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser, after rejecting non-blank arguments. In all cases it returns the resulting object as a `Command`.
+
+The next diagram focuses on the shared argument-parsing utilities, using `AddCommandParser` as a representative caller.
+
+<puml src="diagrams/ParserUtilities.puml" alt="AddCommandParser dependencies on shared argument-parsing utilities and prefix relationships"/>
+
+*Shared argument-parsing utilities.*
+
+* `AddCommandParser` uses `ArgumentTokenizer`, `ArgumentMultimap`, the `Prefix` constants in `CliSyntax`, and `ParserUtil` to parse arguments and construct an `AddCommand`. `EditCommandParser`, `ListCommandParser`, and `ViewCommandParser` also use these utilities. Other parsers use only the helpers they need; for example, `DeleteCommandParser`, `LinkCommandParser`, and `UnlinkCommandParser` use `ParserUtil` to parse indexes.
+* `TagModificationCommandParser` uses the same four utilities as `AddCommandParser`; its repeated dependencies are omitted from this diagram.
+* `ArgumentTokenizer` creates an `ArgumentMultimap`, which stores argument values keyed by `Prefix`. `CliSyntax` defines the recognized prefix constants; `ParserUtil` parses values and indexes without depending on `Prefix`.
 
 #### Command-input boundary
 
@@ -1386,6 +1396,8 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: `Math` is removed. The remaining tag is stored as `Sec  4` without surrounding spaces.
 1. Relaunch TuitionBook, enter `list`, then `edit 1 t/first t/second`.<br>
    Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
+1. Enter `edit 1 t/first][second`.<br>
+   Expected: The confirmation ends with `Tags: [first\]\[second]`: one tag whose brackets are escaped, distinguishable from the two separate tags `[first]` and `[second]` in the previous step's confirmation.
 1. Enter `edit 1 t/`.<br>
    Expected: All of Alex's tags are cleared, as before.
 
@@ -1393,7 +1405,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 `LogicManager` uses `canMutate()` to snapshot contacts and exact working-set membership, order, predicate and refresh command before commands that can change data. After successful execution, it saves only when `requiresSave()` returns true; it does not compare the complete contact list. Each contact-changing command starts with a false save decision, resets it at the start of every execution, and sets it only after changing contact data. These commands override `canMutate()` to remain true independently of their latest save decision. Reusing a command after an earlier change therefore cannot cause a stale save request on a later no-change or rejected execution. Read-only commands and `reload` always return false from `requiresSave()`.
 
-`link` requests saving only after creating or replacing a relationship; `unlink` only after removing one. `edit` compares the selected contact's stored values with its proposed replacement and requests saving only when they differ; the replacement preserves the persistent ID. An unchanged edit preserves the working set, as do other unchanged mutations. `clear` checks whether the complete book contains any contacts, including hidden contacts. Successful additions and deletions always request saving. Filter changes alone do not trigger saving. Actual changes retain the existing save-failure rollback.
+`link` requests saving only after creating or replacing a relationship; `unlink` only after removing one. `edit` compares the selected contact's stored values with its proposed replacement and requests saving only when they differ; the replacement preserves the persistent ID. An unchanged edit reports `No changes made: the specified values already match NAME` and preserves the working set, as do other unchanged mutations. The comparison uses stored values, so spelling, capitalization and phone-format changes still count as edits; tag order does not. `clear` checks whether the complete book contains any contacts, including hidden contacts. Successful additions and deletions always request saving. Filter changes alone do not trigger saving. Actual changes retain the existing save-failure rollback.
 
 **Performance:** The save decision no longer scans all contacts: it uses the command's mutation outcome, an emptiness check for `clear`, or a comparison of the selected contact for `edit`. Comparing that contact's fields and tags still depends on their sizes. Before executing a command for which `canMutate()` is true, `LogicManager` creates a rollback snapshot through `new TuitionBook(existingBook)` → `resetData` → `setPersons(List)` → `personsAreUnique`. For a valid book of n distinct contacts, this validation performs `n(n - 1) / 2` pairwise identity comparisons: 499,500 for 1,000 contacts. Each comparison first compares roles, then normalizes and compares names when the roles match, and also normalizes and compares phone numbers when the normalized names match. Snapshot creation therefore takes O(n²) time for fixed contact-field sizes, in addition to its O(n) reference copying; the comparison costs also depend on field lengths. The snapshot is created even when the command ultimately makes no change and skips saving. Avoiding unnecessary saves does not remove this cost or make overall command execution constant-time. No benchmark has established a user-visible speedup, and this complexity analysis alone does not establish whether the two-second performance NFR is met.
 
@@ -1405,7 +1417,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Configure the data file or its folder so saving fails, then enter `edit 2 t/Science`.<br>
       Expected: A save error is reported and Sam's tag remains `Math`. This establishes the save-failure precondition; permission controls differ by operating system.
    1. Enter `link 2 1`, `edit 2 n/Sam Student`, and `edit 2 t/Math`.<br>
-      Expected: Each command completes without a save error and contacts remain unchanged. The link command reports that the relationship already exists.
+      Expected: Each command completes without a save error and contacts remain unchanged. The link command reports that the relationship already exists. Each edit reports `No changes made: the specified values already match Sam Student` Repeating `edit 2 e/`, `edit 2 a/`, or `edit 2 t/Math t/Math` also reports no changes because those fields already match.
    1. Restore write access, then enter `edit 2 t/Science`, `unlink 2`, and `unlink 2` again.<br>
       Expected: The tag change and first unlink persist; the second unlink reports no linked guardian. Restart and verify that Sam has tag `Science` and no guardian link.
 
@@ -1490,7 +1502,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
    1. Launch TuitionBook.<br>
-      Expected: TuitionBook opens with an empty contact list and a warning. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+      Expected: TuitionBook opens with an empty contact list and a warning. The warning shows the problem, the full backup location, and the recovery steps (ending with entering `reload` or restarting) as separate paragraphs. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
 
    1. Enter `help`.<br>
       Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
@@ -1511,6 +1523,9 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
 
    1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[{"name":"Amy Tan","phone":"81234567"},{"name":"-Ben","phone":"82345678"}]}`.<br>
       Expected: The warning includes `The file contains invalid contact data. Contact 2 in the file: Names must start with a letter or number.` TuitionBook opens with an empty contact list and moves the original file unchanged to a backup.
+
+   1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[{"name":"Amy Tan","phone":"81234567"},{"name":"Ben Lim","phone":"82345678","email":"ben@@example.com"}]}`.<br>
+      Expected: The warning includes `The file contains invalid contact data. Contact 2 in the file ("Ben Lim"): Emails must be in the format name@example.com.` TuitionBook opens with an empty contact list and moves the original file unchanged to a backup.
 
    1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}`.<br>
       Expected: TuitionBook rejects the duplicate `persons` property, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).

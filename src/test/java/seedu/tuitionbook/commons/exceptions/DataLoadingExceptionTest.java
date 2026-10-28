@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonParseException;
 
+import seedu.tuitionbook.model.person.Email;
+import seedu.tuitionbook.model.person.Name;
+
 public class DataLoadingExceptionTest {
 
     @Test
@@ -105,12 +108,41 @@ public class DataLoadingExceptionTest {
 
     @Test
     public void getUserFacingGuidance_longMultilineInvalidValue_isBoundedAndSingleLine() {
-        String longMessage = "first line\n" + "x".repeat(250);
+        String longMessage = "first line\n" + "x".repeat(400);
         String guidance = new DataLoadingException(new IllegalValueException(longMessage))
                 .getUserFacingGuidance();
 
         assertTrue(guidance.startsWith("The file contains invalid contact data. first line x"));
         assertTrue(guidance.endsWith("..."));
-        assertTrue(guidance.length() <= 250);
+        assertTrue(guidance.length() <= 400);
+    }
+
+    @Test
+    public void getUserFacingGuidance_longestNamedContactEmailError_isNotTruncated() {
+        String detail = "Contact 9999 in the file (\"" + "A".repeat(100) + "\"): "
+                + Email.MESSAGE_INVALID_NAME_CHARACTERS;
+        String guidance = new DataLoadingException(new IllegalValueException(detail)).getUserFacingGuidance();
+
+        assertEquals("The file contains invalid contact data. " + detail, guidance);
+    }
+
+    @Test
+    public void getUserFacingGuidance_longestSupplementaryNamedContactEmailError_isNotTruncated() {
+        // U+20000 is a CJK letter outside the Basic Multilingual Plane, taking two UTF-16 units each.
+        String longestName = "\uD840\uDC00".repeat(Name.MAX_LENGTH);
+        assertTrue(Name.isValidName(longestName));
+        String detail = "Contact 9999 in the file (\"" + longestName + "\"): "
+                + Email.MESSAGE_INVALID_NAME_CHARACTERS;
+        String guidance = new DataLoadingException(new IllegalValueException(detail)).getUserFacingGuidance();
+
+        assertEquals("The file contains invalid contact data. " + detail, guidance);
+    }
+
+    @Test
+    public void getUserFacingGuidance_longSupplementaryInvalidValue_truncatesWithoutSplittingCharacters() {
+        String guidance = new DataLoadingException(new IllegalValueException("\uD840\uDC00".repeat(400)))
+                .getUserFacingGuidance();
+
+        assertEquals("The file contains invalid contact data. " + "\uD840\uDC00".repeat(320) + "...", guidance);
     }
 }

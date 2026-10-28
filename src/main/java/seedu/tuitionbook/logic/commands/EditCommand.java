@@ -48,6 +48,8 @@ public class EditCommand extends Command {
             + PREFIX_EMAIL + "johndoe@example.com";
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
+    public static final String MESSAGE_NO_CHANGE =
+            "No changes made: the specified values already match %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_ROLE_NOT_EDITABLE =
             "A contact's role cannot be changed after it is added.";
@@ -104,10 +106,11 @@ public class EditCommand extends Command {
         }
 
         // createEditedPerson preserves the persistent ID; compare only the selected contact's stored values.
-        if (!personToEdit.equals(editedPerson)) {
-            model.setPerson(personToEdit, editedPerson);
-            requiresSave = true;
+        if (personToEdit.equals(editedPerson)) {
+            return new CommandResult(String.format(MESSAGE_NO_CHANGE, personToEdit.getName()));
         }
+        model.setPerson(personToEdit, editedPerson);
+        requiresSave = true;
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }
 

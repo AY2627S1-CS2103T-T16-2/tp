@@ -707,7 +707,8 @@ public class LogicManagerTest {
         for (String command : commands) {
             model.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
             assertEquals(List.of(student), logic.getFilteredPersonList(), command);
-            logic.execute(command);
+            assertEquals("No changes made: the specified values already match Sam Student",
+                    logic.execute(command).getFeedbackToUser(), command);
             assertEquals(0, fileStorage.getSaveCallCount(), command);
             assertEquals(List.of(student, guardian), logic.getPersonList(), command);
             assertEquals(List.of(student), logic.getFilteredPersonList(), command);

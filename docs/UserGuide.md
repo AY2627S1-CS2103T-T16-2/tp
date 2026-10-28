@@ -299,6 +299,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 * `INDEX` is the number shown beside the contact in the current list (1, 2, 3, …).
 * Give at least one field to change. The new value replaces the old one; fields you leave out stay the same.
+* If all supplied values already match the contact, `edit` reports `No changes made: the specified values already match NAME` and does not save.
 * All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`: `edit 1 n/"Rina a/p Kaur"`.
 * To remove an email or address, type `e/` or `a/` with nothing after it. `a/""` also removes the address.
 * **Giving `t/` replaces all of the contact's tags.** Retype any tags you want to keep, or use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag) to change one tag at a time. To remove every tag, type `t/` with nothing after it.
@@ -504,7 +505,7 @@ If a student's `guardianId` doesn't point to a guardian in the file, TuitionBook
 
 **If TuitionBook can't read the data file**
 
-TuitionBook starts with an empty contact list and shows a warning explaining what went wrong. If the problem is with a particular contact, the warning names it by its position in the file, for example `Contact 3 in the file: Missing "name" value.` Contacts are counted from the top of the file, starting from 1.
+TuitionBook starts with an empty contact list and shows a warning explaining what went wrong. If the problem is with a particular contact, the warning names it by its position in the file and, if that contact's name is valid, by its name, for example `Contact 3 in the file ("Alex Yeoh"): Emails must be in the format name@example.com.` or `Contact 4 in the file: Missing "name" value.` Contacts are counted from the top of the file, starting from 1.
 
 TuitionBook also moves the unreadable file, unchanged, to a backup in the same folder with `.backup` added to its name, for example `tuitionbook.json.backup` (or `.backup.1`, `.backup.2` and so on if that name is taken). **The warning shows the exact name and location**, so check it rather than assuming. You can then keep using TuitionBook, and new contacts are saved to a fresh data file.
 
