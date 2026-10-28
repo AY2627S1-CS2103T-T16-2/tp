@@ -30,69 +30,66 @@ public class HelpWindow extends UiPart<Stage> {
     static final String OPEN_GUIDE_PENDING = "Opening the User Guide...";
 
     static final String COMMAND_SUMMARY = """
-            Command input
-              Command words ignore case: LIST and LiSt work like list.
-              Field prefixes (n/, t/, etc.) and the clear confirmation word confirm stay lowercase.
-              Enter one command on one line. Use normal spaces (U+0020) for command syntax.
-              Pasted tabs and line separators become spaces; press Enter to run the command.
-              Raw line breaks reaching the parser are rejected, including inside quotes.
-              help, exit and reload take no arguments.
-              Edits, tags and links keep the working set and displayed indexes.
-              Rerun the originating list/find query to refresh; bare list shows all contacts.
-              Matching additions append; nonmatching additions are saved but hidden.
-              Deletion compacts the list and can change subsequent indexes.
+            How to read this summary
+              Replace words in CAPITALS with your own details, e.g. n/NAME becomes n/John Doe.
+              Parts in [square brackets] are optional. Parts followed by ... can be repeated.
+              INDEX is the number shown beside a contact in the current list.
+
+            Typing commands
+              Command words can be typed in any letter case: LIST works like list.
+              Prefixes such as n/ and t/, and the word confirm, must be lowercase.
+              Type one command at a time, then press Enter.
+              help, exit and reload take nothing after the command word.
+              Editing, tagging and linking keep each contact at the same number in the list.
+              Deleting moves the contacts below up by one, so check the list before your next command.
 
             add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...
-              Add a student or guardian contact.
+              Add a student or guardian.
 
             list [r/ROLE] [t/TAG]...
-              List contacts matching the role and all tags, ignoring case. Bare list resets filters.
+              Show everyone, or only contacts with this role and all of these tags.
 
             view INDEX [v/]
-              View a contact and linked contact summaries. Add v/ for full linked contact details.
+              Show a contact's details. Add v/ to also show their linked contacts' full details.
 
             edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...
-              Edit one or more details of a displayed contact.
+              Change a contact's details. Giving t/ replaces all of their tags.
 
             tag INDEX t/TAG [t/TAG]...
-              Add tags to a displayed contact, keeping its existing tags.
+              Add tags to a contact, keeping their existing tags.
 
             untag INDEX t/TAG [t/TAG]...
-              Remove specified tags from a displayed contact, keeping its other tags.
+              Remove these tags from a contact, keeping their other tags.
 
             link STUDENT_INDEX GUARDIAN_INDEX
-              Link a displayed student to a displayed guardian.
+              Link a student to their guardian.
 
             unlink STUDENT_INDEX
-              Remove a displayed student's guardian link.
+              Remove a student's guardian link.
 
             find KEYWORD [MORE_KEYWORDS]...
-              Find contacts whose names contain any keyword as a substring.
+              Find contacts whose names contain any of the keywords, even as part of a name.
 
             delete INDEX
-              Delete a displayed contact.
+              Delete a contact.
 
             clear confirm
-              Delete every contact, including contacts hidden by the current filter.
+              Delete every contact, including any hidden by the current filter.
 
             help
-              Open or focus this Help window.
+              Open this Help window.
 
             reload
-              Replace contacts from the data file and clear the filter. Retry a blocked load.
+              Load your contacts from the data file again, replacing the ones in the app.
 
             exit
-              Exit TuitionBook.
+              Close TuitionBook.
 
-            Field prefixes (add/edit/list/tag/untag)
-              After a normal space, ASCII letters followed by / are field syntax, e.g. ee/.
-              Unknown prefixes are rejected. Quote complete literal names, addresses or tags.
-
-            Quoted values (add/edit names, addresses and tags; list/tag/untag tags)
-              Use double quotes around values containing field prefixes, e.g. t/"call p/next week".
-              For a complete address, use a/"20 Main Road, c/o Rina a/p Kaur".
-              Inside quoted values, use \\" for a literal quote and \\\\ for a literal backslash.
-              Surrounding whitespace is trimmed, including inside quotes.
+            Using double quotes
+              If a name, address or tag contains text like a/ or s/, wrap the whole value in double quotes:
+              n/"Muhammad s/o Ali", a/"20 Main Road, c/o Rina a/p Kaur" or t/"call p/next week".
+              This works in add, edit, list, tag and untag. The quotes are not saved.
+              Inside quotes, type \\" for a double quote and \\\\ for a backslash.
             """.strip();
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);

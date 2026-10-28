@@ -81,8 +81,8 @@ public class ListCommandParserTest {
 
     @Test
     public void parse_invalidTag_throwsParseException() {
-        assertParseFailure(parser, " t/not\tvalid", seedu.tuitionbook.model.tag.Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, " t/   ", seedu.tuitionbook.model.tag.Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " t/not\tvalid", seedu.tuitionbook.model.tag.Tag.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, " t/   ", seedu.tuitionbook.model.tag.Tag.MESSAGE_BLANK);
     }
 
     @Test

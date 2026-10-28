@@ -49,8 +49,8 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new JsonParseException(null, "Invalid JSON"))
                 .getUserFacingGuidance();
 
-        assertTrue(guidance.contains("UTF-8 JSON"));
-        assertTrue(guidance.contains("encoding or JSON syntax"));
+        assertTrue(guidance.contains("not in a format TuitionBook can read"));
+        assertTrue(guidance.contains("missing comma, quote or bracket"));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new CharacterCodingException())
                 .getUserFacingGuidance();
 
-        assertTrue(guidance.contains("UTF-8 JSON"));
+        assertTrue(guidance.contains("not in a format TuitionBook can read"));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new IOException("JSON root value must not be null."))
                 .getUserFacingGuidance();
 
-        assertTrue(guidance.contains("UTF-8 JSON"));
+        assertTrue(guidance.contains("not in a format TuitionBook can read"));
     }
 
     @Test
@@ -100,7 +100,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new IllegalValueException("  "))
                 .getUserFacingGuidance();
 
-        assertTrue(guidance.endsWith("the contact fields are invalid."));
+        assertTrue(guidance.endsWith("invalid contact data. Check each contact's values."));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new IllegalValueException(longMessage))
                 .getUserFacingGuidance();
 
-        assertTrue(guidance.startsWith("The file contains invalid contact data: first line x"));
+        assertTrue(guidance.startsWith("The file contains invalid contact data. first line x"));
         assertTrue(guidance.endsWith("..."));
         assertTrue(guidance.length() <= 250);
     }
