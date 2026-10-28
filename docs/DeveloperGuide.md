@@ -86,9 +86,13 @@ The sections below give more details of each component.
 
 The **API** of this component is specified in [`Ui.java`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/ui/Ui.java)
 
-<puml src="diagrams/UiClassDiagram.puml" alt="Structure of the UI Component"/>
+<puml src="diagrams/UiClassDiagram.puml" alt="Overview of the UI component"/>
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. The overview treats these parts as a single `UI parts` package. `UiManager` coordinates the UI with `Logic` and displays the startup notice when one is available.
+
+The `UI parts` package is expanded in the following diagram. It shows the concrete UI parts, their common abstract `UiPart` base class, the relationships managed by `MainWindow`, and the UI parts that display `Person` data or open the User Guide.
+
+<puml src="diagrams/UiPartsClassDiagram.puml" alt="Detailed UI parts and their relationships"/>
 
 `CommandBox` uses `CommandTextField`, a `TextField` subclass that converts pasted tabs and line separators to spaces before JavaFX filters them. This preserves word boundaries while keeping each command on one line. Pasted text is inserted into the field but is not executed until the user presses <kbd>Enter</kbd>.
 
