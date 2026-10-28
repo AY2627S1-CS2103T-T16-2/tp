@@ -38,6 +38,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Report when `edit` leaves all contact values unchanged instead of claiming the contact was edited, including repeated values, clearing already-empty fields, and reordered identical tag sets; unchanged edits continue to skip saving.
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
 - Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).
 - Trim surrounding ASCII spaces from tags loaded from JSON, making previously padded tags addressable through `list`, `tag`, and `untag` while preserving significant internal spaces; tags that differ only by surrounding spaces are merged into one (#185).
