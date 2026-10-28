@@ -114,7 +114,7 @@ public class ContactViewStatusTest {
                     "delete 2", "tag 1 t/Active"}) {
                     fixture.execute(command);
                     TextArea result = (TextArea) fixture.window.getRoot().getScene().lookup("#resultDisplay");
-                    assertTrue(result.getText().contains("Could not save data"));
+                    assertTrue(result.getText().contains("Could not save your changes"));
                     fixture.assertQuery("list t/Active", 2, 2, 1, 1);
                 }
             }

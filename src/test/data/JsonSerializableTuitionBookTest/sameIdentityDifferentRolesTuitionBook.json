@@ -1,0 +1,13 @@
+{
+  "persons": [ {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "role": "STUDENT",
+    "name": "José Tan",
+    "phone": "+65 9123-4567"
+  }, {
+    "id": "123e4567-e89b-12d3-a456-426614174001",
+    "role": "GUARDIAN",
+    "name": "JOSÉ  TAN ",
+    "phone": "+65 91234567"
+  } ]
+}

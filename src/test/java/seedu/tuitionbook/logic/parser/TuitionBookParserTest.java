@@ -202,21 +202,17 @@ public class TuitionBookParserTest {
     }
 
     @Test
-    public void parseCommand_lineBreaks_reportCodePointBeforeTrimmingOrDispatch() {
+    public void parseCommand_lineBreaks_reportedBeforeTrimmingOrDispatch() {
         // Scenarios adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/322
+        String expectedMessage = "Commands must be entered on a single line. Remove the line break and try again.";
         for (char separator : new char[] {'\n', '\r', '\u000b', '\f', '\u0085', '\u2028', '\u2029'}) {
-            String expectedMessage = String.format(Locale.ROOT, "Commands must be entered on a single line. "
-                    + "Found line break U+%04X; remove it or replace it with a normal space (U+0020).",
-                    (int) separator);
             for (String input : List.of(separator + "list", "list" + separator, "li" + separator + "st",
                     "list " + separator + "help", "add r/student n/Amy p/123 a/12" + separator + "Road",
                     "edit 1 n/\"Amy" + separator + " Tan\"")) {
                 assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
             }
         }
-        assertThrows(ParseException.class, "Commands must be entered on a single line. "
-                + "Found line break U+000D; remove it or replace it with a normal space (U+0020).", ()
-                -> parser.parseCommand("list\r\nhelp"));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("list\r\nhelp"));
     }
 
     @Test
@@ -225,17 +221,77 @@ public class TuitionBookParserTest {
         // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/187
         // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/374
         // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/188
-        for (char space : new char[] {'\u00a0', '\u3000'}) {
-            String description = space == '\u00a0' ? "non-breaking space" : "full-width space";
-            String expectedMessage = String.format(Locale.ROOT, "Unexpected %s (U+%04X). "
-                    + "Retype the command separator or index using normal spaces (U+0020).", description, (int) space);
+        String expectedMessage = "Your command contains an unusual space character, often from copied text. "
+                + "Retype the spaces using the spacebar.";
+        for (char space : new char[] {'\u00a0', '\u3000', '\u2007', '\u202f', '\u2002', '\u2003', '\u2009',
+            '\u200a', '\u205f', '\u1680', '\u200b', '\ufeff', '\u2060', '\u180e'}) {
             for (String input : List.of(space + "list", "list" + space, "LiSt" + space + "r/student",
                     "help " + space, "exit " + space, "reload " + space, "delete " + space + "1",
                     "edit 1" + space + " n/Amy", "tag 1" + space + " t/Math", "untag " + space + "1 t/Math",
                     "unlink 1" + space, "link 1" + space + "2", "link 1 " + space + "2",
-                    "view 1" + space + " v/")) {
+                    "view 1" + space + " v/", "find" + space + "Amy", "clear" + space + "confirm")) {
                 assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
             }
         }
+    }
+
+    @Test
+    public void parseCommand_lookalikeCommandWords_reportUnknownCommand() {
+        String[] lookalikes = {
+            "lin\u212A 1 2", // Kelvin sign, which lowercases to an ASCII k
+            "unlin\u212A 1",
+            "\u0430dd r/student n/Amy p/123", // Cyrillic a
+            "d\u0435lete 1", // Cyrillic e
+            "\uFF4C\uFF49\uFF53\uFF54", // full-width list
+            "L\u0130ST", // Latin capital I with dot
+            "\u0435xit", // Cyrillic e
+            "h\u0435lp",
+            "\u0455\u0435\u0435" // Cyrillic lookalike of "see"
+        };
+        for (String input : lookalikes) {
+            assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand(input));
+        }
+    }
+
+    @Test
+    public void parseCommand_nonAsciiDigitIndexes_rejectedBeforeExecution() {
+        for (String digit : List.of("\uFF11", "\u0661", "\u0967")) {
+            for (String input : List.of("delete " + digit, "view " + digit, "edit " + digit + " n/Amy",
+                    "tag " + digit + " t/Math", "untag " + digit + " t/Math", "unlink " + digit,
+                    "link " + digit + " 2", "link 1 " + digit)) {
+                org.junit.jupiter.api.Assertions.assertThrows(ParseException.class, () ->
+                        parser.parseCommand(input), input);
+            }
+        }
+    }
+
+    @Test
+    public void parseCommand_unpairedSurrogatesAndControlCharacters_throwParseException() {
+        for (String input : List.of("\uD800", "list\uDC00", "\u0000", "delete \uD800", "view 1\u00002")) {
+            org.junit.jupiter.api.Assertions.assertThrows(ParseException.class, () ->
+                    parser.parseCommand(input), input);
+        }
+    }
+
+    @Test
+    public void parseCommand_hiddenControls_rejectedBeforeTrimmingOrDispatch() {
+        String expectedMessage = "Your command contains a hidden control character, often from copied text. "
+                + "Retype the command.";
+        for (char control : new char[] {'\u0000', '\u0001', '\u001b', '\u001c', '\u007f', '\u0080', '\u009f'}) {
+            for (String input : List.of(control + "list", "list" + control, "help " + control,
+                    "clear " + control + "confirm", "delete " + control + "1", "delete 1" + control,
+                    "link " + control + "1 2", "link 1 2" + control, "view 1" + control + " v/",
+                    "edit 1 a/" + control, "edit 1 a/\"" + control + "\"", "edit 1 e/" + control,
+                    "edit 1 t/" + control, "tag 1 t/" + control + "Math", "untag 1 t/Math" + control,
+                    "find " + control + "Amy", "list r/student" + control,
+                    "add r/" + control + "student n/Amy p/91234567")) {
+                assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+            }
+        }
+    }
+
+    @Test
+    public void parseCommand_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> parser.parseCommand(null));
     }
 }

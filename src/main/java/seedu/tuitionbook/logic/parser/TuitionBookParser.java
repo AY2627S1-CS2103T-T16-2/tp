@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import seedu.tuitionbook.commons.core.LogsCenter;
+import seedu.tuitionbook.commons.util.StringUtil;
 import seedu.tuitionbook.logic.commands.AddCommand;
 import seedu.tuitionbook.logic.commands.ClearCommand;
 import seedu.tuitionbook.logic.commands.Command;
@@ -31,8 +32,10 @@ import seedu.tuitionbook.logic.parser.exceptions.ParseException;
  */
 public class TuitionBookParser {
 
-    public static final String MESSAGE_LINE_BREAK = "Commands must be entered on a single line. "
-            + "Found line break U+%04X; remove it or replace it with a normal space (U+0020).";
+    public static final String MESSAGE_LINE_BREAK =
+            "Commands must be entered on a single line. Remove the line break and try again.";
+    public static final String MESSAGE_CONTROL_CHARACTER =
+            "Your command contains a hidden control character, often from copied text. Retype the command.";
 
     /**
      * Used for initial separation of command word and args.
@@ -49,17 +52,22 @@ public class TuitionBookParser {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public Command parseCommand(String userInput) throws ParseException {
-        Matcher lineBreak = LINE_BREAK.matcher(userInput);
-        if (lineBreak.find()) {
-            throw new ParseException(String.format(Locale.ROOT, MESSAGE_LINE_BREAK,
-                    lineBreak.group().codePointAt(0)));
+        if (LINE_BREAK.matcher(userInput).find()) {
+            throw new ParseException(MESSAGE_LINE_BREAK);
         }
-        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(userInput.trim());
+        if (userInput.chars().anyMatch(character -> Character.isISOControl(character) && character != '\t')) {
+            throw new ParseException(MESSAGE_CONTROL_CHARACTER);
+        }
+        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(StringUtil.trimAsciiWhitespace(userInput));
         if (!matcher.matches()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE));
         }
 
         ParserUtil.checkForUnsupportedSpaces(matcher.group("commandWord"));
+        // Reject lookalikes such as the Kelvin sign before case folding maps them to ASCII command letters.
+        if (!StringUtil.isAscii(matcher.group("commandWord"))) {
+            throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
+        }
         final String commandWord = matcher.group("commandWord").toLowerCase(Locale.ROOT);
         final String arguments = matcher.group("arguments");
 

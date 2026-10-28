@@ -12,8 +12,6 @@ public class TagCommand extends TagModificationCommand {
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Adds tags to the contact identified by its displayed index, keeping existing tags.\n"
             + "Parameters: INDEX t/TAG [t/TAG]...\n"
-            + "Quote tags containing t/ after a space, for example t/\"study t/weekly\".\n"
-            + "Inside quoted tags, use \\\" for a literal quote and \\\\ for a literal backslash.\n"
             + "Example: tag 1 t/Math t/Sec 4";
     public static final String MESSAGE_SUCCESS = "Added tags to %1$s: %2$s.";
     public static final String MESSAGE_NO_CHANGE = "All specified tags are already present on %1$s.";

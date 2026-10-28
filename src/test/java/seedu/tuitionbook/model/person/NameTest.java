@@ -70,8 +70,33 @@ public class NameTest {
     }
 
     @Test
-    public void messageConstraints_nameSpacing_identifiesAsciiSpace() {
-        assertTrue(Name.MESSAGE_CONSTRAINTS.contains("ASCII spaces (U+0020)"));
+    public void getConstraintMessage_reportsFirstViolatedConstraint() {
+        assertEquals(Name.MESSAGE_BLANK, Name.getConstraintMessage(""));
+        assertEquals(Name.MESSAGE_BLANK, Name.getConstraintMessage("   "));
+        assertEquals(Name.MESSAGE_TOO_LONG, Name.getConstraintMessage("A".repeat(Name.MAX_LENGTH + 1)));
+        assertEquals(Name.MESSAGE_TOO_LONG, Name.getConstraintMessage("@" + "A".repeat(Name.MAX_LENGTH)));
+        assertEquals(Name.MESSAGE_INVALID_START, Name.getConstraintMessage("-Amy"));
+        assertEquals(Name.MESSAGE_INVALID_START, Name.getConstraintMessage(" Amy"));
+        assertEquals(Name.MESSAGE_INVALID_START, Name.getConstraintMessage("\u0301Amy"));
+        assertEquals(Name.MESSAGE_INVALID_CHARACTERS, Name.getConstraintMessage("R@chel"));
+        assertEquals(Name.MESSAGE_INVALID_CHARACTERS, Name.getConstraintMessage("Amy\u2003Bee"));
+    }
+
+    @Test
+    public void messageInvalidCharacters_listsBothAcceptedApostrophes() {
+        assertTrue(Name.MESSAGE_INVALID_CHARACTERS.contains("apostrophes (' or \u2019)"));
+        assertTrue(Name.isValidName("O'Brien"));
+        assertTrue(Name.isValidName("O\u2019Brien"));
+    }
+
+    @Test
+    public void getConstraintMessage_validName_failsAssertion() {
+        assertThrows(AssertionError.class, () -> Name.getConstraintMessage("Amy Bee"));
+    }
+
+    @Test
+    public void constructor_invalidName_reportsSpecificMessage() {
+        assertThrows(IllegalArgumentException.class, Name.MESSAGE_INVALID_START, () -> new Name("-Amy"));
     }
 
     @Test
@@ -99,6 +124,34 @@ public class NameTest {
         assertEquals(Name.MAX_LENGTH + 1,
                 nameWith101CodePoints.codePointCount(0, nameWith101CodePoints.length()));
         assertThrows(IllegalArgumentException.class, () -> new Name(nameWith101CodePoints));
+    }
+
+    @Test
+    public void isValidName_invisibleOrBrokenCharacters_returnsFalse() {
+        String[] invalidNames = {
+            "Amy\u200BTan", // zero-width space
+            "Amy\u200DTan", // zero-width joiner
+            "Amy\uFEFFTan", // byte-order mark
+            "Amy\u202ETan", // right-to-left override
+            "Amy\u2066Tan\u2069", // bidi isolate
+            "Amy\u202FTan", // narrow no-break space
+            "Amy\u2007Tan", // figure space
+            "Amy\u0000Tan", // NUL
+            "Amy\uD800", // unpaired high surrogate
+            "Amy\uDC00", // unpaired low surrogate
+            "\u0301\u0302" // combining marks only
+        };
+        for (String name : invalidNames) {
+            assertFalse(Name.isValidName(name), name);
+        }
+    }
+
+    @Test
+    public void isValidName_lookalikeLettersFromOtherScripts_returnsTrue() {
+        // Names accept letters from any language, so lookalikes are valid but distinct spellings.
+        assertTrue(Name.isValidName("\u0410my Tan")); // Cyrillic capital A
+        assertTrue(Name.isValidName("\uFF21my Tan")); // full-width A
+        assertTrue(Name.isValidName("\u0391my Tan")); // Greek capital Alpha
     }
 
     @Test

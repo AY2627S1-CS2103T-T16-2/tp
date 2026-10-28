@@ -76,7 +76,7 @@ public class JsonTuitionBookStorage {
         boolean isConfiguredFile = isConfiguredFilePath(filePath);
 
         try {
-            Optional<JsonSerializableTuitionBook> jsonTuitionBook = JsonUtil.readJsonFile(
+            Optional<JsonSerializableTuitionBook> jsonTuitionBook = JsonUtil.readJsonFileRejectingUnknownFields(
                     filePath, JsonSerializableTuitionBook.class);
             if (jsonTuitionBook.isEmpty()) {
                 if (isConfiguredFile) {
@@ -155,7 +155,7 @@ public class JsonTuitionBookStorage {
         requireNonNull(filePath);
 
         if (isWriteBlocked && isConfiguredFilePath(filePath)) {
-            throw new IOException(String.format(MESSAGE_WRITE_BLOCKED, this.filePath));
+            throw new SaveBlockedException(String.format(MESSAGE_WRITE_BLOCKED, this.filePath));
         }
 
         Path absoluteFilePath = filePath.toAbsolutePath();

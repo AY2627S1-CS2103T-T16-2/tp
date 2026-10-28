@@ -49,18 +49,53 @@ public class StringUtil {
     }
 
     /**
-     * Returns true if {@code s} represents a non-zero unsigned integer
+     * Returns true if {@code s} contains only ASCII characters (U+0000 to U+007F).
+     *
+     * @throws NullPointerException if {@code s} is null.
+     */
+    public static boolean isAscii(String s) {
+        requireNonNull(s);
+        return s.chars().allMatch(c -> c < 0x80);
+    }
+
+    /** Returns whether {@code character} is an ASCII space, tab, LF, vertical tab, form feed or CR. */
+    public static boolean isAsciiWhitespace(char character) {
+        return character == ' ' || (character >= '\t' && character <= '\r');
+    }
+
+    /**
+     * Trims ASCII whitespace while preserving other controls and non-ASCII characters for validation.
+     * Unlike {@link String#trim()}, this never discards characters such as NUL or escape.
+     */
+    public static String trimAsciiWhitespace(String s) {
+        requireNonNull(s);
+        int start = 0;
+        int end = s.length();
+        while (start < end && isAsciiWhitespace(s.charAt(start))) {
+            start++;
+        }
+        while (end > start && isAsciiWhitespace(s.charAt(end - 1))) {
+            end--;
+        }
+        return s.substring(start, end);
+    }
+
+    /**
+     * Returns true if {@code s} represents a non-zero unsigned integer written with ASCII digits
      * e.g. 1, 2, 3, ..., {@code Integer.MAX_VALUE} <br>
      * Will return false for any other non-null string input
-     * e.g. empty string, "-1", "0", "+1", and " 2 " (untrimmed), "3 0" (contains whitespace), "1 a" (contains letters)
+     * e.g. empty string, "-1", "0", "+1", and " 2 " (untrimmed), "3 0" (contains whitespace), "1 a" (contains letters),
+     * and non-ASCII digits such as full-width or Arabic-Indic digits that {@link Integer#parseInt(String)} accepts.
      * @throws NullPointerException if {@code s} is null.
      */
     public static boolean isNonZeroUnsignedInteger(String s) {
         requireNonNull(s);
+        if (s.isEmpty() || !s.chars().allMatch(c -> c >= '0' && c <= '9')) {
+            return false;
+        }
 
         try {
-            int value = Integer.parseInt(s);
-            return value > 0 && !s.startsWith("+"); // "+1" is successfully parsed by Integer#parseInt(String)
+            return Integer.parseInt(s) > 0;
         } catch (NumberFormatException nfe) {
             return false;
         }
