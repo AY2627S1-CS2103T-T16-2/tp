@@ -49,6 +49,13 @@ public class TagTest {
     }
 
     @Test
+    public void messageInvalidCharacters_coversKeyboardSymbolsButNotOtherPunctuation() {
+        assertTrue(Tag.isValidTagName("$+=@^|~"));
+        assertTrue(Tag.MESSAGE_INVALID_CHARACTERS.contains("punctuation and symbols from a standard English keyboard"));
+        assertEquals(Tag.MESSAGE_INVALID_CHARACTERS, Tag.getConstraintMessage("Math\u2014Science"));
+    }
+
+    @Test
     public void getConstraintMessage_validTagName_failsAssertion() {
         assertThrows(AssertionError.class, () -> Tag.getConstraintMessage("Math"));
     }
