@@ -12,7 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  * Represents an error during loading of data from a file.
  */
 public class DataLoadingException extends Exception {
-    private static final int MAX_GUIDANCE_DETAIL_LENGTH = 200;
+    private static final int MAX_GUIDANCE_DETAIL_LENGTH = 320;
     private final Path malformedFileBackupPath;
 
     /**

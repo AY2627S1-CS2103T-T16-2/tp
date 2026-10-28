@@ -27,6 +27,7 @@ import seedu.tuitionbook.model.person.Role;
 class JsonSerializableTuitionBook {
 
     public static final String MESSAGE_CONTACT_PREFIX = "Contact %d in the file: %s";
+    public static final String MESSAGE_NAMED_CONTACT_PREFIX = "Contact %d in the file (\"%s\"): %s";
     public static final String MESSAGE_DUPLICATE_PERSON =
             "Contact %d in the file has the same role, name and phone number as contact %d.";
     public static final String MESSAGE_DUPLICATE_ID = "Contact %d in the file has the same \"id\" as contact %d. "
@@ -120,7 +121,8 @@ class JsonSerializableTuitionBook {
     }
 
     /**
-     * Converts the contact at the given 1-based {@code position}, naming that position in any error message.
+     * Converts the contact at the given 1-based {@code position}, naming that position, and the contact's name
+     * when it is valid, in any error message.
      */
     private static JsonAdaptedPerson.PersonLoadResult convertContact(JsonAdaptedPerson jsonAdaptedPerson,
             int position) throws IllegalValueException {
@@ -130,7 +132,10 @@ class JsonSerializableTuitionBook {
         try {
             return jsonAdaptedPerson.toModelTypeWithResult();
         } catch (IllegalValueException ive) {
-            throw new IllegalValueException(String.format(MESSAGE_CONTACT_PREFIX, position, ive.getMessage()), ive);
+            String message = jsonAdaptedPerson.getValidName()
+                    .map(name -> String.format(MESSAGE_NAMED_CONTACT_PREFIX, position, name, ive.getMessage()))
+                    .orElseGet(() -> String.format(MESSAGE_CONTACT_PREFIX, position, ive.getMessage()));
+            throw new IllegalValueException(message, ive);
         }
     }
 
