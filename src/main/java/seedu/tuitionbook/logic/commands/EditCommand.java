@@ -52,7 +52,7 @@ public class EditCommand extends Command {
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
     public static final String MESSAGE_NO_CHANGE =
-            "No changes made: the specified values already match %1$s.";
+            "No changes made: the specified values already match %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_ROLE_NOT_EDITABLE =
             "A contact's role cannot be changed after it is added.";
