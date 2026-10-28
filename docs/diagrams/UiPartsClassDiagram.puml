@@ -36,9 +36,12 @@ MainWindow ..> StatusBarFooter : <<create>>
 CommandBox ..> CommandTextField : FXML injects
 
 note right of UiPart
-All UI parts in this diagram
-inherit from UiPart.
+CommandTextField and DesktopAdapter
+do not inherit from UiPart.
+
+All other UI parts inherit form UiPart
 end note
+
 
 PersonListPanel ..> PersonCard : <<create>>
 PersonListPanel --> "*" Person : working set and complete list

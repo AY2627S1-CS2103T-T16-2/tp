@@ -38,7 +38,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
-- Split the UI UML documentation into a component overview and a detailed UI-parts diagram with explicit inheritance relationships while retaining standard UML notation.
+- Split the UI UML documentation into a component overview and a detailed UI-parts diagram with a note documenting the relevant inheritance relationships while retaining standard UML notation.
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
 - Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).
 - Trim surrounding ASCII spaces from tags loaded from JSON, making previously padded tags addressable through `list`, `tag`, and `untag` while preserving significant internal spaces; tags that differ only by surrounding spaces are merged into one (#185).
