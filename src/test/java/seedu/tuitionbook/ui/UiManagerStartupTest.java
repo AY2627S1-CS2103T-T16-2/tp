@@ -48,6 +48,7 @@ import javafx.stage.Window;
 import seedu.tuitionbook.logic.Logic;
 import seedu.tuitionbook.logic.LogicManager;
 import seedu.tuitionbook.model.ModelManager;
+import seedu.tuitionbook.model.person.Email;
 import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
@@ -63,14 +64,17 @@ public class UiManagerStartupTest {
     private static final double EXPECTED_UI_SCALE = 1.5;
     private static final String UI_SCALE_REPORT_DIRECTORY_ENV = "TUITIONBOOK_UI_SCALE_REPORT_DIR";
     private static final String INVALID_JSON_GUIDANCE = "The data file is not in a format TuitionBook can read. "
-            + "Check the preserved file for mistakes such as a missing comma, quote or bracket, and save it as "
+            + "Check the data file for mistakes such as a missing comma, quote or bracket, and save it as "
             + "UTF-8 text before trying again.";
     private static final String PERMISSION_GUIDANCE = "TuitionBook did not have permission to read the data file. "
-            + "Restore read permission on the preserved file before trying again.";
+            + "Restore read permission on the data file before trying again.";
     private static final String FILE_SYSTEM_GUIDANCE = "The data file could not be read because of a file-system "
-            + "error. Check access to the preserved file before trying again.";
+            + "error. Check access to the data file before trying again.";
     private static final String INVALID_CONTACT_GUIDANCE = "The file contains invalid contact data. "
             + "Contact 3 in the file: Missing \"name\" value.";
+    private static final String LONG_EMAIL_VALIDATION_GUIDANCE = "The file contains invalid contact data. "
+            + "Contact 9999 in the file (\"" + "A".repeat(100) + "\"): "
+            + Email.MESSAGE_INVALID_NAME_CHARACTERS;
 
     @TempDir
     public Path testFolder;
@@ -92,7 +96,7 @@ public class UiManagerStartupTest {
     public void loadFailure_showsWarningWithRecoveryAction() throws Exception {
         Path backupPath = testFolder.resolve("contacts.json.backup.1");
         assertStartupDialog(StartupNotice.loadFailedBackedUp(backupPath), "Contact data could not be loaded",
-                "Your contacts are safe in a backup", "The data file could not be read.",
+                "Your contacts are safe in a backup", "Your data file could not be read.",
                 "warning");
     }
 
@@ -129,17 +133,18 @@ public class UiManagerStartupTest {
     }
 
     @Test
-    public void loadFailure_backupFailureShowsWarningWithBlockedSavingAction() throws Exception {
-        assertStartupDialog(StartupNotice.loadFailedBackupFailed(), "Contact data could not be loaded",
-                "Saving is paused to protect your data file", "The data file could not be read.",
+    public void loadFailure_longBackupPath_keepsFullPathInSeparateParagraph() throws Exception {
+        Path backupPath = testFolder.resolve("a".repeat(60)).resolve("b".repeat(60))
+                .resolve("contacts.json.backup.12");
+        assertStartupDialog(StartupNotice.loadFailedBackedUp(backupPath, PERMISSION_GUIDANCE),
+                "Contact data could not be loaded", "Your contacts are safe in a backup", PERMISSION_GUIDANCE,
                 "warning");
     }
 
     @Test
-    public void permissionLoadFailure_backedUpShowsPermissionRecoveryAction() throws Exception {
-        Path backupPath = testFolder.resolve("contacts.json.backup.1");
-        assertStartupDialog(StartupNotice.loadFailedBackedUp(backupPath, PERMISSION_GUIDANCE),
-                "Contact data could not be loaded", "Your contacts are safe in a backup", PERMISSION_GUIDANCE,
+    public void loadFailure_backupFailureShowsWarningWithBlockedSavingAction() throws Exception {
+        assertStartupDialog(StartupNotice.loadFailedBackupFailed(), "Contact data could not be loaded",
+                "Saving is paused to protect your data file", "Your data file could not be read.",
                 "warning");
     }
 
@@ -173,15 +178,66 @@ public class UiManagerStartupTest {
         Path longDataPath = longDataFilePath();
         Path longBackupPath = longDataPath.resolveSibling(longDataPath.getFileName() + ".backup.123");
         assertExpandedLoadFailureFitsCompactVisualBounds(longDataPath,
-                StartupNotice.loadFailedBackedUp(longBackupPath, INVALID_CONTACT_GUIDANCE),
+                StartupNotice.loadFailedBackedUp(longBackupPath, LONG_EMAIL_VALIDATION_GUIDANCE),
                 "successful-backup");
     }
 
     @Test
     public void backupFailedLoadFailure_expandedDetailsFitCompactVisualBounds() throws Exception {
         assertExpandedLoadFailureFitsCompactVisualBounds(longDataFilePath(),
-                StartupNotice.loadFailedBackupFailed(INVALID_CONTACT_GUIDANCE),
+                StartupNotice.loadFailedBackupFailed(LONG_EMAIL_VALIDATION_GUIDANCE),
                 "backup-failure");
+    }
+
+    @Test
+    public void fitLoadFailureDialogWithin_syntheticCompactBounds_fitsDeterministically() throws Exception {
+        AtomicReference<Stage> owner = new AtomicReference<>();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        CountDownLatch inspected = new CountDownLatch(1);
+        Path backupPath = longDataFilePath().resolveSibling("tuitionbook.json.backup.123");
+
+        Platform.runLater(() -> Platform.runLater(() -> {
+            try {
+                Stage stage = new Stage();
+                owner.set(stage);
+                new UiManager(logic(), longDataFilePath(), Optional.of(
+                        StartupNotice.loadFailedBackedUp(backupPath, LONG_EMAIL_VALIDATION_GUIDANCE))).start(stage);
+            } catch (Throwable throwable) {
+                failure.set(throwable);
+            }
+        }));
+        Platform.runLater(() -> Platform.runLater(() -> {
+            try {
+                DialogPane pane = findDialogPane();
+                Stage dialogStage = (Stage) pane.getScene().getWindow();
+                TitledPane recoveryDetails = (TitledPane) pane.lookup("#recoveryDetails");
+                recoveryDetails.setExpanded(true);
+                pane.applyCss();
+                pane.layout();
+                UiManager.fitLoadFailureDialogWithin(dialogStage, COMPACT_VISUAL_BOUNDS);
+                pane.applyCss();
+                pane.layout();
+                assertWindowWithin(dialogStage, COMPACT_VISUAL_BOUNDS);
+                assertWrappedLabelFullyAllocated((Label) pane.lookup("#loadFailureBody"));
+                assertWrappedLabelFullyAllocated((Label) pane.lookup("#loadFailureOutcome"));
+                pane.getScene().getWindow().hide();
+            } catch (Throwable throwable) {
+                failure.set(throwable);
+            } finally {
+                inspected.countDown();
+            }
+        }));
+
+        assertTrue(inspected.await(10, TimeUnit.SECONDS), "Synthetic compact dialog was not inspected in time");
+        try {
+            if (failure.get() != null) {
+                throw new AssertionError(failure.get());
+            }
+        } finally {
+            if (owner.get() != null) {
+                JavaFxTestUtil.runOnFxThread(owner.get()::close);
+            }
+        }
     }
 
     @Test
@@ -389,7 +445,7 @@ public class UiManagerStartupTest {
                 failure.set(throwable);
             }
         });
-        Platform.runLater(() -> {
+        Platform.runLater(() -> Platform.runLater(() -> {
             try {
                 DialogPane pane = findDialogPane();
                 assertTrue(owner.get().isShowing());
@@ -436,7 +492,7 @@ public class UiManagerStartupTest {
             } finally {
                 inspected.countDown();
             }
-        });
+        }));
 
         assertTrue(inspected.await(10, TimeUnit.SECONDS), "Startup dialog was not inspected in time");
         try {
@@ -479,17 +535,19 @@ public class UiManagerStartupTest {
         assertTrue(dialogStage.getMinHeight() > 0);
         assertTrue(pane.getStyleClass().contains("startup-load-failure-dialog"));
         assertTrue(body.isWrapText());
+        assertEquals(javafx.scene.layout.Region.USE_PREF_SIZE, body.getMinHeight());
         assertTrue(body.getText().contains(expectedCause));
         assertTrue(body.getText().contains("started with an empty contact list"));
         assertFalse(body.getFont().getStyle().toLowerCase().contains("bold"));
         assertTrue(outcome.isWrapText());
+        assertEquals(javafx.scene.layout.Region.USE_PREF_SIZE, outcome.getMinHeight());
         assertEquals("Recovery details", recoveryDetails.getText());
         assertFalse(recoveryDetails.isExpanded());
         assertTrue(recoveryDetails.getContent() instanceof ScrollPane);
         ScrollPane detailsScroller = (ScrollPane) recoveryDetails.getContent();
         assertTrue(detailsScroller.isFitToWidth());
         assertTrue(recoverySteps.isWrapText());
-        assertTrue(recoverySteps.getText().contains("1. Close TuitionBook"));
+        assertTrue(recoverySteps.getText().startsWith("1. "));
         assertNull(pane.lookup("#loadFailureDetails"));
 
         Path displayedDataFilePath = configuredDataFilePath.toAbsolutePath().normalize();
@@ -504,11 +562,13 @@ public class UiManagerStartupTest {
             assertTrue(outcome.getText().contains("preserved unchanged"));
             assertTrue(outcome.getText().contains("cannot be merged automatically"));
             assertTrue(recoverySteps.getText().contains(
-                    "2. If there’s a new data file, copy it somewhere safe."));
+                    "2. If there is a new data file, copy it somewhere safe."));
             assertTrue(recoverySteps.getText().contains(
-                    "3. Fix the problem described above in the backup file."));
+                    "1. Fix the problem described above in the backup file."));
             assertTrue(recoverySteps.getText().contains(
-                    "6. Re-enter any contacts you added since the problem started."));
+                    "5. Either enter reload while TuitionBook remains open, or close and restart TuitionBook."));
+            assertTrue(recoverySteps.getText().contains(
+                    "6. Re-enter contacts that existed only in the separately saved new file as needed."));
             assertFalse(body.getText().contains(displayedDataFilePath.toString()));
             assertFalse(outcome.getText().contains(displayedDataFilePath.toString()));
             assertFalse(recoverySteps.getText().contains(displayedDataFilePath.toString()));
@@ -518,6 +578,7 @@ public class UiManagerStartupTest {
             assertEquals("Original file remains at", originalPath.getAccessibleText());
             assertTrue(outcome.getText().contains("Saving is disabled"));
             assertTrue(recoverySteps.getText().contains("Correct or move the original data file"));
+            assertTrue(recoverySteps.getText().contains("If TuitionBook remains open, enter reload"));
             assertFalse(body.getText().contains(displayedDataFilePath.toString()));
             assertFalse(outcome.getText().contains(displayedDataFilePath.toString()));
             assertFalse(recoverySteps.getText().contains(displayedDataFilePath.toString()));
@@ -546,104 +607,37 @@ public class UiManagerStartupTest {
                 failure.set(throwable);
             }
         });
-        Platform.runLater(() -> {
+        Platform.runLater(() -> Platform.runLater(() -> {
             try {
                 DialogPane pane = findDialogPane();
                 Stage dialogStage = (Stage) pane.getScene().getWindow();
                 TitledPane recoveryDetails = (TitledPane) pane.lookup("#recoveryDetails");
                 ScrollPane detailsScroller = (ScrollPane) recoveryDetails.getContent();
-                Rectangle2D verificationBounds = isScaleVerificationEnabled()
-                        ? Screen.getPrimary().getVisualBounds()
-                        : COMPACT_VISUAL_BOUNDS;
+                Rectangle2D verificationBounds = Screen.getPrimary().getVisualBounds();
 
                 pane.applyCss();
                 pane.layout();
+                assertActualDialogState(pane, dialogStage, recoveryDetails, detailsScroller,
+                        verificationBounds, false);
                 if (isScaleVerificationEnabled()) {
                     assertScaledDisplayEnvironment(dialogStage);
                     recordScaleMeasurements(pane, dialogStage, recoveryDetails, detailsScroller,
                             artifactPrefix, "collapsed");
                     snapshotDialog(pane, artifactPrefix + "-collapsed.png");
-                    assertActualDialogState(pane, dialogStage, recoveryDetails, detailsScroller,
-                            verificationBounds, false);
                 }
 
                 recoveryDetails.setExpanded(true);
-                pane.applyCss();
-                pane.layout();
-                dialogStage.sizeToScene();
-                UiManager.fitLoadFailureDialogWithin(dialogStage, verificationBounds);
-                pane.applyCss();
-                pane.layout();
-                if (isScaleVerificationEnabled()) {
-                    recordScaleMeasurements(pane, dialogStage, recoveryDetails, detailsScroller,
-                            artifactPrefix, "expanded");
-                    snapshotDialog(pane, artifactPrefix + "-expanded.png");
-                    assertActualDialogState(pane, dialogStage, recoveryDetails, detailsScroller,
-                            verificationBounds, true);
-                }
-
-                Runnable inspectResizedDialog = () -> {
-                    try {
-                        pane.applyCss();
-                        pane.layout();
-                        assertWindowWithin(dialogStage, verificationBounds);
-                        assertTrue(dialogStage.getMinWidth() <= verificationBounds.getWidth());
-                        assertTrue(dialogStage.getMinHeight() <= verificationBounds.getHeight());
-                        assertTrue(detailsScroller.getViewportBounds().getWidth() > 0);
-                        assertTrue(detailsScroller.getViewportBounds().getHeight() >= 50);
-                        assertTrue(detailsScroller.getContent().getLayoutBounds().getHeight()
-                                > detailsScroller.getViewportBounds().getHeight());
-                        assertEquals(ScrollPane.ScrollBarPolicy.NEVER, detailsScroller.getHbarPolicy());
-                        assertTrue(detailsScroller.getContent().getLayoutBounds().getWidth()
-                                <= detailsScroller.getViewportBounds().getWidth() + LAYOUT_TOLERANCE);
-                        Label body = (Label) pane.lookup("#loadFailureBody");
-                        Label outcome = (Label) pane.lookup("#loadFailureOutcome");
-                        assertTrue(body.isVisible());
-                        assertTrue(outcome.isVisible());
-                        assertNodeWithinScene(body, pane);
-                        assertNodeWithinScene(outcome, pane);
-
-                        Button okButton = (Button) pane.lookupButton(ButtonType.OK);
-                        assertTrue(okButton.isVisible());
-                        assertTrue(okButton.isFocusTraversable());
-                        assertNodeWithinScene(okButton, pane);
-                        assertFalse(isDescendantOf(okButton, detailsScroller));
-                        okButton.requestFocus();
-                        assertEquals(okButton, pane.getScene().getFocusOwner());
-
-                        if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
-                            assertPathReachable(detailsScroller, (TextField) pane.lookup("#backupFilePath"));
-                            assertPathReachable(detailsScroller, (TextField) pane.lookup("#newDataFilePath"));
-                        } else {
-                            assertPathReachable(detailsScroller, (TextField) pane.lookup("#originalFilePath"));
-                        }
-                        if (isScaleVerificationEnabled()) {
-                            recordScaleMeasurements(pane, dialogStage, recoveryDetails, detailsScroller,
-                                    artifactPrefix, "resized-smaller");
-                        }
-                        pane.getScene().getWindow().hide();
-                    } catch (Throwable throwable) {
-                        failure.set(throwable);
-                    } finally {
-                        inspected.countDown();
-                    }
-                };
                 Platform.runLater(() -> {
-                    try {
-                        dialogStage.setWidth(Math.max(dialogStage.getMinWidth(), dialogStage.getWidth() - 80));
-                        dialogStage.setHeight(Math.max(dialogStage.getMinHeight(), dialogStage.getHeight() - 60));
-                        UiManager.fitLoadFailureDialogWithin(dialogStage, verificationBounds);
-                        Platform.runLater(inspectResizedDialog);
-                    } catch (Throwable throwable) {
-                        failure.set(throwable);
-                        inspected.countDown();
-                    }
+                    // The production expansion listener is queued before this callback. Wait one more pulse before
+                    // inspecting so this user-path test fails if that listener is removed or broken.
+                    Platform.runLater(() -> inspectExpandedAndResizedDialog(pane, dialogStage, recoveryDetails,
+                            detailsScroller, verificationBounds, notice, artifactPrefix, failure, inspected));
                 });
             } catch (Throwable throwable) {
                 failure.set(throwable);
                 inspected.countDown();
             }
-        });
+        }));
 
         assertTrue(inspected.await(10, TimeUnit.SECONDS), "Compact startup dialog was not inspected in time");
         try {
@@ -655,6 +649,68 @@ public class UiManagerStartupTest {
                 JavaFxTestUtil.runOnFxThread(owner.get()::close);
             }
         }
+    }
+
+    private void inspectExpandedAndResizedDialog(DialogPane pane, Stage dialogStage,
+                                                  TitledPane recoveryDetails, ScrollPane detailsScroller,
+                                                  Rectangle2D verificationBounds, StartupNotice notice,
+                                                  String artifactPrefix, AtomicReference<Throwable> failure,
+                                                  CountDownLatch inspected) {
+        try {
+            pane.applyCss();
+            pane.layout();
+            assertActualDialogState(pane, dialogStage, recoveryDetails, detailsScroller,
+                    verificationBounds, true);
+            assertContentAwareRecoveryViewport(detailsScroller);
+            if (isScaleVerificationEnabled()) {
+                recordScaleMeasurements(pane, dialogStage, recoveryDetails, detailsScroller,
+                        artifactPrefix, "expanded");
+                snapshotDialog(pane, artifactPrefix + "-expanded.png");
+            }
+
+            dialogStage.setWidth(536);
+            dialogStage.setHeight(420);
+            Platform.runLater(() -> {
+                try {
+                    pane.applyCss();
+                    pane.layout();
+                    assertActualDialogState(pane, dialogStage, recoveryDetails, detailsScroller,
+                            verificationBounds, true);
+                    assertContentAwareRecoveryViewport(detailsScroller);
+                    assertTrue(dialogStage.getMinWidth() <= verificationBounds.getWidth());
+                    assertTrue(dialogStage.getMinHeight() <= verificationBounds.getHeight());
+
+                    if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
+                        assertPathReachable(detailsScroller, (TextField) pane.lookup("#backupFilePath"));
+                        assertPathReachable(detailsScroller, (TextField) pane.lookup("#newDataFilePath"));
+                    } else {
+                        assertPathReachable(detailsScroller, (TextField) pane.lookup("#originalFilePath"));
+                    }
+                    if (isScaleVerificationEnabled()) {
+                        recordScaleMeasurements(pane, dialogStage, recoveryDetails, detailsScroller,
+                                artifactPrefix, "resized-smaller");
+                    }
+                    pane.getScene().getWindow().hide();
+                } catch (Throwable throwable) {
+                    failure.set(throwable);
+                } finally {
+                    inspected.countDown();
+                }
+            });
+        } catch (Throwable throwable) {
+            failure.set(throwable);
+            inspected.countDown();
+        }
+    }
+
+    private void assertContentAwareRecoveryViewport(ScrollPane detailsScroller) {
+        assertTrue(detailsScroller.getViewportBounds().getWidth() > 0);
+        assertTrue(detailsScroller.getViewportBounds().getHeight() >= 50);
+        assertTrue(detailsScroller.getViewportBounds().getHeight()
+                <= detailsScroller.getContent().getLayoutBounds().getHeight() + LAYOUT_TOLERANCE);
+        assertEquals(ScrollPane.ScrollBarPolicy.NEVER, detailsScroller.getHbarPolicy());
+        assertTrue(detailsScroller.getContent().getLayoutBounds().getWidth()
+                <= detailsScroller.getViewportBounds().getWidth() + LAYOUT_TOLERANCE);
     }
 
     private void assertScaledDisplayEnvironment(Stage dialogStage) {
@@ -685,6 +741,8 @@ public class UiManagerStartupTest {
         assertTrue(outcome.isVisible());
         assertNodeWithinScene(body, pane);
         assertNodeWithinScene(outcome, pane);
+        assertWrappedLabelFullyAllocated(body);
+        assertWrappedLabelFullyAllocated(outcome);
         assertTrue(okButton.isVisible());
         assertTrue(okButton.isFocusTraversable());
         assertNodeWithinScene(okButton, pane);
@@ -699,12 +757,21 @@ public class UiManagerStartupTest {
         }
     }
 
+    private void assertWrappedLabelFullyAllocated(Label label) {
+        double preferredWrappedHeight = label.prefHeight(label.getWidth());
+        assertTrue(label.getHeight() + LAYOUT_TOLERANCE >= preferredWrappedHeight, () ->
+                label.getId() + " is vertically clipped: allocated=" + label.getHeight()
+                        + ", preferred=" + preferredWrappedHeight + ", width=" + label.getWidth());
+    }
+
     private void recordScaleMeasurements(DialogPane pane, Stage dialogStage, TitledPane recoveryDetails,
                                          ScrollPane detailsScroller, String artifactPrefix, String state)
             throws IOException {
         Rectangle2D screenBounds = Screen.getPrimary().getBounds();
         Rectangle2D visualBounds = Screen.getPrimary().getVisualBounds();
         Button okButton = (Button) pane.lookupButton(ButtonType.OK);
+        Label body = (Label) pane.lookup("#loadFailureBody");
+        Label outcome = (Label) pane.lookup("#loadFailureOutcome");
         Node viewport = detailsScroller.lookup(".viewport");
         String report = String.format(
                 "%s %s%n"
@@ -714,6 +781,8 @@ public class UiManagerStartupTest {
                         + "dialog.stage=[x=%.2f,y=%.2f,width=%.2f,height=%.2f]%n"
                         + "dialog.outputScale=[x=%.2f,y=%.2f]%n"
                         + "dialog.scene=[width=%.2f,height=%.2f]%n"
+                        + "body=[allocatedHeight=%.2f,preferredWrappedHeight=%.2f,width=%.2f]%n"
+                        + "outcome=[allocatedHeight=%.2f,preferredWrappedHeight=%.2f,width=%.2f]%n"
                         + "okButton.screenBounds=%s%n"
                         + "recoveryDetails.screenBounds=%s%n"
                         + "recoveryViewport.screenBounds=%s%n%n",
@@ -724,6 +793,8 @@ public class UiManagerStartupTest {
                 dialogStage.getX(), dialogStage.getY(), dialogStage.getWidth(), dialogStage.getHeight(),
                 dialogStage.getOutputScaleX(), dialogStage.getOutputScaleY(),
                 pane.getScene().getWidth(), pane.getScene().getHeight(),
+                body.getHeight(), body.prefHeight(body.getWidth()), body.getWidth(),
+                outcome.getHeight(), outcome.prefHeight(outcome.getWidth()), outcome.getWidth(),
                 format(okButton.localToScreen(okButton.getBoundsInLocal())),
                 format(recoveryDetails.localToScreen(recoveryDetails.getBoundsInLocal())),
                 viewport == null ? "not-visible" : format(viewport.localToScreen(viewport.getBoundsInLocal())));
@@ -852,20 +923,20 @@ public class UiManagerStartupTest {
     private String getExpectedResultMessage(StartupNotice notice) {
         Path displayedDataFilePath = dataFilePath().toAbsolutePath().normalize();
         String description = notice.loadFailureGuidance() == null
-                ? "The data file could not be read."
+                ? "Your data file could not be read."
                 : notice.loadFailureGuidance();
         if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
             return description + "\nBackup file: "
                     + notice.malformedFileBackupPath().toAbsolutePath().normalize() + ".\nNew contacts save to "
                     + displayedDataFilePath
-                    + " and cannot be merged automatically with the backup file.\nBefore restoring, close "
-                    + "TuitionBook and copy any new data file somewhere safe. Fix the problem described above in "
-                    + "the backup file. Replace the new data file with the corrected backup file, then restart "
-                    + "TuitionBook.";
+                    + " and cannot be merged automatically with the backup file.\nFix the problem in the backup "
+                    + "file. If a new data file exists, copy it somewhere safe, then replace it with the corrected "
+                    + "backup. Enter reload while TuitionBook remains open, or close and restart TuitionBook. "
+                    + "Re-enter contacts that existed only in the separately saved new file as needed.";
         }
         return description + "\nThe original file could not be backed up and remains at " + displayedDataFilePath
-                + ".\nSaving is disabled. Close TuitionBook, correct or move the original file, then restart "
-                + "TuitionBook.";
+                + ".\nSaving is disabled. Correct or move the original file, then enter reload while TuitionBook "
+                + "remains open, or close and restart TuitionBook.";
     }
 
     private GuardianLinkRepair repair(String personName) {

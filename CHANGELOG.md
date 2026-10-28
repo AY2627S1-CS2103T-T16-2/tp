@@ -17,6 +17,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Accept the full unquoted ASCII email local-part character set, including punctuation at either end, while rejecting leading, trailing and consecutive periods, spaces and double quotes; retain the email length limits and domain rules, and clarify how emails containing field-like text such as `t/` are entered.
 - Consolidated the Developer Guide's AI acknowledgement to identify Codex and Claude, their extensive use in TuitionBook-specific development, and human oversight through team code review (#149).
 - Added assertions that execution-dependent save decisions are queried only after a command execution attempt and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
 - Clarify separate workflows for routine manual file edits with TuitionBook closed and load recovery using `reload` while it stays open, including backup precautions, replacement of in-memory contacts, and filter reset; align the DG manual tests (#196).
@@ -34,15 +35,23 @@ The format is based on Keep a Changelog.
 - Clarified that names accept ordinary ASCII spaces (U+0020), rather than every Unicode whitespace character.
 - Shortened invalid name, phone, email, address and tag errors into user-facing messages that report the specific rule broken, and removed quoted-value guidance from the `add`, `edit`, `list`, `tag` and `untag` usage messages (#269).
 - Reworded unknown-field, repeated-field, quote, unusual-space, line-break, `g/` in `add`, `find` usage and save-failure messages in plain language without character codes; save failures now explain that the command was undone instead of showing raw system errors (#269).
+- Rewrote the User Guide in plain language for tutors, replacing character codes and technical terms with everyday wording, and added a tip explaining when to wrap names, addresses and tags in double quotes (#269).
 - Rewrote the Help window's command summary in plain language, with a short guide to reading the command formats and a section on when to use double quotes (#269).
 - Data-file load errors now name the affected contact by its position in the file, use the file's own key names such as `"name"` and `"tags"`, and describe unreadable JSON in plain language (#269).
 - Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
 - Preserve an ordered contact working set across edit, tag, untag, link and unlink; retain and mark contacts that stop matching with canonical refresh commands, append matching additions, explain hidden additions, and warn when deletion compacts indexes. Explicit queries refresh membership; reload, clear and restart reset it. Save failures restore exact membership, order and query (#187).
 - Clarified the supported `guardianId` JSON value types and the difference between link repair and whole-file recovery.
+- Split the unreadable-data startup warning into separate paragraphs for the problem, the preserved or unpreserved file location, and the recovery steps, so long file paths no longer bury the guidance (#286).
 
 ### Fixed
 
+- Reject lookalike and invisible characters at command-syntax boundaries: non-ASCII digits are no longer accepted as indexes (so `delete １` no longer deletes contact 1), a Kelvin-sign `linK` no longer runs `link`, `ſtudent`/`guardıan` are no longer accepted as roles, and every Unicode or zero-width space in command words and indexes now shows the unusual-space hint (#142).
+- Reject addresses containing unpaired surrogates, which were silently saved as `?`, or embedded control characters other than tabs, and stop treating combining marks alone as visible address content (#142).
+- Reject hidden control characters before command trimming and preserve them through field and role validation, preventing control-padded indexes from executing and control-only optional fields from being cleared; ordinary whitespace and intentionally empty fields retain their existing behavior (#142).
+- Report when `edit` leaves all contact values unchanged instead of claiming the contact was edited, including repeated values, clearing already-empty fields, and reordered identical tag sets; unchanged edits continue to skip saving.
+- Split the dense Developer Guide parser diagram into focused dispatch and utility views, moving explanatory notes and command inheritance into prose (#225).
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).
+- Name the affected contact, when its name is valid, alongside its position in data-file load errors such as an invalid email, and tell users they can enter `reload` instead of only restarting after recovering the data file (#277).
 - Allowed a student and guardian to share the same normalized name and phone number while retaining duplicate rejection within each role (#271).
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
 - Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).
@@ -62,6 +71,7 @@ The format is based on Keep a Changelog.
 - Scroll the contact list to a newly added contact until it is visible, then stop retrying so manual scrolling is not overridden.
 - Use locale-independent, case-insensitive alphabetical ordering for tags in contact cards and detailed views.
 - Render detailed-view tags with brackets and escape literal backslashes and square brackets.
+- Escape literal backslashes and square brackets in tags shown by `add`, `edit` and `delete` confirmations, as `view` does, so a single tag such as `first][second` is no longer indistinguishable from the two tags `first` and `second` (#268).
 - Keep the current screen visible when a command fails instead of forcing a return to the contact list.
 - Give bare and invalid `clear` confirmations distinct guidance without changing `clear confirm` behaviour.
 - Reject extra arguments to `help` and `exit`, consistently with `reload`, rather than opening Help or exiting unexpectedly.

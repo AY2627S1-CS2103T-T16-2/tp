@@ -66,6 +66,43 @@ public class AddressTest {
     }
 
     @Test
+    public void isValidAddress_combiningMarksOnly_returnsFalse() {
+        assertFalse(Address.isValidAddress("\u0301")); // combining acute accent
+        assertFalse(Address.isValidAddress("\u0301\u0302 \u20DD")); // non-spacing and enclosing marks
+        assertFalse(Address.isValidAddress("\u0903")); // Devanagari spacing mark without a base letter
+        assertEquals(Address.MESSAGE_BLANK, Address.getConstraintMessage("\u0301"));
+    }
+
+    @Test
+    public void isValidAddress_embeddedControlCharacters_returnsFalse() {
+        for (String address : new String[] {"Blk\u0000 1", "Blk 1\u0007", "Blk\u001B[31m 1", "Blk\u009B 1",
+            "Blk\u007F 1"}) {
+            assertFalse(Address.isValidAddress(address), address);
+            assertEquals(Address.MESSAGE_INVALID_CHARACTERS, Address.getConstraintMessage(address));
+        }
+        assertTrue(Address.isValidAddress("Blk 12\tMain Street")); // tabs remain accepted
+    }
+
+    @Test
+    public void isValidAddress_unpairedSurrogates_returnsFalse() {
+        for (String address : new String[] {"Blk\uD800 1", "Blk\uDC00 1", "Blk 1\uD83D", "\uDE00Blk 1"}) {
+            assertFalse(Address.isValidAddress(address));
+            assertEquals(Address.MESSAGE_INVALID_CHARACTERS, Address.getConstraintMessage(address));
+            assertThrows(IllegalArgumentException.class, Address.MESSAGE_INVALID_CHARACTERS, () ->
+                    new Address(address));
+        }
+        assertFalse(Address.isValidAddress("\uD800"));
+        assertTrue(Address.isValidAddress("Blk \uD83D\uDE00 1")); // a complete surrogate pair is accepted
+    }
+
+    @Test
+    public void isValidAddress_unicodeSpacesBetweenVisibleText_returnsTrue() {
+        for (String space : new String[] {"\u00a0", "\u2007", "\u202f", "\u2003", "\u3000", "\u200b", "\ufeff"}) {
+            assertTrue(Address.isValidAddress("Blk" + space + "1"));
+        }
+    }
+
+    @Test
     public void isValidAddress_visibleUnicodeWithCombiningOrFormatCharacters_returnsTrue() {
         assertTrue(Address.isValidAddress("李小龙街 12号"));
         assertTrue(Address.isValidAddress("Cafe\u0301 Road"));

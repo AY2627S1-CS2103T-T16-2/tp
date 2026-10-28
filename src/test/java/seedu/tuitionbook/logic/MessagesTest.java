@@ -1,11 +1,14 @@
 package seedu.tuitionbook.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
+import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
 public class MessagesTest {
@@ -36,6 +39,30 @@ public class MessagesTest {
         Person person = new PersonBuilder().withoutEmail().withoutAddress().withTags().build();
 
         assertEquals("Amy Bee; Role: STUDENT; Phone: 85355255; Email: -; Address: -; Tags: ", Messages.format(person));
+    }
+
+    @Test
+    public void format_plainTag_displaysTagUnchanged() {
+        Person person = new PersonBuilder().withoutEmail().withoutAddress().withTags("Sec 4").build();
+
+        assertEquals("Amy Bee; Role: STUDENT; Phone: 85355255; Email: -; Address: -; Tags: [Sec 4]",
+                Messages.format(person));
+    }
+
+    @Test
+    public void format_tagContainingBrackets_distinguishableFromSeparateTags() {
+        Person oneTag = new PersonBuilder().withTags("first][second").build();
+        Person twoTags = new PersonBuilder().withTags("first", "second").build();
+
+        assertTrue(Messages.format(oneTag).endsWith("Tags: [first\\]\\[second]"));
+        assertNotEquals(Messages.format(oneTag), Messages.format(twoTags));
+    }
+
+    @Test
+    public void formatTag_backslashesAndBrackets_escaped() {
+        assertEquals("[plain]", Messages.formatTag(new Tag("plain")));
+        assertEquals("[C:\\\\Math\\\\]", Messages.formatTag(new Tag("C:\\Math\\")));
+        assertEquals("[\\[Math\\]]", Messages.formatTag(new Tag("[Math]")));
     }
 
     @Test

@@ -12,7 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
  * Represents an error during loading of data from a file.
  */
 public class DataLoadingException extends Exception {
-    private static final int MAX_GUIDANCE_DETAIL_LENGTH = 200;
+    private static final int MAX_GUIDANCE_DETAIL_LENGTH = 320;
     private final Path malformedFileBackupPath;
 
     /**
@@ -45,7 +45,7 @@ public class DataLoadingException extends Exception {
     public String getUserFacingGuidance() {
         if (hasCause(AccessDeniedException.class)) {
             return "TuitionBook did not have permission to read the data file. "
-                    + "Restore read permission on the preserved file before trying again.";
+                    + "Restore read permission on the data file before trying again.";
         }
         if (hasCause(IllegalValueException.class)) {
             String detail = causeMessage(IllegalValueException.class);
@@ -54,14 +54,14 @@ public class DataLoadingException extends Exception {
         }
         if (hasCause(CharacterCodingException.class) || hasCause(JsonProcessingException.class)
                 || hasCauseWithMessage(IOException.class, "JSON root value must not be null.")) {
-            return "The data file is not in a format TuitionBook can read. Check the preserved file for mistakes "
+            return "The data file is not in a format TuitionBook can read. Check the data file for mistakes "
                     + "such as a missing comma, quote or bracket, and save it as UTF-8 text before trying again.";
         }
         if (hasCause(IOException.class)) {
-            return "The data file could not be read because of a file-system error. Check access to the preserved "
+            return "The data file could not be read because of a file-system error. Check access to the data "
                     + "file before trying again.";
         }
-        return "The data file could not be read because of a file-system error. Check access to the preserved "
+        return "The data file could not be read because of a file-system error. Check access to the data "
                 + "file before trying again.";
     }
 
@@ -93,8 +93,10 @@ public class DataLoadingException extends Exception {
             return "Check each contact's values";
         }
         String singleLineMessage = message.replaceAll("\\R", " ").trim();
-        return singleLineMessage.length() > MAX_GUIDANCE_DETAIL_LENGTH
-                ? singleLineMessage.substring(0, MAX_GUIDANCE_DETAIL_LENGTH) + "..."
+        // Count code points, as names do, so supplementary characters neither shorten the bound nor get split.
+        return singleLineMessage.codePointCount(0, singleLineMessage.length()) > MAX_GUIDANCE_DETAIL_LENGTH
+                ? singleLineMessage.substring(0, singleLineMessage.offsetByCodePoints(0, MAX_GUIDANCE_DETAIL_LENGTH))
+                        + "..."
                 : singleLineMessage;
     }
 

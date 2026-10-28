@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import seedu.tuitionbook.commons.util.StringUtil;
 import seedu.tuitionbook.logic.parser.exceptions.ParseException;
 
 /**
@@ -85,7 +86,8 @@ public class ArgumentTokenizer {
             positions.add(candidate);
             if (quotedPrefixes.contains(candidate.getPrefix())) {
                 int valueStart = candidate.getStartPosition() + candidate.getPrefix().getPrefix().length();
-                while (valueStart < argsString.length() && argsString.charAt(valueStart) <= ' ') {
+                while (valueStart < argsString.length()
+                        && StringUtil.isAsciiWhitespace(argsString.charAt(valueStart))) {
                     valueStart++;
                 }
                 if (valueStart < argsString.length() && argsString.charAt(valueStart) == '"') {
@@ -121,7 +123,7 @@ public class ArgumentTokenizer {
             decoded.append(value.charAt(i));
         }
         // Trim after decoding so quoting and escapes cannot preserve surrounding whitespace.
-        return decoded.toString().trim();
+        return StringUtil.trimAsciiWhitespace(decoded.toString());
     }
 
     /** Finds the first unescaped closing quote using the same escape rules as value decoding. */
@@ -234,7 +236,7 @@ public class ArgumentTokenizer {
         int valueStartPos = currentPrefixPosition.getStartPosition() + prefix.getPrefix().length();
         String value = argsString.substring(valueStartPos, nextPrefixPosition.getStartPosition());
 
-        return value.trim();
+        return StringUtil.trimAsciiWhitespace(value);
     }
 
     /**

@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then work through [Features](#features) for each command's rules and examples. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, and *index*.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. For an older downloaded JAR, use the guide saved with that release: the [v1.4 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) or the [v1.3 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These open on GitHub, which does not show this website's navigation or styled note boxes. Commands added in later versions are not available in older releases.
+**Version:** This guide describes v1.5, which has not been released yet. Some features described here, such as stable list numbering, stricter prefix checks and quoted addresses, are not in the v1.4 JAR. If you downloaded an older version, use the guide for that version instead: the [v1.4 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) or the [v1.3 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These open on GitHub, so they look plainer than this page.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -31,7 +31,7 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Exit**   | `exit`
 **Reload** | `reload`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]...` (name substrings)<br> e.g., `find rac bob`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]...` (searches names)<br> e.g., `find rac bob`
 **Help**   | `help`
 **Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
 **List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/active t/MATH`
@@ -88,21 +88,31 @@ The command box is where you enter instructions; the result area reports success
 * Parameters with a prefix, such as `n/NAME` and `p/PHONE`, can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable. Positional parameters have no prefix and must appear in the order shown: `edit 2 n/James Lee` puts its index first; `link 1 2` puts the student index before the guardian index.
 
-* Command words ignore letter case: `list`, `LIST`, and `LiSt` run the same command. Field prefixes must still be lowercase (`n/`, not `N/`), and the confirmation keyword must still be exactly `confirm`. Values keep their existing rules; command-word casing does not change stored names, addresses or tags.
+* Command words can be typed in any letter case: `list`, `LIST` and `LiSt` all work. Prefixes such as `n/` must be lowercase, and `clear confirm` must use the lowercase word `confirm`.
 
-* `help`, `exit`, and `reload` take no arguments. For example, `help 123`, `exit extra`, and `reload 123` report errors instead of running. `clear` requires exactly `confirm`; `CLEAR confirm` works, but `clear CONFIRM` and `clear confirm extra` do not.
+* Command words, prefixes, roles and indexes must use ordinary English letters and the digits 0-9. Lookalike characters, such as a Cyrillic `а`, a full-width `ｌｉｓｔ` or a full-width index `１`, are not recognised. For example, `delete １` is rejected instead of deleting contact 1.
 
-* Enter one command at a time and press <kbd>Enter</kbd> to run it. The command box is single-line; pasted tabs and line separators, including Unicode line/paragraph separators, become normal spaces before command parsing, even inside quoted values. Adjacent words remain separate, and pasting does not run a command automatically. Check the resulting text before pressing <kbd>Enter</kbd>.
+* `help`, `exit` and `reload` take nothing after the command word. For example, `help 123` shows an error instead of opening Help.
 
-* If a raw line break reaches the parser without this command-box conversion, it is rejected with its character code (such as `U+2028`), including at the input edges or inside quotes. Remove it or replace it with a normal space before retrying. Quoting does not bypass this parser check.
+* Enter one command at a time and press <kbd>Enter</kbd> to run it. If you paste text containing tabs or line breaks, they become spaces. Pasting never runs a command by itself, so check the text before pressing <kbd>Enter</kbd>.
 
-* Use normal spaces (`U+0020`) for command syntax. Non-breaking spaces (`U+00A0`) and full-width spaces (`U+3000`) in a command word, an index, or after a no-argument command are rejected with correction guidance, not silently converted. This check does not rewrite field values; their own validation rules still apply.
+* Type spaces with the spacebar. Text copied from a website or PDF can contain special spaces that look normal; TuitionBook rejects these in command words and indexes. If that happens, retype the spaces. Also check copied commands for missing spaces.
 
-* When copying commands from a PDF or website, check for missing spaces, unusual spaces and line breaks before submitting them. If the source already removed a separator, TuitionBook cannot reconstruct the intended text.
+* If a copied command produces a hidden-control-character error, retype the command. Hidden characters are not removed to turn an invalid index or field into a valid value or an instruction to clear a field.
 
-* In `add`, `edit`, `list`, `tag` and `untag`, a token beginning after a normal space (`U+0020`) with one or more ASCII letters immediately followed by `/` is field syntax. It must be a supported lowercase prefix for that command. Unknown prefixes such as `ee/` are rejected before the command runs, not silently saved as another field's text or automatically corrected. This is a defined syntax rule, not a detector for every possible typo.
+* In `add`, `edit`, `list`, `tag` and `untag`, a word made of letters and ending in `/` (such as `n/` or `ee/`) starts a new field when it comes after a space. If the command doesn't recognise it, the command is rejected, so a typo like `ee/` is never saved by mistake.
+</box>
 
-* Quote the complete name, address or tag when that text contains a literal prefix-like token: `n/"Muhammad s/o Ali"`, `a/"20 Main Road, c/o Rina a/p Kaur"` or `t/"Advanced Math/Science"`. Supported prefixes inside quotes also remain literal. Slashes that do not start such a space-separated token, as in `t/Math/Science`, still work without quotes. Quoting does not bypass field validation.
+<box type="tip" seamless>
+
+**Tip: use double quotes when a value contains text like `a/` or `s/`.**<br>
+Names, addresses and tags sometimes contain text that looks like a prefix, such as `Rina a/p Kaur` or `c/o`. Wrap the **whole value** in straight double quotes so TuitionBook keeps it together:
+
+* `n/"Muhammad s/o Ali"`
+* `a/"20 Main Road, c/o Rina a/p Kaur"`
+* `t/"study t/weekly"`
+
+The quotes are not saved. You don't need quotes for slashes that don't follow a space, such as `t/Math/Science`, or just because a value contains spaces. See [Adding a contact](#adding-a-contact-add) for the full quoting rules.
 </box>
 
 ### Sample contacts for examples
@@ -134,12 +144,8 @@ Opens the Help window, which contains a scrollable summary of every command and 
 
 Format: `help`
 
-* Takes no arguments. `help extra` reports a format error and does not open the Help window.
-* You can also open or focus the same Help window by clicking the one-click `Help` control at the top of the main window, or by pressing <kbd>F1</kbd> even while the command box has focus.
-* When TuitionBook starts, the command box is ready for typing after any startup notice is dismissed. Pressing <kbd>Space</kbd> types in the command box instead of opening Help.
-* Use `Open User Guide` to open this User Guide in your system's default browser.
-* If TuitionBook cannot open a browser, the Help window displays fallback guidance and remains open. Use `Copy URL` to copy the User Guide address and open it manually.
-* An internet connection is needed to open the linked page itself.
+* You can also open Help by clicking `Help` at the top of the main window, or by pressing <kbd>F1</kbd> at any time.
+* Click `Open User Guide` to open this guide in your web browser. If the browser doesn't open, click `Copy URL` and paste the address into your browser yourself. You need an internet connection to view the online guide.
 
 
 ### Adding a contact: `add`
@@ -148,33 +154,54 @@ Adds a student or guardian contact to TuitionBook.
 
 Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
-* `ROLE`, `NAME`, and `PHONE` are mandatory.
-* `ROLE` must be either `student` or `guardian`, case-insensitively.
-* `NAME` must start with a Unicode letter or number. It may contain Unicode letters and numbers, Unicode combining marks, ordinary ASCII spaces (U+0020), periods (`.`), straight apostrophes (`'`), right curly apostrophes (`’`), forward slashes (`/`), and ASCII hyphens (`-`). Other Unicode whitespace and punctuation such as `@` and `#` are not accepted inside a name. Surrounding command-input whitespace is trimmed before validation, while the accepted name's capitalization, punctuation, and Unicode representation are preserved.
-* `NAME` can contain at most 100 Unicode code points. For example, `😀` counts as one code point.
-* In `add` and `edit`, wrap the entire name in straight double quotes when it contains a field prefix or prefix-like token: `n/"Rina a/p Kaur"` or `n/"Muhammad s/o Ali"`. The quotes are not stored and do not count towards the name length. Ordinary names still work without quotes.
-* **Unquoted names still use normal field parsing:** `n/Rina a/p Kaur` is interpreted as name `Rina` and address `p Kaur`, not as the full name. Use `n/"Rina a/p Kaur"` to preserve it.
-* `PHONE` must contain at least three ASCII digits in the main number and may start with `+`. Write each main-number group either as plain digits or as digits enclosed in balanced parentheses. Separate groups with one or more ASCII spaces, one hyphen, or one forward slash. After the main number and at least one ASCII space, you may add one annotation in parentheses. An annotation must contain at least one ASCII letter; it may otherwise contain ASCII letters, digits, and single internal spaces, with no leading, trailing, or repeated spaces. An optional numeric extension may follow the main number or annotation, directly or after ASCII spaces, using `x123`, `ext 123`, or `ext. 123`, case-insensitively. For example, `+65 (9123) 4567 (HP) ext. 89` is accepted. Unmatched or nested parentheses, empty groups or annotations, separators inside parenthesized digit groups, doubled or trailing hyphens or slashes, multiple annotations, punctuation in annotations, letters outside an annotation or supported extension marker, bare or non-numeric extension markers, and multiple extensions are rejected. Formatting is preserved for display.
-* `EMAIL` is optional. If supplied, it must have exactly one `@`. The local part uses ASCII letters, digits, periods (`.`), plus signs (`+`), underscores (`_`), hyphens (`-`), or apostrophes (`'`), and must start and end with a letter or digit. These special characters may be consecutive except that periods cannot be consecutive. Domain labels are separated by periods, use ASCII letters, digits, or internal hyphens, and start and end with a letter or digit; the final label has at least two characters. Punycode labels such as `xn--bcher-kva` are accepted. This is a practical supported subset, not full RFC 5322 support.
-* `ADDRESS` is optional. If supplied, it must contain at least one meaningful visible code point: Unicode whitespace and space characters, control characters, and format characters such as zero-width space, BOM, word joiner, and bidi-format marks do not make an otherwise blank address valid. These characters do not invalidate an address that also contains visible text, except that line-breaking characters are always rejected. An address must be single-line and can contain at most 200 Unicode code points. For example, `😀` counts as one code point. Surrounding ordinary spaces are ignored; the address is otherwise preserved as entered.
-* Addresses support the same complete-value quoting and escapes as names and tags: `a/"20 Main Road, c/o Rina a/p Kaur"` stores the complete address without its enclosing quotes. To store literal quotes around an address, use `a/"\"Block A\""`. Existing addresses in the data file are not stripped of quotes or migrated.
-* Each `TAG` must be non-blank and may contain ASCII letters, digits, spaces, and printable punctuation, such as `Sec 4`, `Math--Science`, `C++`, or `Mrs. Lim's`. Leading, trailing, and repeated hyphens are allowed. Non-ASCII characters and internal control characters (such as tabs or newlines) are not accepted. Surrounding whitespace is trimmed from typed tags, while surrounding ASCII spaces are trimmed from tags in the data file. Internal spaces, punctuation, spelling, and capitalization are preserved.
-* **Use consistent spacing in tags.** `Sec 4` (one internal space) and `Sec  4` (two internal spaces) are different tags, even though they may look similar. `list t/Sec 4` will not match a contact whose only tag is `Sec  4`. Repeated internal spaces are not collapsed. Use the same internal spacing when adding, editing, and filtering tags.
-* Tags do not need quotes merely to contain spaces. Wrap the entire tag in straight double quotes when it contains a space-separated prefix-like token: `t/"meet at a/c room"` or `t/"Advanced Math/Science"`. Without quotes, supported prefixes start another field and unsupported ones report an error. This rule also applies to `list`, `tag` and `untag`; the enclosing quotes are not stored.
-* For a quoted name, address or tag, after the closing quote, end the command or enter a space followed by another supported field prefix. Missing closing quotes, unknown prefixes and extra text after the closing quote are rejected.
-* Inside a quoted value, use `\"` for a literal double quote and `\\` for a literal backslash. For example, `t/"\"Sec 4\""` stores the tag `"Sec 4"` including its literal quotes, while `t/"Sec 4"` stores `Sec 4`. Use `t/"C:\\Math\\"` for a tag ending in a backslash. A backslash before any other character is preserved (for example, `\M` stays `\M`); sequences such as `\n` do not insert newlines.
-* Unquoted values keep their quotes and backslashes literally, unless the first non-whitespace character is `"`, which starts quoted syntax.
-* Decoded values still follow normal field validation: double quotes and backslashes are allowed in addresses and tags but not names.
-* `g/` is not accepted by `add`; linking a guardian to a student is a separate operation.
-* Matching additions append to the working set without changing existing indexes. Nonmatching additions are saved but stay hidden; feedback explains how to locate them with `list`.
+* `ROLE`, `NAME` and `PHONE` are required. Email, address and tags are optional.
+* `ROLE` is `student` or `guardian` (any letter case, using ordinary English letters).
+* `NAME`:
+  * must start with a letter or number, and can be up to 100 characters long.
+  * may contain letters from any language, numbers, accents, spaces, periods (`.`), apostrophes (`'` or `’`), forward slashes (`/`) and hyphens (`-`). Other symbols, such as `@`, `#` or double quotes, are not allowed.
+  * is saved exactly as you type it, including capital letters and punctuation. Spaces at the start or end are ignored.
+* `PHONE`:
+  * must contain at least 3 digits (0-9) in the main number, not counting any label or extension, and may start with `+`.
+  * can be split into groups of digits using spaces, a hyphen (`-`) or a slash (`/`), for example `9123 4567`, `9123-4567` or `+65/9123/4567`. A group can also be put in brackets, as in `+65 (9123) 4567`.
+  * can end with a label in brackets after a space, such as `(HP)` or `(Office 2)`. A label contains English letters, digits and single spaces, with at least one letter.
+  * can end with an extension written as `x123`, `ext 123` or `ext. 123`.
+  * is displayed exactly as you type it. For example, `+65 (9123) 4567 (HP) ext. 89` is accepted.
+* `EMAIL` must look like `name@example.com`:
+  * The whole email can be up to 254 characters long, including the `@` and periods.
+  * Before the `@`: up to 64 characters, using English letters, digits (0-9), periods (`.`), and these symbols: `` ! # $ % & ' * + - / = ? ^ _ ` { | } ~ ``. A period cannot be first or last, and two periods cannot appear in a row. The other allowed symbols can appear at the start or end; for example, `_alice+@example.com` is accepted. Spaces and double quotes (`"`) are not allowed.
+  * Slashes inside an email do not start another field: `e/alice.t/user@example.com t/Math` stores email `alice.t/user@example.com` and tag `Math`. If an email starts with text such as `t/`, put it directly after `e/`: `e/t/user@example.com`. A space before `t/` starts a tag field, so `edit 1 e/ t/user@example.com` clears the email and sets the tag to `user@example.com`.
+  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part can be up to 63 characters long, must start and end with a letter or digit, and the last part must be at least 2 characters long.
+* `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
+  * Accent marks on their own do not count as visible characters.
+  * Hidden control characters (other than tabs) and broken characters left over from copied text are rejected; retype the address if this happens.
+* Each `TAG`:
+  * may contain English letters, digits (0-9), spaces, and punctuation and symbols from a standard English keyboard, for example `Sec 4`, `Math--Science`, `C++`, `$50/hr` or `Mrs. Lim's`. Letters with accents, other languages and other symbols (such as `—`) are not allowed.
+  * cannot be blank. Spaces at the start or end are ignored.
+  * keeps the exact spacing inside it: `Sec 4` (one space) and `Sec  4` (two spaces) are **different tags** and will not match each other in `list`. Use the same spacing every time.
+* `g/` cannot be used with `add`. Add the contact first, then use [`link`](#linking-a-student-to-a-guardian-link).
+* If the new contact matches the current filter, it is added to the end of the displayed list. Otherwise it is saved but not shown, and the result tells you how to find it with `list`.
+
+**Using double quotes in names, addresses and tags**
+
+* Wrap the whole value in straight double quotes when it contains a word like `a/`, `s/` or `c/` after a space: `n/"Rina a/p Kaur"`, `a/"20 Road c/o Rina"` or `t/"meet at a/c room"`. This works in `add`, `edit`, `list`, `tag` and `untag`.
+* Without quotes, `n/Rina a/p Kaur` is read as the name `Rina` with the address `p Kaur`.
+* The quotes themselves are not saved, and they don't count towards the length limit.
+* After the closing quote, either end the command or type a space followed by the next field.
+* To include a double quote or backslash *inside* a quoted address or tag, type `\"` or `\\`. For example, `t/"\"Sec 4\""` saves the tag `"Sec 4"` with its quotes, and `t/"C:\\Math\\"` saves `C:\Math\`. Names cannot contain quotes or backslashes.
+* A value that doesn't start with `"` is saved as typed, including any quotes or backslashes inside it.
 
 <box type="tip" seamless>
 
-**Tip:** A person can have any number of tags, including zero.
+**Tip:** A contact can have any number of tags, including none.
 
-TuitionBook treats two contacts as duplicates only when their roles, normalized names, and normalized phone numbers all match. A student and guardian may therefore have the same normalized name and phone number, while two students or two guardians may not. Each contact record still has exactly one role. Name identity first trims surrounding ASCII spaces and collapses consecutive internal ASCII spaces. It then normalizes the name to Unicode NFC, lowercases and uppercases it using locale-independent rules, and normalizes it to NFC again. This makes canonically equivalent accents compare equally and handles the demonstrated sharp-S cases consistently: `Groß` matches `GROẞ`, and `Straße` matches `STRASSE`. This is a concrete comparison rule, not a guarantee that every linguistically equivalent Unicode spelling is identical. Phone comparison removes spaces, hyphens, forward slashes, and numeric-group parentheses, and ignores the optional annotation, while retaining a leading `+`. The extension markers `x`, `ext`, and `ext.` compare equivalently, while extension digits are retained. Country-code equivalence is not applied, so phone numbers that differ by a leading `+` are distinct. The original name spelling, casing, Unicode representation, and phone formatting remain unchanged for display and storage.
+TuitionBook stops you from adding the same person twice. Two contacts count as the same person when they have the same role, the same name **and** the same phone number. A student and a guardian can therefore share a name and phone number. When comparing:
 
-A young student without their own phone number may reuse their guardian's phone number. If an email is supplied, the guardian's email may also be reused. The student and guardian remain distinct contacts even when their names are the same because their roles differ.
+* letter case and extra spaces in names are ignored, so `john  doe` matches `John Doe`. Accented letters typed in different ways also match.
+* spaces, hyphens, slashes, brackets and labels such as `(HP)` in phone numbers are ignored, and `x`, `ext` and `ext.` count as the same. However, a leading `+` matters: `+6591234567` and `6591234567` are different numbers.
+
+These differences are ignored only for this check. TuitionBook still saves each name and phone number with the spelling, capital letters and formatting you entered.
+
+A young student without their own phone number can use their guardian's phone number and email. They remain separate contacts because their roles differ, even if their names are the same.
 </box>
 
 Examples (each adds a new contact after the existing ones, so the [sample contacts](#sample-contacts-for-examples) keep indexes 1 to 5 in an unfiltered list):
@@ -185,32 +212,28 @@ Examples (each adds a new contact after the existing ones, so the [sample contac
 
 ### Listing contacts: `list`
 
-Shows all contacts, or only contacts matching a specified role and/or all specified tags. Bare `list` replaces the working set with all contacts.
+Shows all contacts, or only the contacts with a given role and/or tags.
 
 Format: `list [r/ROLE] [t/TAG]...`
 
-* `ROLE` is `student` or `guardian`, case-insensitively.
-* Each `TAG` follows the same tag-name rules as [adding a contact](#adding-a-contact-add). Tag matching is exact but case-insensitive; all specified tags must be present.
-* Spaces and punctuation are significant: `list t/SEC 4 t/math--science` requires both complete tags. `Sec  4` (two spaces) is different from `Sec 4`; `active!` does not match `inactive!` or `active`. In `list`, a space followed by `r/` or `t/` starts a new filter argument.
-* To search for a tag containing `r/` or `t/` after a space, quote the complete tag, for example `list t/"study r/student t/weekly"`.
-* Escaping works the same way in `add`, `edit`, `list`, `tag`, and `untag`: `list t/"\"Sec 4\""` matches the literal tag `"Sec 4"`, including one loaded from an existing JSON file.
-* A filtered `list` replaces the working set with contacts matching the supplied criteria. No matches is a successful result: `0 person(s) listed!`. Bare `list` restores all contacts in their original order.
-* Repeating `t/` applies an additional tag condition. Repeating `r/` is rejected.
-* `list r/student` shows only students; `list r/guardian` shows only guardians.
-* Other trailing text is rejected.
-* Before linking a student to a guardian after applying a filter, enter `list` to restore the full list so that both contacts can be selected.
-* Each contact card displays a `STUDENT` or `GUARDIAN` role badge.
-* Each contact card labels its phone number, email address, and home address with `Phone:`, `Email:`, and `Address:`.
-* Tags on contact cards use locale-independent, case-insensitive alphabetical order; original spelling breaks ties when tags differ only in case.
-* Student cards display a `Guardian:` line with the linked guardian's name and contact number, or `-` when no guardian is linked.
-* Guardian cards display a `Students:` line with linked student names in contact-list order, or `-` when no students are linked. The names come from the complete contact list even when a filter hides the student cards.
-* Missing email addresses and home addresses display as `Email: -` and `Address: -`.
-* Tags wrap onto additional rows when needed, and the contact card grows so every phone, relationship, address, and email line remains visible. Cards with few or no tags remain compact.
-* If a name, phone number, email address, relationship summary, or home address is wider than its card, the card keeps the start visible and uses an ellipsis. Hover over the shortened value to see it in full, or use `view INDEX v/` for a keyboard-accessible full-detail view. The role badge remains visible beside a long name.
+* `list` on its own shows every contact in its original order.
+* `r/student` shows only students; `r/guardian` shows only guardians. You can give `r/` only once.
+* Each `t/TAG` adds a condition: a contact is shown only if it has **all** the tags you list. Tags must match completely, but letter case doesn't matter, so `t/math` matches `Math`.
+* Spaces and punctuation inside a tag must match exactly. `Sec  4` (two spaces) does not match `Sec 4`, and `active` does not match `active!`.
+* To filter by a tag that contains `r/` or `t/` after a space, use double quotes: `list t/"study t/weekly"`. See [quoting rules](#adding-a-contact-add).
+* If nothing matches, the list is empty and the result shows `0 person(s) listed!`. Enter `list` to see everyone again.
+* To link a student to a guardian after filtering, enter `list` first so that both contacts are shown.
+
+**Reading a contact card**
+
+* Each card shows a `STUDENT` or `GUARDIAN` badge, followed by the contact's phone, email and address. Missing details are shown as `-`.
+* A student's card has a `Guardian:` line with the guardian's name and phone number. A guardian's card has a `Students:` line listing their linked students, even students hidden by the current filter.
+* Tags are sorted alphabetically and wrap onto more rows when needed.
+* If a value is too long for the card, it is shortened with `…`. Hover over it to see the full text, or use `view INDEX v/` to see every detail.
 
 ### Organising levels, subjects and status with tags
 
-Choose a consistent tag convention, for example `Sec4` for level, `AMath` for subject, and `Active` or `Inactive` for status. These are labels you choose, not dedicated fields or enforced categories. Tag filters ignore letter case but preserve internal spacing and punctuation.
+Choose a consistent way of naming tags, for example `Sec4` for level, `AMath` for subject, and `Active` or `Inactive` for status. Tags are free-form labels that you choose; TuitionBook doesn't check them against any list. Tag filters ignore letter case, but spaces and punctuation must match.
 
 This workflow uses its own contact, Alex Tan, instead of the sample contacts. To try it, start a new, empty contact list in a separate disposable folder, then enter these steps in order:
 
@@ -221,15 +244,24 @@ This workflow uses its own contact, Alex Tan, instead of the sample contacts. To
 1. Enter `list r/student t/Inactive`, then `edit 1 t/Active t/Sec4 t/AMath` to label Alex active again.
 1. Enter `list` to show every contact regardless of status tags.
 
-`Inactive` does not archive a contact or prevent editing, linking or deletion. Status labels do not change guardian relationships. There are no dedicated archive/restore commands. Use `tag INDEX t/TAG` and `untag INDEX t/TAG` to add or remove selected labels without replacing the other tags. These operations match stored tags case-sensitively, unlike `list` filters.
+`Inactive` is just a label: it doesn't hide, archive or lock the contact, and it doesn't affect guardian links. To add or remove one label without retyping the others, use `tag INDEX t/TAG` and `untag INDEX t/TAG`. Unlike `list`, these commands treat `Math` and `math` as different tags.
 
 ### Keeping displayed indexes stable
 
-The indicator above the contact list stays visible even when later commands replace the result message or open contact details. An unfiltered view shows `All contacts: 42`. A filtered view shows its query, for example `Query: list t/Active`, and `Shown: 3 of 42 contacts · Matching: 2 · Retained: 1`. `Shown` is the working-set size, and the total includes hidden contacts. `Matching` counts only displayed contacts that currently satisfy the query; `Retained` counts displayed contacts that no longer match. Hidden contacts are not included in either of these two counts. The query remains identified even when it matches every contact or no contacts. A long query is shortened on screen; hover over it to read the complete command.
+When you run `list` or `find`, the contacts it shows become your *working set*, and the numbers beside them are the indexes you use in commands. TuitionBook keeps these indexes steady so that the contact you meant doesn't move while you work:
 
-Each `list` or `find` establishes a working set in normal contact-list order. `edit`, `tag`, `untag`, `link` and `unlink` preserve all surviving displayed indexes, even when contacts stop matching the query. Those rows show **No longer matches the query** with a command to refresh. Matching again removes the notice without moving the row. An existing hidden contact that becomes a match stays hidden until an explicit query.
+* `edit`, `tag`, `untag`, `link` and `unlink` never reorder the list. If a change means a contact no longer fits your filter, it stays where it is, marked **No longer matches the query**, with a command you can run to refresh the list.
+* A contact that is currently hidden stays hidden, even if a change makes it match, until you run `list` or `find` again.
+* A new contact that matches the filter is added to the end of the list. One that doesn't match is saved but not shown.
+* To refresh the list, run the same command again, for example `list t/Active`. `list` on its own shows everyone.
 
-Rerun the originating command, such as `list t/Active`, to refresh membership. Bare `list` deliberately shows all contacts. Matching additions append; nonmatching additions are saved without being displayed.
+The bar above the contact list always shows what you're looking at. With no filter it shows, for example, `All contacts: 42`. With a filter it shows the command, such as `Query: list t/Active`, and counts such as `Shown: 3 of 42 contacts · Matching: 2 · Retained: 1`:
+
+* **Shown**: contacts in the list, out of all your contacts.
+* **Matching**: shown contacts that still fit the filter.
+* **Retained**: shown contacts that no longer fit the filter.
+
+If the command is too long to fit, hover over it to read it in full.
 
 To see this with the [sample contacts](#sample-contacts-for-examples), enter these steps in order:
 
@@ -240,19 +272,20 @@ To see this with the [sample contacts](#sample-contacts-for-examples), enter the
 1. `list t/Active`<br>
    **Expected:** Only Alex Yeoh is listed, now at index 1.
 
-Deletion is the exception: deleting a row compacts the list. For example, if `list t/Active` shows Grace Tan (1) and Alex Yeoh (2), `delete 1` deletes Grace Tan and Alex Yeoh becomes index 1. Explicit queries, successful reload, clear and restart can also change indexes. Indexes are positions, not permanent contact identifiers. Reload and restart show the full list; clear resets to an empty, unfiltered working set. Working sets are not saved in the data file.
+Deleting is the exception: the contacts below the deleted one move up. For example, if `list t/Active` shows Grace Tan (1) and Alex Yeoh (2), `delete 1` deletes Grace Tan and Alex Yeoh becomes index 1. Running `list` or `find`, `reload`, `clear confirm`, or restarting the app can also change indexes, and `reload` and restarting show the full list again. An index is a position in the current list, not a permanent number for that contact.
 
 ### Viewing a contact: `view`
 
-Replaces the contact list with a contact's details and their recorded relationship. A successful command other than `view` restores the contact list. If a command fails, the current screen remains visible so that you can correct the command without losing the details you were reading.
+Shows a contact's full details, together with their guardian or linked students, in place of the contact list. The list comes back after your next successful command. If a command fails, the details stay on screen so that you can fix the command.
 
 Format: `view INDEX [v/]`
 
-* `INDEX` is the positive index shown in the current working set, including retained contacts that no longer match its query.
-* Without `v/`, each linked contact appears as `NAME (CONTACT_NUMBER)`. A student view shows its linked guardian, while a guardian view lists its linked students in contact-list order.
-* Add `v/` to show the linked guardian's or linked students' full contact details, including their role, phone, email, address, and tags.
-* If a student has no guardian link, the result shows `No guardian linked.` If a guardian has no linked students, it shows `No students linked.` Related contacts are shown even when the current filter hides them.
-* Missing optional email, address, or tags are shown as `-`. Tags appear in locale-independent, case-insensitive alphabetical order; tags that differ only in case use their original spelling as a deterministic tie-breaker. In `view` output, each tag is enclosed in brackets; literal backslashes and square brackets inside a tag are escaped with a backslash. `view` does not change contact data or the active filter.
+* `INDEX` is the number shown beside the contact in the current list.
+* Without `v/`, linked contacts are shown as `NAME (PHONE)`. A student shows their guardian; a guardian lists their students.
+* Add `v/` to show the linked contacts' full details too.
+* If there is no link, the result shows `No guardian linked.` or `No students linked.` Linked contacts are shown even if the current filter hides them.
+* Missing details are shown as `-`. Tags are sorted alphabetically and each is shown in square brackets, such as `[Math]`. A backslash is added before any `[`, `]` or `\` inside a tag so you can tell where each tag ends.
+* `view` doesn't change any contacts or the current filter.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 
@@ -270,19 +303,14 @@ Edits an existing contact in TuitionBook.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
-Names support the same optional double quotes as `add`. For example, `edit 1 n/"Rina a/p Kaur"` changes the first contact's complete name without interpreting `a/` as an address prefix.
-
-* Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
-* At least one of the optional fields must be provided.
-* To remove an existing email or address, use `e/` or `a/` with no value respectively.
-* Existing values will be updated to the input values.
-* `edit` cannot change a person's role or guardian link. Supplying `r/` reports that a contact's role cannot be changed after it is added. Supplying `g/` directs you to `link STUDENT_INDEX GUARDIAN_INDEX` to set or replace a guardian link, or `unlink STUDENT_INDEX` to remove it, using indexes from the currently displayed list. If both prefixes are supplied, both explanations are shown. No part of the rejected edit is applied. The role specified with `add` applies only to the new contact.
-* `NAME`, `PHONE`, `EMAIL`, and `ADDRESS` follow the same validation and Unicode code-point length rules described for [`add`](#adding-a-contact-add).
-* Names, addresses and tags support the same quoting and strict prefix rules as [`add`](#adding-a-contact-add). `edit INDEX a/""` clears the address, just like `edit INDEX a/`; a blank quoted address is not stored.
-* `TAG` follows the same space-and-punctuation and optional quoting rules described for [`add`](#adding-a-contact-add).
-* When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
-* To remove all of a person's tags, enter `t/` without a tag after it.
-* Editing preserves the working set and every surviving contact's index, even when its name or tags stop matching. Such contacts are marked until an explicit refresh.
+* `INDEX` is the number shown beside the contact in the current list (1, 2, 3, …).
+* Give at least one field to change. The new value replaces the old one; fields you leave out stay the same.
+* If all supplied values already match the contact, `edit` reports `No changes made: the specified values already match NAME` and does not save.
+* All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`: `edit 1 n/"Rina a/p Kaur"`.
+* To remove an email or address, type `e/` or `a/` with nothing after it. `a/""` also removes the address.
+* **Giving `t/` replaces all of the contact's tags.** Retype any tags you want to keep, or use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag) to change one tag at a time. To remove every tag, type `t/` with nothing after it.
+* You cannot change a contact's role (`r/`) or guardian (`g/`) with `edit`. Use `link` and `unlink` to change guardian links. If you include `r/` or `g/`, nothing is changed and the result explains what to do instead.
+* The edited contact keeps its place in the list, even if it no longer matches the current filter.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 *  `edit 1 p/91110000 e/johndoe@example.com` changes John Doe's phone number to `91110000` and adds the email address `johndoe@example.com`.
@@ -294,13 +322,12 @@ Adds one or more tags while keeping the contact's existing tags.
 
 Format: `tag INDEX t/TAG [t/TAG]...`
 
-* `INDEX` is a positive index in the currently displayed list, including after `find` or a filtered `list`. Both students and guardians can be tagged.
-* Supply at least one non-blank tag. Tags follow the same character and spacing rules as `add`. Repeating a tag in the command has the same effect as supplying it once.
-* Tag identity is case-sensitive: `Math` and `math` are separate stored tags, although `list` matches tags case-insensitively.
-* Existing tags are retained. Success feedback lists only newly added tags, in sorted order and enclosed in double quotes; literal quotes and backslashes are escaped for clarity. Already-present tags are omitted from this list. If every requested tag is already present, the command reports this without saving or changing the working set.
-* Tag changes preserve the working set and indexes, including contacts that stop matching. If saving fails, the original contacts, exact working-set membership/order and query are restored.
-* Only `t/` is supported as a field prefix by `tag` and `untag`. A space followed by `t/` starts another tag unless it is inside a quoted value; other space-separated letter prefixes are rejected. Use the same quoting and escape rules as `add`, `edit` and `list`: `tag 1 t/"study t/weekly"` adds one tag containing `t/weekly`, while `tag 1 t/"call p/next week"` preserves the literal `p/`. Enclosing quotes are not stored, and surrounding whitespace is trimmed even inside quotes.
-* Inside quoted tags, use `\"` for a literal double quote and `\\` for a literal backslash. For example, `tag 1 t/"\"Sec 4\""` adds the literal tag `"Sec 4"`, and `untag 1 t/"\"Sec 4\""` removes it. Missing closing quotes, extra text after the closing quote, and blank decoded tags are rejected before any tags change.
+* `INDEX` is the number shown beside the contact in the current list. Students and guardians can both be tagged.
+* Give at least one tag. Tags follow the same rules as [`add`](#adding-a-contact-add).
+* `Math` and `math` are saved as two different tags, even though `list` treats them as the same.
+* The result lists only the tags that were newly added, each in double quotes. If the contact already has every tag you gave, nothing changes.
+* The contact keeps its place in the list, even if it no longer matches the current filter.
+* Use double quotes for a tag containing text like `t/` or `p/` after a space: `tag 1 t/"study t/weekly"` adds one tag, `study t/weekly`. Quotes and backslashes inside a tag work the same way as in [`add`](#adding-a-contact-add).
 
 Example using the [sample contacts](#sample-contacts-for-examples): Grace Tan (3) has `Active`, `Math` and `Sec 4`. `tag 3 t/Science t/Math` adds `Science` while keeping her existing tags, and reports `Added tags to Grace Tan: "Science".` `Math` is not listed because it was already present. Continue using `add` to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
 
@@ -310,12 +337,10 @@ Removes only the specified tags while keeping the contact's other tags.
 
 Format: `untag INDEX t/TAG [t/TAG]...`
 
-* The index, tag validation, case sensitivity, prefix boundaries, saving, and working-set rules are the same as for `tag`.
-* Tag names must match exactly, including case and internal spacing. `untag 1 t/math` does not remove `Math`.
-* If an absent tag differs only in case from a tag on this contact, feedback suggests the stored spelling so you can retry. For example, `untag 1 t/math` reports `Tag "math" not found, did you mean "Math"?` when `Math` is the stored tag. If multiple case variants remain, all are listed in sorted order; suggestions exclude tags removed by the same command. Suggestions do not change or remove tags automatically.
-* Absent tags are skipped and listed in the feedback under `Tags not present:`. Names are shown in sorted order, enclosed in double quotes; literal quotes and backslashes are escaped in this display so tag boundaries are clear. If none of the requested tags is present, the command reports this without saving or changing the working set.
-* A mixture of present and absent tags removes the present tags. Removing the final tag leaves the contact with no tags.
-* A missing tag argument or an empty `t/` is rejected; use `edit INDEX t/` to clear the entire tag set.
+* Works like [`tag`](#adding-tags-to-a-contact-tag): same index, tag rules and double quotes.
+* Each tag must match exactly, including letter case and spacing. `untag 1 t/math` does not remove `Math`; instead, the result suggests the correct spelling: `Tag "math" not found, did you mean "Math"?`
+* Tags the contact doesn't have are skipped and listed under `Tags not present:`. If none of them are present, nothing changes.
+* To remove every tag at once, use `edit INDEX t/` instead.
 
 Examples continuing from the [`tag` example](#adding-tags-to-a-contact-tag), where Grace Tan (3) has `Active`, `Math`, `Science` and `Sec 4`. Enter them in order:
 
@@ -328,11 +353,10 @@ Links a student contact to a guardian contact.
 
 Format: `link STUDENT_INDEX GUARDIAN_INDEX`
 
-* The first index must refer to a student and the second index must refer to a guardian.
-* Both indexes refer to positive index numbers in the currently displayed contact list. Both contacts must be visible. If a filter hides either contact, enter `list` to restore the full list before using `link`.
-* If the student already has a different guardian, the previous guardian is unlinked and the result identifies that previous guardian.
-* Linking a student to the guardian they are already linked to is idempotent; TuitionBook reports that the link already exists and makes no change.
-* Creating, replacing or repeating a link preserves the working set and indexes. Relationship summaries update immediately, including related contacts outside the working set.
+* The first index must be a student and the second must be a guardian, both from the current list. If a filter hides either contact, enter `list` first.
+* A student has at most one guardian. If the student already has a different guardian, that link is replaced and the result names the previous guardian.
+* If the student is already linked to that guardian, nothing changes.
+* The list order stays the same, and the `Guardian:` and `Students:` lines on the cards update straight away.
 
 Examples using the [sample contacts](#sample-contacts-for-examples), entered in order:
 
@@ -346,10 +370,9 @@ Removes a student contact's guardian link without deleting either contact.
 
 Format: `unlink STUDENT_INDEX`
 
-* `STUDENT_INDEX` is the positive index shown in the current working set, including retained contacts that no longer match its query.
-* The index must refer to a student.
-* If the student has no linked guardian, TuitionBook reports this and makes no change. The working set and its indexes are preserved.
-* Removing a guardian link preserves the working set and indexes. Related contacts' relationship summaries update immediately.
+* `STUDENT_INDEX` is the number shown beside a student in the current list.
+* If the student has no guardian, nothing changes.
+* The list order stays the same, and the cards update straight away.
 
 Example using the [sample contacts](#sample-contacts-for-examples): `unlink 1` removes John Doe's link to Betsy Crowe and reports `Unlinked student John Doe from guardian Betsy Crowe.` Both contacts remain. Running `unlink 1` again reports `Student John Doe has no linked guardian.`
 
@@ -357,15 +380,15 @@ Example using the [sample contacts](#sample-contacts-for-examples): `unlink 1` r
 
 ### Finding contacts by name: `find`
 
-Finds contacts whose names contain any of the text you enter. Each piece of text can match part of a name (a substring).
+Finds contacts whose names contain any of the keywords you type, even as part of a name.
 
 Format: `find KEYWORD [MORE_KEYWORDS]...`
 
-* Each keyword matches anywhere within a name, including the start, middle, or end of a name component. For example, `rac` matches `Grace Tan`.
-* The search converts both each stored name and each keyword to Unicode NFC, lowercases and uppercases them using locale-independent rules, and normalizes them to NFC again before literal substring matching. As a result, `GRACE` matches `Grace Tan`, composed and decomposed accents match, `STRASSE` matches `Straße`, and the demonstrated `Groß`/`GROẞ` forms match consistently. Search does not trim or collapse spaces in stored names and does not otherwise use duplicate-identity normalization. This rule does not make every linguistically equivalent Unicode spelling identical.
-* The search considers only contact names. Text found only in a phone number, email address, home address, tag, role, or linked contact's name does not match.
-* Keywords are treated as literal text, so punctuation is not interpreted as a search pattern.
-* Persons matching at least one keyword are returned (an `OR` search). A person is listed only once even if multiple keywords match their name.
+* A keyword can match any part of a name. For example, `rac` matches `Grace Tan`.
+* Letter case doesn't matter: `GRACE` matches `Grace Tan`. Accented letters typed in different ways also match, and `STRASSE` matches `Straße`.
+* A contact is shown if their name matches **any** of the keywords. Each contact appears only once.
+* Only names are searched, not phone numbers, emails, addresses, tags or roles.
+* Symbols in keywords are searched for as ordinary text.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 * `find gr`, `find rac`, `find ace`, and `find GRACE` each list only Grace Tan.
@@ -385,11 +408,9 @@ Deletion is immediate and cannot be undone. Check the contact name and its curre
 
 Format: `delete INDEX`
 
-* Deletes the person at the specified `INDEX`.
-* The index refers to the index number shown in the displayed person list.
-* The index **must be a positive integer** 1, 2, 3, ...
-* Deleting a guardian keeps their linked students, but clears those students' guardian links.
-* Deletion removes the targeted row and compacts the working set, preserving survivors' relative order. It does not rerun the query or reveal hidden contacts. Subsequent indexes may change; check the displayed list before another indexed command.
+* `INDEX` is the number shown beside the contact in the current list (1, 2, 3, …).
+* Deleting a guardian keeps their students, but removes those students' guardian links.
+* The contacts below the deleted one move up by one, so **check the list before your next command that uses an index**. Hidden contacts stay hidden.
 
 Examples using the [sample contacts](#sample-contacts-for-examples). Each example starts from the full sample list:
 * `list` followed by `delete 2` deletes Betsy Crowe, the 2nd contact in the full list. Because she was John Doe's guardian, the result also reports that John Doe is no longer linked to a guardian. Grace Tan, Bob Lim and Alex Yeoh move up to indexes 2 to 4.
@@ -397,94 +418,111 @@ Examples using the [sample contacts](#sample-contacts-for-examples). Each exampl
 
 ### Clearing all entries: `clear confirm`
 
-Clears all entries from TuitionBook, including contacts outside the current working set.
+Deletes all contacts, including any hidden by the current filter.
 
 Format: `clear confirm`
 
 <box type="warning" seamless>
 
-This deletes every contact, including contacts outside the current working set. There is no undo. Close the app and copy its data file to a safe location before reopening it if you need a backup.
+This deletes every contact and cannot be undone. If you might need your contacts later, close the app and copy its data file somewhere safe first.
 </box>
 
-* The confirmation keyword must be the exact lowercase word `confirm`.
-* Bare or whitespace-only `clear` reports `Confirmation required: enter "clear confirm" to clear all contacts.` Any nonblank argument other than exact lowercase `confirm` reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Neither error deletes contacts.
+* You must type the lowercase word `confirm`. `clear` on its own, or with any other word, shows a reminder and deletes nothing.
 
-Diagnostic log files are stored separately from the contact data file, so `clear confirm` does not remove them. For the packaged TuitionBook, these logs are in the same folder as the JAR. They are normally named `tuitionbook.log.0` through `tuitionbook.log.4`; only files that have already been created are present. The files may contain information entered in earlier commands, so review them before sharing them. To remove the logs, close TuitionBook, open the folder containing the JAR, and delete every existing numbered log file. Ordinary file deletion is not secure erasure, and TuitionBook does not provide a secure-erasure guarantee.
+`clear confirm` does not delete TuitionBook's log files (`tuitionbook.log.0` to `tuitionbook.log.4`, in the same folder as the JAR). These files may contain details from commands you entered earlier, so check them before sharing them with anyone. To remove them, close TuitionBook and delete those files. Normal file deletion does not securely erase data.
 
 ### Reloading contacts: `reload`
 
 Format: `reload`
 
-Reads the configured contact file again and resets the working set to all loaded contacts in contact-list order, clearing the current filter. **Reload replaces the contacts currently in memory; it does not merge them with the file.** No arguments are accepted.
+Reads your contacts from the data file again and shows the full list.
 
-For routine manual edits, follow [Editing the data file](#editing-the-data-file) and restart the app. To recover without restarting after a load failure, you may keep TuitionBook open and use this workflow:
+<box type="warning" seamless>
 
-1. Stop entering contact-changing commands until recovery is complete: a save can overwrite external edits. Record any current contacts or changes you need to keep, including contacts added after an earlier recovery. Copy the current data file (if present) and any preserved `.backup` file to a separate safe location before editing or replacing either file.
-1. Follow the error's permission, encoding, JSON, or contact-value guidance. Correct the configured data file, or restore a corrected copy of the preserved file to that path. Use the path reported by the app; it may still be `data/addressbook.json` if migration failed.
-1. Save your file edits, then enter `reload`. Check the loaded contacts before entering another contact-changing command. Contacts recorded in step 1 that are absent from the restored file must be re-entered manually.
+`reload` **replaces** the contacts in the app with the contents of the file. It does not combine them, so any contact that is only in the app will be lost.
+</box>
 
-A successful read enables saving again, but does not check write permissions or retry a rolled-back command. Re-enter that command afterwards.
+For everyday edits to the data file, close TuitionBook, edit the file, then reopen it (see [Editing the data file](#editing-the-data-file)). `reload` is for fixing the file while TuitionBook stays open, usually after it could not read the file:
 
-If the file is missing, the contact list becomes empty and saving is enabled; only move it away if you intend to start with no contacts. Reloading does not save anything. If reading fails, the current contacts and exact working set (membership, order and originating query) are retained. TuitionBook attempts to preserve the unreadable file in a backup: the error reports the cause and backup path if successful (saving is then enabled), or states that saving remains blocked if preservation fails. Follow the recovery steps above before trying again.
+1. Don't add or change contacts until you've finished, because saving could overwrite your fixes. Note down any contacts you added since the problem started. Copy the data file and any `.backup` file the app created to a safe place.
+1. Follow the advice in the error message to fix the data file, or put a fixed copy of the backup file in its place. Use the file location shown in the message.
+1. Save the file, enter `reload`, and check your contacts. Re-enter any contacts you noted in step 1 that are missing.
 
-When a reload succeeds but invalid guardian links are repaired, the result lists every affected contact's name, UUID, guardian ID when present, and reason. Valid contacts remain loaded, the links are removed in memory, and the next successful save removes those invalid links from the JSON file.
+More about `reload`:
+
+* If a command was undone because saving failed, `reload` does not redo it. Enter it again afterwards.
+* If the data file doesn't exist, the contact list becomes empty.
+* If the file still can't be read, your current contacts and list stay as they are, and the message explains what's wrong. TuitionBook moves the unreadable file to a backup when it can, and tells you where.
+* If some guardian links in the file are invalid, the contacts still load but those links are removed. The result lists each affected contact and why its link was removed.
 
 ### Exiting the program: `exit`
 
-Exits the program without attempting to save contact data.
+Closes TuitionBook. Your changes are already saved, so there is nothing to save on exit.
 
 Format: `exit`
 
 ### Saving the data
 
-TuitionBook allows one running instance for each home folder. If you launch the JAR again from a folder already used by a running instance, the second launch shows an error and exits before reading or changing contacts, preferences, recovery files, or normal logs. Close or use the existing window. Copies in separate folders have separate guards and can run independently with their own data and preferences.
+TuitionBook saves automatically after every command that changes your contacts or guardian links. There is no Save command.
 
-TuitionBook uses `.tuitionbook.lock` in the home folder for this check. The file normally remains after TuitionBook closes or is forcibly terminated; an unlocked leftover file is harmless and does not block the next launch. Do not delete this file while TuitionBook is running, because replacing a locked file can defeat coordination between launches. The guard is honoured only by this TuitionBook version; it does not lock out external editors or older versions.
+* If saving fails, the command is undone and an error explains what to check. Fix the problem, then enter the command again.
+* If TuitionBook can't read your data file when it starts, it shows a warning. It usually moves the unreadable file to a backup and starts with an empty list, and you can keep working. If it can't make the backup, it won't save anything until you fix or move the file and then run `reload` or restart. See [Editing the data file](#editing-the-data-file).
 
-For routine manual edits or backup restoration, close TuitionBook first. The [reload recovery workflow](#reloading-contacts-reload) explains how to recover while keeping it open.
+Only one TuitionBook window can use a folder at a time. If you start it again from the same folder, the second copy shows an error and closes without touching your contacts. To run a separate copy, put the JAR in a different folder; each folder has its own contacts and settings.
 
-TuitionBook attempts to save contact data after commands that change contacts or guardian links. Repeating an existing link, unlinking a student without a guardian, editing fields or tags to their existing values, or clearing an already-empty contact list does not attempt a save. A change to the working set alone does not require saving. Read-only commands, including `help` and `exit`, do not save contact data. If saving fails, TuitionBook displays an error and restores contacts, exact working-set membership/order and its query to their state before the command. You do not need to save manually.
-If TuitionBook cannot load an existing data file, it shows a startup warning with the recovery outcome. When it successfully moves the unreadable file to a backup, you can save new contacts. If it cannot create that backup, saving remains blocked until you correct or move the original file and run `reload` or restart the app.
+TuitionBook creates a file named `.tuitionbook.lock` in its folder to make this check. It's safe to leave this file after closing the app, but **don't delete it while TuitionBook is running**. This check only works between copies of this version of TuitionBook; it doesn't stop other programs from editing the data file.
 
 ### Editing the data file
 
-For routine manual editing:
-
-1. Close TuitionBook.
-1. Copy the data file to a separate safe location as a backup.
-1. Edit or replace the data file, keeping it valid UTF-8 JSON and following the field rules below. Save your edits.
-1. Reopen TuitionBook and check the loaded contacts before entering contact-changing commands. Restart shows the full list and clears the previous filter.
-
-An open instance keeps its own copy in memory and can overwrite external edits on the next save. If recovering from a load failure while keeping the app open, use the separate [reload recovery workflow](#reloading-contacts-reload).
-
-TuitionBook stores its data, preferences, and logs relative to the folder containing the JAR, regardless of the folder from which it is launched. Contact data is saved automatically as a UTF-8 JSON file `[JAR file location]/data/tuitionbook.json`. A UTF-8 byte-order mark (BOM) at the start is accepted. Invalid UTF-8 byte sequences make the file invalid rather than being replaced silently. Advanced users are welcome to update data directly by editing that data file. On first launch after upgrading from an earlier version, TuitionBook moves the existing `data/addressbook.json` to this path. If both files are present, it uses `tuitionbook.json` and leaves `addressbook.json` unchanged. If permissions prevent the move, TuitionBook continues using the unchanged `addressbook.json` for that run and retries migration on a later launch. Contact-changing commands can still report a save error and roll back if the legacy file's folder is not writable.
-
-Each contact in the file has these relationship fields:
-
-* `id`: the contact's unique identifier. It must be a valid UUID and must not be repeated in the file.
-* `role`: either `STUDENT` or `GUARDIAN`.
-* `guardianId`: optional. The supported JSON values are a string containing the `id` of a guardian contact, or `null`; the field can also be absent. Guardians must have no guardian link.
-
-Do not change an existing `id` when editing the file. A current-format contact must include valid `id` and `role` fields. Contacts with the same role, normalized name, and normalized phone number are duplicates and make the file invalid, even when their `id` values differ. A student and guardian may have the same normalized name and phone number.
-
-The file must contain exactly one JSON value and each object must use every property name at most once. Additional JSON after the first value and repeated property names make the file invalid, even if the repeated values are identical. Such files follow the recovery behavior below so that ignored or conflicting content is not lost on a later save.
-
-Data files created before these relationship fields were introduced remain supported. A contact that has none of `id`, `role`, or `guardianId` is loaded as an unlinked student and receives a generated `id`. The updated fields are written when TuitionBook next saves the data file.
-
-Surrounding ASCII spaces in tag strings are removed when the file is loaded, so `" Math "` is treated as `"Math"`. Tags that differ only by that padding collapse into one tag. Spaces around a tag cannot keep it separate from the unpadded tag; to keep two tags separate, give them visibly different names, such as `"Math"` and `"Math (old)"`. Internal spacing remains significant: `"Sec 4"` and `"Sec  4"` remain different tags. The normalized tags are written to the data file after the next successful contact-changing command.
-
-Do not add backslashes before spaces in a tag string. For example, `"\ Math\ "` is invalid JSON, so TuitionBook treats the whole data file as invalid and starts with an empty contact list through its recovery flow.
-
-If a string `guardianId` is not a UUID, refers to a missing contact, refers to a student, or links a student to itself, TuitionBook keeps the contact but removes that guardian link when loading the file. A startup warning gives the number of links repaired and lists every affected contact, its UUID, guardian ID when present, and the reason for the repair in a scrollable summary. Review the `guardianId` values in the data file before entering a contact-changing command; the next save removes invalid links. A guardian contact's own `guardianId` is also removed if present. An object or array `guardianId` cannot be interpreted as a link string, so the complete file follows the invalid-file recovery behavior instead of loading contacts and repairing only that link.
+Your contacts are saved in `data/tuitionbook.json`, inside the folder that contains the TuitionBook JAR. Settings and log files are kept in the same folder. The data file is a JSON text file, so you can edit it with a text editor if you're comfortable doing so.
 
 <box type="warning" seamless>
 
-**Caution:** If TuitionBook cannot read the data file, it starts with an empty contact list and shows a warning at the next run. It moves the unreadable file unchanged to `tuitionbook.json.backup`. If that name already exists, it uses the next available name such as `tuitionbook.json.backup.1`; the warning names the exact backup path and distinguishes permission failures, invalid UTF-8 or JSON, invalid contact values, and other file-system errors. The backup is kept unchanged, and TuitionBook can then save new contact data to `tuitionbook.json`.<br>
-To restore the original data, close TuitionBook and copy both the current data file (if present) and the preserved backup to a separate safe location. Follow the warning's guidance: for example, restore read permission, correct invalid UTF-8 or JSON, or correct the reported contact value in a copy of the preserved file. Restore that corrected copy to the configured data path, replacing the new file, then restart TuitionBook. Contacts added after recovery are stored in the new file and must be re-entered because TuitionBook cannot merge the two files automatically. If the backup cannot be created, TuitionBook leaves the original file in place and blocks saves. Resolve the reported problem before restarting, or follow the [reload recovery workflow](#reloading-contacts-reload) to keep the app open.<br>
-Furthermore, certain edits can cause TuitionBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
-
-The 100-character name limit and 200-character address limit also apply to values edited directly in the data file. A file containing a longer value is invalid and follows the recovery behavior above: TuitionBook moves it unchanged to an unused sibling backup and allows new data to be saved; if that backup cannot be created, TuitionBook leaves the original file in place and blocks saves.
+**Edit the data file only if you're confident you can do so correctly.** If TuitionBook can't read the file, it starts with an empty contact list (see [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file) below).
 </box>
+
+To edit the file:
+
+1. Close TuitionBook. If it is open, it may overwrite your edits the next time it saves.
+1. Copy the data file somewhere safe as a backup.
+1. Edit the file and save it as UTF-8 text.
+1. Reopen TuitionBook and check your contacts before making any changes.
+
+If you are fixing the file after a problem and want to keep TuitionBook open, use [`reload`](#reloading-contacts-reload) instead.
+
+**Rules for the data file**
+
+* Each contact must follow the same rules as [`add`](#adding-a-contact-add), including the 100-character limit for names and 200-character limit for addresses.
+* Each contact also has these fields, which TuitionBook manages for you:
+  * `id`: a code that identifies the contact, in the format TuitionBook creates (known as a UUID), for example `123e4567-e89b-12d3-a456-426614174000`. Every contact needs one, except in files from older versions (see below). **Don't change it** or make up your own, such as `student-1`, and don't give two contacts the same `id`. Any of these makes the whole file unreadable.
+  * `role`: `STUDENT` or `GUARDIAN`.
+  * `guardianId`: for a student, the `id` of their guardian, written in double quotes. It can be left out or set to `null` if the student has no guardian. Any other kind of value, such as a list, makes the file unreadable.
+* Two contacts with the same role, name and phone number count as duplicates, even if their `id`s differ, and make the file unreadable. A student and a guardian can share a name and phone number.
+* The file must contain one set of contacts only. Extra text after the final `}`, or the same field name used twice in one contact, makes the file unreadable.
+* Spaces at the start or end of a tag are removed when the file is loaded, so `" Math "` becomes `"Math"`. Spaces inside a tag are kept.
+* Don't put a backslash before a space (for example `"\ Math"`). This is not valid JSON and makes the whole file unreadable.
+* Files from older versions of TuitionBook still work. A contact without `id`, `role` and `guardianId` is loaded as a student with no guardian, and the missing fields are added the next time TuitionBook saves. If an older `data/addressbook.json` exists, TuitionBook moves it to `data/tuitionbook.json` the first time it starts. If it can't move the file (for example, because it isn't allowed to change that folder), it keeps using `data/addressbook.json` as your data file and tries again next time.
+
+**Invalid guardian links**
+
+If a student's `guardianId` doesn't point to a guardian in the file, TuitionBook still loads the student but removes that link. This happens when the `guardianId` is not a valid id, points to a missing contact or to another student, or points to the student themselves. A warning lists each affected contact and the reason. Check the file before making changes, because the next save removes those links permanently. Any `guardianId` on a guardian is also removed.
+
+<a id="if-tuitionbook-can-t-read-the-data-file"></a>
+
+**If TuitionBook can't read the data file**
+
+TuitionBook starts with an empty contact list and shows a warning explaining what went wrong. If the problem is with a particular contact, the warning names it by its position in the file and, if that contact's name is valid, by its name, for example `Contact 3 in the file ("Alex Yeoh"): Emails must be in the format name@example.com.` or `Contact 4 in the file: Missing "name" value.` Contacts are counted from the top of the file, starting from 1.
+
+TuitionBook also moves the unreadable file, unchanged, to a backup in the same folder with `.backup` added to its name, for example `tuitionbook.json.backup` (or `.backup.1`, `.backup.2` and so on if that name is taken). **The warning shows the exact name and location**, so check it rather than assuming. You can then keep using TuitionBook, and new contacts are saved to a fresh data file.
+
+To get your old contacts back:
+
+1. Close TuitionBook. Copy both the data file and the `.backup` file somewhere safe.
+1. Fix the problem described in the warning in a copy of the `.backup` file.
+1. Replace the data file with your fixed copy (keeping the data file's original name), then reopen TuitionBook.
+1. Re-enter any contacts you added after the problem started. TuitionBook cannot combine the two files for you.
+
+If TuitionBook can't create the backup, it leaves the file where it is and won't save anything until you fix or move the file and restart (or use [`reload`](#reloading-contacts-reload)).
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -492,14 +530,14 @@ The 100-character name limit and 200-character address limit also apply to value
 
 * **JAR**: The `.jar` application file you download and run with Java.
 * **Terminal**: The window where you enter the Java launch command. Once TuitionBook opens, enter contact-management commands in its command box instead.
-* **Prefix**: A marker such as `n/` or `t/` that identifies the value following it.
+* **Prefix**: A short marker such as `n/` or `t/` that tells TuitionBook what the value after it is (here, a name or a tag).
 * **Contact**: A record representing either a student or a guardian, with a name, phone number, and optional email address, home address, and tags.
 * **Role**: Whether a contact is a `student` or a `guardian`. Entered in any casing; shown as a `STUDENT` or `GUARDIAN` badge on the contact card.
 * **Guardian link**: A recorded association from a student to a guardian. A student has at most one guardian link; a guardian can be linked to multiple students.
-* **Index**: A contact's position in the current working set, starting from 1. Index-based commands such as `edit`, `delete`, and `view` use this displayed position. Indexes can change after deletion compacts the working set, an explicit `find` or `list` query, a successful reload, clear or restart.
-* **Working set**: The ordered contacts selected by the last `find` or `list`. Their details stay current, but edits do not automatically recompute membership. The originating query classifies additions and identifies retained contacts that no longer match. A new query replaces the working set; bare `list` shows all contacts.
-* **Tag**: An optional label you choose for a contact, such as `Sec4` or `AMath`, used for organising and filtering. Tags are not dedicated fields and are not validated against any category list.
-* **Home folder**: The folder containing the TuitionBook JAR. Data, preferences, logs, and the single-instance lock file are stored relative to this folder.
+* **Index**: The number shown beside a contact in the current list, starting from 1. Commands such as `edit`, `delete` and `view` use it to pick a contact. It can change after `delete`, `list`, `find`, `reload`, `clear confirm` or a restart.
+* **Working set**: The contacts shown by your last `list` or `find`. Changing a contact doesn't remove it from the working set, even if it no longer matches; run the command again to refresh. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable).
+* **Tag**: An optional label you choose for a contact, such as `Sec4` or `AMath`, used for organising and filtering.
+* **Home folder**: The folder containing the TuitionBook JAR. Your data file, settings and log files are kept here.
 * **Data file**: The local JSON file (`data/tuitionbook.json`) that stores your contacts and guardian links between sessions.
 
 --------------------------------------------------------------------------------------------------------------------
@@ -512,19 +550,19 @@ Find the symptom below and try the suggested action. Error messages appear in th
 |---|---|---|
 | The terminal cannot find `java`, or reports an unsupported Java version | Java is missing, too old, or a different installation is being used | Run `java -version` in that terminal and follow the Java installation links in [Quick start](#quick-start). |
 | `Unable to access jarfile` | The path or filename in the launch command is wrong | Check the downloaded file's location and name. Put the full path in straight double quotes. |
-| `TuitionBook is already running` | A TuitionBook instance from the same home folder holds the instance lock | Use or close the existing window. If you intentionally need an independent instance, copy the JAR to a separate folder and launch that copy. Do not delete `.tuitionbook.lock` while the first instance is running. |
-| `TuitionBook could not start safely` | The app could not create or lock `.tuitionbook.lock`, for example because the home folder is not writable | Check that the JAR's folder exists and that your account can create and lock files there, then retry. This message does not mean that another instance is known to be running. |
+| `TuitionBook is already running` | TuitionBook is already open from the same folder | Use or close the existing window. To run a separate copy, put the JAR in a different folder. Don't delete `.tuitionbook.lock` while TuitionBook is running. |
+| `TuitionBook could not start safely` | TuitionBook could not create its `.tuitionbook.lock` file, for example because you can't save files in that folder | Check that you are allowed to create files in the JAR's folder, or move the JAR to a folder you own, then try again. |
 | `Unknown command.` | A misspelled or unsupported command word | Use a command word from the [Command summary](#command-summary), without the backticks shown in this guide. Command-word letter case does not matter. |
-| `Invalid command format!` | A required value is missing or a positional argument is misplaced | Read the usage shown with the error. Supply the required index first, then the relevant prefixed fields. For `link`, supply the student index followed by the guardian index. |
-| `Commands must be entered on a single line.` | A raw line break reached the parser without command-box conversion | Remove the line break or replace it with a normal space (`U+0020`); quotation marks do not bypass this rule. Normal GUI pasting converts tabs and line separators to spaces before parsing instead. |
-| `Your command contains an unusual space character` | A lookalike space occurs in the command word, an index or a no-argument command's trailing text | Retype that syntax using the spacebar (`U+0020`) and retry. Contact values are not automatically normalised. |
-| `Missing required field(s): ...` | An `add` command omitted one or more of `r/ROLE`, `n/NAME`, or `p/PHONE` | Add every field named in the message. The fields are listed in role, name, phone order, followed by the full `add` usage. |
-| `The contact index provided is invalid.` | That index is not in the currently displayed list | Enter `list`, find the intended contact's current index, and retry. Filters can change the displayed indexes. |
-| No contacts appear after `find` or a filtered `list` | No contacts match the current filter | Enter `list` to show all contacts. `find` searches names only; tag filters must match the complete tag, including internal spaces. |
-| `Unknown field` | A space-separated letter prefix, such as `ee/`, is not supported by that command | Correct the prefix using the command format, or quote the complete name, address or tag if the text is intentional. The command has not run; no guessed correction is applied. |
-| A name, address or tag is split at text such as `a/` or `t/` | The text was interpreted as a supported field prefix | Quote the complete value, for example `n/"Rina a/p Kaur"`, `a/"20 Road c/o Rina"` or `t/"study t/weekly"`. See [Adding a contact](#adding-a-contact-add). |
-| `Could not save your changes, so the command was undone.` | TuitionBook cannot write to its data location | Check write access and available disk space. The attempted change was rolled back. Correct the storage problem, then re-enter the command; it is not retried automatically. |
-| Startup reports an unreadable file or blocked saving | The data could not be loaded, and a backup may also have failed | Follow the reported backup path and [data recovery instructions](#editing-the-data-file). Preserve the original and any new contacts before replacing files. Use `reload` or restart after correcting the file. |
+| `Invalid command format!` | Something required is missing, or values are in the wrong order | Follow the format and example shown with the error. Put the index first, then the fields. For `link`, put the student's index before the guardian's. |
+| `Commands must be entered on a single line.` | The command contains a line break | Remove the line break or replace it with a space, then try again. |
+| `Your command contains an unusual space character` | The command was copied from a website or document that uses special spaces | Retype the spaces around the command word and index using the spacebar, then try again. |
+| `Missing required field(s): ...` | An `add` command is missing `r/ROLE`, `n/NAME` or `p/PHONE` | Add every field named in the message. |
+| `The contact index provided is invalid.` | No contact has that number in the current list | Enter `list`, find the contact's number, and try again. |
+| No contacts appear after `find` or `list` | No contacts match | Enter `list` to show everyone. `find` searches names only, and tag filters must match the whole tag, including spaces. |
+| `Unknown field` | The command contains a prefix it doesn't recognise, such as `ee/` | Fix the typo. If the text is meant to be part of a name, address or tag (for example `s/o`), put the whole value in double quotes: `n/"Muhammad s/o Ali"`. Nothing was changed. |
+| A name, address or tag is cut off at text such as `a/` or `t/` | TuitionBook read that text as the start of another field | Put the whole value in double quotes, for example `n/"Rina a/p Kaur"`, `a/"20 Road c/o Rina"` or `t/"study t/weekly"`. See [Adding a contact](#adding-a-contact-add). |
+| `Could not save your changes, so the command was undone.` | TuitionBook can't save to its data folder | Check that you can save files in the JAR's folder and that the disk isn't full, then enter the command again. If the message says saving is disabled, see [Editing the data file](#editing-the-data-file). |
+| A warning says your contact data could not be loaded | The data file has a mistake or can't be opened | Follow the advice in the warning and the steps in [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file). |
 | The Help window opens but the online guide does not | A browser could not open, or the page cannot be reached | Use the offline summary in Help. Try `Copy URL` in a browser when an internet connection is available. |
 
 ### Reporting a problem or unclear instruction
@@ -543,10 +581,10 @@ Check [Known issues](#known-issues) first. If you still need help, search the [p
 ## Known issues
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. Close TuitionBook, rename `preferences.json` in the JAR folder to `preferences.json.old`, then reopen the app. This resets window preferences without changing `data/tuitionbook.json`.
-2. **Unquoted text resembling a supported parameter prefix** (e.g. `a/` in `Rina a/p Kaur`) is still read as a separate field. Unknown space-separated letter prefixes are rejected instead. Quote complete literal names, addresses and tags, for example `n/"Rina a/p Kaur"` or `n/"Muhammad s/o Ali"`. The parser cannot infer whether an accidentally entered supported prefix was intentional.
-3. **Country-code equivalence is not inferred for phone numbers.** Spaces, hyphens, forward slashes, numeric-group parentheses, and the optional annotation are ignored during duplicate detection, and `x`, `ext`, and `ext.` are equivalent extension markers, but a leading `+` and the extension digits remain significant. For example, `+6591234567` and `91234567` are different numbers.
-4. **Two contacts may share a name**: only a matching role, name, *and* phone number counts as a duplicate. To tell namesakes with the same role apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
+2. **Text that looks like a prefix is read as a new field** (e.g. `a/` in `Rina a/p Kaur`) unless you put the whole value in double quotes, for example `n/"Rina a/p Kaur"` or `n/"Muhammad s/o Ali"`. TuitionBook can't tell whether you meant it as part of the value.
+3. **Country codes are not recognised in phone numbers.** When checking for duplicates, `+6591234567` and `91234567` are treated as different numbers.
+4. **Two contacts may share a name**: they only count as the same person if their role, name *and* phone number all match. To tell apart two students (or two guardians) with the same name, add something to the name, e.g. `Tan Wei Ming - Sec 2`.
 5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
 6. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Keep a separate backup of the data file before bulk changes so you can recover removed contacts.
-7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts, one per role. Those contacts may use the same normalized name and phone number.
-8. **If the data file is invalid or corrupted, TuitionBook starts with an empty contact list and a warning.** If it successfully moves the original bytes to a sibling backup named `tuitionbook.json.backup` (or the next available numbered name), the warning gives the exact backup path and TuitionBook allows new data to be saved. To recover the original data, fix the JSON in the backup, rename it to `tuitionbook.json` (replacing the new file), and restart; contacts added after recovery must be re-entered because the files cannot be merged automatically. If the backup fails, the original remains in place and saving is blocked; correct or move it, then restart.
+7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts, one for each role. The two contacts can have the same name and phone number.
+8. **If the data file has a mistake, TuitionBook starts with an empty contact list and a warning.** Your original file is kept as a backup. See [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file) to get your contacts back.

@@ -94,6 +94,27 @@ public class TagTest {
     }
 
     @Test
+    public void isValidTagName_lookalikeOrInvisibleCharacters_returnsFalse() {
+        String[] invalidTags = {
+            "M\u0430th", // Cyrillic a
+            "\uFF2Dath", // full-width M
+            "Sec\u00a04", // no-break space
+            "Sec\u202f4", // narrow no-break space
+            "Sec\u30004", // ideographic space
+            "Math\u200B", // zero-width space
+            "\uFEFFMath", // byte-order mark
+            "Math\u202E", // right-to-left override
+            "Math\u0301", // combining accent
+            "\u0301", // combining accent only
+            "A\uD800", // unpaired surrogate
+            "Math\u2014Science" // em dash
+        };
+        for (String tag : invalidTags) {
+            assertFalse(Tag.isValidTagName(tag), tag);
+        }
+    }
+
+    @Test
     public void isValidTagName_longInvalidTags_returnsFalse() {
         String manySegments = "A-".repeat(5000);
 

@@ -19,6 +19,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -45,7 +46,7 @@ public class UiManager implements Ui {
     private static final double LOAD_FAILURE_DIALOG_PREF_WIDTH = 600;
     private static final double LOAD_FAILURE_DETAILS_MIN_HEIGHT = 80;
     private static final double LOAD_FAILURE_DETAILS_PREF_HEIGHT = 220;
-    private static final double LOAD_FAILURE_DETAILS_SCREEN_FRACTION = 0.25;
+    private static final String DEFAULT_LOAD_FAILURE_CAUSE = "Your data file could not be read.";
 
     private Logic logic;
     private Path dataFilePath;
@@ -179,24 +180,23 @@ public class UiManager implements Ui {
     }
 
     private String backedUpResultMessage(StartupNotice notice, Path displayedDataFilePath) {
-        String cause = notice.loadFailureGuidance() == null
-                ? "The data file could not be read."
-                : notice.loadFailureGuidance();
-        return cause + "\nBackup file: "
+        return loadFailureCause(notice) + "\nBackup file: "
                 + displayedPath(notice.malformedFileBackupPath()) + ".\nNew contacts save to " + displayedDataFilePath
-                + " and cannot be merged automatically with the backup file.\nBefore restoring, close TuitionBook "
-                + "and copy any new data file somewhere safe. Fix the problem described above in the backup file. "
-                + "Replace the new data file with the corrected backup file, then restart TuitionBook.";
+                + " and cannot be merged automatically with the backup file.\nFix the problem in the backup file. "
+                + "If a new data file exists, copy it somewhere safe, then replace it with the corrected backup. "
+                + "Enter reload while TuitionBook remains open, or close and restart TuitionBook. Re-enter contacts "
+                + "that existed only in the separately saved new file as needed.";
     }
 
     private String backupFailedResultMessage(StartupNotice notice, Path displayedDataFilePath) {
-        String cause = notice.loadFailureGuidance() == null
-                ? "The data file could not be read."
-                : notice.loadFailureGuidance();
-        return cause + "\nThe original file could not be backed up and remains at "
+        return loadFailureCause(notice) + "\nThe original file could not be backed up and remains at "
                 + displayedDataFilePath
-                + ".\nSaving is disabled. Close TuitionBook, correct or move the original file, then restart "
-                + "TuitionBook.";
+                + ".\nSaving is disabled. Correct or move the original file, then enter reload while TuitionBook "
+                + "remains open, or close and restart TuitionBook.";
+    }
+
+    private String loadFailureCause(StartupNotice notice) {
+        return notice.loadFailureGuidance() == null ? DEFAULT_LOAD_FAILURE_CAUSE : notice.loadFailureGuidance();
     }
 
     private void showLoadFailureNotice(StartupNotice notice, Path displayedDataFilePath, String resultMessage) {
@@ -214,13 +214,18 @@ public class UiManager implements Ui {
         alert.setOnShown(event -> {
             Stage dialogStage = (Stage) alert.getDialogPane().getScene().getWindow();
             TitledPane recoveryDetails = (TitledPane) alert.getDialogPane().lookup("#recoveryDetails");
+            Rectangle2D visualBounds = activeVisualBounds(dialogStage);
+            dialogStage.setWidth(Math.min(LOAD_FAILURE_DIALOG_PREF_WIDTH, visualBounds.getWidth()));
             dialogStage.sizeToScene();
-            fitLoadFailureDialogWithin(dialogStage, activeVisualBounds(dialogStage));
+            fitLoadFailureDialogWithin(dialogStage, visualBounds);
             recoveryDetails.expandedProperty().addListener((observable, wasExpanded, isExpanded) ->
                     Platform.runLater(() -> {
                         dialogStage.sizeToScene();
                         fitLoadFailureDialogWithin(dialogStage, activeVisualBounds(dialogStage));
                     }));
+            dialogStage.widthProperty().addListener((observable, oldWidth, newWidth) ->
+                    Platform.runLater(() -> fitLoadFailureDialogWithin(dialogStage,
+                            activeVisualBounds(dialogStage))));
         });
         alert.showAndWait();
     }
@@ -232,10 +237,8 @@ public class UiManager implements Ui {
     }
 
     private VBox buildLoadFailureContent(StartupNotice notice, Path displayedDataFilePath) {
-        String cause = notice.loadFailureGuidance() == null
-                ? "The data file could not be read."
-                : notice.loadFailureGuidance();
-        Label body = createWrappedLabel(cause + "\n\nTuitionBook started with an empty contact list.",
+        String bodyText = loadFailureCause(notice) + "\n\nTuitionBook started with an empty contact list.";
+        Label body = createWrappedLabel(bodyText,
                 "loadFailureBody", "startup-load-failure-body");
         Label outcome = createWrappedLabel(loadFailureOutcome(notice),
                 "loadFailureOutcome", "startup-load-failure-body");
@@ -279,7 +282,6 @@ public class UiManager implements Ui {
         scroller.setFitToWidth(true);
         scroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroller.setMinHeight(LOAD_FAILURE_DETAILS_MIN_HEIGHT);
-        scroller.setPrefViewportHeight(LOAD_FAILURE_DETAILS_PREF_HEIGHT);
         scroller.getStyleClass().add("startup-load-failure-scroll");
 
         TitledPane recoveryDetails = new TitledPane("Recovery details", scroller);
@@ -291,16 +293,19 @@ public class UiManager implements Ui {
 
     private String recoverySteps(StartupNotice notice) {
         if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
-            return "1. Close TuitionBook before replacing any files.\n"
-                    + "2. If there’s a new data file, copy it somewhere safe.\n"
-                    + "3. Fix the problem described above in the backup file.\n"
+            return "1. Fix the problem described above in the backup file. Do not enter contact-changing commands "
+                    + "during recovery.\n"
+                    + "2. If there is a new data file, copy it somewhere safe.\n"
+                    + "3. The backup and new data file cannot be merged automatically.\n"
                     + "4. Replace the new data file with the corrected backup file.\n"
-                    + "5. Restart TuitionBook.\n"
-                    + "6. Re-enter any contacts you added since the problem started.";
+                    + "5. Either enter reload while TuitionBook remains open, or close and restart TuitionBook.\n"
+                    + "6. Re-enter contacts that existed only in the separately saved new file as needed.";
         }
-        return "1. Close TuitionBook before changing the data file.\n"
-                + "2. Correct or move the original data file.\n"
-                + "3. Restart TuitionBook to retry loading and re-enable saving.";
+        return "1. The original file remains in place and saving is blocked. Do not enter contact-changing commands "
+                + "during recovery.\n"
+                + "2. Correct or move the original data file while TuitionBook remains open, or close TuitionBook "
+                + "before doing so.\n"
+                + "3. If TuitionBook remains open, enter reload. Otherwise, restart TuitionBook.";
     }
 
     private VBox createPathEntry(String labelText, Path path, String fieldId) {
@@ -327,21 +332,49 @@ public class UiManager implements Ui {
         DialogPane dialogPane = (DialogPane) dialogStage.getScene().getRoot();
         TitledPane recoveryDetails = (TitledPane) dialogPane.lookup("#recoveryDetails");
         ScrollPane recoveryScroller = (ScrollPane) recoveryDetails.getContent();
-        double detailsHeight = Math.min(LOAD_FAILURE_DETAILS_PREF_HEIGHT,
-                Math.max(LOAD_FAILURE_DETAILS_MIN_HEIGHT,
-                        visualBounds.getHeight() * LOAD_FAILURE_DETAILS_SCREEN_FRACTION));
-        recoveryScroller.setMinHeight(Math.min(LOAD_FAILURE_DETAILS_MIN_HEIGHT, detailsHeight));
+        dialogPane.applyCss();
+        dialogPane.layout();
+
+        double viewportWidth = recoveryScroller.getViewportBounds().getWidth();
+        if (viewportWidth <= 0) {
+            viewportWidth = Math.max(1, dialogPane.getWidth() - 60);
+        }
+        double contentHeight = recoveryScroller.getContent().prefHeight(viewportWidth);
+        double detailsHeight = Math.max(LOAD_FAILURE_DETAILS_MIN_HEIGHT,
+                Math.min(LOAD_FAILURE_DETAILS_PREF_HEIGHT, contentHeight + 2));
+        recoveryScroller.setMinHeight(LOAD_FAILURE_DETAILS_MIN_HEIGHT);
         recoveryScroller.setPrefViewportHeight(detailsHeight);
         recoveryScroller.setMaxHeight(detailsHeight);
+        dialogPane.applyCss();
+        dialogPane.layout();
+        double windowDecorationHeight = Double.isFinite(dialogStage.getHeight())
+                && Double.isFinite(dialogStage.getScene().getHeight())
+                ? Math.max(0, dialogStage.getHeight() - dialogStage.getScene().getHeight())
+                : 0;
+        double desiredHeight = dialogPane.prefHeight(dialogPane.getWidth()) + windowDecorationHeight;
+        double requiredMinimumHeight = Math.max(LOAD_FAILURE_DIALOG_MIN_HEIGHT, desiredHeight);
+        if (recoveryDetails.isExpanded()) {
+            recoveryScroller.setPrefViewportHeight(LOAD_FAILURE_DETAILS_MIN_HEIGHT);
+            recoveryScroller.setMaxHeight(LOAD_FAILURE_DETAILS_MIN_HEIGHT);
+            dialogPane.applyCss();
+            dialogPane.layout();
+            requiredMinimumHeight = Math.max(LOAD_FAILURE_DIALOG_MIN_HEIGHT,
+                    dialogPane.prefHeight(dialogPane.getWidth()) + windowDecorationHeight);
+            recoveryScroller.setPrefViewportHeight(detailsHeight);
+            recoveryScroller.setMaxHeight(detailsHeight);
+            dialogPane.applyCss();
+            dialogPane.layout();
+            desiredHeight = dialogPane.prefHeight(dialogPane.getWidth()) + windowDecorationHeight;
+        }
 
         double boundedMinWidth = Math.min(LOAD_FAILURE_DIALOG_MIN_WIDTH, visualBounds.getWidth());
-        double boundedMinHeight = Math.min(LOAD_FAILURE_DIALOG_MIN_HEIGHT, visualBounds.getHeight());
+        double boundedMinHeight = Math.min(requiredMinimumHeight, visualBounds.getHeight());
         dialogStage.setMinWidth(boundedMinWidth);
         dialogStage.setMinHeight(boundedMinHeight);
         dialogStage.setMaxWidth(visualBounds.getWidth());
         dialogStage.setMaxHeight(visualBounds.getHeight());
         dialogStage.setWidth(Math.min(dialogStage.getWidth(), visualBounds.getWidth()));
-        dialogStage.setHeight(Math.min(dialogStage.getHeight(), visualBounds.getHeight()));
+        dialogStage.setHeight(Math.min(Math.max(desiredHeight, boundedMinHeight), visualBounds.getHeight()));
         dialogStage.setX(clamp(dialogStage.getX(), visualBounds.getMinX(),
                 visualBounds.getMaxX() - dialogStage.getWidth()));
         dialogStage.setY(clamp(dialogStage.getY(), visualBounds.getMinY(),
@@ -356,6 +389,7 @@ public class UiManager implements Ui {
         Label label = new Label(text);
         label.setId(id);
         label.setWrapText(true);
+        label.setMinHeight(Region.USE_PREF_SIZE);
         label.setMaxWidth(Double.MAX_VALUE);
         label.getStyleClass().add(styleClass);
         return label;
