@@ -12,6 +12,8 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.core.JsonParseException;
+
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
 import seedu.tuitionbook.testutil.SerializableTestClass;
 import seedu.tuitionbook.testutil.TestUtil;
@@ -93,11 +95,21 @@ public class JsonUtilTest {
     }
 
     @Test
-    public void fromJsonString_trailingJson_throwsIoException() {
+    public void fromJsonString_trailingJson_throwsJsonParseException() {
         String jsonWithTrailingObject = SerializableTestClass.JSON_STRING_REPRESENTATION + " {}";
 
-        assertThrows(IOException.class, () ->
+        assertThrows(JsonParseException.class, () ->
                 JsonUtil.fromJsonString(jsonWithTrailingObject, SerializableTestClass.class));
+    }
+
+    @Test
+    public void fromJsonString_trailingWhitespace_returnsObject() throws IOException {
+        String jsonWithTrailingWhitespace = SerializableTestClass.JSON_STRING_REPRESENTATION + " \t\r\n";
+
+        SerializableTestClass result = JsonUtil.fromJsonString(
+                jsonWithTrailingWhitespace, SerializableTestClass.class);
+
+        assertEquals(SerializableTestClass.getNameTestValue(), result.getName());
     }
 
     //TODO: @Test jsonUtil_writeThenReadObjectToJson_correctObject()

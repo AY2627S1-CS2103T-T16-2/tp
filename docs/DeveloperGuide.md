@@ -1475,7 +1475,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
 1. Preserving ambiguous JSON input
 
    1. Place the JAR file in a fresh, disposable folder. Create `data/tuitionbook.json` containing exactly `{"persons":[]} {"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}` and launch TuitionBook.<br>
-      Expected: TuitionBook rejects the trailing second JSON value, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
+      Expected: TuitionBook rejects the trailing second JSON value, opens with an empty contact list, identifies the file as invalid UTF-8 JSON, advises correcting the preserved file, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
 
    1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}`.<br>
       Expected: TuitionBook rejects the duplicate `persons` property, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
