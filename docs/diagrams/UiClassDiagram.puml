@@ -3,79 +3,38 @@
 skinparam arrowThickness 1.1
 skinparam arrowColor UI_COLOR_T4
 skinparam classBackgroundColor UI_COLOR
+skinparam ClassFontSize 17
+skinparam PackageFontSize 16
+skinparam ArrowFontSize 12
+skinparam ArrowFontStyle plain
+skinparam nodesep 15
+skinparam ranksep 20
+scale max 800 width
+allowmixing
 
-package UI <<Rectangle>> {
-    class "<<interface>>\nUi" as Ui
-    class "{abstract}\nUiPart<T>" as UiPart
+package UI {
+    interface Ui
     class UiManager
     class MainWindow
-    class CommandBox
-    class CommandTextField
-    class ResultDisplay
-    class PersonListPanel
-    class PersonCard
-    class DetailDisplay
-    class StatusBarFooter
-    class HelpWindow
-    class DesktopAdapter
-    class "<<record>>\nStartupNotice" as StartupNotice
+    class StartupNotice
 }
 
-package Logic <<Rectangle>> {
-    class "<<interface>>\nLogic" as Logic #3333C4
-}
-
-package Model <<Rectangle>> {
-    class Person #9D0012
+package Logic {
+    interface Logic #3333C4
 }
 
 class MainApp #555555
 
 MainApp --> "1" Ui : starts
-UiManager .left.|> Ui
-UiManager -down-> "0..1" MainWindow
+UiManager .up.|> Ui
+UiManager --> "0..1" MainWindow
 UiManager --> "0..1" StartupNotice : displays at startup
-UiManager -right-> "1" Logic
+UiManager --> "1" Logic
 
-MainWindow -left-|> UiPart
-CommandBox --|> UiPart
-ResultDisplay --|> UiPart
-PersonListPanel --|> UiPart
-PersonCard --|> UiPart
-DetailDisplay --|> UiPart
-StatusBarFooter --|> UiPart
-HelpWindow --|> UiPart
+MainWindow -up-> "1" Logic : commands and lists
 
-MainWindow *-down-> "1" HelpWindow
-MainWindow *-down-> "0..1" PersonListPanel
-MainWindow *-down-> "0..1" DetailDisplay
-MainWindow *-down-> "0..1" ResultDisplay
-MainWindow ..> CommandBox : <<create>>
-CommandBox ..> CommandTextField : <<uses in FXML>>
-MainWindow ..> StatusBarFooter : <<create>>
-MainWindow -left-> "1" Logic : commands and lists
-
-PersonListPanel ..> PersonCard : <<create>> via ListCell
-PersonListPanel --> "*" Person : working set and\ncomplete list
-PersonCard --> "1" Person : displays
-HelpWindow --> "1" DesktopAdapter : opens User Guide
-
-PersonListPanel -[hidden]left- HelpWindow
-HelpWindow -[hidden]left- CommandBox
-CommandBox -[hidden]left- ResultDisplay
-ResultDisplay -[hidden]left- DetailDisplay
-DetailDisplay -[hidden]left- StatusBarFooter
-
-legend bottom
-  MainWindow installs CommandBox and StatusBarFooter roots in FXML placeholders;
-  it retains the other four parts as fields. PersonListPanel and DetailDisplay
-  share a placeholder and alternate visibility based on CommandResult details.
-  CommandTextField normalizes pasted separators before JavaFX filters them.
-  CommandBox invokes a CommandExecutor bound to MainWindow::executeCommand.
-  PersonListPanel's nested PersonListViewCell creates cards for nonempty cells;
-  PersonListPanel retains the complete list and a lookup of Person objects by ID,
-  which supply linked contact summaries for contacts outside the working set.
-  HelpWindow opens the User Guide through DesktopAdapter's Browser callback
-  on a background Executor, or copies its URL to the clipboard.
-endlegend
+note right of MainWindow
+MainWindow's UI parts are expanded
+in the following diagram.
+end note
 @enduml
