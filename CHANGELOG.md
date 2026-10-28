@@ -44,6 +44,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Split the dense Developer Guide parser diagram into focused dispatch and utility views, moving explanatory notes and command inheritance into prose (#225).
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).
 - Name the affected contact, when its name is valid, alongside its position in data-file load errors such as an invalid email, and tell users they can enter `reload` instead of only restarting after recovering the data file (#277).
 - Allowed a student and guardian to share the same normalized name and phone number while retaining duplicate rejection within each role (#271).
