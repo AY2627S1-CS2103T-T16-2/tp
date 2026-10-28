@@ -45,6 +45,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Reject unrecognised fields in the contact data file and preserve the original file through load recovery, preventing misspelled or incorrectly cased field names from silently discarding values (#292).
 - Reject lookalike and invisible characters at command-syntax boundaries: non-ASCII digits are no longer accepted as indexes (so `delete １` no longer deletes contact 1), a Kelvin-sign `linK` no longer runs `link`, `ſtudent`/`guardıan` are no longer accepted as roles, and every Unicode or zero-width space in command words and indexes now shows the unusual-space hint (#142).
 - Reject addresses containing unpaired surrogates, which were silently saved as `?`, or embedded control characters other than tabs, and stop treating combining marks alone as visible address content (#142).
 - Reject hidden control characters before command trimming and preserve them through field and role validation, preventing control-padded indexes from executing and control-only optional fields from being cleared; ordinary whitespace and intentionally empty fields retain their existing behavior (#142).
