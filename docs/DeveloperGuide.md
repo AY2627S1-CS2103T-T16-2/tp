@@ -1377,6 +1377,8 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: `Math` is removed. The remaining tag is stored as `Sec  4` without surrounding spaces.
 1. Relaunch TuitionBook, enter `list`, then `edit 1 t/first t/second`.<br>
    Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
+1. Enter `edit 1 t/first][second`.<br>
+   Expected: The confirmation ends with `Tags: [first\]\[second]`: one tag whose brackets are escaped, distinguishable from the two separate tags `[first]` and `[second]` in the previous step's confirmation.
 1. Enter `edit 1 t/`.<br>
    Expected: All of Alex's tags are cleared, as before.
 
@@ -1481,7 +1483,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
    1. Launch TuitionBook.<br>
-      Expected: TuitionBook opens with an empty contact list and a warning. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+      Expected: TuitionBook opens with an empty contact list and a warning. The warning shows the problem, the full backup location, and the recovery steps (ending with entering `reload` or restarting) as separate paragraphs. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
 
    1. Enter `help`.<br>
       Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
@@ -1502,6 +1504,9 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
 
    1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[{"name":"Amy Tan","phone":"81234567"},{"name":"-Ben","phone":"82345678"}]}`.<br>
       Expected: The warning includes `The file contains invalid contact data. Contact 2 in the file: Names must start with a letter or number.` TuitionBook opens with an empty contact list and moves the original file unchanged to a backup.
+
+   1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[{"name":"Amy Tan","phone":"81234567"},{"name":"Ben Lim","phone":"82345678","email":"ben@@example.com"}]}`.<br>
+      Expected: The warning includes `The file contains invalid contact data. Contact 2 in the file ("Ben Lim"): Emails must be in the format name@example.com.` TuitionBook opens with an empty contact list and moves the original file unchanged to a backup.
 
    1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}`.<br>
       Expected: TuitionBook rejects the duplicate `persons` property, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
