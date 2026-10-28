@@ -26,6 +26,8 @@ public class JsonSerializableTuitionBookTest {
     private static final Path DUPLICATE_PERSON_FILE = TEST_DATA_FOLDER.resolve("duplicatePersonTuitionBook.json");
     private static final Path CASE_EQUIVALENT_DUPLICATE_PERSON_FILE =
             TEST_DATA_FOLDER.resolve("caseEquivalentDuplicatePersonTuitionBook.json");
+    private static final Path SAME_IDENTITY_DIFFERENT_ROLES_FILE =
+            TEST_DATA_FOLDER.resolve("sameIdentityDifferentRolesTuitionBook.json");
 
     @Test
     public void toModelType_typicalPersonsFile_success() throws Exception {
@@ -47,7 +49,8 @@ public class JsonSerializableTuitionBookTest {
     public void toModelType_duplicatePersons_throwsIllegalValueException() throws Exception {
         JsonSerializableTuitionBook dataFromFile = JsonUtil.readJsonFile(DUPLICATE_PERSON_FILE,
                 JsonSerializableTuitionBook.class).get();
-        assertThrows(IllegalValueException.class, JsonSerializableTuitionBook.MESSAGE_DUPLICATE_PERSON,
+        assertThrows(IllegalValueException.class,
+                "Two contacts in the file have the same role, name and phone number.",
                 dataFromFile::toModelType);
     }
 
@@ -58,6 +61,18 @@ public class JsonSerializableTuitionBookTest {
 
         assertThrows(IllegalValueException.class, JsonSerializableTuitionBook.MESSAGE_DUPLICATE_PERSON,
                 dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_sameNormalizedIdentityInDifferentRoles_success() throws Exception {
+        JsonSerializableTuitionBook dataFromFile = JsonUtil.readJsonFile(SAME_IDENTITY_DIFFERENT_ROLES_FILE,
+                JsonSerializableTuitionBook.class).get();
+
+        TuitionBook tuitionBook = dataFromFile.toModelType();
+
+        assertEquals(List.of(Role.STUDENT, Role.GUARDIAN), tuitionBook.getPersonList().stream()
+                .map(Person::getRole).toList());
+        assertEquals(2, tuitionBook.getPersonList().size());
     }
 
     @Test
