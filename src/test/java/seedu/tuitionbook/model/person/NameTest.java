@@ -83,6 +83,13 @@ public class NameTest {
     }
 
     @Test
+    public void messageInvalidCharacters_listsBothAcceptedApostrophes() {
+        assertTrue(Name.MESSAGE_INVALID_CHARACTERS.contains("apostrophes (' or \u2019)"));
+        assertTrue(Name.isValidName("O'Brien"));
+        assertTrue(Name.isValidName("O\u2019Brien"));
+    }
+
+    @Test
     public void getConstraintMessage_validName_failsAssertion() {
         assertThrows(AssertionError.class, () -> Name.getConstraintMessage("Amy Bee"));
     }

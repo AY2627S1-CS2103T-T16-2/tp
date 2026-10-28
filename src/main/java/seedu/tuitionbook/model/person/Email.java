@@ -10,14 +10,14 @@ public class Email {
 
     public static final String MESSAGE_FORMAT = "Emails must be in the format name@example.com.";
     public static final String MESSAGE_INVALID_NAME_CHARACTERS = "The part of an email before the @ may only "
-            + "contain English letters, digits, periods (.), plus signs (+), underscores (_), hyphens (-), "
+            + "contain English letters, digits (0-9), periods (.), plus signs (+), underscores (_), hyphens (-), "
             + "and apostrophes (').";
     public static final String MESSAGE_INVALID_NAME_EDGE =
             "The part of an email before the @ must start and end with a letter or digit.";
     public static final String MESSAGE_CONSECUTIVE_PERIODS =
             "The part of an email before the @ cannot have two periods in a row.";
     public static final String MESSAGE_INVALID_DOMAIN = "The part of an email after the @ must look like example.com, "
-            + "using only English letters, digits, hyphens (-) and periods (.).";
+            + "using only English letters, digits (0-9), hyphens (-) and periods (.).";
     private static final String LOCAL_PART_SPECIAL_CHARACTERS = ".+_-'";
 
     public final String value;

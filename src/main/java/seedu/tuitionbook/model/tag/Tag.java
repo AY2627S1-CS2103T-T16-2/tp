@@ -12,7 +12,7 @@ public class Tag {
 
     public static final String MESSAGE_BLANK = "Tag names must not be blank.";
     public static final String MESSAGE_INVALID_CHARACTERS =
-            "Tag names may contain only English letters, digits, spaces, and punctuation.";
+            "Tag names may contain only English letters, digits (0-9), spaces, and punctuation.";
     /** Orders tags by case-insensitive names, then by their original names. */
     public static final Comparator<Tag> DISPLAY_COMPARATOR = Comparator
             .comparing((Tag tag) -> tag.tagName, String.CASE_INSENSITIVE_ORDER)

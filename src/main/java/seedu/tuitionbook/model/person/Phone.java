@@ -9,7 +9,7 @@ import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
  */
 public class Phone {
 
-    public static final String MESSAGE_CONSTRAINTS = "Phone numbers must contain at least 3 digits and may start "
+    public static final String MESSAGE_CONSTRAINTS = "Phone numbers must contain at least 3 digits (0-9) and may start "
             + "with '+'. Use spaces, hyphens (-) or slashes (/) to separate groups of digits.";
     private static final int MINIMUM_DIGIT_COUNT = 3;
     public final String value;
