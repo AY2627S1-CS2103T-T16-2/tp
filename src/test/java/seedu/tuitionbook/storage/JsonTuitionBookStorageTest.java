@@ -235,6 +235,24 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readTuitionBook_unknownRootField_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("""
+                {"persons":[],"unexpected":true}
+                """);
+    }
+
+    @Test
+    public void readTuitionBook_unknownContactField_movesDataToBackupAndAllowsSaving() throws Exception {
+        DataLoadingException exception = assertMalformedDataIsBackedUpAndSavingIsAllowed("""
+                {"persons":[{"name":"Test Student","phone":"81234567",
+                 "Email":"student@example.com","tags":[]}]}
+                """);
+        assertEquals("The data file contains a field TuitionBook does not recognise. Check that every field name "
+                + "uses the spelling and letter case shown in the User Guide before trying again.",
+                exception.getUserFacingGuidance());
+    }
+
+    @Test
     public void readTuitionBook_utf8Bom_loadsNormally() throws Exception {
         Path filePath = testFolder.resolve("BomTuitionBook.json");
         byte[] contents = ("\uFEFF" + CONFLICTING_TUITION_BOOK_JSON.replace("alice", "Alicia"))
@@ -654,17 +672,19 @@ public class JsonTuitionBookStorageTest {
         assertMalformedDataIsBackedUpAndSavingIsAllowed(contents);
     }
 
-    private void assertMalformedDataIsBackedUpAndSavingIsAllowed(String contents) throws Exception {
+    private DataLoadingException assertMalformedDataIsBackedUpAndSavingIsAllowed(String contents) throws Exception {
         Path filePath = testFolder.resolve("MalformedTuitionBook.json");
         Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
         Files.writeString(filePath, contents);
         JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
 
-        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+        DataLoadingException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DataLoadingException.class, storage::readTuitionBook);
         assertFalse(Files.exists(filePath));
         assertEquals(contents, Files.readString(backupPath));
         storage.saveTuitionBook(new TuitionBook());
         assertTrue(Files.exists(filePath));
         assertEquals(contents, Files.readString(backupPath));
+        return exception;
     }
 }
