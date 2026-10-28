@@ -40,12 +40,14 @@ The format is based on Keep a Changelog.
 - Pasted tabs and line separators in the command box are converted to spaces so that adjacent words remain separate; pasted text is not executed until Enter is pressed.
 - Preserve an ordered contact working set across edit, tag, untag, link and unlink; retain and mark contacts that stop matching with canonical refresh commands, append matching additions, explain hidden additions, and warn when deletion compacts indexes. Explicit queries refresh membership; reload, clear and restart reset it. Save failures restore exact membership, order and query (#187).
 - Clarified the supported `guardianId` JSON value types and the difference between link repair and whole-file recovery.
+- Split the unreadable-data startup warning into separate paragraphs for the problem, the preserved or unpreserved file location, and the recovery steps, so long file paths no longer bury the guidance (#286).
 
 ### Fixed
 
 - Report when `edit` leaves all contact values unchanged instead of claiming the contact was edited, including repeated values, clearing already-empty fields, and reordered identical tag sets; unchanged edits continue to skip saving.
 - Split the dense Developer Guide parser diagram into focused dispatch and utility views, moving explanatory notes and command inheritance into prose (#225).
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).
+- Name the affected contact, when its name is valid, alongside its position in data-file load errors such as an invalid email, and tell users they can enter `reload` instead of only restarting after recovering the data file (#277).
 - Allowed a student and guardian to share the same normalized name and phone number while retaining duplicate rejection within each role (#271).
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
 - Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).

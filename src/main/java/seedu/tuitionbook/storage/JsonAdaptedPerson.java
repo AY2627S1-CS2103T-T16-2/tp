@@ -3,6 +3,7 @@ package seedu.tuitionbook.storage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -84,6 +85,13 @@ class JsonAdaptedPerson {
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
+    }
+
+    /**
+     * Returns this contact's name if it is valid, so that load errors can identify the contact.
+     */
+    Optional<String> getValidName() {
+        return name != null && Name.isValidName(name) ? Optional.of(name) : Optional.empty();
     }
 
     /**

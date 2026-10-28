@@ -503,7 +503,7 @@ If a student's `guardianId` doesn't point to a guardian in the file, TuitionBook
 
 **If TuitionBook can't read the data file**
 
-TuitionBook starts with an empty contact list and shows a warning explaining what went wrong. If the problem is with a particular contact, the warning names it by its position in the file, for example `Contact 3 in the file: Missing "name" value.` Contacts are counted from the top of the file, starting from 1.
+TuitionBook starts with an empty contact list and shows a warning explaining what went wrong. If the problem is with a particular contact, the warning names it by its position in the file and, if that contact's name is valid, by its name, for example `Contact 3 in the file ("Alex Yeoh"): Emails must be in the format name@example.com.` or `Contact 4 in the file: Missing "name" value.` Contacts are counted from the top of the file, starting from 1.
 
 TuitionBook also moves the unreadable file, unchanged, to a backup in the same folder with `.backup` added to its name, for example `tuitionbook.json.backup` (or `.backup.1`, `.backup.2` and so on if that name is taken). **The warning shows the exact name and location**, so check it rather than assuming. You can then keep using TuitionBook, and new contacts are saved to a fresh data file.
 

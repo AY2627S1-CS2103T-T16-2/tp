@@ -308,7 +308,8 @@ public class MainAppTest {
         StartupNotice notice = state.notice().orElseThrow();
         assertEquals(StartupNotice.Type.LOAD_FAILED_BACKED_UP, notice.type());
         assertTrue(notice.loadFailureGuidance().contains("invalid contact data"));
-        assertTrue(notice.loadFailureGuidance().contains("Contact 1 in the file: " + Phone.MESSAGE_CONSTRAINTS));
+        assertTrue(notice.loadFailureGuidance().contains("Contact 1 in the file (\"Invalid Phone\"): "
+                + Phone.MESSAGE_CONSTRAINTS));
         assertFalse(Files.exists(dataFile));
         assertTrue(Files.exists(dataFile.resolveSibling(dataFile.getFileName() + ".backup")));
     }
