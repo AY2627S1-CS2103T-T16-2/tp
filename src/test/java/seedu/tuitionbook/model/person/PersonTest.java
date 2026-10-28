@@ -37,6 +37,16 @@ public class PersonTest {
     }
 
     @Test
+    public void isSamePerson_lookalikeLettersFromOtherScripts_returnsFalse() {
+        // Identity uses NFC case folding, not visual similarity or compatibility (NFKC) folding.
+        Person latin = new PersonBuilder().withName("Amy Tan").withPhone("91234567").build();
+        for (String lookalike : new String[] {"\u0410my Tan", "\uFF21my Tan", "\u0391my Tan"}) {
+            Person other = new PersonBuilder().withName(lookalike).withPhone("91234567").build();
+            assertFalse(latin.isSamePerson(other), lookalike);
+        }
+    }
+
+    @Test
     public void isSamePerson_phoneAnnotationAndFormattingDiffer_returnsTrue() {
         Person annotatedPhone = new PersonBuilder().withPhone("9123 4567 (home)").build();
         Person slashedPhone = new PersonBuilder(annotatedPhone).withPhone("9123/4567").build();

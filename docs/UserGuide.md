@@ -90,11 +90,15 @@ The command box is where you enter instructions; the result area reports success
 
 * Command words can be typed in any letter case: `list`, `LIST` and `LiSt` all work. Prefixes such as `n/` must be lowercase, and `clear confirm` must use the lowercase word `confirm`.
 
+* Command words, prefixes, roles and indexes must use ordinary English letters and the digits 0-9. Lookalike characters, such as a Cyrillic `а`, a full-width `ｌｉｓｔ` or a full-width index `１`, are not recognised. For example, `delete １` is rejected instead of deleting contact 1.
+
 * `help`, `exit` and `reload` take nothing after the command word. For example, `help 123` shows an error instead of opening Help.
 
 * Enter one command at a time and press <kbd>Enter</kbd> to run it. If you paste text containing tabs or line breaks, they become spaces. Pasting never runs a command by itself, so check the text before pressing <kbd>Enter</kbd>.
 
 * Type spaces with the spacebar. Text copied from a website or PDF can contain special spaces that look normal; TuitionBook rejects these in command words and indexes. If that happens, retype the spaces. Also check copied commands for missing spaces.
+
+* If a copied command produces a hidden-control-character error, retype the command. Hidden characters are not removed to turn an invalid index or field into a valid value or an instruction to clear a field.
 
 * In `add`, `edit`, `list`, `tag` and `untag`, a word made of letters and ending in `/` (such as `n/` or `ee/`) starts a new field when it comes after a space. If the command doesn't recognise it, the command is rejected, so a typo like `ee/` is never saved by mistake.
 </box>
@@ -151,7 +155,7 @@ Adds a student or guardian contact to TuitionBook.
 Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 * `ROLE`, `NAME` and `PHONE` are required. Email, address and tags are optional.
-* `ROLE` is `student` or `guardian` (any letter case).
+* `ROLE` is `student` or `guardian` (any letter case, using ordinary English letters).
 * `NAME`:
   * must start with a letter or number, and can be up to 100 characters long.
   * may contain letters from any language, numbers, accents, spaces, periods (`.`), apostrophes (`'` or `’`), forward slashes (`/`) and hyphens (`-`). Other symbols, such as `@`, `#` or double quotes, are not allowed.
@@ -166,6 +170,8 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
   * Before the `@`: English letters, digits (0-9), periods (`.`), plus signs (`+`), underscores (`_`), hyphens (`-`) and apostrophes (`'`). It must start and end with a letter or digit, and cannot have two periods in a row.
   * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part must start and end with a letter or digit, and the last part must be at least 2 characters long.
 * `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
+  * Accent marks on their own do not count as visible characters.
+  * Hidden control characters (other than tabs) and broken characters left over from copied text are rejected; retype the address if this happens.
 * Each `TAG`:
   * may contain English letters, digits (0-9), spaces, and punctuation and symbols from a standard English keyboard, for example `Sec 4`, `Math--Science`, `C++`, `$50/hr` or `Mrs. Lim's`. Letters with accents, other languages and other symbols (such as `—`) are not allowed.
   * cannot be blank. Spaces at the start or end are ignored.

@@ -172,6 +172,87 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_lookalikeOrBrokenUnicodeInput_rejectedWithoutChangingContactsOrFile() throws Exception {
+        logic.execute("add r/student n/Alex Lim p/91234567");
+        logic.execute("add r/guardian n/Bernice Lim p/92345678");
+        Path dataFile = temporaryFolder.resolve("tuitionBook.json");
+        byte[] savedData = Files.readAllBytes(dataFile);
+        List<Person> savedContacts = List.copyOf(logic.getPersonList());
+
+        for (String input : List.of("delete \uFF11", "delete \u0661", "lin\u212A 1 2", "view \u0967",
+                "add r/\u017Ftudent n/Cara Ng p/93456789", "edit 1 a/Blk\uD800 1", "edit 1 a/Blk\u0000 1",
+                "edit 1 a/\u0301", "delete\u202f1", "tag 1\u200b t/Math")) {
+            org.junit.jupiter.api.Assertions.assertThrows(ParseException.class, () -> logic.execute(input), input);
+            assertEquals(savedContacts, logic.getPersonList(), input);
+            assertArrayEquals(savedData, Files.readAllBytes(dataFile), input);
+        }
+    }
+
+    @Test
+    public void execute_lookalikeNameWithSamePhone_addsDistinctContactThatSurvivesReload() throws Exception {
+        logic.execute("add r/student n/Alex Lim p/91234567");
+        String cyrillicName = "\u0410lex Lim";
+
+        logic.execute("add r/student n/" + cyrillicName + " p/91234567");
+        logic.execute("reload");
+
+        assertEquals(List.of("Alex Lim", cyrillicName),
+                logic.getPersonList().stream().map(person -> person.getName().fullName).toList());
+    }
+
+    @Test
+    public void execute_hiddenControls_preserveContactsRelationshipsWorkingSetAndFile() throws Exception {
+        logic.execute("add r/guardian n/Bernice p/92345678");
+        logic.execute("add r/student n/Amy p/91234567 a/Blk 1 e/amy@example.com t/Math");
+        logic.execute("link 2 1");
+        logic.execute("find Amy");
+        TuitionBook original = new TuitionBook(model.getTuitionBook());
+        Predicate<Person> filter = model.getPersonListQueryPredicate();
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(file);
+        CountingTuitionBookStorage fileStorage = new CountingTuitionBookStorage(file, DUMMY_AD_EXCEPTION);
+        logic = new LogicManager(model, new StorageManager(fileStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("ControlPrefs.json"))));
+
+        for (char control : new char[] {'\u0000', '\u0001', '\u001b', '\u001c', '\u007f', '\u0080', '\u009f'}) {
+            for (String input : List.of("delete " + control + "1", "delete 1" + control,
+                    control + "clear confirm", "clear confirm" + control, "unlink " + control + "1",
+                    "edit 1 a/" + control, "edit 1 a/\"" + control + "\"", "edit 1 e/" + control,
+                    "edit 1 t/" + control, "edit 1 n/" + control + "Beth",
+                    "edit 1 p/93456789" + control, "tag 1 t/" + control + "Science",
+                    "untag 1 t/Math" + control, "list t/" + control + "Science",
+                    "add r/" + control + "student n/Beth p/93456789")) {
+                assertThrows(ParseException.class, () -> logic.execute(input));
+                assertEquals(original, model.getTuitionBook());
+                assertEquals(original.getPersonList().stream().map(Person::getId).toList(),
+                        model.getTuitionBook().getPersonList().stream().map(Person::getId).toList());
+                assertSame(filter, model.getPersonListQueryPredicate());
+                assertEquals(displayed, model.getFilteredPersonList());
+                assertArrayEquals(originalBytes, Files.readAllBytes(file));
+            }
+        }
+        assertEquals(0, fileStorage.getSaveCallCount());
+    }
+
+    @Test
+    public void execute_supportedWhitespaceAndEmptyFields_remainUsableAndSurviveReload() throws Exception {
+        logic.execute("\t add r/\tStUdEnT\t n/ Amy p/91234567 a/\" Blk\t1 \" e/amy@example.com t/\" Math \" \t");
+        Person added = model.getTuitionBook().getPersonList().getFirst();
+        assertEquals(Role.STUDENT, added.getRole());
+        assertEquals(new Address("Blk\t1"), added.getAddress().orElseThrow());
+        assertEquals(Set.of(new Tag("Math")), added.getTags());
+        logic.execute("edit \t1\t a/\" \" e/ t/");
+        logic.execute("reload");
+        Person reloaded = model.getTuitionBook().getPersonList().getFirst();
+        assertEquals(added.getId(), reloaded.getId());
+        assertEquals(added.getName(), reloaded.getName());
+        assertTrue(reloaded.getAddress().isEmpty());
+        assertTrue(reloaded.getEmail().isEmpty());
+        assertTrue(reloaded.getTags().isEmpty());
+    }
+
+    @Test
     public void execute_addAndEdit_preservesSpacesPunctuationAndCase() throws Exception {
         logic.execute("add r/student n/Alex Lim p/91234567 t/ Sec  4  t/Math--Science t/-active- t/C++ t/Mrs. Lim's");
         assertEquals(Set.of(new Tag("Sec  4"), new Tag("Math--Science"), new Tag("-active-"),
