@@ -155,7 +155,7 @@ public class JsonTuitionBookStorage {
         requireNonNull(filePath);
 
         if (isWriteBlocked && isConfiguredFilePath(filePath)) {
-            throw new IOException(String.format(MESSAGE_WRITE_BLOCKED, this.filePath));
+            throw new SaveBlockedException(String.format(MESSAGE_WRITE_BLOCKED, this.filePath));
         }
 
         Path absoluteFilePath = filePath.toAbsolutePath();

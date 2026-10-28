@@ -10,6 +10,16 @@ import org.junit.jupiter.api.Test;
 public class PhoneTest {
 
     @Test
+    public void constructor_fewMainNumberDigits_reportsMainNumberRule() {
+        // Extension and annotation digits do not count towards the three-digit minimum.
+        for (String phone : new String[] {"12 x345", "12 (Office 3)"}) {
+            assertFalse(Phone.isValidPhone(phone));
+            assertThrows(IllegalArgumentException.class, Phone.MESSAGE_CONSTRAINTS, () -> new Phone(phone));
+        }
+        assertTrue(Phone.MESSAGE_CONSTRAINTS.contains("at least 3 digits (0-9) in the main number"));
+    }
+
+    @Test
     public void constructor_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Phone(null));
     }

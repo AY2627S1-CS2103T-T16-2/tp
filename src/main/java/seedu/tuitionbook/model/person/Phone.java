@@ -9,13 +9,8 @@ import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
  */
 public class Phone {
 
-    public static final String MESSAGE_CONSTRAINTS =
-            "Phone numbers must contain at least 3 ASCII digits in the main number and may start with '+'. Main "
-                    + "groups must be plain digits or digits in balanced parentheses, separated by one or more "
-                    + "spaces, one hyphen, or one slash. After at least one space, you may add one parenthesized "
-                    + "annotation containing ASCII letters, digits, and single internal spaces, with at least one "
-                    + "letter. An optional numeric extension may follow the main number or annotation, directly "
-                    + "or after spaces, using x123, ext 123, or ext. 123 (case-insensitive).";
+    public static final String MESSAGE_CONSTRAINTS = "Phone numbers must contain at least 3 digits (0-9) in the main "
+            + "number and may start with '+'. Use spaces, hyphens (-) or slashes (/) to separate groups of digits.";
     private static final int MINIMUM_DIGIT_COUNT = 3;
     public final String value;
 

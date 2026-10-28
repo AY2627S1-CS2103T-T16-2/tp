@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -121,7 +122,7 @@ public class JsonUtil {
     private static <T> T fromJsonParser(JsonParser parser, Class<T> instanceClass) throws IOException {
         T result = objectMapper.readValue(parser, instanceClass);
         if (parser.nextToken() != null) {
-            throw new IOException("Unexpected trailing JSON content.");
+            throw new JsonParseException(parser, "Unexpected trailing JSON content.");
         }
         return result;
     }

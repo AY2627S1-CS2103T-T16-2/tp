@@ -202,21 +202,17 @@ public class TuitionBookParserTest {
     }
 
     @Test
-    public void parseCommand_lineBreaks_reportCodePointBeforeTrimmingOrDispatch() {
+    public void parseCommand_lineBreaks_reportedBeforeTrimmingOrDispatch() {
         // Scenarios adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/322
+        String expectedMessage = "Commands must be entered on a single line. Remove the line break and try again.";
         for (char separator : new char[] {'\n', '\r', '\u000b', '\f', '\u0085', '\u2028', '\u2029'}) {
-            String expectedMessage = String.format(Locale.ROOT, "Commands must be entered on a single line. "
-                    + "Found line break U+%04X; remove it or replace it with a normal space (U+0020).",
-                    (int) separator);
             for (String input : List.of(separator + "list", "list" + separator, "li" + separator + "st",
                     "list " + separator + "help", "add r/student n/Amy p/123 a/12" + separator + "Road",
                     "edit 1 n/\"Amy" + separator + " Tan\"")) {
                 assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
             }
         }
-        assertThrows(ParseException.class, "Commands must be entered on a single line. "
-                + "Found line break U+000D; remove it or replace it with a normal space (U+0020).", ()
-                -> parser.parseCommand("list\r\nhelp"));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("list\r\nhelp"));
     }
 
     @Test
@@ -225,10 +221,9 @@ public class TuitionBookParserTest {
         // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/187
         // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/374
         // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/188
+        String expectedMessage = "Your command contains an unusual space character, often from copied text. "
+                + "Retype the spaces using the spacebar.";
         for (char space : new char[] {'\u00a0', '\u3000'}) {
-            String description = space == '\u00a0' ? "non-breaking space" : "full-width space";
-            String expectedMessage = String.format(Locale.ROOT, "Unexpected %s (U+%04X). "
-                    + "Retype the command separator or index using normal spaces (U+0020).", description, (int) space);
             for (String input : List.of(space + "list", "list" + space, "LiSt" + space + "r/student",
                     "help " + space, "exit " + space, "reload " + space, "delete " + space + "1",
                     "edit 1" + space + " n/Amy", "tag 1" + space + " t/Math", "untag " + space + "1 t/Math",

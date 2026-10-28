@@ -68,15 +68,19 @@ public class HelpWindowTest {
             assertEquals(450, helpWindow.getRoot().getMinWidth());
             assertEquals(320, helpWindow.getRoot().getMinHeight());
             IMPLEMENTED_COMMAND_SYNTAX.forEach(syntax -> assertTrue(commandSummary.getText().contains(syntax)));
-            assertTrue(commandSummary.getText().contains("Command words ignore case"));
-            assertTrue(commandSummary.getText().contains("confirmation word confirm stay lowercase"));
-            assertTrue(commandSummary.getText().contains("help, exit and reload take no arguments"));
-            assertTrue(commandSummary.getText().contains("Enter one command on one line"));
-            assertTrue(commandSummary.getText().contains("Pasted tabs and line separators become spaces"));
-            assertTrue(commandSummary.getText().contains("Raw line breaks reaching the parser are rejected"));
-            assertTrue(commandSummary.getText().contains("Unknown prefixes are rejected"));
-            assertTrue(commandSummary.getText().contains("add/edit names, addresses and tags"));
+            assertTrue(commandSummary.getText().contains("Command words can be typed in any letter case"));
+            assertTrue(commandSummary.getText().contains("and the word confirm, must be lowercase"));
+            assertTrue(commandSummary.getText().contains("help, exit and reload take nothing after the command word"));
+            assertTrue(commandSummary.getText().contains("Type one command at a time"));
+            assertTrue(commandSummary.getText().contains("Giving t/ replaces all of their tags"));
+            assertTrue(commandSummary.getText().contains("wrap the whole value in double quotes"));
             assertTrue(commandSummary.getText().contains("a/\"20 Main Road, c/o Rina a/p Kaur\""));
+            assertTrue(commandSummary.getText().contains("type \\\" for a double quote"));
+            assertTrue(commandSummary.getText().indexOf("exit\n")
+                    < commandSummary.getText().indexOf("Using double quotes"));
+            for (String jargon : List.of("U+", "ASCII", "parser", "substring", "working set", "literal")) {
+                assertFalse(commandSummary.getText().contains(jargon), jargon);
+            }
             assertEquals(HelpWindow.HELP_MESSAGE, helpMessage.getText());
             assertEquals("Open User Guide", openButton.getText());
             assertEquals("Copy URL", copyButton.getText());

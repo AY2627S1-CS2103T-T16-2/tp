@@ -1,7 +1,6 @@
 package seedu.tuitionbook.model.person;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
 
 /**
  * Represents a Person's address in TuitionBook.
@@ -11,9 +10,9 @@ public class Address {
 
     public static final int MAX_LENGTH = 200;
 
-    public static final String MESSAGE_CONSTRAINTS = "Addresses must contain at least one visible character other "
-            + "than Unicode whitespace, space, control, or format characters; must be single-line; and must contain "
-            + "at most " + MAX_LENGTH + " characters, counted as Unicode code points.";
+    public static final String MESSAGE_BLANK = "Addresses must contain at least one visible character.";
+    public static final String MESSAGE_MULTIPLE_LINES = "Addresses must be on a single line.";
+    public static final String MESSAGE_TOO_LONG = "Addresses must be at most " + MAX_LENGTH + " characters.";
 
     public final String value;
 
@@ -24,7 +23,9 @@ public class Address {
      */
     public Address(String address) {
         requireNonNull(address);
-        checkArgument(isValidAddress(address), MESSAGE_CONSTRAINTS);
+        if (!isValidAddress(address)) {
+            throw new IllegalArgumentException(getConstraintMessage(address));
+        }
         value = address;
     }
 
@@ -33,22 +34,31 @@ public class Address {
      */
     public static boolean isValidAddress(String test) {
         requireNonNull(test);
-        if (test.codePointCount(0, test.length()) > MAX_LENGTH) {
-            return false;
-        }
+        return test.codePointCount(0, test.length()) <= MAX_LENGTH
+                && !hasLineBreak(test) && hasMeaningfulVisibleCharacter(test);
+    }
 
-        boolean hasMeaningfulVisibleCharacter = false;
-        for (int offset = 0; offset < test.length();) {
-            int codePoint = test.codePointAt(offset);
-            if (isLineBreak(codePoint)) {
-                return false;
-            }
-            if (isMeaningfulVisibleCodePoint(codePoint)) {
-                hasMeaningfulVisibleCharacter = true;
-            }
-            offset += Character.charCount(codePoint);
+    /**
+     * Returns the message describing the first constraint that the given invalid address violates.
+     */
+    public static String getConstraintMessage(String invalidAddress) {
+        requireNonNull(invalidAddress);
+        assert !isValidAddress(invalidAddress);
+        if (!hasMeaningfulVisibleCharacter(invalidAddress)) {
+            return MESSAGE_BLANK;
         }
-        return hasMeaningfulVisibleCharacter;
+        if (hasLineBreak(invalidAddress)) {
+            return MESSAGE_MULTIPLE_LINES;
+        }
+        return MESSAGE_TOO_LONG;
+    }
+
+    private static boolean hasLineBreak(String test) {
+        return test.codePoints().anyMatch(Address::isLineBreak);
+    }
+
+    private static boolean hasMeaningfulVisibleCharacter(String test) {
+        return test.codePoints().anyMatch(Address::isMeaningfulVisibleCodePoint);
     }
 
     private static boolean isMeaningfulVisibleCodePoint(int codePoint) {
