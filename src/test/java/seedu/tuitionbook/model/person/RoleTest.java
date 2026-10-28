@@ -34,6 +34,17 @@ public class RoleTest {
     }
 
     @Test
+    public void isValidRole_nonAsciiLookalikes_returnsFalse() {
+        // Each of these uppercases to STUDENT or GUARDIAN under Unicode case mapping.
+        assertFalse(Role.isValidRole("\u017Ftudent")); // Latin small long s
+        assertFalse(Role.isValidRole("\uFB06udent")); // st ligature
+        assertFalse(Role.isValidRole("guard\u0131an")); // Turkish dotless i
+        assertFalse(Role.isValidRole("\u0455tudent")); // Cyrillic dze
+        assertFalse(Role.isValidRole("\uFF53tudent")); // full-width s
+        assertThrows(IllegalArgumentException.class, () -> Role.fromString("\u017Ftudent"));
+    }
+
+    @Test
     public void fromString_validRole_returnsRole() {
         assertEquals(Role.STUDENT, Role.fromString("student"));
         assertEquals(Role.GUARDIAN, Role.fromString("guardian"));

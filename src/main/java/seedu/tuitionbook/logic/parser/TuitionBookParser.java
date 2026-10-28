@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import seedu.tuitionbook.commons.core.LogsCenter;
+import seedu.tuitionbook.commons.util.StringUtil;
 import seedu.tuitionbook.logic.commands.AddCommand;
 import seedu.tuitionbook.logic.commands.ClearCommand;
 import seedu.tuitionbook.logic.commands.Command;
@@ -58,6 +59,10 @@ public class TuitionBookParser {
         }
 
         ParserUtil.checkForUnsupportedSpaces(matcher.group("commandWord"));
+        // Reject lookalikes such as the Kelvin sign before case folding maps them to ASCII command letters.
+        if (!StringUtil.isAscii(matcher.group("commandWord"))) {
+            throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
+        }
         final String commandWord = matcher.group("commandWord").toLowerCase(Locale.ROOT);
         final String arguments = matcher.group("arguments");
 

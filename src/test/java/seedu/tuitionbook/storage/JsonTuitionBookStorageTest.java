@@ -124,6 +124,56 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readTuitionBook_nullOrMistypedContactList_movesDataToBackupAndAllowsSaving() throws Exception {
+        for (String contents : List.of("{\"persons\":null}", "{}", "{\"persons\":{}}", "{\"persons\":[[]]}",
+                "[]", "\"text\"")) {
+            assertMalformedDataIsBackedUpAndSavingIsAllowed(contents);
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json"));
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json.backup"));
+        }
+    }
+
+    @Test
+    public void readTuitionBook_mistypedContactValues_movesDataToBackupAndAllowsSaving() throws Exception {
+        String prefix = "{\"persons\":[{\"id\":\"123e4567-e89b-12d3-a456-426614174000\",\"role\":\"student\",";
+        for (String contact : List.of("\"name\":{\"a\":1},\"phone\":\"912\"}]}",
+                "\"name\":\"Amy\",\"phone\":\"912\",\"tags\":\"Math\"}]}",
+                "\"name\":\"Amy\",\"phone\":\"912\",\"tags\":[123]}]}")) {
+            assertMalformedDataIsBackedUpAndSavingIsAllowed(prefix + contact);
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json"));
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json.backup"));
+        }
+    }
+
+    @Test
+    public void readTuitionBook_nullOptionalValues_loadsContactWithoutThem() throws Exception {
+        Path filePath = testFolder.resolve("NullOptionalTuitionBook.json");
+        Files.writeString(filePath, """
+                {"persons":[{"id":"123e4567-e89b-12d3-a456-426614174000","role":"student","guardianId":null,
+                "name":"Amy","phone":"912","email":null,"address":null,"tags":null}]}
+                """);
+
+        Person person = new JsonTuitionBookStorage(filePath).readTuitionBook().orElseThrow().getPersonList().get(0);
+
+        assertTrue(person.getGuardianId().isEmpty());
+        assertTrue(person.getEmail().isEmpty());
+        assertTrue(person.getAddress().isEmpty());
+        assertTrue(person.getTags().isEmpty());
+    }
+
+    @Test
+    public void readTuitionBook_escapedUnpairedSurrogateOrNulAddress_movesDataToBackupAndAllowsSaving()
+            throws Exception {
+        String prefix = "{\"persons\":[{\"id\":\"123e4567-e89b-12d3-a456-426614174000\",\"role\":\"student\","
+                + "\"name\":\"Amy\",\"phone\":\"912\",\"address\":";
+        for (String address : List.of("\"Blk \\ud800\"", "\"Blk\\u0000 1\"", "\"\\u0301\"")) {
+            assertMalformedDataIsBackedUpAndSavingIsAllowed(prefix + address + "}]}");
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json"));
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json.backup"));
+        }
+    }
+
+    @Test
     public void readTuitionBook_trailingJson_movesDataToBackupAndAllowsSaving() throws Exception {
         assertMalformedDataIsBackedUpAndSavingIsAllowed("""
                 {"persons":[]}

@@ -26,17 +26,20 @@ public class ParserUtil {
             + "often from copied text. Retype the spaces using the spacebar.";
 
     /**
-     * Diagnoses known lookalike spaces in command syntax, without normalising user data.
+     * Diagnoses non-ASCII spaces and zero-width spaces in command syntax, without normalising user data.
      * Call only on command words, no-argument command tails or positional indexes, never on field values.
      * Index parsers also call this before their generic usage-error wrappers so the diagnosis remains visible.
      */
     static void checkForUnsupportedSpaces(String input) throws ParseException {
-        for (int i = 0; i < input.length(); i++) {
-            char space = input.charAt(i);
-            if (space == '\u00a0' || space == '\u3000') {
-                throw new ParseException(MESSAGE_UNSUPPORTED_SPACE);
-            }
+        if (input.chars().anyMatch(ParserUtil::isUnsupportedSpace)) {
+            throw new ParseException(MESSAGE_UNSUPPORTED_SPACE);
         }
+    }
+
+    private static boolean isUnsupportedSpace(int character) {
+        return character >= 0x80 && (Character.isSpaceChar(character) || Character.isWhitespace(character)
+                || character == '\u180e' || character == '\u200b' || character == '\u2060'
+                || character == '\ufeff');
     }
 
     /**

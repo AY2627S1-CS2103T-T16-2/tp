@@ -172,6 +172,35 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_lookalikeOrBrokenUnicodeInput_rejectedWithoutChangingContactsOrFile() throws Exception {
+        logic.execute("add r/student n/Alex Lim p/91234567");
+        logic.execute("add r/guardian n/Bernice Lim p/92345678");
+        Path dataFile = temporaryFolder.resolve("tuitionBook.json");
+        byte[] savedData = Files.readAllBytes(dataFile);
+        List<Person> savedContacts = List.copyOf(logic.getPersonList());
+
+        for (String input : List.of("delete \uFF11", "delete \u0661", "lin\u212A 1 2", "view \u0967",
+                "add r/\u017Ftudent n/Cara Ng p/93456789", "edit 1 a/Blk\uD800 1", "edit 1 a/Blk\u0000 1",
+                "edit 1 a/\u0301", "delete\u202f1", "tag 1\u200b t/Math")) {
+            org.junit.jupiter.api.Assertions.assertThrows(ParseException.class, () -> logic.execute(input), input);
+            assertEquals(savedContacts, logic.getPersonList(), input);
+            assertArrayEquals(savedData, Files.readAllBytes(dataFile), input);
+        }
+    }
+
+    @Test
+    public void execute_lookalikeNameWithSamePhone_addsDistinctContactThatSurvivesReload() throws Exception {
+        logic.execute("add r/student n/Alex Lim p/91234567");
+        String cyrillicName = "\u0410lex Lim";
+
+        logic.execute("add r/student n/" + cyrillicName + " p/91234567");
+        logic.execute("reload");
+
+        assertEquals(List.of("Alex Lim", cyrillicName),
+                logic.getPersonList().stream().map(person -> person.getName().fullName).toList());
+    }
+
+    @Test
     public void execute_addAndEdit_preservesSpacesPunctuationAndCase() throws Exception {
         logic.execute("add r/student n/Alex Lim p/91234567 t/ Sec  4  t/Math--Science t/-active- t/C++ t/Mrs. Lim's");
         assertEquals(Set.of(new Tag("Sec  4"), new Tag("Math--Science"), new Tag("-active-"),

@@ -45,6 +45,33 @@ public class StringUtilTest {
         assertTrue(StringUtil.isNonZeroUnsignedInteger("10"));
     }
 
+    @Test
+    public void isNonZeroUnsignedInteger_nonAsciiDigits_returnsFalse() {
+        // Integer#parseInt accepts these digits, so they must be rejected explicitly.
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\uFF11")); // full-width 1
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\u0661")); // Arabic-Indic 1
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\u0967")); // Devanagari 1
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("1\uFF10")); // ASCII 1 followed by full-width 0
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\uD835\uDFCF")); // mathematical bold 1
+    }
+
+    @Test
+    public void isNonZeroUnsignedInteger_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> StringUtil.isNonZeroUnsignedInteger(null));
+    }
+
+    //---------------- Tests for isAscii --------------------------------------
+
+    @Test
+    public void isAscii() {
+        assertTrue(StringUtil.isAscii(""));
+        assertTrue(StringUtil.isAscii("link \u0000~\u007F"));
+        assertFalse(StringUtil.isAscii("lin\u212A")); // Kelvin sign
+        assertFalse(StringUtil.isAscii("\u0430dd")); // Cyrillic a
+        assertFalse(StringUtil.isAscii("\u00a0"));
+        assertThrows(NullPointerException.class, () -> StringUtil.isAscii(null));
+    }
+
 
     //---------------- Tests for containsWordIgnoreCase --------------------------------------
 
