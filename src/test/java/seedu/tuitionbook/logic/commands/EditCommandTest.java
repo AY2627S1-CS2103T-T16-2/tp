@@ -15,6 +15,8 @@ import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.tuitionbook.testutil.TypicalPersons.getTypicalTuitionBook;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.tuitionbook.commons.core.index.Index;
@@ -217,6 +219,42 @@ public class EditCommandTest {
 
         assertCommandFailure(new EditCommand(INDEX_SECOND_PERSON, descriptor), model,
                 EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_normalizedIdentityMatchingDifferentRole_success() {
+        Person guardian = new PersonBuilder().withRole(Role.GUARDIAN).withName("Jos\u00e9 Tan")
+                .withPhone("+65 9123-4567").withEmail("guardian@example.com")
+                .withAddress("1 Guardian Road").withTags("family").build();
+        Person student = new PersonBuilder().withRole(Role.STUDENT).withName("Other Student")
+                .withPhone("92345678").withEmail("student@example.com")
+                .withAddress("2 Student Road").withTags("math").build();
+        TuitionBook book = new TuitionBook();
+        book.addPerson(guardian);
+        book.addPerson(student);
+        model = new ModelManager(book, new UserPrefs());
+        Person editedStudent = new PersonBuilder(student).withName("JOSE\u0301  TAN ")
+                .withPhone("+65 91234567").build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedStudent).build();
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
+
+        Model expectedModel = new ModelManager(new TuitionBook(model.getTuitionBook()), new UserPrefs());
+        expectedModel.setPerson(student, editedStudent);
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS,
+                Messages.format(editedStudent));
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+
+        List<Person> contacts = model.getTuitionBook().getPersonList();
+        assertEquals(2, contacts.size());
+        Person actualGuardian = contacts.getFirst();
+        Person actualStudent = contacts.get(1);
+        assertEquals(guardian, actualGuardian);
+        assertEquals(guardian.getId(), actualGuardian.getId());
+        assertEquals(Role.GUARDIAN, actualGuardian.getRole());
+        assertEquals(editedStudent, actualStudent);
+        assertEquals(student.getId(), actualStudent.getId());
+        assertEquals(Role.STUDENT, actualStudent.getRole());
     }
 
     @Test
