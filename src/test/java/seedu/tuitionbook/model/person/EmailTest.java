@@ -33,10 +33,16 @@ public class EmailTest {
         assertEquals(Email.MESSAGE_INVALID_NAME_EDGE, Email.getConstraintMessage(".peter@example.com"));
         assertEquals(Email.MESSAGE_INVALID_NAME_EDGE, Email.getConstraintMessage("peter-@example.com"));
         assertEquals(Email.MESSAGE_CONSECUTIVE_PERIODS, Email.getConstraintMessage("peter..jack@example.com"));
-        assertEquals(Email.MESSAGE_INVALID_DOMAIN, Email.getConstraintMessage("peter@example.c"));
-        assertEquals(Email.MESSAGE_INVALID_DOMAIN, Email.getConstraintMessage("peter@-example.com"));
-        assertEquals(Email.MESSAGE_INVALID_DOMAIN, Email.getConstraintMessage("peter@example..com"));
-        assertEquals(Email.MESSAGE_INVALID_DOMAIN, Email.getConstraintMessage("peter@exa_mple.com"));
+        assertEquals(Email.MESSAGE_INVALID_DOMAIN_CHARACTERS, Email.getConstraintMessage("peter@exa_mple.com"));
+        assertEquals(Email.MESSAGE_INVALID_DOMAIN_CHARACTERS, Email.getConstraintMessage("peter@exämple.com"));
+        assertEquals(Email.MESSAGE_EMPTY_DOMAIN_PART, Email.getConstraintMessage("peter@example..com"));
+        assertEquals(Email.MESSAGE_EMPTY_DOMAIN_PART, Email.getConstraintMessage("peter@.example.com"));
+        assertEquals(Email.MESSAGE_EMPTY_DOMAIN_PART, Email.getConstraintMessage("peter@example.com."));
+        assertEquals(Email.MESSAGE_DOMAIN_PART_EDGE, Email.getConstraintMessage("peter@-example.com"));
+        assertEquals(Email.MESSAGE_DOMAIN_PART_EDGE, Email.getConstraintMessage("peter@example-.com"));
+        assertEquals(Email.MESSAGE_DOMAIN_PART_EDGE, Email.getConstraintMessage("peter@example.com-"));
+        assertEquals(Email.MESSAGE_SHORT_DOMAIN_ENDING, Email.getConstraintMessage("peter@example.c"));
+        assertEquals(Email.MESSAGE_SHORT_DOMAIN_ENDING, Email.getConstraintMessage("peter@e"));
         assertThrows(IllegalArgumentException.class, Email.MESSAGE_CONSECUTIVE_PERIODS, ()
                 -> new Email("peter..jack@example.com"));
     }
