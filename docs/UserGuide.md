@@ -186,14 +186,14 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 **Tip:** A contact can have any number of tags, including none.
 
-TuitionBook stops you from adding the same person twice. Two contacts count as the same person when they have the same name **and** the same phone number. When comparing:
+TuitionBook stops you from adding the same person twice. Two contacts count as the same person when they have the same role, the same name **and** the same phone number. A student and a guardian can therefore share a name and phone number. When comparing:
 
 * letter case and extra spaces in names are ignored, so `john  doe` matches `John Doe`. Accented letters typed in different ways also match.
 * spaces, hyphens, slashes, brackets and labels such as `(HP)` in phone numbers are ignored, and `x`, `ext` and `ext.` count as the same. However, a leading `+` matters: `+6591234567` and `6591234567` are different numbers.
 
-Your contacts are always displayed and saved exactly as you typed them.
+These differences are ignored only for this check. TuitionBook still saves each name and phone number with the spelling, capital letters and formatting you entered.
 
-A young student without their own phone number can use their guardian's phone number and email. The two remain separate contacts because their names differ.
+A young student without their own phone number can use their guardian's phone number and email. They remain separate contacts because their roles differ, even if their names are the same.
 </box>
 
 Examples (each adds a new contact after the existing ones, so the [sample contacts](#sample-contacts-for-examples) keep indexes 1 to 5 in an unfiltered list):
@@ -574,8 +574,8 @@ Check [Known issues](#known-issues) first. If you still need help, search the [p
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. Close TuitionBook, rename `preferences.json` in the JAR folder to `preferences.json.old`, then reopen the app. This resets window preferences without changing `data/tuitionbook.json`.
 2. **Text that looks like a prefix is read as a new field** (e.g. `a/` in `Rina a/p Kaur`) unless you put the whole value in double quotes, for example `n/"Rina a/p Kaur"` or `n/"Muhammad s/o Ali"`. TuitionBook can't tell whether you meant it as part of the value.
 3. **Country codes are not recognised in phone numbers.** When checking for duplicates, `+6591234567` and `91234567` are treated as different numbers.
-4. **Two contacts may share a name**: only a matching name *and* phone number counts as a duplicate. To tell namesakes apart at a glance, add a distinguishing suffix, e.g. `Tan Wei Ming - Sec 2`.
+4. **Two contacts may share a name**: they only count as the same person if their role, name *and* phone number all match. To tell apart two students (or two guardians) with the same name, add something to the name, e.g. `Tan Wei Ming - Sec 2`.
 5. **A contact's role cannot be changed after it is added.** To correct a wrong role, delete the contact and add it again, then re-create any guardian links.
 6. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Keep a separate backup of the data file before bulk changes so you can recover removed contacts.
-7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts with distinguishable names.
+7. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts, one for each role. The two contacts can have the same name and phone number.
 8. **If the data file has a mistake, TuitionBook starts with an empty contact list and a warning.** Your original file is kept as a backup. See [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file) to get your contacts back.

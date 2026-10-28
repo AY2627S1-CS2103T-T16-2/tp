@@ -28,6 +28,8 @@ public class JsonSerializableTuitionBookTest {
     private static final Path DUPLICATE_PERSON_FILE = TEST_DATA_FOLDER.resolve("duplicatePersonTuitionBook.json");
     private static final Path CASE_EQUIVALENT_DUPLICATE_PERSON_FILE =
             TEST_DATA_FOLDER.resolve("caseEquivalentDuplicatePersonTuitionBook.json");
+    private static final Path SAME_IDENTITY_DIFFERENT_ROLES_FILE =
+            TEST_DATA_FOLDER.resolve("sameIdentityDifferentRolesTuitionBook.json");
 
     @Test
     public void toModelType_typicalPersonsFile_success() throws Exception {
@@ -63,14 +65,16 @@ public class JsonSerializableTuitionBookTest {
     }
 
     @Test
-    public void toModelType_laterDuplicatePerson_namesBothPositions() {
+    public void toModelType_laterDuplicatePerson_namesEarlierContactWithSameRole() {
+        // Contact 1 shares the name and phone but not the role, so it is not the reported duplicate.
         JsonSerializableTuitionBook tuitionBook = new JsonSerializableTuitionBook(List.of(
-                person("123e4567-e89b-12d3-a456-426614174000", "student", null, "Alice", "91234567"),
-                person("123e4567-e89b-12d3-a456-426614174001", "student", null, "Bob", "92345678"),
-                person("123e4567-e89b-12d3-a456-426614174002", "guardian", null, "BOB", "9234 5678")));
+                person("123e4567-e89b-12d3-a456-426614174000", "guardian", null, "Bob", "92345678"),
+                person("123e4567-e89b-12d3-a456-426614174001", "student", null, "Alice", "91234567"),
+                person("123e4567-e89b-12d3-a456-426614174002", "student", null, "Bob", "92345678"),
+                person("123e4567-e89b-12d3-a456-426614174003", "student", null, "BOB", "9234 5678")));
 
-        assertThrows(IllegalValueException.class, "Contact 3 in the file has the same name and phone number as "
-                + "contact 2.", tuitionBook::toModelType);
+        assertThrows(IllegalValueException.class, "Contact 4 in the file has the same role, name and phone number "
+                + "as contact 3.", tuitionBook::toModelType);
     }
 
     @Test
@@ -101,6 +105,18 @@ public class JsonSerializableTuitionBookTest {
 
         assertThrows(IllegalValueException.class, "Contact 1 in the file: Missing \"name\" value.",
                 tuitionBook::toModelType);
+    }
+
+    @Test
+    public void toModelType_sameNormalizedIdentityInDifferentRoles_success() throws Exception {
+        JsonSerializableTuitionBook dataFromFile = JsonUtil.readJsonFile(SAME_IDENTITY_DIFFERENT_ROLES_FILE,
+                JsonSerializableTuitionBook.class).get();
+
+        TuitionBook tuitionBook = dataFromFile.toModelType();
+
+        assertEquals(List.of(Role.STUDENT, Role.GUARDIAN), tuitionBook.getPersonList().stream()
+                .map(Person::getRole).toList());
+        assertEquals(2, tuitionBook.getPersonList().size());
     }
 
     @Test

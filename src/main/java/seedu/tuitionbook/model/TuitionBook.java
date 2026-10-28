@@ -11,7 +11,8 @@ import seedu.tuitionbook.model.person.UniquePersonList;
 
 /**
  * Wraps all data at the address-book level.
- * Duplicates are not allowed (by .isSamePerson comparison).
+ * Duplicate contacts with the same role, normalized name, and normalized phone are not allowed
+ * (by {@link Person#isSamePerson(Person)} comparison).
  */
 public class TuitionBook implements ReadOnlyTuitionBook {
 

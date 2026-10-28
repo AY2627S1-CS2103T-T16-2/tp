@@ -262,6 +262,22 @@ public class MainAppTest {
     }
 
     @Test
+    public void loadStartupState_trailingJson_reportsJsonGuidanceAndPreservesOriginalBytes() throws Exception {
+        Path dataFile = testFolder.resolve("contacts.json");
+        byte[] originalContents = "{\"persons\":[]} {\"persons\":[]}".getBytes(StandardCharsets.UTF_8);
+        Files.write(dataFile, originalContents);
+
+        MainApp.StartupState state = MainApp.loadStartupState(storage(), new UserPrefs());
+
+        Path backupPath = dataFile.resolveSibling(dataFile.getFileName() + ".backup");
+        assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
+        assertEquals(StartupNotice.loadFailedBackedUp(backupPath, INVALID_JSON_GUIDANCE),
+                state.notice().orElseThrow());
+        assertFalse(Files.exists(dataFile));
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+    }
+
+    @Test
     public void loadStartupState_invalidUtf8_reportsEncodingGuidanceAndPreservesBytes() throws Exception {
         // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/196
         Path dataFile = testFolder.resolve("contacts.json");

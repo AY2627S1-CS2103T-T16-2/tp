@@ -28,7 +28,7 @@ class JsonSerializableTuitionBook {
 
     public static final String MESSAGE_CONTACT_PREFIX = "Contact %d in the file: %s";
     public static final String MESSAGE_DUPLICATE_PERSON =
-            "Contact %d in the file has the same name and phone number as contact %d.";
+            "Contact %d in the file has the same role, name and phone number as contact %d.";
     public static final String MESSAGE_DUPLICATE_ID = "Contact %d in the file has the same \"id\" as contact %d. "
             + "Each contact needs a different id.";
     public static final String MESSAGE_NULL_PERSON = "Contact %d in the file is null instead of a contact. "
@@ -59,7 +59,7 @@ class JsonSerializableTuitionBook {
      * Converts this TuitionBook into the model's {@code TuitionBook} object.
      * First converts and validates every serialized contact so that all contact ids are available.
      * It then resolves guardian links against that complete set of contacts before adding contacts
-     * to TuitionBook, which enforces the normalized name-and-phone uniqueness invariant.
+     * to TuitionBook, which enforces the role-aware normalized name-and-phone uniqueness invariant.
      *
      * @throws IllegalValueException if there were any data constraints violated.
      */

@@ -23,14 +23,16 @@ import seedu.tuitionbook.storage.Storage;
  * The main LogicManager of the app.
  */
 public class LogicManager implements Logic {
-    public static final String FILE_OPS_ERROR_MESSAGE = "Could not save your changes, so the command was undone. "
+    public static final String MESSAGE_SAVE_FAILED = "Could not save your changes, so the command was undone. ";
+
+    public static final String FILE_OPS_ERROR_MESSAGE = MESSAGE_SAVE_FAILED
             + "Check that the data folder can be written to and has free space, then try again.";
 
-    public static final String FILE_OPS_BLOCKED_ERROR_FORMAT = "Could not save your changes, so the command was "
-            + "undone. %s";
+    public static final String FILE_OPS_BLOCKED_ERROR_FORMAT = MESSAGE_SAVE_FAILED + "%s";
 
-    public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
-            "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
+    public static final String FILE_OPS_PERMISSION_ERROR_FORMAT = MESSAGE_SAVE_FAILED
+            + "TuitionBook does not have permission to save to %s. Check that you can save files in that folder, "
+            + "then try again.";
 
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 

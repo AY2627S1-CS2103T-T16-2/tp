@@ -754,8 +754,9 @@ public class LogicManagerTest {
 
     @Test
     public void execute_storageThrowsAdException_throwsCommandException() {
-        assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+        assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, "Could not save your changes, so the command "
+                + "was undone. TuitionBook does not have permission to save to dummy access denied exception. "
+                + "Check that you can save files in that folder, then try again.");
     }
 
     @Test

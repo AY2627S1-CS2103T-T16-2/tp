@@ -110,5 +110,15 @@ public class JsonUtilTest {
         }
     }
 
+    @Test
+    public void fromJsonString_trailingWhitespace_returnsObject() throws IOException {
+        String jsonWithTrailingWhitespace = SerializableTestClass.JSON_STRING_REPRESENTATION + " \t\r\n";
+
+        SerializableTestClass result = JsonUtil.fromJsonString(
+                jsonWithTrailingWhitespace, SerializableTestClass.class);
+
+        assertEquals(SerializableTestClass.getNameTestValue(), result.getName());
+    }
+
     //TODO: @Test jsonUtil_writeThenReadObjectToJson_correctObject()
 }
