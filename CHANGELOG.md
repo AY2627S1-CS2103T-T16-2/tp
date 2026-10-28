@@ -65,6 +65,7 @@ The format is based on Keep a Changelog.
 - Scroll the contact list to a newly added contact until it is visible, then stop retrying so manual scrolling is not overridden.
 - Use locale-independent, case-insensitive alphabetical ordering for tags in contact cards and detailed views.
 - Render detailed-view tags with brackets and escape literal backslashes and square brackets.
+- Escape literal backslashes and square brackets in tags shown by `add`, `edit` and `delete` confirmations, as `view` does, so a single tag such as `first][second` is no longer indistinguishable from the two tags `first` and `second` (#268).
 - Keep the current screen visible when a command fails instead of forcing a return to the contact list.
 - Give bare and invalid `clear` confirmations distinct guidance without changing `clear confirm` behaviour.
 - Reject extra arguments to `help` and `exit`, consistently with `reload`, rather than opening Help or exiting unexpectedly.
