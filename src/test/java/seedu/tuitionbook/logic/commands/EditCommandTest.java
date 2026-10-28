@@ -76,7 +76,7 @@ public class EditCommandTest {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, new EditPersonDescriptor());
         Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
-        String expectedMessage = "No changes made: the specified values already match " + editedPerson.getName() + ".";
+        String expectedMessage = "No changes made: the specified values already match " + editedPerson.getName();
 
         Model expectedModel = new ModelManager(new TuitionBook(model.getTuitionBook()), new UserPrefs());
 
@@ -94,7 +94,7 @@ public class EditCommandTest {
         showPersonAtIndex(expectedModel, INDEX_FIRST_PERSON);
 
         assertCommandSuccess(editCommand, model,
-                "No changes made: the specified values already match " + person.getName() + ".", expectedModel);
+                "No changes made: the specified values already match " + person.getName(), expectedModel);
         assertFalse(editCommand.requiresSave());
     }
 
