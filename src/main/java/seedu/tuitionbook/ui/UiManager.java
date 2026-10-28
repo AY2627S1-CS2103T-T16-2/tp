@@ -7,10 +7,17 @@ import java.util.function.IntConsumer;
 import java.util.logging.Logger;
 
 import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.image.Image;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import seedu.tuitionbook.MainApp;
 import seedu.tuitionbook.commons.core.LogsCenter;
@@ -29,6 +36,9 @@ public class UiManager implements Ui {
     private static final String ICON_APPLICATION = "/images/address_book_32.png";
     private static final double REPAIR_DIALOG_MIN_WIDTH = 450;
     private static final double REPAIR_DIALOG_MIN_HEIGHT = 150;
+    private static final double LOAD_FAILURE_DIALOG_MIN_WIDTH = 480;
+    private static final double LOAD_FAILURE_DIALOG_MIN_HEIGHT = 220;
+    private static final double LOAD_FAILURE_DIALOG_PREF_WIDTH = 600;
 
     private Logic logic;
     private Path dataFilePath;
@@ -85,15 +95,10 @@ public class UiManager implements Ui {
     private void showStartupNotice(StartupNotice notice) {
         Path displayedDataFilePath = displayedPath(dataFilePath);
         switch (notice.type()) {
-            case MISSING_DATA_FILE -> showAlertDialogAndWait(AlertType.INFORMATION, "No data file found",
-                    "TuitionBook started with an empty contact list",
-                    "No contact data was found at " + displayedDataFilePath + ". Add contacts to get started.");
-            case LOAD_FAILED_BACKED_UP -> showLoadFailureNotice("TuitionBook started with an empty contact list",
-                    backedUpDialogMessage(notice, displayedDataFilePath),
+            case MISSING_DATA_FILE -> showMissingDataFileNotice();
+            case LOAD_FAILED_BACKED_UP -> showLoadFailureNotice(notice, displayedDataFilePath,
                     backedUpResultMessage(notice, displayedDataFilePath));
-            case LOAD_FAILED_BACKUP_FAILED -> showLoadFailureNotice(
-                    "TuitionBook started with an empty contact list, but saving is disabled",
-                    backupFailedDialogMessage(notice, displayedDataFilePath),
+            case LOAD_FAILED_BACKUP_FAILED -> showLoadFailureNotice(notice, displayedDataFilePath,
                     backupFailedResultMessage(notice, displayedDataFilePath));
             case GUARDIAN_LINKS_REPAIRED -> {
                 int count = notice.repairedGuardianLinkCount();
@@ -150,63 +155,163 @@ public class UiManager implements Ui {
         return path.toAbsolutePath().normalize();
     }
 
-    private String backedUpDialogMessage(StartupNotice notice, Path displayedDataFilePath) {
-        if (notice.loadFailureGuidance() == null) {
-            return "Your data file could not be read, so it was moved unchanged to "
-                    + displayedPath(notice.malformedFileBackupPath())
-                    + ". Your original data is not lost. TuitionBook will save new contacts to "
-                    + displayedDataFilePath + ". To restore the original data, fix the JSON in the backup, "
-                    + "rename it to " + displayedDataFilePath + " (replacing the new file), "
-                    + "then restart TuitionBook. Contacts added after recovery are in the new file and must be "
-                    + "re-entered; the files cannot be merged automatically.";
+    private void showMissingDataFileNotice() {
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
+        alert.initOwner(mainWindow.getPrimaryStage());
+        alert.setTitle("No data file found");
+        alert.setHeaderText("No contact data file was found");
+        Label body = createWrappedLabel("TuitionBook started with an empty contact list. Add a contact to get started.",
+                "missingDataFileBody", "startup-missing-data-body");
+        alert.getDialogPane().setContent(body);
+        alert.getDialogPane().setId(ALERT_DIALOG_PANE_FIELD_ID);
+        alert.getDialogPane().getStyleClass().add("startup-missing-data-dialog");
+        alert.getDialogPane().setPrefWidth(LOAD_FAILURE_DIALOG_MIN_WIDTH);
+        alert.setResizable(true);
+        alert.showAndWait();
+    }
+
+    private String loadFailureDescription(StartupNotice notice) {
+        String cause = notice.loadFailureGuidance() == null
+                ? "The data file could not be read."
+                : notice.loadFailureGuidance();
+        if (notice.loadFailureDetails() == null) {
+            return cause;
         }
-        return notice.loadFailureGuidance() + " The data file was moved unchanged to "
-                + displayedPath(notice.malformedFileBackupPath()) + ". Your original data is not lost. "
-                + "TuitionBook will save new contacts to " + displayedDataFilePath + ". After resolving the reported "
-                + "problem, rename the preserved file to " + displayedDataFilePath
-                + " (replacing the new file), then restart TuitionBook. Contacts added after recovery are in the new "
-                + "file and must be re-entered; the files cannot be merged automatically.";
+        return cause + "\nValidation details: " + notice.loadFailureDetails();
     }
 
     private String backedUpResultMessage(StartupNotice notice, Path displayedDataFilePath) {
-        if (notice.loadFailureGuidance() == null) {
-            return "Data file was moved unchanged to " + displayedPath(notice.malformedFileBackupPath()) + ".\n"
-                    + "New contacts save to " + displayedDataFilePath
-                    + ". Fix the backup JSON and replace this file to restore it.\n"
-                    + "Restart TuitionBook; contacts added after recovery must be re-entered.";
-        }
-        return notice.loadFailureGuidance() + "\nData file was moved unchanged to "
+        String correction = notice.loadFailureGuidance() == null
+                ? "Fix the backup JSON."
+                : "Resolve the reported problem in the preserved file.";
+        return loadFailureDescription(notice) + "\nOriginal file was preserved unchanged at "
                 + displayedPath(notice.malformedFileBackupPath()) + ".\nNew contacts save to " + displayedDataFilePath
-                + ". Resolve the reported problem and replace this file to restore the preserved contacts.\n"
-                + "Restart TuitionBook; contacts added after recovery must be re-entered.";
-    }
-
-    private String backupFailedDialogMessage(StartupNotice notice, Path displayedDataFilePath) {
-        if (notice.loadFailureGuidance() == null) {
-            return "Your data file could not be read and could not be moved to a backup. It remains at "
-                    + displayedDataFilePath
-                    + ". To protect it, TuitionBook cannot save contacts. Correct or move this file, then restart "
-                    + "TuitionBook.";
-        }
-        String reason = notice.loadFailureGuidance();
-        return reason + " It could not be moved to a backup and remains at " + displayedDataFilePath
-                + ". To protect it, TuitionBook cannot save contacts. Resolve the reported problem or move the file, "
-                + "then restart TuitionBook.";
+                + " and cannot be merged automatically with the preserved data.\nBefore restoring, close TuitionBook "
+                + "and preserve any new data file. " + correction
+                + " Replace the new data file with the corrected preserved file, then restart TuitionBook.";
     }
 
     private String backupFailedResultMessage(StartupNotice notice, Path displayedDataFilePath) {
-        if (notice.loadFailureGuidance() == null) {
-            return "Data file could not be backed up and remains at " + displayedDataFilePath + ".\n"
-                    + "Saving is disabled. Correct or move the file, then restart TuitionBook.";
-        }
-        String reason = notice.loadFailureGuidance();
-        return reason + "\nThe file could not be backed up and remains at " + displayedDataFilePath
-                + ".\nSaving is disabled. Resolve the reported problem or move the file, then restart TuitionBook.";
+        return loadFailureDescription(notice) + "\nThe original file could not be backed up and remains at "
+                + displayedDataFilePath
+                + ".\nSaving is disabled. Close TuitionBook, correct or move the original file, then restart "
+                + "TuitionBook.";
     }
 
-    private void showLoadFailureNotice(String header, String dialogMessage, String resultMessage) {
+    private void showLoadFailureNotice(StartupNotice notice, Path displayedDataFilePath, String resultMessage) {
         mainWindow.showStartupMessage(resultMessage);
-        showAlertDialogAndWait(AlertType.WARNING, "Contact data could not be loaded", header, dialogMessage);
+        Alert alert = new Alert(AlertType.WARNING);
+        alert.getDialogPane().getStylesheets().add("view/DarkTheme.css");
+        alert.initOwner(mainWindow.getPrimaryStage());
+        alert.setTitle("Contact data could not be loaded");
+        alert.setHeaderText("Data file could not be loaded");
+        alert.getDialogPane().setContent(buildLoadFailureContent(notice, displayedDataFilePath));
+        alert.getDialogPane().setId(ALERT_DIALOG_PANE_FIELD_ID);
+        alert.getDialogPane().getStyleClass().add("startup-load-failure-dialog");
+        alert.getDialogPane().setPrefWidth(LOAD_FAILURE_DIALOG_PREF_WIDTH);
+        alert.setResizable(true);
+        alert.setOnShown(event -> {
+            Stage dialogStage = (Stage) alert.getDialogPane().getScene().getWindow();
+            dialogStage.setMinWidth(LOAD_FAILURE_DIALOG_MIN_WIDTH);
+            dialogStage.setMinHeight(LOAD_FAILURE_DIALOG_MIN_HEIGHT);
+        });
+        alert.showAndWait();
+    }
+
+    private VBox buildLoadFailureContent(StartupNotice notice, Path displayedDataFilePath) {
+        String cause = notice.loadFailureGuidance() == null
+                ? "The data file could not be read."
+                : notice.loadFailureGuidance();
+        Label body = createWrappedLabel(cause + "\n\nTuitionBook started with an empty contact list.",
+                "loadFailureBody", "startup-load-failure-body");
+        Label outcome = createWrappedLabel(loadFailureOutcome(notice),
+                "loadFailureOutcome", "startup-load-failure-body");
+        TitledPane recoveryDetails = createRecoveryDetails(notice, displayedDataFilePath);
+        VBox.setVgrow(recoveryDetails, Priority.ALWAYS);
+
+        VBox content = new VBox(12, body, outcome, recoveryDetails);
+        content.setPrefWidth(LOAD_FAILURE_DIALOG_PREF_WIDTH);
+        content.getStyleClass().add("startup-load-failure-content");
+        return content;
+    }
+
+    private String loadFailureOutcome(StartupNotice notice) {
+        if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
+            return "The original file was preserved unchanged. If you add contacts now, TuitionBook saves them in "
+                    + "a separate new data file. Those contacts cannot be merged automatically with the preserved "
+                    + "data, so keep a copy of the new data file before restoring the backup.";
+        }
+        return "The original file could not be moved to a backup. Saving is disabled to prevent overwriting it.";
+    }
+
+    private TitledPane createRecoveryDetails(StartupNotice notice, Path displayedDataFilePath) {
+        VBox details = new VBox(8);
+        details.setPadding(new Insets(10));
+        details.getStyleClass().add("startup-load-failure-details");
+
+        Label steps = createWrappedLabel(recoverySteps(notice),
+                "recoverySteps", "startup-load-failure-instructions");
+        if (notice.loadFailureDetails() != null) {
+            Label validationDetails = createWrappedLabel("Validation details:\n" + notice.loadFailureDetails(),
+                    "loadFailureDetails", "startup-load-failure-instructions");
+            details.getChildren().add(validationDetails);
+        }
+        details.getChildren().add(steps);
+        if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
+            details.getChildren().add(createPathEntry("Preserved original file",
+                    displayedPath(notice.malformedFileBackupPath()), "preservedFilePath"));
+            details.getChildren().add(createPathEntry("New data file", displayedDataFilePath, "newDataFilePath"));
+        } else {
+            details.getChildren().add(createPathEntry("Original file remains at",
+                    displayedDataFilePath, "originalFilePath"));
+        }
+
+        ScrollPane scroller = new ScrollPane(details);
+        scroller.setFitToWidth(true);
+        scroller.setMinHeight(100);
+        scroller.setPrefViewportHeight(220);
+        scroller.getStyleClass().add("startup-load-failure-scroll");
+
+        TitledPane recoveryDetails = new TitledPane("Recovery details", scroller);
+        recoveryDetails.setId("recoveryDetails");
+        recoveryDetails.setAnimated(false);
+        recoveryDetails.setExpanded(false);
+        return recoveryDetails;
+    }
+
+    private String recoverySteps(StartupNotice notice) {
+        if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
+            return "1. Close TuitionBook before replacing any files.\n"
+                    + "2. Copy and preserve any new data file in a separate safe location if it exists.\n"
+                    + "3. Resolve the reported problem in a copy of the preserved original file.\n"
+                    + "4. Replace the new data file with the corrected preserved file.\n"
+                    + "5. Restart TuitionBook and re-enter separately saved contacts as needed.";
+        }
+        return "1. Close TuitionBook before changing the data file.\n"
+                + "2. Correct or move the original data file.\n"
+                + "3. Restart TuitionBook to retry loading and re-enable saving.";
+    }
+
+    private VBox createPathEntry(String labelText, Path path, String fieldId) {
+        Label label = new Label(labelText);
+        label.getStyleClass().add("startup-load-failure-path-label");
+        TextField pathField = new TextField(path.toString());
+        pathField.setId(fieldId);
+        pathField.setEditable(false);
+        pathField.setFocusTraversable(true);
+        pathField.setAccessibleText(labelText);
+        pathField.getStyleClass().add("startup-load-failure-path");
+        return new VBox(4, label, pathField);
+    }
+
+    private Label createWrappedLabel(String text, String id, String styleClass) {
+        Label label = new Label(text);
+        label.setId(id);
+        label.setWrapText(true);
+        label.setMaxWidth(Double.MAX_VALUE);
+        label.getStyleClass().add(styleClass);
+        return label;
     }
 
     void showAlertDialogAndWait(Alert.AlertType type, String title, String headerText, String contentText) {

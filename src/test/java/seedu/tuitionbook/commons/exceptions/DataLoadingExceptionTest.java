@@ -28,11 +28,13 @@ public class DataLoadingExceptionTest {
 
     @Test
     public void getUserFacingGuidance_invalidContactValue_mentionsContactData() {
-        String guidance = new DataLoadingException(new IllegalValueException("Invalid phone"))
-                .getUserFacingGuidance();
+        DataLoadingException exception = new DataLoadingException(new IllegalValueException("Invalid phone"));
+        String guidance = exception.getUserFacingGuidance();
 
         assertTrue(guidance.contains("invalid contact data"));
-        assertTrue(guidance.contains("Invalid phone"));
+        assertTrue(guidance.endsWith("before trying again."));
+        assertFalse(guidance.contains("Invalid phone"));
+        assertEquals("Invalid phone", exception.getUserFacingDetails().orElseThrow());
     }
 
     @Test
@@ -41,7 +43,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(wrappedCause).getUserFacingGuidance();
 
         assertTrue(guidance.contains("invalid contact data"));
-        assertTrue(guidance.contains("Invalid phone"));
+        assertFalse(guidance.contains("Invalid phone"));
     }
 
     @Test
@@ -96,21 +98,36 @@ public class DataLoadingExceptionTest {
     }
 
     @Test
-    public void getUserFacingGuidance_blankInvalidValue_usesFallbackDetail() {
-        String guidance = new DataLoadingException(new IllegalValueException("  "))
-                .getUserFacingGuidance();
+    public void getUserFacingDetails_blankInvalidValue_usesFallbackDetail() {
+        String details = new DataLoadingException(new IllegalValueException("  "))
+                .getUserFacingDetails().orElseThrow();
 
-        assertTrue(guidance.endsWith("the contact fields are invalid."));
+        assertEquals("One or more contact fields do not satisfy their validation rules.", details);
     }
 
     @Test
-    public void getUserFacingGuidance_longMultilineInvalidValue_isBoundedAndSingleLine() {
-        String longMessage = "first line\n" + "x".repeat(250);
-        String guidance = new DataLoadingException(new IllegalValueException(longMessage))
-                .getUserFacingGuidance();
+    public void getUserFacingDetails_multilineInvalidValue_isCompleteAndSingleLine() {
+        String details = new DataLoadingException(new IllegalValueException("first sentence.\nSecond sentence."))
+                .getUserFacingDetails().orElseThrow();
 
-        assertTrue(guidance.startsWith("The file contains invalid contact data: first line x"));
-        assertTrue(guidance.endsWith("..."));
-        assertTrue(guidance.length() <= 250);
+        assertEquals("first sentence. Second sentence.", details);
+        assertFalse(details.contains("..."));
+    }
+
+    @Test
+    public void getUserFacingDetails_excessivelyLongInvalidValue_usesCompleteBoundedFallback() {
+        String details = new DataLoadingException(new IllegalValueException("x".repeat(1_001)))
+                .getUserFacingDetails().orElseThrow();
+
+        assertEquals("The validation explanation is too long to display safely. Review the affected contact field "
+                + "against the documented constraints.", details);
+        assertFalse(details.contains("..."));
+    }
+
+    @Test
+    public void getUserFacingDetails_nonValidationFailure_isEmpty() {
+        DataLoadingException exception = new DataLoadingException(new IOException("disk failure"));
+
+        assertTrue(exception.getUserFacingDetails().isEmpty());
     }
 }

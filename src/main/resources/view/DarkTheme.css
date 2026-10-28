@@ -332,6 +332,41 @@
     -fx-text-fill: white;
 }
 
+.dialog-pane.startup-load-failure-dialog .startup-load-failure-body,
+.dialog-pane.startup-load-failure-dialog .startup-load-failure-instructions,
+.dialog-pane.startup-missing-data-dialog .startup-missing-data-body {
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 12pt;
+    -fx-font-weight: normal;
+    -fx-text-fill: white;
+}
+
+.dialog-pane.startup-load-failure-dialog .startup-load-failure-path-label {
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.dialog-pane.startup-load-failure-dialog .startup-load-failure-path {
+    -fx-font-family: monospace;
+    -fx-font-size: 10pt;
+}
+
+.dialog-pane.startup-load-failure-dialog .titled-pane > .title {
+    -fx-background-color: derive(#1d1d1d, 25%);
+}
+
+.dialog-pane.startup-load-failure-dialog .titled-pane > .title > .text {
+    -fx-fill: white;
+}
+
+.dialog-pane.startup-load-failure-dialog .titled-pane > *.content,
+.dialog-pane.startup-load-failure-dialog .startup-load-failure-scroll,
+.dialog-pane.startup-load-failure-dialog .startup-load-failure-scroll > .viewport {
+    -fx-background-color: #1d1d1d;
+}
+
 .scroll-bar {
     -fx-background-color: derive(#1d1d1d, 20%);
 }

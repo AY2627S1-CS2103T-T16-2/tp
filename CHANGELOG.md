@@ -64,6 +64,7 @@ The format is based on Keep a Changelog.
 - Update the UG, DG manual tests and offline Help to describe the development build's command-input rules rather than the old permissive behaviour.
 - Reject JSON files containing trailing content or duplicate property names so that ambiguous data is preserved through the existing malformed-file recovery workflow instead of being silently discarded on the next save.
 - Identify trailing JSON as invalid JSON in startup recovery guidance instead of reporting a file-system error, while preserving the original file unchanged (#267).
+- Replace dense startup data notices with compact, resizable layouts: load failures keep a concise cause and backup outcome visible while placing complete contact-validation guidance, numbered recovery steps and selectable full paths under expandable details, and a missing file no longer exposes a dominating absolute path (#267).
 - Continue startup with the unchanged legacy `addressbook.json` when permissions prevent migration to `tuitionbook.json`, allowing migration to be retried on a later launch.
 - Show all repaired guardian links in a scrollable startup summary while retaining the existing in-memory repair and next-save behaviour.
 - Decode JSON files strictly as UTF-8 so UTF-8 BOMs are accepted while invalid UTF-8 and other encodings are rejected and preserved unchanged through recovery.

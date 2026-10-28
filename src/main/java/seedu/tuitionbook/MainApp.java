@@ -122,9 +122,10 @@ public class MainApp extends Application {
                     + " Will be starting with an empty TuitionBook.");
             initialData = new TuitionBook();
             String guidance = e.getUserFacingGuidance();
+            String details = e.getUserFacingDetails().orElse(null);
             notice = Optional.of(e.getMalformedFileBackupPath()
-                    .map(path -> StartupNotice.loadFailedBackedUp(path, guidance))
-                    .orElseGet(() -> StartupNotice.loadFailedBackupFailed(guidance)));
+                    .map(path -> StartupNotice.loadFailedBackedUp(path, guidance, details))
+                    .orElseGet(() -> StartupNotice.loadFailedBackupFailed(guidance, details)));
         }
 
         return new StartupState(new ModelManager(initialData, userPrefs), notice);
