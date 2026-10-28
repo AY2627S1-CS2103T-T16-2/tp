@@ -384,12 +384,15 @@ public class UiManager implements Ui {
         dialogStage.setMinHeight(boundedMinHeight);
         dialogStage.setMaxWidth(visualBounds.getWidth());
         dialogStage.setMaxHeight(visualBounds.getHeight());
+        double targetHeight = Math.min(Math.max(desiredHeight, boundedMinHeight), visualBounds.getHeight());
         dialogStage.setWidth(targetWidth);
-        dialogStage.setHeight(Math.min(Math.max(desiredHeight, boundedMinHeight), visualBounds.getHeight()));
+        dialogStage.setHeight(targetHeight);
+        // Clamp against the just-requested sizes: the size properties update asynchronously on some
+        // platforms, so reading them back here could reposition the window using stale, smaller sizes.
         dialogStage.setX(clamp(dialogStage.getX(), visualBounds.getMinX(),
-                visualBounds.getMaxX() - dialogStage.getWidth()));
+                visualBounds.getMaxX() - targetWidth));
         dialogStage.setY(clamp(dialogStage.getY(), visualBounds.getMinY(),
-                visualBounds.getMaxY() - dialogStage.getHeight()));
+                visualBounds.getMaxY() - targetHeight));
     }
 
     private static double clamp(double value, double minimum, double maximum) {
