@@ -93,8 +93,10 @@ public class DataLoadingException extends Exception {
             return "Check each contact's values";
         }
         String singleLineMessage = message.replaceAll("\\R", " ").trim();
-        return singleLineMessage.length() > MAX_GUIDANCE_DETAIL_LENGTH
-                ? singleLineMessage.substring(0, MAX_GUIDANCE_DETAIL_LENGTH) + "..."
+        // Count code points, as names do, so supplementary characters neither shorten the bound nor get split.
+        return singleLineMessage.codePointCount(0, singleLineMessage.length()) > MAX_GUIDANCE_DETAIL_LENGTH
+                ? singleLineMessage.substring(0, singleLineMessage.offsetByCodePoints(0, MAX_GUIDANCE_DETAIL_LENGTH))
+                        + "..."
                 : singleLineMessage;
     }
 
