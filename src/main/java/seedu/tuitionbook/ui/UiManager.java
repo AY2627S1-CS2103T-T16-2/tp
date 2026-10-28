@@ -46,6 +46,7 @@ public class UiManager implements Ui {
     private static final double LOAD_FAILURE_DIALOG_PREF_WIDTH = 600;
     private static final double LOAD_FAILURE_DETAILS_MIN_HEIGHT = 80;
     private static final double LOAD_FAILURE_DETAILS_PREF_HEIGHT = 220;
+    private static final double MAX_PLAUSIBLE_DECORATION = 200;
     private static final String DEFAULT_LOAD_FAILURE_CAUSE = "Your data file could not be read.";
 
     private Logic logic;
@@ -228,6 +229,9 @@ public class UiManager implements Ui {
                             activeVisualBounds(dialogStage))));
             dialogStage.heightProperty().addListener((observable, oldHeight, newHeight) -> {
                 if (newHeight.doubleValue() < dialogStage.getMinHeight() - 1) {
+                    // Restore the floor immediately: some platforms do not clamp programmatic
+                    // resizes to the minimum size, and a later refit recomputes the exact fit.
+                    dialogStage.setHeight(dialogStage.getMinHeight());
                     Platform.runLater(() -> fitLoadFailureDialogWithin(dialogStage,
                             activeVisualBounds(dialogStage)));
                 }
@@ -343,10 +347,19 @@ public class UiManager implements Ui {
 
         // Size against the stage's target width: during a resize the pane still has its old width,
         // so measuring the pane directly underestimates how tall the wrapped labels become.
+        boolean sceneLaidOut = dialogStage.getScene().getWidth() > 1 && dialogStage.getScene().getHeight() > 1;
+        if (!sceneLaidOut && dialogStage.getProperties().put("loadFailureRefitQueued", Boolean.TRUE) == null) {
+            // Decorations cannot be measured yet, so this fit sizes the window as though it had no
+            // decorations, leaving it one title bar too short. Refit once the scene is laid out.
+            Platform.runLater(() -> {
+                dialogStage.getProperties().remove("loadFailureRefitQueued");
+                fitLoadFailureDialogWithin(dialogStage, activeVisualBounds(dialogStage));
+            });
+        }
         double decorationWidth = rememberedDecoration(dialogStage, "loadFailureDecorationWidth",
-                dialogStage.getWidth() - dialogStage.getScene().getWidth());
+                dialogStage.getWidth() - dialogStage.getScene().getWidth(), sceneLaidOut);
         double decorationHeight = rememberedDecoration(dialogStage, "loadFailureDecorationHeight",
-                dialogStage.getHeight() - dialogStage.getScene().getHeight());
+                dialogStage.getHeight() - dialogStage.getScene().getHeight(), sceneLaidOut);
         double targetWidth = Math.min(dialogStage.getWidth(), visualBounds.getWidth());
         double targetContentWidth = Math.max(1, targetWidth - decorationWidth);
 
@@ -395,6 +408,7 @@ public class UiManager implements Ui {
                 visualBounds.getMaxY() - targetHeight));
     }
 
+
     private static double clamp(double value, double minimum, double maximum) {
         return Math.max(minimum, Math.min(value, maximum));
     }
@@ -402,16 +416,22 @@ public class UiManager implements Ui {
     /**
      * Returns the window-decoration size remembered for {@code dialogStage}, measuring it once while the
      * stage and scene sizes agree. Later fits reuse the remembered value because a resize updates the
-     * stage size before the scene catches up, which would make a fresh measurement wrong.
+     * stage size before the scene catches up, which would make a fresh measurement wrong. Measurements
+     * taken before the scene is laid out, or that are implausibly large, are not remembered; zero is
+     * used until a sane measurement is available.
      */
-    private static double rememberedDecoration(Stage dialogStage, String key, double measuredDecoration) {
+    private static double rememberedDecoration(Stage dialogStage, String key, double measuredDecoration,
+            boolean sceneLaidOut) {
         Object remembered = dialogStage.getProperties().get(key);
         if (remembered instanceof Double value) {
             return value;
         }
-        double decoration = Double.isFinite(measuredDecoration) ? Math.max(0, measuredDecoration) : 0;
-        dialogStage.getProperties().put(key, decoration);
-        return decoration;
+        if (!sceneLaidOut || !Double.isFinite(measuredDecoration) || measuredDecoration < 0
+                || measuredDecoration > MAX_PLAUSIBLE_DECORATION) {
+            return 0;
+        }
+        dialogStage.getProperties().put(key, measuredDecoration);
+        return measuredDecoration;
     }
 
     private Label createWrappedLabel(String text, String id, String styleClass) {

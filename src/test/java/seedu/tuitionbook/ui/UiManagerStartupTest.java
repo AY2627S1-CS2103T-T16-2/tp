@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.geometry.Bounds;
@@ -45,6 +46,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import javafx.util.Duration;
 import seedu.tuitionbook.logic.Logic;
 import seedu.tuitionbook.logic.LogicManager;
 import seedu.tuitionbook.model.ModelManager;
@@ -615,23 +617,30 @@ public class UiManagerStartupTest {
                 ScrollPane detailsScroller = (ScrollPane) recoveryDetails.getContent();
                 Rectangle2D verificationBounds = Screen.getPrimary().getVisualBounds();
 
-                pane.applyCss();
-                pane.layout();
-                assertActualDialogState(pane, dialogStage, recoveryDetails, detailsScroller,
-                        verificationBounds, false);
-                if (isScaleVerificationEnabled()) {
-                    assertScaledDisplayEnvironment(dialogStage);
-                    recordScaleMeasurements(pane, dialogStage, recoveryDetails, detailsScroller,
-                            artifactPrefix, "collapsed");
-                    snapshotDialog(pane, artifactPrefix + "-collapsed.png");
-                }
+                runAfterDialogSettles(dialogStage, 30, () -> {
+                    try {
+                        pane.applyCss();
+                        pane.layout();
+                        assertActualDialogState(pane, dialogStage, recoveryDetails, detailsScroller,
+                                verificationBounds, false);
+                        if (isScaleVerificationEnabled()) {
+                            assertScaledDisplayEnvironment(dialogStage);
+                            recordScaleMeasurements(pane, dialogStage, recoveryDetails, detailsScroller,
+                                    artifactPrefix, "collapsed");
+                            snapshotDialog(pane, artifactPrefix + "-collapsed.png");
+                        }
 
-                recoveryDetails.setExpanded(true);
-                Platform.runLater(() -> {
-                    // The production expansion listener is queued before this callback. Wait one more pulse before
-                    // inspecting so this user-path test fails if that listener is removed or broken.
-                    Platform.runLater(() -> inspectExpandedAndResizedDialog(pane, dialogStage, recoveryDetails,
-                            detailsScroller, verificationBounds, notice, artifactPrefix, failure, inspected));
+                        recoveryDetails.setExpanded(true);
+                        // The production expansion listener refits the dialog asynchronously. Wait until that
+                        // correction lands, so this user-path test fails if the listener is removed or broken.
+                        runAfterDialogSettles(dialogStage, 30, () ->
+                                inspectExpandedAndResizedDialog(pane, dialogStage, recoveryDetails,
+                                        detailsScroller, verificationBounds, notice, artifactPrefix,
+                                        failure, inspected));
+                    } catch (Throwable throwable) {
+                        failure.set(throwable);
+                        inspected.countDown();
+                    }
                 });
             } catch (Throwable throwable) {
                 failure.set(throwable);
@@ -670,7 +679,9 @@ public class UiManagerStartupTest {
 
             dialogStage.setWidth(536);
             dialogStage.setHeight(420);
-            Platform.runLater(() -> {
+            // The dialog refits itself after a programmatic shrink, but the correction and the
+            // scene's catch-up to the window size take a few pulses on some platforms.
+            runAfterDialogSettles(dialogStage, 30, () -> {
                 try {
                     pane.applyCss();
                     pane.layout();
@@ -837,6 +848,41 @@ public class UiManagerStartupTest {
         }
         return String.format("[minX=%.2f,minY=%.2f,width=%.2f,height=%.2f]",
                 bounds.getMinX(), bounds.getMinY(), bounds.getWidth(), bounds.getHeight());
+    }
+
+    /**
+     * Runs {@code inspection} once the dialog's self-correction has settled: the stage respects its
+     * minimum height and the scene has caught up with the stage size. Platforms apply programmatic
+     * window changes asynchronously, so the dialog's refit can take a few pulses to land. Gives up
+     * after {@code remainingAttempts} pulses and runs the inspection anyway so assertions still report.
+     */
+    private void runAfterDialogSettles(Stage stage, int remainingAttempts, Runnable inspection) {
+        Platform.runLater(() -> {
+            DialogPane pane = (DialogPane) stage.getScene().getRoot();
+            double decorationWidth = rememberedDecoration(stage, "loadFailureDecorationWidth");
+            double decorationHeight = rememberedDecoration(stage, "loadFailureDecorationHeight");
+            boolean settled = stage.getHeight() >= stage.getMinHeight() - LAYOUT_TOLERANCE
+                    && Math.abs(stage.getScene().getWidth() + decorationWidth - stage.getWidth())
+                            <= LAYOUT_TOLERANCE
+                    && Math.abs(stage.getScene().getHeight() + decorationHeight - stage.getHeight())
+                            <= LAYOUT_TOLERANCE
+                    && pane.minHeight(stage.getScene().getWidth())
+                            <= stage.getScene().getHeight() + LAYOUT_TOLERANCE;
+            if (!settled && remainingAttempts > 0) {
+                // Space the retries out: chained runLater calls can all run within the same frame,
+                // before the platform delivers the window's new size to the scene.
+                PauseTransition pause = new PauseTransition(Duration.millis(25));
+                pause.setOnFinished(event -> runAfterDialogSettles(stage, remainingAttempts - 1, inspection));
+                pause.play();
+                return;
+            }
+            inspection.run();
+        });
+    }
+
+    private double rememberedDecoration(Stage stage, String key) {
+        Object value = stage.getProperties().get(key);
+        return value instanceof Double decoration ? decoration : 0;
     }
 
     private void assertWindowWithin(Stage stage, Rectangle2D visualBounds) {
