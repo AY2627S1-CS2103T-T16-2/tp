@@ -17,10 +17,10 @@ public class Email {
             "Each part of an email's domain between periods must be at most 63 characters long.";
     public static final String MESSAGE_FORMAT = "Emails must be in the format name@example.com.";
     public static final String MESSAGE_INVALID_NAME_CHARACTERS = "The part of an email before the @ may only "
-            + "contain English letters, digits (0-9), periods (.), plus signs (+), underscores (_), hyphens (-), "
-            + "and apostrophes (').";
+            + "contain English letters, digits (0-9), periods (.), or these symbols: "
+            + "! # $ % & ' * + - / = ? ^ _ ` { | } ~.";
     public static final String MESSAGE_INVALID_NAME_EDGE =
-            "The part of an email before the @ must start and end with a letter or digit.";
+            "The part of an email before the @ cannot start or end with a period.";
     public static final String MESSAGE_CONSECUTIVE_PERIODS =
             "The part of an email before the @ cannot have two periods in a row.";
     public static final String MESSAGE_INVALID_DOMAIN_CHARACTERS = "The part of an email after the @ may only "
@@ -31,7 +31,7 @@ public class Email {
             + "at the start or end, or next to a period.";
     public static final String MESSAGE_SHORT_DOMAIN_ENDING =
             "The last part of an email's domain must be at least 2 characters long, as in .com or .sg.";
-    private static final String LOCAL_PART_SPECIAL_CHARACTERS = ".+_-'";
+    private static final String LOCAL_PART_SPECIAL_CHARACTERS = ".!#$%&'*+-/=?^_`{|}~";
     // Accepted characters are ASCII, so character counts equal byte counts for these SMTP/DNS limits.
     private static final int MAX_LENGTH = 254;
     private static final int MAX_LOCAL_PART_LENGTH = 64;
@@ -86,7 +86,7 @@ public class Email {
         if (!hasOnlyLocalPartCharacters(localPart)) {
             return MESSAGE_INVALID_NAME_CHARACTERS;
         }
-        if (!hasAlphanumericEdges(localPart)) {
+        if (!hasNoEdgePeriods(localPart)) {
             return MESSAGE_INVALID_NAME_EDGE;
         }
         if (localPart.contains("..")) {
@@ -116,7 +116,11 @@ public class Email {
 
     private static boolean isValidLocalPart(String localPart) {
         return localPart.length() <= MAX_LOCAL_PART_LENGTH && hasOnlyLocalPartCharacters(localPart)
-                && hasAlphanumericEdges(localPart) && !localPart.contains("..");
+                && hasNoEdgePeriods(localPart) && !localPart.contains("..");
+    }
+
+    private static boolean hasNoEdgePeriods(String localPart) {
+        return localPart.charAt(0) != '.' && localPart.charAt(localPart.length() - 1) != '.';
     }
 
     private static boolean hasOnlyLocalPartCharacters(String localPart) {

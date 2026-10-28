@@ -29,9 +29,9 @@ public class EmailTest {
         assertEquals(Email.MESSAGE_FORMAT, Email.getConstraintMessage("peter@"));
         assertEquals(Email.MESSAGE_FORMAT, Email.getConstraintMessage("a@b@example.com"));
         assertEquals(Email.MESSAGE_INVALID_NAME_CHARACTERS, Email.getConstraintMessage("peter jack@example.com"));
-        assertEquals(Email.MESSAGE_INVALID_NAME_CHARACTERS, Email.getConstraintMessage("-peter!@example.com"));
+        assertEquals(Email.MESSAGE_INVALID_NAME_CHARACTERS, Email.getConstraintMessage("-peter:@example.com"));
         assertEquals(Email.MESSAGE_INVALID_NAME_EDGE, Email.getConstraintMessage(".peter@example.com"));
-        assertEquals(Email.MESSAGE_INVALID_NAME_EDGE, Email.getConstraintMessage("peter-@example.com"));
+        assertEquals(Email.MESSAGE_INVALID_NAME_EDGE, Email.getConstraintMessage("peter.@example.com"));
         assertEquals(Email.MESSAGE_CONSECUTIVE_PERIODS, Email.getConstraintMessage("peter..jack@example.com"));
         assertEquals(Email.MESSAGE_INVALID_DOMAIN_CHARACTERS, Email.getConstraintMessage("peter@exa_mple.com"));
         assertEquals(Email.MESSAGE_INVALID_DOMAIN_CHARACTERS, Email.getConstraintMessage("peter@exämple.com"));
@@ -75,10 +75,6 @@ public class EmailTest {
         assertFalse(Email.isValidEmail("peterjack@example.com ")); // trailing space
         assertFalse(Email.isValidEmail("peterjack@@example.com")); // double '@' symbol
         assertFalse(Email.isValidEmail("peter@jack@example.com")); // '@' symbol in local part
-        assertFalse(Email.isValidEmail("-peterjack@example.com")); // local part starts with a hyphen
-        assertFalse(Email.isValidEmail("peterjack-@example.com")); // local part ends with a hyphen
-        assertFalse(Email.isValidEmail("'peterjack@example.com")); // local part starts with an apostrophe
-        assertFalse(Email.isValidEmail("peterjack'@example.com")); // local part ends with an apostrophe
         assertFalse(Email.isValidEmail(".peterjack@example.com")); // local part starts with a period
         assertFalse(Email.isValidEmail("peterjack.@example.com")); // local part ends with a period
         assertFalse(Email.isValidEmail("peter..jack@example.com")); // local part has two consecutive periods
@@ -89,7 +85,7 @@ public class EmailTest {
         assertFalse(Email.isValidEmail("peterjack@example.com-")); // domain name ends with a hyphen
         assertFalse(Email.isValidEmail("peterjack@example..com")); // empty domain label
         assertFalse(Email.isValidEmail("peterjack@example.c")); // top level domain has less than two chars
-        assertFalse(Email.isValidEmail("peter{jack@example.com")); // character just after the ASCII letter range
+        assertFalse(Email.isValidEmail("peter[jack@example.com")); // brackets require quoted local-part syntax
         assertFalse(Email.isValidEmail("peter:jack@example.com")); // character just after the ASCII digit range
 
         // valid email
@@ -108,6 +104,42 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("if.you.dream.it_you.can.do.it@example.com")); // long local part
         assertTrue(Email.isValidEmail("e1234567@u.nus.edu")); // more than one period in domain
         assertTrue(Email.isValidEmail("AZaz09@AZaz09.co")); // ASCII alphanumeric boundaries
+    }
+
+    @Test
+    public void isValidEmail_unquotedPunctuation_acceptsInsideAndAtEdges() {
+        String punctuation = "!#$%&'*+-/=?^_`{|}~";
+        for (char character : punctuation.toCharArray()) {
+            for (String localPart : new String[]{"a" + character + "b", character + "alice", "alice" + character,
+                String.valueOf(character)}) {
+                String email = localPart + "@example.com";
+                assertTrue(Email.isValidEmail(email), email);
+                assertEquals(email, new Email(email).value);
+            }
+        }
+    }
+
+    @Test
+    public void isValidEmail_spacesQuotesAndUnsupportedCharacters_rejects() {
+        for (String localPart : new String[]{"alice smith", "\"alice\"", "alice\"smith", "alice\\smith",
+            "alice(smith)", "alice,smith", "alice:smith", "alice;smith", "alice[smith]", "alice<smith>",
+            "alice\tsmith", "alice\nsmith", "alic\u00e9", "alice\u00a0smith", "alice\u0000smith"}) {
+            String email = localPart + "@example.com";
+            assertFalse(Email.isValidEmail(email), email);
+            assertThrows(IllegalArgumentException.class, Email.MESSAGE_INVALID_NAME_CHARACTERS, () -> new Email(email));
+        }
+    }
+
+    @Test
+    public void isValidEmail_periodRules_rejectsLeadingTrailingAndConsecutivePeriods() {
+        for (String localPart : new String[]{".", ".alice", "alice.", ".!", "!.", "alice..smith", "!..!"}) {
+            String email = localPart + "@example.com";
+            assertFalse(Email.isValidEmail(email), email);
+            assertThrows(IllegalArgumentException.class, () -> new Email(email));
+        }
+        assertTrue(Email.isValidEmail("!.!@example.com"));
+        assertEquals("The part of an email before the @ cannot start or end with a period.",
+                Email.getConstraintMessage(".alice@example.com"));
     }
 
     @Test

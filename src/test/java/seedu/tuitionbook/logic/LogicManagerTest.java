@@ -85,6 +85,66 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_unquotedEmailPunctuation_addEditAndReloadPreserveValues() throws Exception {
+        logic.execute("add r/student n/Amy p/91234567 e/a!#$%&'*+-/=?^_`{|}~z@example.com");
+        logic.execute("reload");
+        assertEquals("a!#$%&'*+-/=?^_`{|}~z@example.com",
+                model.getTuitionBook().getPersonList().getFirst().getEmail().orElseThrow().value);
+        logic.execute("edit 1 e/_alice+@example.com");
+        logic.execute("reload");
+        assertEquals("_alice+@example.com",
+                model.getTuitionBook().getPersonList().getFirst().getEmail().orElseThrow().value);
+    }
+
+    @Test
+    public void execute_invalidEmailSyntax_rejectsWithoutChangingContactsOrFile() throws Exception {
+        logic.execute("add r/student n/Amy p/91234567 e/amy@example.com");
+        TuitionBook original = new TuitionBook(model.getTuitionBook());
+        Path file = temporaryFolder.resolve("tuitionBook.json");
+        byte[] originalBytes = Files.readAllBytes(file);
+        for (String email : new String[]{".alice@example.com", "alice.@example.com", "alice..smith@example.com",
+            "alice smith@example.com", "\"alice\"@example.com",
+            "alice\"smith@example.com"}) {
+            assertThrows(ParseException.class, () -> logic.execute("add r/student n/Other p/98765432 e/" + email));
+            assertThrows(ParseException.class, () -> logic.execute("edit 1 n/Changed e/" + email));
+            assertEquals(original, model.getTuitionBook());
+            assertArrayEquals(originalBytes, Files.readAllBytes(file));
+        }
+    }
+
+    @Test
+    public void execute_emailContainingFieldPrefixes_preservesEmailAndSeparatesRealFields() throws Exception {
+        String[] prefixes = {"t/", "n/", "p/", "e/", "a/", "r/", "g/", "zz/"};
+        for (int i = 0; i < prefixes.length; i++) {
+            String name = "Slash " + i;
+            String email = prefixes[i] + "user@example.com";
+            logic.execute("add r/student n/" + name + " p/91234567 e/" + email + " t/Real");
+            Person added = model.getTuitionBook().getPersonList().getLast();
+            assertEquals(email, added.getEmail().orElseThrow().value);
+            assertEquals(Set.of(new Tag("Real")), added.getTags());
+            assertEquals(name, added.getName().fullName);
+            assertEquals("91234567", added.getPhone().value);
+            assertEquals(Role.STUDENT, added.getRole());
+
+            String updatedEmail = "alice." + prefixes[i] + "@example.com";
+            logic.execute("edit " + (i + 1) + " e/" + updatedEmail + " t/Edited");
+            logic.execute("reload");
+            Person restored = model.getTuitionBook().getPersonList().getLast();
+            assertEquals(updatedEmail, restored.getEmail().orElseThrow().value);
+            assertEquals(Set.of(new Tag("Edited")), restored.getTags());
+            assertEquals(added.getId(), restored.getId());
+            assertEquals(name, restored.getName().fullName);
+            assertEquals("91234567", restored.getPhone().value);
+            assertEquals(Role.STUDENT, restored.getRole());
+        }
+        // A space before t/ deliberately starts a separate tag field, even if its value resembles an email.
+        logic.execute("edit 1 e/ t/user@example.com");
+        Person cleared = model.getTuitionBook().getPersonList().getFirst();
+        assertTrue(cleared.getEmail().isEmpty());
+        assertEquals(Set.of(new Tag("user@example.com")), cleared.getTags());
+    }
+
+    @Test
     public void execute_overlengthEmails_rejectWithoutChangingContactsFilterOrFile() throws Exception {
         logic.execute("add r/student n/Amy p/91234567 e/amy@example.com");
         logic.execute("find Amy");
