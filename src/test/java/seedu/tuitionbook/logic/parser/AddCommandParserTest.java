@@ -425,6 +425,36 @@ public class AddCommandParserTest {
                 AddCommand.MESSAGE_GUARDIAN_PREFIX_NOT_ALLOWED);
     }
 
+    @Test
+    public void parse_lookalikePrefixes_notRecognizedAsFields() {
+        // Lookalike prefixes are not field markers, so the required field they imitate is reported missing.
+        String roleAndName = ROLE_DESC_STUDENT + NAME_DESC_BOB;
+        for (String phonePrefix : new String[] {"\u0440/", "\uFF50/", "p\uFF0F", "p\u2215", "p\u2044"}) {
+            assertParseFailure(parser, roleAndName + " " + phonePrefix + VALID_PHONE_BOB,
+                    missingFieldsMessage("p/PHONE"));
+        }
+        assertParseFailure(parser, ROLE_DESC_STUDENT + " n\uFF0F" + VALID_NAME_BOB + PHONE_DESC_BOB,
+                missingFieldsMessage("n/NAME"));
+    }
+
+    @Test
+    public void parse_lookalikeRole_failure() {
+        for (String role : new String[] {"\u017Ftudent", "guard\u0131an", "\uFB06udent"}) {
+            assertParseFailure(parser, " " + PREFIX_ROLE + role + NAME_DESC_BOB + PHONE_DESC_BOB,
+                    Role.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
+    public void parse_brokenUnicodeAddress_failure() {
+        String mandatoryFields = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB;
+        for (String address : new String[] {"Blk\uD800 1", "Blk\u0000 1", "\"Blk\uDC00 1\""}) {
+            assertParseFailure(parser, mandatoryFields + " " + PREFIX_ADDRESS + address,
+                    Address.MESSAGE_INVALID_CHARACTERS);
+        }
+        assertParseFailure(parser, mandatoryFields + " " + PREFIX_ADDRESS + "\u0301", Address.MESSAGE_BLANK);
+    }
+
     private static String missingFieldsMessage(String missingFields) {
         return String.format(AddCommand.MESSAGE_MISSING_REQUIRED_FIELDS, missingFields, AddCommand.MESSAGE_USAGE);
     }

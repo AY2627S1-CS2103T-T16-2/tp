@@ -53,6 +53,22 @@ public class EmailTest {
     }
 
     @Test
+    public void isValidEmail_lookalikeOrInvisibleCharacters_returnsFalse() {
+        String[] invalidEmails = {
+            "\u0430my@example.com", // Cyrillic a in local part
+            "amy@\u0435xample.com", // Cyrillic e in domain
+            "amy\uFF20example.com", // full-width at sign
+            "amy@example\uFF0Ecom", // full-width full stop
+            "\uFF41my@example.com", // full-width a
+            "amy\u200B@example.com", // zero-width space
+            "amy@example.com\u00a0" // trailing no-break space
+        };
+        for (String email : invalidEmails) {
+            assertFalse(Email.isValidEmail(email), email);
+        }
+    }
+
+    @Test
     public void isValidEmail() {
         // null email
         assertThrows(NullPointerException.class, () -> Email.isValidEmail(null));

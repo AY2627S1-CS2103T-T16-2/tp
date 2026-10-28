@@ -143,6 +143,35 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_brokenUnicodeOrControlAddress_throwsIllegalValueException() {
+        // A file can contain these through JSON escapes such as "\ud800" or "\u0000".
+        for (String address : new String[] {"Blk \uD800", "Blk \uDC00 1", "Blk\u0000 1"}) {
+            JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, address,
+                    VALID_TAGS);
+            assertThrows(IllegalValueException.class, Address.MESSAGE_INVALID_CHARACTERS, person::toModelType);
+        }
+    }
+
+    @Test
+    public void toModelType_combiningMarkOnlyAddress_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, "\u0301",
+                VALID_TAGS);
+
+        assertThrows(IllegalValueException.class, Address.MESSAGE_BLANK, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_lookalikeRoleOrUnicodeDigitPhone_throwsIllegalValueException() {
+        JsonAdaptedPerson lookalikeRole = new JsonAdaptedPerson(VALID_ID, "\u017Ftudent", null, VALID_NAME,
+                VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+        assertThrows(IllegalValueException.class, Role.MESSAGE_CONSTRAINTS, lookalikeRole::toModelType);
+
+        JsonAdaptedPerson fullWidthPhone = new JsonAdaptedPerson(VALID_NAME, "\uFF19\uFF11\uFF12\uFF13",
+                VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+        assertThrows(IllegalValueException.class, Phone.MESSAGE_CONSTRAINTS, fullWidthPhone::toModelType);
+    }
+
+    @Test
     public void toModelType_visibleAddressWithCombiningAndFormatCharacters_preservesAddress() throws Exception {
         String visibleAddress = "Cafe\u0301\u200B Road";
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL,

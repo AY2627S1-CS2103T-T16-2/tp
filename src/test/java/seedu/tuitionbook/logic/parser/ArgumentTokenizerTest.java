@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 public class ArgumentTokenizerTest {
@@ -21,6 +23,20 @@ public class ArgumentTokenizerTest {
 
         assertPreambleEmpty(argMultimap);
         assertArgumentAbsent(argMultimap, pSlash);
+    }
+
+    @Test
+    public void tokenize_edgeControls_preservesCharactersForValidation() throws Exception {
+        Prefix address = new Prefix("a/");
+        for (char control : new char[] {'\u0000', '\u001b', '\u001c'}) {
+            String value = control + "Blk 1" + control;
+            assertEquals(value, ArgumentTokenizer.tokenize(" a/ " + value + " ", address)
+                    .getValue(address).orElseThrow());
+            assertEquals(value, ArgumentTokenizer.tokenizeWithQuotedValues(" a/\" " + value + " \"",
+                    Set.of(address)).getValue(address).orElseThrow());
+            assertEquals("1" + control, ArgumentTokenizer.tokenize(" 1" + control + " v/", new Prefix("v/"))
+                    .getPreamble());
+        }
     }
 
     private void assertPreamblePresent(ArgumentMultimap argMultimap, String expectedPreamble) {

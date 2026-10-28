@@ -127,6 +127,34 @@ public class NameTest {
     }
 
     @Test
+    public void isValidName_invisibleOrBrokenCharacters_returnsFalse() {
+        String[] invalidNames = {
+            "Amy\u200BTan", // zero-width space
+            "Amy\u200DTan", // zero-width joiner
+            "Amy\uFEFFTan", // byte-order mark
+            "Amy\u202ETan", // right-to-left override
+            "Amy\u2066Tan\u2069", // bidi isolate
+            "Amy\u202FTan", // narrow no-break space
+            "Amy\u2007Tan", // figure space
+            "Amy\u0000Tan", // NUL
+            "Amy\uD800", // unpaired high surrogate
+            "Amy\uDC00", // unpaired low surrogate
+            "\u0301\u0302" // combining marks only
+        };
+        for (String name : invalidNames) {
+            assertFalse(Name.isValidName(name), name);
+        }
+    }
+
+    @Test
+    public void isValidName_lookalikeLettersFromOtherScripts_returnsTrue() {
+        // Names accept letters from any language, so lookalikes are valid but distinct spellings.
+        assertTrue(Name.isValidName("\u0410my Tan")); // Cyrillic capital A
+        assertTrue(Name.isValidName("\uFF21my Tan")); // full-width A
+        assertTrue(Name.isValidName("\u0391my Tan")); // Greek capital Alpha
+    }
+
+    @Test
     public void equals() {
         Name name = new Name("Valid Name");
 
