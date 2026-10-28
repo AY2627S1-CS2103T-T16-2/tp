@@ -2,13 +2,12 @@ package seedu.tuitionbook.storage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,10 +26,13 @@ import seedu.tuitionbook.model.person.Role;
 @JsonRootName(value = "tuitionbook")
 class JsonSerializableTuitionBook {
 
+    public static final String MESSAGE_CONTACT_PREFIX = "Contact %d in the file: %s";
     public static final String MESSAGE_DUPLICATE_PERSON =
-            "Two contacts in the file have the same role, name and phone number.";
-    public static final String MESSAGE_DUPLICATE_ID = "Persons list contains duplicate id(s).";
-    public static final String MESSAGE_NULL_PERSON = "Persons list contains a null contact.";
+            "Contact %d in the file has the same role, name and phone number as contact %d.";
+    public static final String MESSAGE_DUPLICATE_ID = "Contact %d in the file has the same \"id\" as contact %d. "
+            + "Each contact needs a different id.";
+    public static final String MESSAGE_NULL_PERSON = "Contact %d in the file is null instead of a contact. "
+            + "Remove it from the \"persons\" list.";
 
     private static final Logger logger = LogsCenter.getLogger(JsonSerializableTuitionBook.class);
 
@@ -71,17 +73,16 @@ class JsonSerializableTuitionBook {
     TuitionBookLoadResult toModelTypeWithResult() throws IllegalValueException {
         List<Person> loadedPersons = new ArrayList<>();
         List<GuardianLinkRepair> parseRepairs = new ArrayList<>();
-        Set<UUID> loadedIds = new HashSet<>();
-        for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
-            if (jsonAdaptedPerson == null) {
-                throw new IllegalValueException(MESSAGE_NULL_PERSON);
-            }
-            JsonAdaptedPerson.PersonLoadResult personResult = jsonAdaptedPerson.toModelTypeWithResult();
+        Map<UUID, Integer> positionsById = new HashMap<>();
+        for (int index = 0; index < persons.size(); index++) {
+            int position = index + 1;
+            JsonAdaptedPerson.PersonLoadResult personResult = convertContact(persons.get(index), position);
             Person person = personResult.person();
             parseRepairs.add(personResult.repair());
             // IDs must be unique before they can safely be used to resolve guardian links.
-            if (!loadedIds.add(person.getId())) {
-                throw new IllegalValueException(MESSAGE_DUPLICATE_ID);
+            Integer earlierPosition = positionsById.putIfAbsent(person.getId(), position);
+            if (earlierPosition != null) {
+                throw new IllegalValueException(String.format(MESSAGE_DUPLICATE_ID, position, earlierPosition));
             }
             loadedPersons.add(person);
         }
@@ -110,11 +111,37 @@ class JsonSerializableTuitionBook {
             }
             // TuitionBook rejects manually introduced duplicate contact identities.
             if (tuitionBook.hasPerson(resolvedPerson)) {
-                throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
+                throw new IllegalValueException(String.format(MESSAGE_DUPLICATE_PERSON, index + 1,
+                        findEarlierSamePersonPosition(loadedPersons, index)));
             }
             tuitionBook.addPerson(resolvedPerson);
         }
         return new TuitionBookLoadResult(tuitionBook, repairs);
+    }
+
+    /**
+     * Converts the contact at the given 1-based {@code position}, naming that position in any error message.
+     */
+    private static JsonAdaptedPerson.PersonLoadResult convertContact(JsonAdaptedPerson jsonAdaptedPerson,
+            int position) throws IllegalValueException {
+        if (jsonAdaptedPerson == null) {
+            throw new IllegalValueException(String.format(MESSAGE_NULL_PERSON, position));
+        }
+        try {
+            return jsonAdaptedPerson.toModelTypeWithResult();
+        } catch (IllegalValueException ive) {
+            throw new IllegalValueException(String.format(MESSAGE_CONTACT_PREFIX, position, ive.getMessage()), ive);
+        }
+    }
+
+    /**
+     * Returns the 1-based position of the first contact before {@code index} with the same identity.
+     */
+    private static int findEarlierSamePersonPosition(List<Person> loadedPersons, int index) {
+        Person duplicate = loadedPersons.get(index);
+        return IntStream.range(0, index)
+                .filter(earlierIndex -> loadedPersons.get(earlierIndex).isSamePerson(duplicate))
+                .findFirst().orElseThrow() + 1;
     }
 
     /**

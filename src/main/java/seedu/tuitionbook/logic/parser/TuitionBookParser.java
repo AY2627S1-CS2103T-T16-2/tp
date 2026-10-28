@@ -31,8 +31,8 @@ import seedu.tuitionbook.logic.parser.exceptions.ParseException;
  */
 public class TuitionBookParser {
 
-    public static final String MESSAGE_LINE_BREAK = "Commands must be entered on a single line. "
-            + "Found line break U+%04X; remove it or replace it with a normal space (U+0020).";
+    public static final String MESSAGE_LINE_BREAK =
+            "Commands must be entered on a single line. Remove the line break and try again.";
 
     /**
      * Used for initial separation of command word and args.
@@ -49,10 +49,8 @@ public class TuitionBookParser {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public Command parseCommand(String userInput) throws ParseException {
-        Matcher lineBreak = LINE_BREAK.matcher(userInput);
-        if (lineBreak.find()) {
-            throw new ParseException(String.format(Locale.ROOT, MESSAGE_LINE_BREAK,
-                    lineBreak.group().codePointAt(0)));
+        if (LINE_BREAK.matcher(userInput).find()) {
+            throw new ParseException(MESSAGE_LINE_BREAK);
         }
         final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(userInput.trim());
         if (!matcher.matches()) {

@@ -171,21 +171,14 @@ public class UiManager implements Ui {
         alert.showAndWait();
     }
 
-    private String loadFailureDescription(StartupNotice notice) {
+    private String backedUpResultMessage(StartupNotice notice, Path displayedDataFilePath) {
         String cause = notice.loadFailureGuidance() == null
                 ? "The data file could not be read."
                 : notice.loadFailureGuidance();
-        if (notice.loadFailureDetails() == null) {
-            return cause;
-        }
-        return cause + "\nValidation details: " + notice.loadFailureDetails();
-    }
-
-    private String backedUpResultMessage(StartupNotice notice, Path displayedDataFilePath) {
         String correction = notice.loadFailureGuidance() == null
-                ? "Fix the backup JSON."
+                ? "Fix the mistake in the backup file."
                 : "Resolve the reported problem in the preserved file.";
-        return loadFailureDescription(notice) + "\nOriginal file was preserved unchanged at "
+        return cause + "\nOriginal file was preserved unchanged at "
                 + displayedPath(notice.malformedFileBackupPath()) + ".\nNew contacts save to " + displayedDataFilePath
                 + " and cannot be merged automatically with the preserved data.\nBefore restoring, close TuitionBook "
                 + "and preserve any new data file. " + correction
@@ -193,7 +186,10 @@ public class UiManager implements Ui {
     }
 
     private String backupFailedResultMessage(StartupNotice notice, Path displayedDataFilePath) {
-        return loadFailureDescription(notice) + "\nThe original file could not be backed up and remains at "
+        String cause = notice.loadFailureGuidance() == null
+                ? "The data file could not be read."
+                : notice.loadFailureGuidance();
+        return cause + "\nThe original file could not be backed up and remains at "
                 + displayedDataFilePath
                 + ".\nSaving is disabled. Close TuitionBook, correct or move the original file, then restart "
                 + "TuitionBook.";
@@ -252,11 +248,6 @@ public class UiManager implements Ui {
 
         Label steps = createWrappedLabel(recoverySteps(notice),
                 "recoverySteps", "startup-load-failure-instructions");
-        if (notice.loadFailureDetails() != null) {
-            Label validationDetails = createWrappedLabel("Validation details:\n" + notice.loadFailureDetails(),
-                    "loadFailureDetails", "startup-load-failure-instructions");
-            details.getChildren().add(validationDetails);
-        }
         details.getChildren().add(steps);
         if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
             details.getChildren().add(createPathEntry("Preserved original file",
@@ -286,7 +277,8 @@ public class UiManager implements Ui {
                     + "2. Copy and preserve any new data file in a separate safe location if it exists.\n"
                     + "3. Resolve the reported problem in a copy of the preserved original file.\n"
                     + "4. Replace the new data file with the corrected preserved file.\n"
-                    + "5. Restart TuitionBook and re-enter separately saved contacts as needed.";
+                    + "5. Restart TuitionBook.\n"
+                    + "6. Re-enter any contacts you added since the problem started.";
         }
         return "1. Close TuitionBook before changing the data file.\n"
                 + "2. Correct or move the original data file.\n"

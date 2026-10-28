@@ -35,7 +35,6 @@ import javafx.stage.Window;
 import seedu.tuitionbook.logic.Logic;
 import seedu.tuitionbook.logic.LogicManager;
 import seedu.tuitionbook.model.ModelManager;
-import seedu.tuitionbook.model.person.Phone;
 import seedu.tuitionbook.storage.GuardianLinkRepair;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
@@ -46,14 +45,15 @@ import seedu.tuitionbook.storage.StorageManager;
  */
 public class UiManagerStartupTest {
 
-    private static final String INVALID_JSON_GUIDANCE = "The data file is not valid UTF-8 JSON. Correct the encoding "
-            + "or JSON syntax in the preserved file before trying again.";
+    private static final String INVALID_JSON_GUIDANCE = "The data file is not in a format TuitionBook can read. "
+            + "Check the preserved file for mistakes such as a missing comma, quote or bracket, and save it as "
+            + "UTF-8 text before trying again.";
     private static final String PERMISSION_GUIDANCE = "TuitionBook did not have permission to read the data file. "
             + "Restore read permission on the preserved file before trying again.";
     private static final String FILE_SYSTEM_GUIDANCE = "The data file could not be read because of a file-system "
             + "error. Check access to the preserved file before trying again.";
-    private static final String INVALID_CONTACT_GUIDANCE = "The file contains invalid contact data. Correct the "
-            + "affected contact field in the preserved file before trying again.";
+    private static final String INVALID_CONTACT_GUIDANCE = "The file contains invalid contact data. "
+            + "Contact 3 in the file: Missing \"name\" value.";
 
     @TempDir
     public Path testFolder;
@@ -96,10 +96,9 @@ public class UiManagerStartupTest {
     }
 
     @Test
-    public void invalidContactLoadFailure_showsConciseCauseAndCompleteValidationDetails() throws Exception {
+    public void invalidContactLoadFailure_showsSpecificProblemInMainContent() throws Exception {
         Path backupPath = testFolder.resolve("contacts.json.backup");
-        assertStartupDialog(StartupNotice.loadFailedBackedUp(
-                        backupPath, INVALID_CONTACT_GUIDANCE, Phone.MESSAGE_CONSTRAINTS),
+        assertStartupDialog(StartupNotice.loadFailedBackedUp(backupPath, INVALID_CONTACT_GUIDANCE),
                 "Contact data could not be loaded", "Data file could not be loaded", INVALID_CONTACT_GUIDANCE,
                 "warning");
     }
@@ -137,9 +136,8 @@ public class UiManagerStartupTest {
     }
 
     @Test
-    public void invalidContactLoadFailure_backupFailureShowsDetailsAndDisabledSaving() throws Exception {
-        assertStartupDialog(StartupNotice.loadFailedBackupFailed(
-                        INVALID_CONTACT_GUIDANCE, Phone.MESSAGE_CONSTRAINTS),
+    public void invalidContactLoadFailure_backupFailureShowsProblemAndDisabledSaving() throws Exception {
+        assertStartupDialog(StartupNotice.loadFailedBackupFailed(INVALID_CONTACT_GUIDANCE),
                 "Contact data could not be loaded", "Data file could not be loaded", INVALID_CONTACT_GUIDANCE,
                 "warning");
     }
@@ -441,7 +439,6 @@ public class UiManagerStartupTest {
         Label outcome = (Label) pane.lookup("#loadFailureOutcome");
         TitledPane recoveryDetails = (TitledPane) pane.lookup("#recoveryDetails");
         Label recoverySteps = (Label) pane.lookup("#recoverySteps");
-        Label validationDetails = (Label) pane.lookup("#loadFailureDetails");
 
         assertTrue(dialogStage.isResizable());
         assertTrue(dialogStage.getMinWidth() > 0);
@@ -459,15 +456,7 @@ public class UiManagerStartupTest {
         assertTrue(detailsScroller.isFitToWidth());
         assertTrue(recoverySteps.isWrapText());
         assertTrue(recoverySteps.getText().contains("1. Close TuitionBook"));
-        if (notice.loadFailureDetails() == null) {
-            assertNull(validationDetails);
-        } else {
-            assertEquals("Validation details:\n" + notice.loadFailureDetails(), validationDetails.getText());
-            assertTrue(validationDetails.isWrapText());
-            assertFalse(body.getText().contains(notice.loadFailureDetails()));
-            assertFalse(outcome.getText().contains(notice.loadFailureDetails()));
-            assertFalse(body.getText().contains("..."));
-        }
+        assertNull(pane.lookup("#loadFailureDetails"));
 
         Path displayedDataFilePath = configuredDataFilePath.toAbsolutePath().normalize();
         if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
@@ -481,6 +470,8 @@ public class UiManagerStartupTest {
             assertTrue(outcome.getText().contains("preserved unchanged"));
             assertTrue(outcome.getText().contains("cannot be merged automatically"));
             assertTrue(recoverySteps.getText().contains("preserve any new data file"));
+            assertTrue(recoverySteps.getText().contains(
+                    "6. Re-enter any contacts you added since the problem started."));
             assertFalse(body.getText().contains(displayedDataFilePath.toString()));
             assertFalse(outcome.getText().contains(displayedDataFilePath.toString()));
             assertFalse(recoverySteps.getText().contains(displayedDataFilePath.toString()));
@@ -541,12 +532,9 @@ public class UiManagerStartupTest {
         String description = notice.loadFailureGuidance() == null
                 ? "The data file could not be read."
                 : notice.loadFailureGuidance();
-        if (notice.loadFailureDetails() != null) {
-            description += "\nValidation details: " + notice.loadFailureDetails();
-        }
         if (notice.type() == StartupNotice.Type.LOAD_FAILED_BACKED_UP) {
             String correction = notice.loadFailureGuidance() == null
-                    ? "Fix the backup JSON."
+                    ? "Fix the mistake in the backup file."
                     : "Resolve the reported problem in the preserved file.";
             return description + "\nOriginal file was preserved unchanged at "
                     + notice.malformedFileBackupPath().toAbsolutePath().normalize() + ".\nNew contacts save to "

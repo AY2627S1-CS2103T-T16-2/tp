@@ -9,8 +9,7 @@ import seedu.tuitionbook.storage.GuardianLinkRepair;
  * Describes a contact-data outcome that the UI must explain when the application starts.
  */
 public record StartupNotice(Type type, List<GuardianLinkRepair> guardianLinkRepairs,
-                            Path malformedFileBackupPath, String loadFailureGuidance,
-                            String loadFailureDetails) {
+                            Path malformedFileBackupPath, String loadFailureGuidance) {
 
     /** The kinds of startup feedback shown to the user. */
     public enum Type {
@@ -32,18 +31,9 @@ public record StartupNotice(Type type, List<GuardianLinkRepair> guardianLinkRepa
                 || (type == Type.GUARDIAN_LINKS_REPAIRED && guardianLinkRepairs.isEmpty())
                 || (type != Type.GUARDIAN_LINKS_REPAIRED && !guardianLinkRepairs.isEmpty())
                 || (!isLoadFailure && loadFailureGuidance != null)
-                || (!isLoadFailure && loadFailureDetails != null)
-                || (isLoadFailure && loadFailureGuidance != null && loadFailureGuidance.isBlank())
-                || (isLoadFailure && loadFailureDetails != null && loadFailureDetails.isBlank())
-                || (loadFailureDetails != null && loadFailureGuidance == null)) {
+                || (isLoadFailure && loadFailureGuidance != null && loadFailureGuidance.isBlank())) {
             throw new IllegalArgumentException("Notice details do not match the notice type.");
         }
-    }
-
-    /** Creates a notice without expanded load-failure details. */
-    public StartupNotice(Type type, List<GuardianLinkRepair> guardianLinkRepairs,
-                         Path malformedFileBackupPath, String loadFailureGuidance) {
-        this(type, guardianLinkRepairs, malformedFileBackupPath, loadFailureGuidance, null);
     }
 
     /** Returns the number of guardian links repaired during loading. */
@@ -53,7 +43,7 @@ public record StartupNotice(Type type, List<GuardianLinkRepair> guardianLinkRepa
 
     /** Returns a notice for a missing contact-data file. */
     public static StartupNotice missingDataFile() {
-        return new StartupNotice(Type.MISSING_DATA_FILE, List.of(), null, null, null);
+        return new StartupNotice(Type.MISSING_DATA_FILE, List.of(), null, null);
     }
 
     /** Returns a notice for a contact-data file that could not be loaded. */
@@ -63,12 +53,7 @@ public record StartupNotice(Type type, List<GuardianLinkRepair> guardianLinkRepa
 
     /** Returns a notice for a contact-data file that could not be loaded, with cause-specific guidance. */
     public static StartupNotice loadFailedBackedUp(Path backupPath, String guidance) {
-        return loadFailedBackedUp(backupPath, guidance, null);
-    }
-
-    /** Returns a notice for a contact-data file that could not be loaded, with expandable details. */
-    public static StartupNotice loadFailedBackedUp(Path backupPath, String guidance, String details) {
-        return new StartupNotice(Type.LOAD_FAILED_BACKED_UP, List.of(), backupPath, guidance, details);
+        return new StartupNotice(Type.LOAD_FAILED_BACKED_UP, List.of(), backupPath, guidance);
     }
 
     /** Returns a notice for a contact-data file that could not be preserved. */
@@ -78,16 +63,11 @@ public record StartupNotice(Type type, List<GuardianLinkRepair> guardianLinkRepa
 
     /** Returns a notice for an unpreserved contact-data file, with cause-specific guidance. */
     public static StartupNotice loadFailedBackupFailed(String guidance) {
-        return loadFailedBackupFailed(guidance, null);
-    }
-
-    /** Returns a notice for an unpreserved contact-data file, with expandable details. */
-    public static StartupNotice loadFailedBackupFailed(String guidance, String details) {
-        return new StartupNotice(Type.LOAD_FAILED_BACKUP_FAILED, List.of(), null, guidance, details);
+        return new StartupNotice(Type.LOAD_FAILED_BACKUP_FAILED, List.of(), null, guidance);
     }
 
     /** Returns a notice for invalid guardian links removed while loading. */
     public static StartupNotice guardianLinksRepaired(List<GuardianLinkRepair> guardianLinkRepairs) {
-        return new StartupNotice(Type.GUARDIAN_LINKS_REPAIRED, guardianLinkRepairs, null, null, null);
+        return new StartupNotice(Type.GUARDIAN_LINKS_REPAIRED, guardianLinkRepairs, null, null);
     }
 }

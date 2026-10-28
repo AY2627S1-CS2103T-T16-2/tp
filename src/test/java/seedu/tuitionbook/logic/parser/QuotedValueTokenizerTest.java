@@ -18,9 +18,8 @@ public class QuotedValueTokenizerTest {
     @Test
     public void tokenize_unknownPrefixOutsideQuotes_rejectsRatherThanAbsorbsData() {
         for (String prefix : List.of("ee/", "N/", "unknown/", "x/")) {
-            String expected = "Unrecognised field prefix: " + prefix
-                    + " Check the command's supported lowercase prefixes. "
-                    + "For literal prefix-like text, quote the complete name, address or tag value.";
+            String expected = "Unknown field " + prefix + ". Check the command format, "
+                    + "or put the whole value in double quotes if it contains " + prefix + ".";
             assertThrows(ParseException.class, expected, () -> tokenize(" a/12 Road " + prefix + "value"));
         }
     }

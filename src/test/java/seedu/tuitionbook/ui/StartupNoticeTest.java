@@ -59,18 +59,6 @@ public class StartupNoticeTest {
         assertThrows(IllegalArgumentException.class, () -> StartupNotice.loadFailedBackupFailed(" "));
     }
 
-    @Test
-    public void constructor_detailsWithoutGuidance_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new StartupNotice(
-                StartupNotice.Type.LOAD_FAILED_BACKUP_FAILED, List.of(), null, null, "Phone constraints."));
-    }
-
-    @Test
-    public void constructor_blankDetails_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> StartupNotice.loadFailedBackupFailed(
-                "Invalid contact data.", " "));
-    }
-
     private static GuardianLinkRepair repair() {
         return new GuardianLinkRepair("Sam", UUID.randomUUID(), null,
                 GuardianLinkRepair.Reason.MISSING_GUARDIAN);

@@ -59,6 +59,7 @@ import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.model.tag.Tag;
 import seedu.tuitionbook.storage.JsonTuitionBookStorage;
 import seedu.tuitionbook.storage.JsonUserPrefsStorage;
+import seedu.tuitionbook.storage.SaveBlockedException;
 import seedu.tuitionbook.storage.StorageManager;
 import seedu.tuitionbook.storage.TuitionBookLoadResult;
 import seedu.tuitionbook.testutil.PersonBuilder;
@@ -380,10 +381,10 @@ public class LogicManagerTest {
         Person originalPerson = new PersonBuilder().withName("Original Name").withAddress("Original Address").build();
         model.addPerson(originalPerson);
 
-        assertParseException("edit 1 n/" + "A".repeat(Name.MAX_LENGTH + 1), Name.MESSAGE_CONSTRAINTS);
+        assertParseException("edit 1 n/" + "A".repeat(Name.MAX_LENGTH + 1), Name.MESSAGE_TOO_LONG);
         assertContactIsUnchanged(originalPerson);
 
-        assertParseException("edit 1 a/" + "A".repeat(Address.MAX_LENGTH + 1), Address.MESSAGE_CONSTRAINTS);
+        assertParseException("edit 1 a/" + "A".repeat(Address.MAX_LENGTH + 1), Address.MESSAGE_TOO_LONG);
         assertContactIsUnchanged(originalPerson);
     }
 
@@ -741,14 +742,21 @@ public class LogicManagerTest {
 
     @Test
     public void execute_storageThrowsIoException_throwsCommandException() {
-        assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
+        assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, LogicManager.FILE_OPS_ERROR_MESSAGE);
+    }
+
+    @Test
+    public void execute_storageBlocksSaving_showsBlockedReason() {
+        SaveBlockedException blocked = new SaveBlockedException("Saving is disabled.");
+        assertCommandFailureForExceptionFromStorage(blocked,
+                String.format(LogicManager.FILE_OPS_BLOCKED_ERROR_FORMAT, blocked.getMessage()));
     }
 
     @Test
     public void execute_storageThrowsAdException_throwsCommandException() {
-        assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+        assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, "Could not save your changes, so the command "
+                + "was undone. TuitionBook does not have permission to save to dummy access denied exception. "
+                + "Check that you can save files in that folder, then try again.");
     }
 
     @Test

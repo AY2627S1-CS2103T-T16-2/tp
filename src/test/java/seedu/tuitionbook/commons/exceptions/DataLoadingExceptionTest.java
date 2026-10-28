@@ -28,13 +28,11 @@ public class DataLoadingExceptionTest {
 
     @Test
     public void getUserFacingGuidance_invalidContactValue_mentionsContactData() {
-        DataLoadingException exception = new DataLoadingException(new IllegalValueException("Invalid phone"));
-        String guidance = exception.getUserFacingGuidance();
+        String guidance = new DataLoadingException(new IllegalValueException("Invalid phone"))
+                .getUserFacingGuidance();
 
         assertTrue(guidance.contains("invalid contact data"));
-        assertTrue(guidance.endsWith("before trying again."));
-        assertFalse(guidance.contains("Invalid phone"));
-        assertEquals("Invalid phone", exception.getUserFacingDetails().orElseThrow());
+        assertTrue(guidance.contains("Invalid phone"));
     }
 
     @Test
@@ -43,7 +41,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(wrappedCause).getUserFacingGuidance();
 
         assertTrue(guidance.contains("invalid contact data"));
-        assertFalse(guidance.contains("Invalid phone"));
+        assertTrue(guidance.contains("Invalid phone"));
     }
 
     @Test
@@ -51,8 +49,8 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new JsonParseException(null, "Invalid JSON"))
                 .getUserFacingGuidance();
 
-        assertTrue(guidance.contains("UTF-8 JSON"));
-        assertTrue(guidance.contains("encoding or JSON syntax"));
+        assertTrue(guidance.contains("not in a format TuitionBook can read"));
+        assertTrue(guidance.contains("missing comma, quote or bracket"));
     }
 
     @Test
@@ -60,7 +58,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new CharacterCodingException())
                 .getUserFacingGuidance();
 
-        assertTrue(guidance.contains("UTF-8 JSON"));
+        assertTrue(guidance.contains("not in a format TuitionBook can read"));
     }
 
     @Test
@@ -68,7 +66,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new IOException("JSON root value must not be null."))
                 .getUserFacingGuidance();
 
-        assertTrue(guidance.contains("UTF-8 JSON"));
+        assertTrue(guidance.contains("not in a format TuitionBook can read"));
     }
 
     @Test
@@ -98,36 +96,21 @@ public class DataLoadingExceptionTest {
     }
 
     @Test
-    public void getUserFacingDetails_blankInvalidValue_usesFallbackDetail() {
-        String details = new DataLoadingException(new IllegalValueException("  "))
-                .getUserFacingDetails().orElseThrow();
+    public void getUserFacingGuidance_blankInvalidValue_usesFallbackDetail() {
+        String guidance = new DataLoadingException(new IllegalValueException("  "))
+                .getUserFacingGuidance();
 
-        assertEquals("One or more contact fields do not satisfy their validation rules.", details);
+        assertTrue(guidance.endsWith("invalid contact data. Check each contact's values."));
     }
 
     @Test
-    public void getUserFacingDetails_multilineInvalidValue_isCompleteAndSingleLine() {
-        String details = new DataLoadingException(new IllegalValueException("first sentence.\nSecond sentence."))
-                .getUserFacingDetails().orElseThrow();
+    public void getUserFacingGuidance_longMultilineInvalidValue_isBoundedAndSingleLine() {
+        String longMessage = "first line\n" + "x".repeat(250);
+        String guidance = new DataLoadingException(new IllegalValueException(longMessage))
+                .getUserFacingGuidance();
 
-        assertEquals("first sentence. Second sentence.", details);
-        assertFalse(details.contains("..."));
-    }
-
-    @Test
-    public void getUserFacingDetails_excessivelyLongInvalidValue_usesCompleteBoundedFallback() {
-        String details = new DataLoadingException(new IllegalValueException("x".repeat(1_001)))
-                .getUserFacingDetails().orElseThrow();
-
-        assertEquals("The validation explanation is too long to display safely. Review the affected contact field "
-                + "against the documented constraints.", details);
-        assertFalse(details.contains("..."));
-    }
-
-    @Test
-    public void getUserFacingDetails_nonValidationFailure_isEmpty() {
-        DataLoadingException exception = new DataLoadingException(new IOException("disk failure"));
-
-        assertTrue(exception.getUserFacingDetails().isEmpty());
+        assertTrue(guidance.startsWith("The file contains invalid contact data. first line x"));
+        assertTrue(guidance.endsWith("..."));
+        assertTrue(guidance.length() <= 250);
     }
 }

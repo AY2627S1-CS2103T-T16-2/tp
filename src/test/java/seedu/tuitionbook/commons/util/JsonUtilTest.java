@@ -95,11 +95,19 @@ public class JsonUtilTest {
     }
 
     @Test
-    public void fromJsonString_trailingJson_throwsJsonParseException() {
+    public void fromJsonString_trailingJson_throwsIoException() {
         String jsonWithTrailingObject = SerializableTestClass.JSON_STRING_REPRESENTATION + " {}";
 
-        assertThrows(JsonParseException.class, () ->
+        assertThrows(IOException.class, () ->
                 JsonUtil.fromJsonString(jsonWithTrailingObject, SerializableTestClass.class));
+    }
+
+    @Test
+    public void fromJsonString_trailingJsonValue_throwsJsonParseException() {
+        for (String trailingValue : new String[] {" {}", " []", " 1"}) {
+            assertThrows(JsonParseException.class, () -> JsonUtil.fromJsonString(
+                    SerializableTestClass.JSON_STRING_REPRESENTATION + trailingValue, SerializableTestClass.class));
+        }
     }
 
     @Test
