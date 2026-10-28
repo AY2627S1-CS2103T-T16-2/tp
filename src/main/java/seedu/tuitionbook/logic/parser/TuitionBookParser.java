@@ -34,6 +34,8 @@ public class TuitionBookParser {
 
     public static final String MESSAGE_LINE_BREAK =
             "Commands must be entered on a single line. Remove the line break and try again.";
+    public static final String MESSAGE_CONTROL_CHARACTER =
+            "Your command contains a hidden control character, often from copied text. Retype the command.";
 
     /**
      * Used for initial separation of command word and args.
@@ -53,7 +55,10 @@ public class TuitionBookParser {
         if (LINE_BREAK.matcher(userInput).find()) {
             throw new ParseException(MESSAGE_LINE_BREAK);
         }
-        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(userInput.trim());
+        if (userInput.chars().anyMatch(character -> Character.isISOControl(character) && character != '\t')) {
+            throw new ParseException(MESSAGE_CONTROL_CHARACTER);
+        }
+        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(StringUtil.trimAsciiWhitespace(userInput));
         if (!matcher.matches()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE));
         }

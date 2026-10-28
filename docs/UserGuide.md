@@ -98,6 +98,8 @@ The command box is where you enter instructions; the result area reports success
 
 * Type spaces with the spacebar. Text copied from a website or PDF can contain special spaces that look normal; TuitionBook rejects these in command words and indexes. If that happens, retype the spaces. Also check copied commands for missing spaces.
 
+* If a copied command produces a hidden-control-character error, retype the command. Hidden characters are not removed to turn an invalid index or field into a valid value or an instruction to clear a field.
+
 * In `add`, `edit`, `list`, `tag` and `untag`, a word made of letters and ending in `/` (such as `n/` or `ee/`) starts a new field when it comes after a space. If the command doesn't recognise it, the command is rejected, so a typo like `ee/` is never saved by mistake.
 </box>
 

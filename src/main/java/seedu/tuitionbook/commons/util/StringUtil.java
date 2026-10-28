@@ -58,6 +58,28 @@ public class StringUtil {
         return s.chars().allMatch(c -> c < 0x80);
     }
 
+    /** Returns whether {@code character} is an ASCII space, tab, LF, vertical tab, form feed or CR. */
+    public static boolean isAsciiWhitespace(char character) {
+        return character == ' ' || (character >= '\t' && character <= '\r');
+    }
+
+    /**
+     * Trims ASCII whitespace while preserving other controls and non-ASCII characters for validation.
+     * Unlike {@link String#trim()}, this never discards characters such as NUL or escape.
+     */
+    public static String trimAsciiWhitespace(String s) {
+        requireNonNull(s);
+        int start = 0;
+        int end = s.length();
+        while (start < end && isAsciiWhitespace(s.charAt(start))) {
+            start++;
+        }
+        while (end > start && isAsciiWhitespace(s.charAt(end - 1))) {
+            end--;
+        }
+        return s.substring(start, end);
+    }
+
     /**
      * Returns true if {@code s} represents a non-zero unsigned integer written with ASCII digits
      * e.g. 1, 2, 3, ..., {@code Integer.MAX_VALUE} <br>

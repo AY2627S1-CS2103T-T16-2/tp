@@ -19,10 +19,10 @@ public enum Role {
      * uppercasing would map them to a role name.
      */
     public static boolean isValidRole(String test) {
-        if (test == null || !StringUtil.isAscii(test.trim())) {
+        if (test == null || !StringUtil.isAscii(StringUtil.trimAsciiWhitespace(test))) {
             return false;
         }
-        String normalised = test.trim().toUpperCase(Locale.ROOT);
+        String normalised = StringUtil.trimAsciiWhitespace(test).toUpperCase(Locale.ROOT);
         return normalised.equals(STUDENT.name()) || normalised.equals(GUARDIAN.name());
     }
 
@@ -35,7 +35,7 @@ public enum Role {
         if (!isValidRole(role)) {
             throw new IllegalArgumentException(MESSAGE_CONSTRAINTS);
         }
-        return Role.valueOf(role.trim().toUpperCase(Locale.ROOT));
+        return Role.valueOf(StringUtil.trimAsciiWhitespace(role).toUpperCase(Locale.ROOT));
     }
 
     @Override

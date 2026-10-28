@@ -174,6 +174,19 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readTuitionBook_controlPaddedRoles_movesDataToBackupAndAllowsSaving() throws Exception {
+        for (String role : List.of("\\u0000student", "guardian\\u001f")) {
+            String contents = """
+                    {"persons":[{"id":"123e4567-e89b-12d3-a456-426614174000","role":"%s",
+                    "name":"Amy","phone":"91234567"}]}
+                    """.formatted(role);
+            assertMalformedDataIsBackedUpAndSavingIsAllowed(contents);
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json"));
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json.backup"));
+        }
+    }
+
+    @Test
     public void readTuitionBook_trailingJson_movesDataToBackupAndAllowsSaving() throws Exception {
         assertMalformedDataIsBackedUpAndSavingIsAllowed("""
                 {"persons":[]}

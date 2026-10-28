@@ -37,7 +37,7 @@ public class ParserUtil {
     }
 
     private static boolean isUnsupportedSpace(int character) {
-        return character >= 0x80 && (Character.isSpaceChar(character) || Character.isWhitespace(character)
+        return character >= 0x80 && (Character.isSpaceChar(character)
                 || character == '\u180e' || character == '\u200b' || character == '\u2060'
                 || character == '\ufeff');
     }
@@ -49,7 +49,7 @@ public class ParserUtil {
      */
     public static Index parseIndex(String oneBasedIndex) throws ParseException {
         checkForUnsupportedSpaces(oneBasedIndex);
-        String trimmedIndex = oneBasedIndex.trim();
+        String trimmedIndex = StringUtil.trimAsciiWhitespace(oneBasedIndex);
         if (!StringUtil.isNonZeroUnsignedInteger(trimmedIndex)) {
             throw new ParseException(MESSAGE_INVALID_INDEX);
         }
@@ -64,7 +64,7 @@ public class ParserUtil {
      */
     public static Name parseName(String name) throws ParseException {
         requireNonNull(name);
-        String trimmedName = name.trim();
+        String trimmedName = StringUtil.trimAsciiWhitespace(name);
         if (!Name.isValidName(trimmedName)) {
             throw new ParseException(Name.getConstraintMessage(trimmedName));
         }
@@ -79,7 +79,7 @@ public class ParserUtil {
      */
     public static Phone parsePhone(String phone) throws ParseException {
         requireNonNull(phone);
-        String trimmedPhone = phone.trim();
+        String trimmedPhone = StringUtil.trimAsciiWhitespace(phone);
         if (!Phone.isValidPhone(trimmedPhone)) {
             throw new ParseException(Phone.MESSAGE_CONSTRAINTS);
         }
@@ -94,7 +94,7 @@ public class ParserUtil {
      */
     public static Address parseAddress(String address) throws ParseException {
         requireNonNull(address);
-        String trimmedAddress = address.trim();
+        String trimmedAddress = StringUtil.trimAsciiWhitespace(address);
         if (!Address.isValidAddress(trimmedAddress)) {
             throw new ParseException(Address.getConstraintMessage(trimmedAddress));
         }
@@ -109,7 +109,7 @@ public class ParserUtil {
      */
     public static Email parseEmail(String email) throws ParseException {
         requireNonNull(email);
-        String trimmedEmail = email.trim();
+        String trimmedEmail = StringUtil.trimAsciiWhitespace(email);
         if (!Email.isValidEmail(trimmedEmail)) {
             throw new ParseException(Email.getConstraintMessage(trimmedEmail));
         }
@@ -124,7 +124,7 @@ public class ParserUtil {
      */
     public static Role parseRole(String role) throws ParseException {
         requireNonNull(role);
-        String trimmedRole = role.trim();
+        String trimmedRole = StringUtil.trimAsciiWhitespace(role);
         if (!Role.isValidRole(trimmedRole)) {
             throw new ParseException(Role.MESSAGE_CONSTRAINTS);
         }
@@ -139,7 +139,7 @@ public class ParserUtil {
      */
     public static Tag parseTag(String tag) throws ParseException {
         requireNonNull(tag);
-        String trimmedTag = tag.trim();
+        String trimmedTag = StringUtil.trimAsciiWhitespace(tag);
         if (!Tag.isValidTagName(trimmedTag)) {
             throw new ParseException(Tag.getConstraintMessage(trimmedTag));
         }

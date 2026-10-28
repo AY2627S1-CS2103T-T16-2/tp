@@ -45,6 +45,7 @@ The format is based on Keep a Changelog.
 
 - Reject lookalike and invisible characters at command-syntax boundaries: non-ASCII digits are no longer accepted as indexes (so `delete １` no longer deletes contact 1), a Kelvin-sign `linK` no longer runs `link`, `ſtudent`/`guardıan` are no longer accepted as roles, and every Unicode or zero-width space in command words and indexes now shows the unusual-space hint (#142).
 - Reject addresses containing unpaired surrogates, which were silently saved as `?`, or embedded control characters other than tabs, and stop treating combining marks alone as visible address content (#142).
+- Reject hidden control characters before command trimming and preserve them through field and role validation, preventing control-padded indexes from executing and control-only optional fields from being cleared; ordinary whitespace and intentionally empty fields retain their existing behavior (#142).
 - Report when `edit` leaves all contact values unchanged instead of claiming the contact was edited, including repeated values, clearing already-empty fields, and reordered identical tag sets; unchanged edits continue to skip saving.
 - Split the dense Developer Guide parser diagram into focused dispatch and utility views, moving explanatory notes and command inheritance into prose (#225).
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).

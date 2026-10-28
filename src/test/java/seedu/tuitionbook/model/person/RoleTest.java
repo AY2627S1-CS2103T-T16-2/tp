@@ -53,6 +53,16 @@ public class RoleTest {
     }
 
     @Test
+    public void roleWithEdgeControlCharacters_isRejected() {
+        for (char control : new char[] {'\u0000', '\u0001', '\u001b', '\u001c', '\u007f', '\u0080', '\u009f'}) {
+            for (String role : new String[] {control + "student", "guardian" + control}) {
+                assertFalse(Role.isValidRole(role));
+                assertThrows(IllegalArgumentException.class, Role.MESSAGE_CONSTRAINTS, () -> Role.fromString(role));
+            }
+        }
+    }
+
+    @Test
     public void fromString_invalidRole_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> Role.fromString("teacher"));
         assertThrows(IllegalArgumentException.class, () -> Role.fromString(""));

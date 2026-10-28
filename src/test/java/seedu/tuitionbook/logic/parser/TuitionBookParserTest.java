@@ -274,6 +274,23 @@ public class TuitionBookParserTest {
     }
 
     @Test
+    public void parseCommand_hiddenControls_rejectedBeforeTrimmingOrDispatch() {
+        String expectedMessage = "Your command contains a hidden control character, often from copied text. "
+                + "Retype the command.";
+        for (char control : new char[] {'\u0000', '\u0001', '\u001b', '\u001c', '\u007f', '\u0080', '\u009f'}) {
+            for (String input : List.of(control + "list", "list" + control, "help " + control,
+                    "clear " + control + "confirm", "delete " + control + "1", "delete 1" + control,
+                    "link " + control + "1 2", "link 1 2" + control, "view 1" + control + " v/",
+                    "edit 1 a/" + control, "edit 1 a/\"" + control + "\"", "edit 1 e/" + control,
+                    "edit 1 t/" + control, "tag 1 t/" + control + "Math", "untag 1 t/Math" + control,
+                    "find " + control + "Amy", "list r/student" + control,
+                    "add r/" + control + "student n/Amy p/91234567")) {
+                assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand(input));
+            }
+        }
+    }
+
+    @Test
     public void parseCommand_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> parser.parseCommand(null));
     }
