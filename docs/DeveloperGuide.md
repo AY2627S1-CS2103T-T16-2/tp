@@ -256,6 +256,12 @@ The working set preserves indexes across non-deleting mutations and compacts the
 
 ### Contact field validation
 
+The email local part accepts the unquoted ASCII `atext` characters from [RFC 5322 section 3.2.3](https://www.rfc-editor.org/rfc/rfc5322.html#section-3.2.3), with periods separating nonempty sections. Periods cannot be first, last or consecutive; other allowed punctuation can appear at either edge or form the entire local part. Spaces, double quotes, backslashes, unsupported punctuation and non-ASCII characters are rejected. Domain-label character and edge rules are unchanged. This does not add quoted-local-part parsing or CLI quoting for email values.
+
+`ArgumentTokenizer` recognizes field prefixes only after an ASCII space. Prefix-like text inside an email, such as `alice.t/user@example.com` or `t/user@example.com` immediately after `e/`, remains part of that email. A space before `t/` starts a real tag field instead; `edit 1 e/ t/user@example.com` clears the email and replaces the tags. The tokenizer needs no email-specific exception because supported emails contain no spaces.
+
+Email addresses contain at most 254 ASCII characters in total, at most 64 before the `@`, and at most 63 in each domain label (the parts separated by periods). ASCII character counts equal byte counts. These limits follow the [SMTP local-part and path limits](https://www.rfc-editor.org/rfc/rfc5321.html#section-4.5.3.1) (allowing for the enclosing angle brackets in the 256-byte path limit) and [DNS label limit](https://www.rfc-editor.org/rfc/rfc1035.html#section-2.3.4). `Email.isValidEmail` applies all limits and `Email.getConstraintMessage` reports the violated limit; construction, add/edit parsing, startup loading and reload share these checks. Existing files containing an over-limit email are rejected through the existing whole-file recovery flow; no values are truncated or migrated. The documented ASCII syntax subset remains in force; these checks do not establish mailbox existence or full RFC support.
+
 `Name`, `Phone`, `Email`, and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding input whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names support Unicode letters, numbers and combining marks plus ordinary ASCII spaces (U+0020) and the documented punctuation, including straight and right curly apostrophes, and contain at most 100 Unicode code points. Other Unicode whitespace is not valid inside a name. Phone validation uses a linear parser shared with identity normalization. It accepts an optional leading `+`; plain or parenthesized digit groups separated by one or more ASCII spaces, one hyphen, or one slash; at most one trailing parenthesized annotation; and an optional numeric `x`, `ext`, or `ext.` extension. An annotation is separated from the main number by at least one ASCII space, contains at least one ASCII letter, and otherwise contains only ASCII letters, digits, and single internal spaces. The parser rejects malformed or nested parentheses, empty groups, doubled or trailing punctuation separators, malformed annotations, unsupported letters, and malformed or repeated extensions. Email validation implements the documented ASCII local-part and domain-label subset, including apostrophes and internal consecutive hyphens used by punycode labels, while rejecting consecutive periods.
 
 Addresses contain at most 200 Unicode code points and must contain at least one meaningful visible code point. `Address` excludes code points for which `Character.isWhitespace` or `Character.isSpaceChar` is true, code points in the Unicode control (`Cc`), format (`Cf`) or surrogate (`Cs`) categories, and combining marks (`Mn`, `Mc`, `Me`), when deciding whether content is nonblank; a mark cannot render without a base character. Spaces, formatting characters and combining marks may coexist with visible text, so they do not make an otherwise visible address invalid. LF, vertical tab, form feed, CR, NEL, line separator and paragraph separator characters are always rejected so every stored address is single-line. Other control characters except tab, and unpaired surrogates, are rejected with `Address.MESSAGE_INVALID_CHARACTERS`: an unpaired surrogate cannot be encoded as UTF-8 and would otherwise be silently replaced with `?` on save, and control characters such as NUL are invisible in the UI. Because storage uses the same validation, a data file containing these values through JSON escapes such as `\ud800` or `\u0000` is rejected and preserved through the normal recovery flow.
@@ -942,6 +948,30 @@ Use a fresh, disposable folder with an empty contact list.
    Expected: The whitespace-only, format-only, control-only, and line-breaking addresses follow the invalid-data recovery path. The visible `Café Road` address loads with its combining and format code points preserved. A successful invalid-file backup preserves the original bytes and permits new saving; a failed backup leaves the original in place and blocks saving.
 1. In separate disposable copies of the valid data file, replace a contact's stored role with `"\u0000student"` and `"guardian\u001f"`, then launch TuitionBook against each file.<br>
    Expected: Both follow the invalid-data recovery path with a role constraint error. The hidden control is rejected rather than trimmed into an accepted role; a successful backup preserves the original contents.
+
+### Email character rules
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Enter `add r/student n/Email Symbols p/91234567 e/!alice+@example.com`, then `edit 1 e/_alice~@example.com`.<br>
+   Expected: Both commands succeed. `view 1` shows `_alice~@example.com`; restarting preserves that exact value.
+1. Enter each command separately: `edit 1 e/.alice@example.com`, `edit 1 e/alice.@example.com`, and `edit 1 e/alice..smith@example.com`.<br>
+   Expected: Leading/trailing periods report `The part of an email before the @ cannot start or end with a period.` Consecutive periods report `The part of an email before the @ cannot have two periods in a row.` The stored email remains `_alice~@example.com`.
+1. Enter `edit 1 e/alice smith@example.com`, then `edit 1 e/"alice"@example.com`.<br>
+   Expected: Both commands report the allowed email characters; neither changes the contact. Double quotes are not interpreted as CLI quoting for email values.
+1. Enter `edit 1 e/alice.t/user@example.com t/Math`, then `edit 1 e/t/user@example.com t/Science`.<br>
+   Expected: The email is first `alice.t/user@example.com`, then `t/user@example.com`. Only the separate, space-prefixed `t/` changes the tags to `Math`, then `Science`. Restarting preserves the second email and its single tag.
+
+### Email length limits
+
+Use a fresh, disposable folder for these commands. These examples use a 64-character local part and a 65-character local part respectively.
+
+1. Enter `add r/student n/Email Boundary p/91234567 e/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com`.<br>
+   Expected: The contact is added. Close and reopen TuitionBook; the email is retained unchanged.
+1. Enter `add r/student n/Too Long p/98765432 e/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com`, then `edit 1 n/Changed e/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com`.<br>
+   Expected: Both commands report `The part of an email before the @ must be at most 64 characters long.` No contact is added or edited, including the proposed name change.
+1. Close TuitionBook and back up the disposable data file. Replace the stored email with `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com` and reopen TuitionBook.<br>
+   Expected: The file is rejected with an invalid-contact email-length explanation and the existing recovery notice. If backing up succeeds, the original file is moved unchanged to a sibling backup and the contact list starts empty; if backing up fails, the original remains in place and saving is blocked. No email is shortened or migrated.
 
 ### Strict prefixes and quoted addresses
 

@@ -57,6 +57,26 @@ public class AddCommandParserTest {
     private final AddCommandParser parser = new AddCommandParser();
 
     @Test
+    public void parse_slashEmails_doNotIntroduceAdditionalFields() {
+        for (String prefix : new String[]{"t/", "n/", "p/", "e/", "a/", "r/", "g/", "zz/"}) {
+            for (String localPart : new String[]{prefix + "user", "alice." + prefix + "user",
+                "alice/" + prefix, "alice//" + prefix + "user"}) {
+                String email = localPart + "@example.com";
+                String input = ROLE_DESC_STUDENT + NAME_DESC_BOB + PHONE_DESC_BOB + " e/" + email;
+                Person expected = new PersonBuilder(BOB).withRole(Role.STUDENT).withEmail(email)
+                        .withoutAddress().withTags().build();
+
+                // Exact command equality verifies that no name, phone, role, address or tag was injected.
+                assertParseSuccess(parser, input, new AddCommand(expected));
+
+                Person expectedWithFields = new PersonBuilder(expected).withAddress("123 Road")
+                        .withTags("Math").build();
+                assertParseSuccess(parser, input + " a/123 Road t/Math", new AddCommand(expectedWithFields));
+            }
+        }
+    }
+
+    @Test
     public void parse_allFieldsPresent_success() {
         Person expectedPerson = new PersonBuilder(BOB).withRole(Role.STUDENT).withTags(VALID_TAG_FRIEND).build();
 

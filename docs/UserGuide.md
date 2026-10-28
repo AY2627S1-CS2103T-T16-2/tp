@@ -167,8 +167,10 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
   * can end with an extension written as `x123`, `ext 123` or `ext. 123`.
   * is displayed exactly as you type it. For example, `+65 (9123) 4567 (HP) ext. 89` is accepted.
 * `EMAIL` must look like `name@example.com`:
-  * Before the `@`: English letters, digits (0-9), periods (`.`), plus signs (`+`), underscores (`_`), hyphens (`-`) and apostrophes (`'`). It must start and end with a letter or digit, and cannot have two periods in a row.
-  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part must start and end with a letter or digit, and the last part must be at least 2 characters long.
+  * The whole email can be up to 254 characters long, including the `@` and periods.
+  * Before the `@`: up to 64 characters, using English letters, digits (0-9), periods (`.`), and these symbols: `` ! # $ % & ' * + - / = ? ^ _ ` { | } ~ ``. A period cannot be first or last, and two periods cannot appear in a row. The other allowed symbols can appear at the start or end; for example, `_alice+@example.com` is accepted. Spaces and double quotes (`"`) are not allowed.
+  * Slashes inside an email do not start another field: `e/alice.t/user@example.com t/Math` stores email `alice.t/user@example.com` and tag `Math`. If an email starts with text such as `t/`, put it directly after `e/`: `e/t/user@example.com`. A space before `t/` starts a tag field, so `edit 1 e/ t/user@example.com` clears the email and sets the tag to `user@example.com`.
+  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part can be up to 63 characters long, must start and end with a letter or digit, and the last part must be at least 2 characters long.
 * `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
   * Accent marks on their own do not count as visible characters.
   * Hidden control characters (other than tabs) and broken characters left over from copied text are rejected; retype the address if this happens.
