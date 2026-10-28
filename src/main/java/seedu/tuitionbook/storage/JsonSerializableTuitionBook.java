@@ -27,7 +27,8 @@ import seedu.tuitionbook.model.person.Role;
 @JsonRootName(value = "tuitionbook")
 class JsonSerializableTuitionBook {
 
-    public static final String MESSAGE_DUPLICATE_PERSON = "Persons list contains duplicate person(s).";
+    public static final String MESSAGE_DUPLICATE_PERSON =
+            "Two contacts in the file have the same role, name and phone number.";
     public static final String MESSAGE_DUPLICATE_ID = "Persons list contains duplicate id(s).";
     public static final String MESSAGE_NULL_PERSON = "Persons list contains a null contact.";
 
@@ -56,7 +57,7 @@ class JsonSerializableTuitionBook {
      * Converts this TuitionBook into the model's {@code TuitionBook} object.
      * First converts and validates every serialized contact so that all contact ids are available.
      * It then resolves guardian links against that complete set of contacts before adding contacts
-     * to TuitionBook, which enforces the normalized name-and-phone uniqueness invariant.
+     * to TuitionBook, which enforces the role-aware normalized name-and-phone uniqueness invariant.
      *
      * @throws IllegalValueException if there were any data constraints violated.
      */

@@ -10,6 +10,7 @@ import static seedu.tuitionbook.testutil.TypicalPersons.ALICE;
 import static seedu.tuitionbook.testutil.TypicalPersons.BOB;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +64,17 @@ public class UniquePersonListTest {
                 .withPhone("9435-1253").build();
 
         assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(duplicateAlice));
+    }
+
+    @Test
+    public void add_personWithNormalizedIdentityAndDifferentRole_success() {
+        uniquePersonList.add(ALICE);
+        Person guardianAlice = new PersonBuilder(ALICE).withId(UUID.randomUUID()).withRole(Role.GUARDIAN)
+                .withName("ALICE  PAULINE ").withPhone("9435-1253").build();
+
+        uniquePersonList.add(guardianAlice);
+
+        assertEquals(List.of(ALICE, guardianAlice), uniquePersonList.asUnmodifiableObservableList());
     }
 
     @Test

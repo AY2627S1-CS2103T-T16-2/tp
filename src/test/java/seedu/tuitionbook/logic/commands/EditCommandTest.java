@@ -203,6 +203,23 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_normalizedDuplicatePersonWithSameRole_failure() {
+        Person existingStudent = new PersonBuilder().withRole(Role.STUDENT).withName("Jos\u00e9 Tan")
+                .withPhone("+65 9123-4567").build();
+        Person studentToEdit = new PersonBuilder().withRole(Role.STUDENT).withName("Other Student")
+                .withPhone("92345678").build();
+        TuitionBook book = new TuitionBook();
+        book.addPerson(existingStudent);
+        book.addPerson(studentToEdit);
+        model = new ModelManager(book, new UserPrefs());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName("JOSE\u0301  TAN ")
+                .withPhone("+65 91234567").build();
+
+        assertCommandFailure(new EditCommand(INDEX_SECOND_PERSON, descriptor), model,
+                EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
     public void execute_duplicatePersonFilteredList_failure() {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
