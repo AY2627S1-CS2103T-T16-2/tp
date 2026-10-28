@@ -94,7 +94,7 @@ public class DataLoadingExceptionTest {
         String guidance = new DataLoadingException(new RuntimeException("unexpected failure"))
                 .getUserFacingGuidance();
 
-        assertEquals("The data file could not be read because of a file-system error. Check access to the preserved "
+        assertEquals("The data file could not be read because of a file-system error. Check access to the data "
                 + "file before trying again.", guidance);
     }
 

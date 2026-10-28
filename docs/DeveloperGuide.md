@@ -862,7 +862,7 @@ If the configured data file is missing, TuitionBook starts with an empty contact
 
 **Malformed-file recovery policy**
 
-When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path and bounded cause-specific guidance to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows appropriate permission, encoding/JSON, contact-value, or file-system recovery steps in both a warning dialog and the result display. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and presents the same cause-specific guidance before asking the user to reload or restart.
+When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path and bounded cause-specific guidance to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows appropriate permission, encoding/JSON, contact-value, or file-system recovery steps in both a warning dialog and the result display. The warning keeps the specific problem and backup outcome in its main content while placing numbered restoration steps and each labelled full path once in an expandable, scrollable **Recovery details** section. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and presents the same cause-specific guidance before asking the user to reload or restart.
 
 ### Non-Functional Requirements
 
@@ -1073,7 +1073,7 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
    1. Download the JAR file and copy it into an empty folder.
 
    1. Open a terminal and run `java -jar` followed by the quoted path to the JAR, as described in the UG's [Quick start](UserGuide.md#quick-start).<br>
-      Expected: The GUI opens with an empty contact list and an information dialog explaining that no data file was found. The window size may not be optimal.
+      Expected: The GUI opens with an empty contact list and a compact information dialog explaining that no contact data file was found and that adding a contact will create one. Its wrapped body text uses normal weight and does not repeat the absolute data path shown in the status bar. The window size may not be optimal.
 
    1. Dismiss the dialog and immediately type `list` without clicking the main window.<br>
       Expected: Typing appears in the command box and Enter runs the command.
@@ -1478,7 +1478,10 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. In a fresh, disposable folder, add `add r/student n/Alex Yeoh p/87438807`, close TuitionBook, and keep a separate copy of the valid `data/tuitionbook.json`.
 
    1. Replace the data file's contents with `{broken`. Configure permissions so the app can read the file but cannot move it to a backup, then launch TuitionBook. Permission controls differ by operating system; verify that the startup warning explicitly reports backup failure before continuing.<br>
-      Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
+      Expected: the collapsed warning heading says **Saving is paused to protect your data file**. The complete specific loading problem remains readable in the main message, which also states that the original file remains in place and saving is disabled. The **OK** button is visible and keyboard reachable. A successful backup means this scenario's precondition was not established.
+
+   1. Expand **Recovery details** and resize the dialog to approximately 536×420 logical pixels.<br>
+      Expected: The steps distinguish entering `reload` while TuitionBook remains open from closing and restarting. The original path appears once in a labelled, selectable, read-only field. The short details content does not reserve a large empty viewport; if scrolling is needed, it is vertical only. The complete problem, outcome and **OK** button remain reachable.
 
    1. Enter `find Nobody`. While the app stays open, record any current contacts you need and copy the malformed file to a separate safe location. Enter no contact-changing commands during file recovery. Restore normal permissions and replace the malformed file with a copy of the saved valid file, keeping both separate copies. Enter `reload`.<br>
       Expected: the empty working set resets to the full loaded list containing Alex Yeoh, and saving is enabled. Reload does not rewrite the restored file or either separate copy. Merely correcting the file without reloading would leave the write block set.
@@ -1517,7 +1520,16 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
    1. Launch TuitionBook.<br>
-      Expected: TuitionBook opens with an empty contact list and a warning. The warning shows the problem, the full backup location, and the recovery steps (ending with entering `reload` or restarting) as separate paragraphs. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+      Expected: TuitionBook opens with an empty contact list and a compact warning headed **Your contacts are safe in a backup**. The main message reports that the file is not in a format TuitionBook can read, states that the original file is preserved unchanged in a backup file, and warns that newly saved contacts cannot be merged automatically. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+
+   1. Expand **Recovery details**.<br>
+      Expected: Numbered restoration steps say to fix the backup file, separately save any new data file, note that the two files cannot be merged automatically, replace the new file with the corrected backup, then either enter `reload` while TuitionBook remains open or close and restart. They also say to re-enter contacts that existed only in the separately saved new file as needed. The backup and new data paths each appear once in a labelled, selectable, read-only field.
+
+   1. On a display configured to 1280×720 at 150% scaling, or using an equivalent 853×480 logical visual area, inspect the collapsed and expanded dialog, then resize it to approximately 536×420 logical pixels.<br>
+      Expected: The dialog remains within the visible screen. Its complete specific problem and backup outcome are not shortened with ellipses. The **OK** button remains visible, clickable and keyboard reachable. The expanded recovery viewport is no taller than its content unless limited by the available screen, shrinks before the main labels or button bar, scrolls vertically when needed, and never scrolls horizontally. Both full paths remain selectable and reachable.
+
+   1. Dismiss the warning.<br>
+      Expected: The result display retains the cause, backup and restoration summary.
 
    1. Enter `help`.<br>
       Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.

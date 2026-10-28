@@ -38,7 +38,7 @@ import seedu.tuitionbook.ui.StartupNotice;
 public class MainAppTest {
 
     private static final String INVALID_JSON_GUIDANCE = "The data file is not in a format TuitionBook can read. "
-            + "Check the preserved file for mistakes such as a missing comma, quote or bracket, and save it as UTF-8 "
+            + "Check the data file for mistakes such as a missing comma, quote or bracket, and save it as UTF-8 "
             + "text before trying again.";
 
     @TempDir

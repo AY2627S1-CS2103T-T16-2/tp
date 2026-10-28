@@ -46,7 +46,7 @@ public class DataLoadingException extends Exception {
     public String getUserFacingGuidance() {
         if (hasCause(AccessDeniedException.class)) {
             return "TuitionBook did not have permission to read the data file. "
-                    + "Restore read permission on the preserved file before trying again.";
+                    + "Restore read permission on the data file before trying again.";
         }
         if (hasCause(IllegalValueException.class)) {
             String detail = causeMessage(IllegalValueException.class);
@@ -59,14 +59,14 @@ public class DataLoadingException extends Exception {
         }
         if (hasCause(CharacterCodingException.class) || hasCause(JsonProcessingException.class)
                 || hasCauseWithMessage(IOException.class, "JSON root value must not be null.")) {
-            return "The data file is not in a format TuitionBook can read. Check the preserved file for mistakes "
+            return "The data file is not in a format TuitionBook can read. Check the data file for mistakes "
                     + "such as a missing comma, quote or bracket, and save it as UTF-8 text before trying again.";
         }
         if (hasCause(IOException.class)) {
-            return "The data file could not be read because of a file-system error. Check access to the preserved "
+            return "The data file could not be read because of a file-system error. Check access to the data "
                     + "file before trying again.";
         }
-        return "The data file could not be read because of a file-system error. Check access to the preserved "
+        return "The data file could not be read because of a file-system error. Check access to the data "
                 + "file before trying again.";
     }
 
