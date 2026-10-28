@@ -127,12 +127,13 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same normalized name and phone number.
+     * Returns true if both persons have the same role, normalized name, and normalized phone number.
      * Names are compared after trimming surrounding ASCII spaces, collapsing consecutive ASCII spaces, and applying
      * the shared Unicode comparison form. Phone numbers are compared after removing supported spaces, hyphens, slashes,
      * numeric-group parentheses, and annotations while retaining a leading {@code +}. Extension markers are normalized
-     * to {@code x} while retaining their digits; country-code equivalence is not applied. All other fields are ignored.
-     * This defines a weaker notion of equality between two persons.
+     * to {@code x} while retaining their digits; country-code equivalence is not applied. A student and guardian may
+     * therefore share the same normalized name and phone number. All other fields are ignored. This defines a weaker
+     * notion of equality between two persons.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -140,6 +141,7 @@ public class Person {
         }
 
         return otherPerson != null
+                && otherPerson.getRole() == getRole()
                 && normalizeNameForIdentity(otherPerson.getName().fullName)
                         .equals(normalizeNameForIdentity(getName().fullName))
                 && normalizePhoneForIdentity(otherPerson.getPhone().value)

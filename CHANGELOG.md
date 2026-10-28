@@ -38,6 +38,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Allowed a student and guardian to share the same normalized name and phone number while retaining duplicate rejection within each role (#271).
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
 - Explain role immutability and direct users to `link`/`unlink` when `edit` contains unsupported role or guardian-link fields, showing both explanations when applicable (#218).
 - Trim surrounding ASCII spaces from tags loaded from JSON, making previously padded tags addressable through `list`, `tag`, and `untag` while preserving significant internal spaces; tags that differ only by surrounding spaces are merged into one (#185).
@@ -47,7 +48,7 @@ The format is based on Keep a Changelog.
 - Rejected whitespace-, control-, or format-only and line-breaking addresses consistently when entered through commands or loaded from JSON.
 - Normalized phone spaces, hyphens, slashes, numeric-group parentheses, annotations, and equivalent extension markers during duplicate detection while retaining a leading `+` and extension digits.
 - Reported every missing mandatory `add` field in role, name, phone order, and showed the ordinary example before quoted-prefix guidance.
-- Made duplicate name identity consistently compare `Groß` with `GROẞ`, while preserving the existing normalized-name-and-phone identity rules and original display spelling.
+- Made duplicate name identity consistently compare `Groß` with `GROẞ`, while preserving the existing name and phone normalization rules and original display spelling.
 - Made literal name-substring search use the same locale-independent Unicode comparison form for stored names and keywords, so composed/decomposed accents and the demonstrated sharp-S cases match consistently without applying duplicate identity's space normalization.
 - Focused the command box after startup and after dismissing a startup notice so typing is immediately available without accidentally activating Help.
 - Allowed contact cards to grow and shrink with wrapped tag rows, preventing tags from obscuring contact details or neighbouring cards at narrow widths.
