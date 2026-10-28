@@ -47,6 +47,7 @@ public class UiManager implements Ui {
     private static final double LOAD_FAILURE_DETAILS_MIN_HEIGHT = 80;
     private static final double LOAD_FAILURE_DETAILS_PREF_HEIGHT = 220;
     private static final double MAX_PLAUSIBLE_DECORATION = 200;
+    private static final int MAX_LAYOUT_REFIT_ATTEMPTS = 10;
     private static final String DEFAULT_LOAD_FAILURE_CAUSE = "Your data file could not be read.";
 
     private Logic logic;
@@ -348,9 +349,13 @@ public class UiManager implements Ui {
         // Size against the stage's target width: during a resize the pane still has its old width,
         // so measuring the pane directly underestimates how tall the wrapped labels become.
         boolean sceneLaidOut = dialogStage.getScene().getWidth() > 1 && dialogStage.getScene().getHeight() > 1;
-        if (!sceneLaidOut && dialogStage.getProperties().put("loadFailureRefitQueued", Boolean.TRUE) == null) {
+        int refitAttempts = (Integer) dialogStage.getProperties().getOrDefault("loadFailureRefitAttempts", 0);
+        if (!sceneLaidOut && refitAttempts < MAX_LAYOUT_REFIT_ATTEMPTS
+                && dialogStage.getProperties().put("loadFailureRefitQueued", Boolean.TRUE) == null) {
             // Decorations cannot be measured yet, so this fit sizes the window as though it had no
-            // decorations, leaving it one title bar too short. Refit once the scene is laid out.
+            // decorations, leaving it one title bar too short. Refit until the scene is laid out,
+            // giving up after a bounded number of attempts so an unshown stage cannot loop forever.
+            dialogStage.getProperties().put("loadFailureRefitAttempts", refitAttempts + 1);
             Platform.runLater(() -> {
                 dialogStage.getProperties().remove("loadFailureRefitQueued");
                 fitLoadFailureDialogWithin(dialogStage, activeVisualBounds(dialogStage));
@@ -363,10 +368,9 @@ public class UiManager implements Ui {
         double targetWidth = Math.min(dialogStage.getWidth(), visualBounds.getWidth());
         double targetContentWidth = Math.max(1, targetWidth - decorationWidth);
 
-        double viewportWidth = recoveryScroller.getViewportBounds().getWidth();
-        if (viewportWidth <= 0) {
-            viewportWidth = Math.max(1, targetContentWidth - 60);
-        }
+        double measuredViewportWidth = recoveryScroller.getViewportBounds().getWidth();
+        double viewportWidth = measuredViewportWidth > 0 ? measuredViewportWidth
+                : Math.max(1, targetContentWidth - 60);
         double contentHeight = recoveryScroller.getContent().prefHeight(viewportWidth);
         double detailsHeight = Math.max(LOAD_FAILURE_DETAILS_MIN_HEIGHT,
                 Math.min(LOAD_FAILURE_DETAILS_PREF_HEIGHT, contentHeight + 2));

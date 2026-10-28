@@ -31,6 +31,7 @@ import javafx.event.Event;
 import javafx.geometry.Bounds;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
@@ -43,6 +44,7 @@ import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -189,6 +191,32 @@ public class UiManagerStartupTest {
         assertExpandedLoadFailureFitsCompactVisualBounds(longDataFilePath(),
                 StartupNotice.loadFailedBackupFailed(LONG_EMAIL_VALIDATION_GUIDANCE),
                 "backup-failure");
+    }
+
+    @Test
+    public void fitLoadFailureDialogWithin_beforeLayout_appliesBoundsFromTargetWidth() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            ScrollPane scroller = new ScrollPane(new VBox(new Label("1. Close TuitionBook.")));
+            TitledPane recoveryDetails = new TitledPane("Recovery details", scroller);
+            recoveryDetails.setId("recoveryDetails");
+            DialogPane pane = new DialogPane();
+            pane.setContent(new VBox(new Label("cause"), recoveryDetails));
+            pane.getButtonTypes().add(ButtonType.OK);
+            Stage stage = new Stage();
+            stage.setScene(new Scene(pane));
+            stage.setWidth(1400);
+            stage.setHeight(400);
+
+            // Unshown, so neither the scene nor the scroller viewport has a size yet.
+            UiManager.fitLoadFailureDialogWithin(stage, new Rectangle2D(0, 0, 1024, 720));
+
+            assertEquals(1024, stage.getMaxWidth());
+            assertEquals(720, stage.getMaxHeight());
+            assertEquals(480, stage.getMinWidth());
+            assertTrue(stage.getWidth() <= 1024);
+            assertTrue(stage.getHeight() <= 720);
+            assertTrue(stage.getMinHeight() >= 230);
+        });
     }
 
     @Test
