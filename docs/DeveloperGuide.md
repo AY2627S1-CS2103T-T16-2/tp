@@ -1366,6 +1366,8 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: `Math` is removed. The remaining tag is stored as `Sec  4` without surrounding spaces.
 1. Relaunch TuitionBook, enter `list`, then `edit 1 t/first t/second`.<br>
    Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
+1. Enter `edit 1 t/first][second`.<br>
+   Expected: The confirmation ends with `Tags: [first\]\[second]`: one tag whose brackets are escaped, distinguishable from the two separate tags `[first]` and `[second]` in the previous step's confirmation.
 1. Enter `edit 1 t/`.<br>
    Expected: All of Alex's tags are cleared, as before.
 
