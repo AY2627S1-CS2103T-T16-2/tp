@@ -44,6 +44,7 @@ The format is based on Keep a Changelog.
 ### Fixed
 
 - Report when `edit` leaves all contact values unchanged instead of claiming the contact was edited, including repeated values, clearing already-empty fields, and reordered identical tag sets; unchanged edits continue to skip saving.
+- Split the dense Developer Guide parser diagram into focused dispatch and utility views, moving explanatory notes and command inheritance into prose (#225).
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).
 - Allowed a student and guardian to share the same normalized name and phone number while retaining duplicate rejection within each role (#271).
 - Suggest the selected contact's exact stored tag spellings when an absent `untag` argument differs only in case, while retaining case-sensitive tag identity and removal (#217).
