@@ -15,16 +15,15 @@ package "UI parts" {
     abstract class UiPart
     class MainWindow
     class CommandBox
-    class CommandTextField
     class ResultDisplay
     class PersonListPanel
     class PersonCard
     class DetailDisplay
     class StatusBarFooter
     class HelpWindow
-    class DesktopAdapter
 }
 
+class CommandTextField
 class Person #9D0012
 
 MainWindow *-down-> "1" HelpWindow
@@ -36,17 +35,14 @@ MainWindow ..> StatusBarFooter : <<create>>
 CommandBox ..> CommandTextField : FXML injects
 
 note right of UiPart
-CommandTextField and DesktopAdapter
-do not inherit from UiPart.
-
-All other UI parts inherit form UiPart
+All in the "UI parts" box
+(except UiPart) inherit from UiPart
 end note
 
 
 PersonListPanel ..> PersonCard : <<create>>
-PersonListPanel --> "*" Person : working set and complete list
-PersonCard --> "1" Person : displays
-HelpWindow --> "1" DesktopAdapter : opens User Guide
+PersonListPanel -right-> "*" Person : working set and\ncomplete list
+PersonCard -down-> "1" Person : displays
 
 ' Arrange the detailed view in a few readable horizontal bands.
 MainWindow -[hidden]right-> CommandBox
@@ -56,6 +52,5 @@ PersonListPanel -[hidden]right-> PersonCard
 PersonCard -[hidden]right-> DetailDisplay
 DetailDisplay -[hidden]down-> StatusBarFooter
 StatusBarFooter -[hidden]right-> HelpWindow
-HelpWindow -[hidden]right-> DesktopAdapter
 
 @enduml

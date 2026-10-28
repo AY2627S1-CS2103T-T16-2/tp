@@ -17,7 +17,7 @@ package UI {
     class UiManager
     class MainWindow
     class StartupNotice
-    package "UI parts" as UiParts
+    class "UI parts" as UiParts
 }
 
 package Logic {
@@ -33,7 +33,7 @@ UiManager --> "0..1" StartupNotice : displays at startup
 UiManager --> "1" Logic
 
 MainWindow --> UiParts : contains UI parts
-MainWindow --> "1" Logic : commands and lists
+MainWindow -up-> "1" Logic : commands and lists
 
 note right of UiParts
 Detailed UI-part relationships
