@@ -297,6 +297,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 * `INDEX` is the number shown beside the contact in the current list (1, 2, 3, …).
 * Give at least one field to change. The new value replaces the old one; fields you leave out stay the same.
+* If all supplied values already match the contact, `edit` reports `No changes made: the specified values already match NAME` and does not save.
 * All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`: `edit 1 n/"Rina a/p Kaur"`.
 * To remove an email or address, type `e/` or `a/` with nothing after it. `a/""` also removes the address.
 * **Giving `t/` replaces all of the contact's tags.** Retype any tags you want to keep, or use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag) to change one tag at a time. To remove every tag, type `t/` with nothing after it.

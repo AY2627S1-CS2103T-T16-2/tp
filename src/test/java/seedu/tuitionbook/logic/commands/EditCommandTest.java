@@ -74,15 +74,30 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_noFieldSpecifiedUnfilteredList_success() {
+    public void execute_noFieldSpecifiedUnfilteredList_noChange() {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, new EditPersonDescriptor());
         Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = "No changes made: the specified values already match " + editedPerson.getName();
 
         Model expectedModel = new ModelManager(new TuitionBook(model.getTuitionBook()), new UserPrefs());
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertFalse(editCommand.requiresSave());
+    }
+
+    @Test
+    public void execute_sameValuesFilteredList_noChange() {
+        showPersonAtIndex(model, INDEX_FIRST_PERSON);
+        Person person = model.getFilteredPersonList().getFirst();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder(person).build());
+        Model expectedModel = new ModelManager(new TuitionBook(model.getTuitionBook()), new UserPrefs());
+        showPersonAtIndex(expectedModel, INDEX_FIRST_PERSON);
+
+        assertCommandSuccess(editCommand, model,
+                "No changes made: the specified values already match " + person.getName(), expectedModel);
+        assertFalse(editCommand.requiresSave());
     }
 
     @Test
