@@ -157,17 +157,17 @@ Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
   * may contain letters from any language, numbers, accents, spaces, periods (`.`), apostrophes (`'` or `’`), forward slashes (`/`) and hyphens (`-`). Other symbols, such as `@`, `#` or double quotes, are not allowed.
   * is saved exactly as you type it, including capital letters and punctuation. Spaces at the start or end are ignored.
 * `PHONE`:
-  * must contain at least 3 digits and may start with `+`.
+  * must contain at least 3 digits (0-9) in the main number, not counting any label or extension, and may start with `+`.
   * can be split into groups of digits using spaces, a hyphen (`-`) or a slash (`/`), for example `9123 4567`, `9123-4567` or `+65/9123/4567`. A group can also be put in brackets, as in `+65 (9123) 4567`.
   * can end with a label in brackets after a space, such as `(HP)` or `(Office 2)`. A label contains English letters, digits and single spaces, with at least one letter.
   * can end with an extension written as `x123`, `ext 123` or `ext. 123`.
   * is displayed exactly as you type it. For example, `+65 (9123) 4567 (HP) ext. 89` is accepted.
 * `EMAIL` must look like `name@example.com`:
-  * Before the `@`: English letters, digits, periods (`.`), plus signs (`+`), underscores (`_`), hyphens (`-`) and apostrophes (`'`). It must start and end with a letter or digit, and cannot have two periods in a row.
-  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits and hyphens, separated by periods. Each part must start and end with a letter or digit, and the last part must be at least 2 characters long.
+  * Before the `@`: English letters, digits (0-9), periods (`.`), plus signs (`+`), underscores (`_`), hyphens (`-`) and apostrophes (`'`). It must start and end with a letter or digit, and cannot have two periods in a row.
+  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part must start and end with a letter or digit, and the last part must be at least 2 characters long.
 * `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
 * Each `TAG`:
-  * may contain English letters, digits, spaces and punctuation, for example `Sec 4`, `Math--Science`, `C++` or `Mrs. Lim's`. Letters with accents and other languages are not allowed.
+  * may contain English letters, digits (0-9), spaces, and punctuation and symbols from a standard English keyboard, for example `Sec 4`, `Math--Science`, `C++`, `$50/hr` or `Mrs. Lim's`. Letters with accents, other languages and other symbols (such as `—`) are not allowed.
   * cannot be blank. Spaces at the start or end are ignored.
   * keeps the exact spacing inside it: `Sec 4` (one space) and `Sec  4` (two spaces) are **different tags** and will not match each other in `list`. Use the same spacing every time.
 * `g/` cannot be used with `add`. Add the contact first, then use [`link`](#linking-a-student-to-a-guardian-link).
@@ -371,7 +371,7 @@ Example using the [sample contacts](#sample-contacts-for-examples): `unlink 1` r
 
 ### Finding contacts by name: `find`
 
-Finds contacts whose names contain any of the words you type.
+Finds contacts whose names contain any of the keywords you type, even as part of a name.
 
 Format: `find KEYWORD [MORE_KEYWORDS]...`
 
@@ -485,14 +485,14 @@ If you are fixing the file after a problem and want to keep TuitionBook open, us
 
 * Each contact must follow the same rules as [`add`](#adding-a-contact-add), including the 100-character limit for names and 200-character limit for addresses.
 * Each contact also has these fields, which TuitionBook manages for you:
-  * `id`: a unique code for the contact. **Don't change it**, and don't give two contacts the same `id`.
+  * `id`: a code that identifies the contact, in the format TuitionBook creates (known as a UUID), for example `123e4567-e89b-12d3-a456-426614174000`. Every contact needs one, except in files from older versions (see below). **Don't change it** or make up your own, such as `student-1`, and don't give two contacts the same `id`. Any of these makes the whole file unreadable.
   * `role`: `STUDENT` or `GUARDIAN`.
   * `guardianId`: for a student, the `id` of their guardian, written in double quotes. It can be left out or set to `null` if the student has no guardian. Any other kind of value, such as a list, makes the file unreadable.
-* Two contacts with the same name and phone number count as duplicates, even if their `id`s differ, and make the file unreadable.
+* Two contacts with the same role, name and phone number count as duplicates, even if their `id`s differ, and make the file unreadable. A student and a guardian can share a name and phone number.
 * The file must contain one set of contacts only. Extra text after the final `}`, or the same field name used twice in one contact, makes the file unreadable.
 * Spaces at the start or end of a tag are removed when the file is loaded, so `" Math "` becomes `"Math"`. Spaces inside a tag are kept.
 * Don't put a backslash before a space (for example `"\ Math"`). This is not valid JSON and makes the whole file unreadable.
-* Files from older versions of TuitionBook still work. A contact without `id`, `role` and `guardianId` is loaded as a student with no guardian, and the missing fields are added the next time TuitionBook saves. If an older `data/addressbook.json` exists, TuitionBook moves it to `data/tuitionbook.json` the first time it starts.
+* Files from older versions of TuitionBook still work. A contact without `id`, `role` and `guardianId` is loaded as a student with no guardian, and the missing fields are added the next time TuitionBook saves. If an older `data/addressbook.json` exists, TuitionBook moves it to `data/tuitionbook.json` the first time it starts. If it can't move the file (for example, because it isn't allowed to change that folder), it keeps using `data/addressbook.json` as your data file and tries again next time.
 
 **Invalid guardian links**
 
@@ -504,13 +504,13 @@ If a student's `guardianId` doesn't point to a guardian in the file, TuitionBook
 
 TuitionBook starts with an empty contact list and shows a warning explaining what went wrong. If the problem is with a particular contact, the warning names it by its position in the file, for example `Contact 3 in the file: Missing "name" value.` Contacts are counted from the top of the file, starting from 1.
 
-TuitionBook also moves the unreadable file, unchanged, to `data/tuitionbook.json.backup` (or `.backup.1`, `.backup.2` and so on if that name is taken). The warning shows the exact location. You can then keep using TuitionBook, and new contacts are saved to a fresh `tuitionbook.json`.
+TuitionBook also moves the unreadable file, unchanged, to a backup in the same folder with `.backup` added to its name, for example `tuitionbook.json.backup` (or `.backup.1`, `.backup.2` and so on if that name is taken). **The warning shows the exact name and location**, so check it rather than assuming. You can then keep using TuitionBook, and new contacts are saved to a fresh data file.
 
 To get your old contacts back:
 
-1. Close TuitionBook. Copy both `tuitionbook.json` and the `.backup` file somewhere safe.
+1. Close TuitionBook. Copy both the data file and the `.backup` file somewhere safe.
 1. Fix the problem described in the warning in a copy of the `.backup` file.
-1. Replace `tuitionbook.json` with your fixed copy, then reopen TuitionBook.
+1. Replace the data file with your fixed copy (keeping the data file's original name), then reopen TuitionBook.
 1. Re-enter any contacts you added after the problem started. TuitionBook cannot combine the two files for you.
 
 If TuitionBook can't create the backup, it leaves the file where it is and won't save anything until you fix or move the file and restart (or use [`reload`](#reloading-contacts-reload)).
