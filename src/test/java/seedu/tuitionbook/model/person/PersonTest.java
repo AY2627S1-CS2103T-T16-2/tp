@@ -80,9 +80,20 @@ public class PersonTest {
         assertFalse(ALICE.isSamePerson(null));
 
         // exact matching identity fields, all non-identity attributes different -> returns true
-        Person editedAlice = new PersonBuilder(ALICE).withId(UUID.randomUUID()).withRole(Role.GUARDIAN)
+        Person editedAlice = new PersonBuilder(ALICE).withId(UUID.randomUUID())
                 .withEmail(VALID_EMAIL_BOB).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // same normalized name and phone but different role -> returns false
+        editedAlice = new PersonBuilder(ALICE).withRole(Role.GUARDIAN).withName("ALICE  PAULINE ")
+                .withPhone("9435-1253").build();
+        assertFalse(ALICE.isSamePerson(editedAlice));
+
+        // same guardian role, normalized name, and normalized phone -> returns true
+        Person guardianAlice = new PersonBuilder(ALICE).withRole(Role.GUARDIAN).build();
+        Person normalizedGuardianAlice = new PersonBuilder(guardianAlice).withName("ALICE  PAULINE ")
+                .withPhone("9435-1253").build();
+        assertTrue(guardianAlice.isSamePerson(normalizedGuardianAlice));
 
         // guardian link differs, identity fields are the same -> returns true
         editedAlice = new PersonBuilder(ALICE).withGuardianId(UUID.randomUUID()).build();

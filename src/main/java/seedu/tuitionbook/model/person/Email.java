@@ -1,7 +1,8 @@
 package seedu.tuitionbook.model.person;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
+
+import java.util.Arrays;
 
 /**
  * Represents a Person's email in TuitionBook.
@@ -9,10 +10,22 @@ import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
  */
 public class Email {
 
-    public static final String MESSAGE_CONSTRAINTS = "Emails must use local-part@domain. The local part may contain "
-            + "ASCII letters, digits, periods, plus signs, underscores, hyphens, and apostrophes; it must start and "
-            + "end with a letter or digit, and periods cannot be consecutive. Domain labels use ASCII letters, "
-            + "digits, or internal hyphens, and the final label must contain at least 2 characters.";
+    public static final String MESSAGE_FORMAT = "Emails must be in the format name@example.com.";
+    public static final String MESSAGE_INVALID_NAME_CHARACTERS = "The part of an email before the @ may only "
+            + "contain English letters, digits (0-9), periods (.), plus signs (+), underscores (_), hyphens (-), "
+            + "and apostrophes (').";
+    public static final String MESSAGE_INVALID_NAME_EDGE =
+            "The part of an email before the @ must start and end with a letter or digit.";
+    public static final String MESSAGE_CONSECUTIVE_PERIODS =
+            "The part of an email before the @ cannot have two periods in a row.";
+    public static final String MESSAGE_INVALID_DOMAIN_CHARACTERS = "The part of an email after the @ may only "
+            + "contain English letters, digits (0-9), hyphens (-) and periods (.).";
+    public static final String MESSAGE_EMPTY_DOMAIN_PART = "The part of an email after the @ cannot start or end "
+            + "with a period, or have two periods in a row.";
+    public static final String MESSAGE_DOMAIN_PART_EDGE = "The part of an email after the @ cannot have a hyphen (-) "
+            + "at the start or end, or next to a period.";
+    public static final String MESSAGE_SHORT_DOMAIN_ENDING =
+            "The last part of an email's domain must be at least 2 characters long, as in .com or .sg.";
     private static final String LOCAL_PART_SPECIAL_CHARACTERS = ".+_-'";
 
     public final String value;
@@ -24,7 +37,9 @@ public class Email {
      */
     public Email(String email) {
         requireNonNull(email);
-        checkArgument(isValidEmail(email), MESSAGE_CONSTRAINTS);
+        if (!isValidEmail(email)) {
+            throw new IllegalArgumentException(getConstraintMessage(email));
+        }
         value = email;
     }
 
@@ -33,53 +48,91 @@ public class Email {
      */
     public static boolean isValidEmail(String test) {
         requireNonNull(test);
-        int atSignIndex = test.indexOf('@');
-        if (atSignIndex <= 0 || atSignIndex != test.lastIndexOf('@') || atSignIndex == test.length() - 1) {
+        if (!hasSingleAtSignBetweenParts(test)) {
             return false;
         }
 
+        int atSignIndex = test.indexOf('@');
         String localPart = test.substring(0, atSignIndex);
         String domain = test.substring(atSignIndex + 1);
         return isValidLocalPart(localPart) && isValidDomain(domain);
     }
 
+    /**
+     * Returns the message describing the first constraint that the given invalid email violates.
+     */
+    public static String getConstraintMessage(String invalidEmail) {
+        requireNonNull(invalidEmail);
+        assert !isValidEmail(invalidEmail);
+        if (!hasSingleAtSignBetweenParts(invalidEmail)) {
+            return MESSAGE_FORMAT;
+        }
+        String localPart = invalidEmail.substring(0, invalidEmail.indexOf('@'));
+        if (!hasOnlyLocalPartCharacters(localPart)) {
+            return MESSAGE_INVALID_NAME_CHARACTERS;
+        }
+        if (!hasAlphanumericEdges(localPart)) {
+            return MESSAGE_INVALID_NAME_EDGE;
+        }
+        if (localPart.contains("..")) {
+            return MESSAGE_CONSECUTIVE_PERIODS;
+        }
+        String domain = invalidEmail.substring(invalidEmail.indexOf('@') + 1);
+        if (!hasOnlyDomainCharacters(domain)) {
+            return MESSAGE_INVALID_DOMAIN_CHARACTERS;
+        }
+        String[] labels = splitDomainLabels(domain);
+        if (!hasNoEmptyLabels(labels)) {
+            return MESSAGE_EMPTY_DOMAIN_PART;
+        }
+        if (!hasAlphanumericLabelEdges(labels)) {
+            return MESSAGE_DOMAIN_PART_EDGE;
+        }
+        return MESSAGE_SHORT_DOMAIN_ENDING;
+    }
+
+    private static boolean hasSingleAtSignBetweenParts(String test) {
+        int atSignIndex = test.indexOf('@');
+        return atSignIndex > 0 && atSignIndex == test.lastIndexOf('@') && atSignIndex < test.length() - 1;
+    }
+
     private static boolean isValidLocalPart(String localPart) {
-        if (!isAsciiAlphanumeric(localPart.charAt(0))
-                || !isAsciiAlphanumeric(localPart.charAt(localPart.length() - 1))) {
-            return false;
-        }
-        boolean previousCharacterWasPeriod = false;
-        for (char currentCharacter : localPart.toCharArray()) {
-            if (!isAsciiAlphanumeric(currentCharacter)
-                    && LOCAL_PART_SPECIAL_CHARACTERS.indexOf(currentCharacter) < 0) {
-                return false;
-            }
-            if (currentCharacter == '.' && previousCharacterWasPeriod) {
-                return false;
-            }
-            previousCharacterWasPeriod = currentCharacter == '.';
-        }
-        return true;
+        return hasOnlyLocalPartCharacters(localPart) && hasAlphanumericEdges(localPart) && !localPart.contains("..");
+    }
+
+    private static boolean hasOnlyLocalPartCharacters(String localPart) {
+        return localPart.chars().allMatch(character -> isAsciiAlphanumeric((char) character)
+                || LOCAL_PART_SPECIAL_CHARACTERS.indexOf(character) >= 0);
+    }
+
+    private static boolean hasAlphanumericEdges(String text) {
+        return isAsciiAlphanumeric(text.charAt(0)) && isAsciiAlphanumeric(text.charAt(text.length() - 1));
     }
 
     private static boolean isValidDomain(String domain) {
-        String[] labels = domain.split("\\.", -1);
-        if (labels[labels.length - 1].length() < 2) {
+        if (!hasOnlyDomainCharacters(domain)) {
             return false;
         }
-        for (String label : labels) {
-            if (label.isEmpty() || !isAsciiAlphanumeric(label.charAt(0))
-                    || !isAsciiAlphanumeric(label.charAt(label.length() - 1))) {
-                return false;
-            }
-            for (int i = 0; i < label.length(); i++) {
-                char currentCharacter = label.charAt(i);
-                if (!isAsciiAlphanumeric(currentCharacter) && currentCharacter != '-') {
-                    return false;
-                }
-            }
-        }
-        return true;
+        String[] labels = splitDomainLabels(domain);
+        return hasNoEmptyLabels(labels) && hasAlphanumericLabelEdges(labels)
+                && labels[labels.length - 1].length() >= 2;
+    }
+
+    private static boolean hasOnlyDomainCharacters(String domain) {
+        return domain.chars().allMatch(character -> isAsciiAlphanumeric((char) character)
+                || character == '-' || character == '.');
+    }
+
+    private static String[] splitDomainLabels(String domain) {
+        return domain.split("\\.", -1);
+    }
+
+    private static boolean hasNoEmptyLabels(String[] labels) {
+        return Arrays.stream(labels).noneMatch(String::isEmpty);
+    }
+
+    private static boolean hasAlphanumericLabelEdges(String[] labels) {
+        return Arrays.stream(labels).allMatch(Email::hasAlphanumericEdges);
     }
 
     private static boolean isAsciiAlphanumeric(char character) {

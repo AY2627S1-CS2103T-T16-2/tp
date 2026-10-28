@@ -26,9 +26,10 @@ import seedu.tuitionbook.model.tag.Tag;
  */
 class JsonAdaptedPerson {
 
-    public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
-    public static final String INVALID_ID_MESSAGE = "Person's id field is invalid!";
-    public static final String NULL_TAG_MESSAGE = "Person's tags list contains a null tag.";
+    public static final String MISSING_FIELD_MESSAGE_FORMAT = "Missing \"%s\" value.";
+    public static final String INVALID_ID_MESSAGE = "The \"id\" value is not in the expected format.";
+    public static final String NULL_TAG_MESSAGE =
+            "The \"tags\" list contains null. Remove it or replace it with a tag name.";
 
     private static final Logger logger = LogsCenter.getLogger(JsonAdaptedPerson.class);
 
@@ -107,15 +108,15 @@ class JsonAdaptedPerson {
         }
 
         if (name == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Name.class.getSimpleName()));
+            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "name"));
         }
         if (!Name.isValidName(name)) {
-            throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
+            throw new IllegalValueException(Name.getConstraintMessage(name));
         }
         final Name modelName = new Name(name);
 
         if (phone == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Phone.class.getSimpleName()));
+            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, "phone"));
         }
         if (!Phone.isValidPhone(phone)) {
             throw new IllegalValueException(Phone.MESSAGE_CONSTRAINTS);
@@ -123,12 +124,12 @@ class JsonAdaptedPerson {
         final Phone modelPhone = new Phone(phone);
 
         if (email != null && !Email.isValidEmail(email)) {
-            throw new IllegalValueException(Email.MESSAGE_CONSTRAINTS);
+            throw new IllegalValueException(Email.getConstraintMessage(email));
         }
         final Email modelEmail = email == null ? null : new Email(email);
 
         if (address != null && !Address.isValidAddress(address)) {
-            throw new IllegalValueException(Address.MESSAGE_CONSTRAINTS);
+            throw new IllegalValueException(Address.getConstraintMessage(address));
         }
         final Address modelAddress = address == null ? null : new Address(address);
 

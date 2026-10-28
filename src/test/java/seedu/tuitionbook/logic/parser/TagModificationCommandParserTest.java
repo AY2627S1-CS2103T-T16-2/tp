@@ -87,11 +87,15 @@ public class TagModificationCommandParserTest {
 
     @Test
     public void parse_anyInvalidTag_rejectsWholeCommand() {
-        for (String input : List.of("1 t/", "1 t/   ", "1 t/Math t/", "1 t/ t/Science",
-                "1 t/Math t/bad\ttag", "1 t/caf\u00e9", "1 t/bad\u007ftag", "1 t/\"\"",
-                "1 t/Math t/\"   \"", "1 t/Math t/\"bad\ttag\"")) {
-            assertParseFailure(tagParser, input, Tag.MESSAGE_CONSTRAINTS);
-            assertParseFailure(untagParser, input, Tag.MESSAGE_CONSTRAINTS);
+        for (String input : List.of("1 t/", "1 t/   ", "1 t/Math t/", "1 t/ t/Science", "1 t/\"\"",
+                "1 t/Math t/\"   \"")) {
+            assertParseFailure(tagParser, input, Tag.MESSAGE_BLANK);
+            assertParseFailure(untagParser, input, Tag.MESSAGE_BLANK);
+        }
+        for (String input : List.of("1 t/Math t/bad\ttag", "1 t/caf\u00e9", "1 t/bad\u007ftag",
+                "1 t/Math t/\"bad\ttag\"")) {
+            assertParseFailure(tagParser, input, Tag.MESSAGE_INVALID_CHARACTERS);
+            assertParseFailure(untagParser, input, Tag.MESSAGE_INVALID_CHARACTERS);
         }
     }
 }

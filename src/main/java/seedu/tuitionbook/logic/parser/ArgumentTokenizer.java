@@ -24,10 +24,9 @@ public class ArgumentTokenizer {
     public static final String MESSAGE_UNCLOSED_QUOTE =
             "Missing closing double quote. Enclose the complete name, address or tag value in straight double quotes.";
     public static final String MESSAGE_TEXT_AFTER_QUOTE =
-            "After a quoted value, enter a space followed by another field prefix, or end the command.";
-    public static final String MESSAGE_UNKNOWN_PREFIX = "Unrecognised field prefix: %s "
-            + "Check the command's supported lowercase prefixes. "
-            + "For literal prefix-like text, quote the complete name, address or tag value.";
+            "A closing quote must be followed by a space and another field, or the end of the command.";
+    public static final String MESSAGE_UNKNOWN_PREFIX = "Unknown field %1$s. Check the command format, "
+            + "or put the whole value in double quotes if it contains %1$s.";
 
     private static final Pattern PREFIX_LIKE_TOKEN = Pattern.compile("(?:^| )([A-Za-z]+/)");
 

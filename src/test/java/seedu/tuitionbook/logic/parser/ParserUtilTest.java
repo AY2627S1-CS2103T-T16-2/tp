@@ -7,7 +7,6 @@ import static seedu.tuitionbook.testutil.Assert.assertThrows;
 import static seedu.tuitionbook.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -61,12 +60,10 @@ public class ParserUtilTest {
     }
 
     @Test
-    public void parseIndex_unicodeSpaces_reportsCodePointAndCorrection() {
+    public void parseIndex_unicodeSpaces_reportsCorrection() {
         // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/374
         for (char space : new char[] {'\u00a0', '\u3000'}) {
-            String description = space == '\u00a0' ? "non-breaking space" : "full-width space";
-            String expectedMessage = String.format(Locale.ROOT, "Unexpected %s (U+%04X). "
-                    + "Retype the command separator or index using normal spaces (U+0020).", description, (int) space);
+            String expectedMessage = ParserUtil.MESSAGE_UNSUPPORTED_SPACE;
             for (String input : List.of(space + "1", "1" + space, "1" + space + "2")) {
                 assertThrows(ParseException.class, expectedMessage, () -> ParserUtil.parseIndex(input));
             }

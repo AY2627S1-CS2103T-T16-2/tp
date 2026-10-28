@@ -49,13 +49,13 @@ public class DataLoadingException extends Exception {
         }
         if (hasCause(IllegalValueException.class)) {
             String detail = causeMessage(IllegalValueException.class);
-            return "The file contains invalid contact data: " + detail
+            return "The file contains invalid contact data. " + detail
                     + (detail.endsWith(".") ? "" : ".");
         }
         if (hasCause(CharacterCodingException.class) || hasCause(JsonProcessingException.class)
                 || hasCauseWithMessage(IOException.class, "JSON root value must not be null.")) {
-            return "The data file is not valid UTF-8 JSON. Correct the encoding or JSON syntax in the preserved "
-                    + "file before trying again.";
+            return "The data file is not in a format TuitionBook can read. Check the preserved file for mistakes "
+                    + "such as a missing comma, quote or bracket, and save it as UTF-8 text before trying again.";
         }
         if (hasCause(IOException.class)) {
             return "The data file could not be read because of a file-system error. Check access to the preserved "
@@ -90,7 +90,7 @@ public class DataLoadingException extends Exception {
         }
         String message = current.getMessage();
         if (message == null || message.isBlank()) {
-            return "the contact fields are invalid";
+            return "Check each contact's values";
         }
         String singleLineMessage = message.replaceAll("\\R", " ").trim();
         return singleLineMessage.length() > MAX_GUIDANCE_DETAIL_LENGTH

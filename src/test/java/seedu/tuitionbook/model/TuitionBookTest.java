@@ -11,12 +11,14 @@ import static seedu.tuitionbook.testutil.TypicalPersons.getTypicalTuitionBook;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.model.person.exceptions.DuplicatePersonException;
 import seedu.tuitionbook.testutil.PersonBuilder;
 
@@ -59,6 +61,17 @@ public class TuitionBookTest {
         TuitionBookStub newData = new TuitionBookStub(List.of(ALICE, duplicateAlice));
 
         assertThrows(DuplicatePersonException.class, () -> tuitionBook.resetData(newData));
+    }
+
+    @Test
+    public void resetData_withNormalizedIdentityInDifferentRoles_success() {
+        Person guardianAlice = new PersonBuilder(ALICE).withId(UUID.randomUUID()).withRole(Role.GUARDIAN)
+                .withName("alice  pauline ").withPhone("9435 1253").build();
+        TuitionBookStub newData = new TuitionBookStub(List.of(ALICE, guardianAlice));
+
+        tuitionBook.resetData(newData);
+
+        assertEquals(List.of(ALICE, guardianAlice), tuitionBook.getPersonList());
     }
 
     @Test

@@ -14,8 +14,6 @@ public class UntagCommand extends TagModificationCommand {
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Removes specified tags from the contact identified by its displayed index, keeping other tags.\n"
             + "Parameters: INDEX t/TAG [t/TAG]...\n"
-            + "Quote tags containing t/ after a space, for example t/\"study t/weekly\".\n"
-            + "Inside quoted tags, use \\\" for a literal quote and \\\\ for a literal backslash.\n"
             + "Absent tags are skipped and reported.\n"
             + "Example: untag 1 t/Math t/Sec 4";
     public static final String MESSAGE_SUCCESS = "Removed tags from %1$s.";

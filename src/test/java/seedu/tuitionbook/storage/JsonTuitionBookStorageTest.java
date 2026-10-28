@@ -132,6 +132,18 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readTuitionBook_trailingJsonValue_reportsJsonGuidance() throws Exception {
+        Path filePath = testFolder.resolve("TrailingTuitionBook.json");
+        Files.writeString(filePath, "{\"persons\":[]} {\"name\":\"Amy\",\"phone\":\"81234567\"}");
+
+        DataLoadingException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DataLoadingException.class, new JsonTuitionBookStorage(filePath)::readTuitionBook);
+
+        assertTrue(exception.getUserFacingGuidance().startsWith("The data file is not in a format TuitionBook can "
+                + "read."));
+    }
+
+    @Test
     public void readTuitionBook_duplicateJsonKey_movesDataToBackupAndAllowsSaving() throws Exception {
         // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/341
         // and https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/317

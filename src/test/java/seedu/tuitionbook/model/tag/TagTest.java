@@ -39,6 +39,28 @@ public class TagTest {
     }
 
     @Test
+    public void getConstraintMessage_distinguishesBlankFromInvalidCharacters() {
+        assertEquals(Tag.MESSAGE_BLANK, Tag.getConstraintMessage(""));
+        assertEquals(Tag.MESSAGE_BLANK, Tag.getConstraintMessage("   "));
+        assertEquals(Tag.MESSAGE_INVALID_CHARACTERS, Tag.getConstraintMessage("Ma\tth"));
+        assertEquals(Tag.MESSAGE_INVALID_CHARACTERS, Tag.getConstraintMessage("caf\u00e9"));
+        assertEquals(Tag.MESSAGE_INVALID_CHARACTERS, Tag.getConstraintMessage("\t"));
+        assertThrows(IllegalArgumentException.class, Tag.MESSAGE_BLANK, () -> new Tag("   "));
+    }
+
+    @Test
+    public void messageInvalidCharacters_coversKeyboardSymbolsButNotOtherPunctuation() {
+        assertTrue(Tag.isValidTagName("$+=@^|~"));
+        assertTrue(Tag.MESSAGE_INVALID_CHARACTERS.contains("punctuation and symbols from a standard English keyboard"));
+        assertEquals(Tag.MESSAGE_INVALID_CHARACTERS, Tag.getConstraintMessage("Math\u2014Science"));
+    }
+
+    @Test
+    public void getConstraintMessage_validTagName_failsAssertion() {
+        assertThrows(AssertionError.class, () -> Tag.getConstraintMessage("Math"));
+    }
+
+    @Test
     public void constructor_longMultiSegmentTag_preservesExactValue() {
         String longMultiSegmentTag = "A-".repeat(5000) + "B";
 
