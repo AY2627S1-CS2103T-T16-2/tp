@@ -1421,7 +1421,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. In a fresh, disposable folder, add `add r/student n/Alex Yeoh p/87438807`, close TuitionBook, and keep a separate copy of the valid `data/tuitionbook.json`.
 
    1. Replace the data file's contents with `{broken`. Configure permissions so the app can read the file but cannot move it to a backup, then launch TuitionBook. Permission controls differ by operating system; verify that the startup warning explicitly reports backup failure before continuing.<br>
-      Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
+      Expected: the warning heading says **Saving is paused to protect your data file**. The specific loading problem remains in the main message, which also states that the original file could not be moved to a backup file and that saving is disabled. Expanding **Recovery details** shows the recovery steps and the original path once in a labelled, selectable, read-only field. The original file remains in place. A successful backup means this scenario's precondition was not established.
 
    1. Enter `find Nobody`. While the app stays open, record any current contacts you need and copy the malformed file to a separate safe location. Enter no contact-changing commands during file recovery. Restore normal permissions and replace the malformed file with a copy of the saved valid file, keeping both separate copies. Enter `reload`.<br>
       Expected: the empty working set resets to the full loaded list containing Alex Yeoh, and saving is enabled. Reload does not rewrite the restored file or either separate copy. Merely correcting the file without reloading would leave the write block set.
@@ -1460,10 +1460,13 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
    1. Launch TuitionBook.<br>
-      Expected: TuitionBook opens with an empty contact list and a compact warning that reports the file is not in a format TuitionBook can read, states that the original file was preserved unchanged, and warns that newly saved contacts cannot be merged automatically. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+      Expected: TuitionBook opens with an empty contact list and a compact warning headed **Your contacts are safe in a backup**. The main message reports that the file is not in a format TuitionBook can read, states that the original file is preserved unchanged in a backup file, and warns that newly saved contacts cannot be merged automatically. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
 
    1. Expand **Recovery details**.<br>
-      Expected: Numbered restoration steps tell you to close TuitionBook and preserve any new data file before replacing files. The preserved and new data paths each appear once in a labelled, selectable, read-only field, and the details remain scrollable when the dialog is resized smaller.
+      Expected: Numbered restoration steps say to close TuitionBook before replacing files, copy any new data file somewhere safe, fix the problem described above in the backup file, and re-enter contacts added since the problem started. The backup and new data paths each appear once in a labelled, selectable, read-only field, and the details remain scrollable when the dialog is resized smaller.
+
+   1. On a display configured to 1280×720 at 150% scaling, or using an equivalent 853×480 logical visual area, keep **Recovery details** expanded and resize the dialog smaller.<br>
+      Expected: The dialog remains within the visible screen. Its heading, specific problem, backup outcome and **OK** button remain visible; the button is keyboard reachable. The recovery steps and both full paths remain reachable by vertical scrolling, and long paths stay inside their selectable fields without widening the dialog.
 
    1. Dismiss the warning.<br>
       Expected: The result display retains the cause, backup and restoration summary.
