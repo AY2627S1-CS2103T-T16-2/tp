@@ -226,6 +226,12 @@ public class UiManager implements Ui {
             dialogStage.widthProperty().addListener((observable, oldWidth, newWidth) ->
                     Platform.runLater(() -> fitLoadFailureDialogWithin(dialogStage,
                             activeVisualBounds(dialogStage))));
+            dialogStage.heightProperty().addListener((observable, oldHeight, newHeight) -> {
+                if (newHeight.doubleValue() < dialogStage.getMinHeight() - 1) {
+                    Platform.runLater(() -> fitLoadFailureDialogWithin(dialogStage,
+                            activeVisualBounds(dialogStage)));
+                }
+            });
         });
         alert.showAndWait();
     }
@@ -335,9 +341,18 @@ public class UiManager implements Ui {
         dialogPane.applyCss();
         dialogPane.layout();
 
+        // Size against the stage's target width: during a resize the pane still has its old width,
+        // so measuring the pane directly underestimates how tall the wrapped labels become.
+        double decorationWidth = rememberedDecoration(dialogStage, "loadFailureDecorationWidth",
+                dialogStage.getWidth() - dialogStage.getScene().getWidth());
+        double decorationHeight = rememberedDecoration(dialogStage, "loadFailureDecorationHeight",
+                dialogStage.getHeight() - dialogStage.getScene().getHeight());
+        double targetWidth = Math.min(dialogStage.getWidth(), visualBounds.getWidth());
+        double targetContentWidth = Math.max(1, targetWidth - decorationWidth);
+
         double viewportWidth = recoveryScroller.getViewportBounds().getWidth();
         if (viewportWidth <= 0) {
-            viewportWidth = Math.max(1, dialogPane.getWidth() - 60);
+            viewportWidth = Math.max(1, targetContentWidth - 60);
         }
         double contentHeight = recoveryScroller.getContent().prefHeight(viewportWidth);
         double detailsHeight = Math.max(LOAD_FAILURE_DETAILS_MIN_HEIGHT,
@@ -347,11 +362,7 @@ public class UiManager implements Ui {
         recoveryScroller.setMaxHeight(detailsHeight);
         dialogPane.applyCss();
         dialogPane.layout();
-        double windowDecorationHeight = Double.isFinite(dialogStage.getHeight())
-                && Double.isFinite(dialogStage.getScene().getHeight())
-                ? Math.max(0, dialogStage.getHeight() - dialogStage.getScene().getHeight())
-                : 0;
-        double desiredHeight = dialogPane.prefHeight(dialogPane.getWidth()) + windowDecorationHeight;
+        double desiredHeight = dialogPane.prefHeight(targetContentWidth) + decorationHeight;
         double requiredMinimumHeight = Math.max(LOAD_FAILURE_DIALOG_MIN_HEIGHT, desiredHeight);
         if (recoveryDetails.isExpanded()) {
             recoveryScroller.setPrefViewportHeight(LOAD_FAILURE_DETAILS_MIN_HEIGHT);
@@ -359,12 +370,12 @@ public class UiManager implements Ui {
             dialogPane.applyCss();
             dialogPane.layout();
             requiredMinimumHeight = Math.max(LOAD_FAILURE_DIALOG_MIN_HEIGHT,
-                    dialogPane.prefHeight(dialogPane.getWidth()) + windowDecorationHeight);
+                    dialogPane.prefHeight(targetContentWidth) + decorationHeight);
             recoveryScroller.setPrefViewportHeight(detailsHeight);
             recoveryScroller.setMaxHeight(detailsHeight);
             dialogPane.applyCss();
             dialogPane.layout();
-            desiredHeight = dialogPane.prefHeight(dialogPane.getWidth()) + windowDecorationHeight;
+            desiredHeight = dialogPane.prefHeight(targetContentWidth) + decorationHeight;
         }
 
         double boundedMinWidth = Math.min(LOAD_FAILURE_DIALOG_MIN_WIDTH, visualBounds.getWidth());
@@ -373,7 +384,7 @@ public class UiManager implements Ui {
         dialogStage.setMinHeight(boundedMinHeight);
         dialogStage.setMaxWidth(visualBounds.getWidth());
         dialogStage.setMaxHeight(visualBounds.getHeight());
-        dialogStage.setWidth(Math.min(dialogStage.getWidth(), visualBounds.getWidth()));
+        dialogStage.setWidth(targetWidth);
         dialogStage.setHeight(Math.min(Math.max(desiredHeight, boundedMinHeight), visualBounds.getHeight()));
         dialogStage.setX(clamp(dialogStage.getX(), visualBounds.getMinX(),
                 visualBounds.getMaxX() - dialogStage.getWidth()));
@@ -383,6 +394,21 @@ public class UiManager implements Ui {
 
     private static double clamp(double value, double minimum, double maximum) {
         return Math.max(minimum, Math.min(value, maximum));
+    }
+
+    /**
+     * Returns the window-decoration size remembered for {@code dialogStage}, measuring it once while the
+     * stage and scene sizes agree. Later fits reuse the remembered value because a resize updates the
+     * stage size before the scene catches up, which would make a fresh measurement wrong.
+     */
+    private static double rememberedDecoration(Stage dialogStage, String key, double measuredDecoration) {
+        Object remembered = dialogStage.getProperties().get(key);
+        if (remembered instanceof Double value) {
+            return value;
+        }
+        double decoration = Double.isFinite(measuredDecoration) ? Math.max(0, measuredDecoration) : 0;
+        dialogStage.getProperties().put(key, decoration);
+        return decoration;
     }
 
     private Label createWrappedLabel(String text, String id, String styleClass) {
