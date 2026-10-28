@@ -840,10 +840,22 @@ public class UiManagerStartupTest {
     }
 
     private void assertWindowWithin(Stage stage, Rectangle2D visualBounds) {
-        assertTrue(stage.getX() >= visualBounds.getMinX() - LAYOUT_TOLERANCE);
-        assertTrue(stage.getY() >= visualBounds.getMinY() - LAYOUT_TOLERANCE);
-        assertTrue(stage.getX() + stage.getWidth() <= visualBounds.getMaxX() + LAYOUT_TOLERANCE);
-        assertTrue(stage.getY() + stage.getHeight() <= visualBounds.getMaxY() + LAYOUT_TOLERANCE);
+        assertTrue(stage.getX() >= visualBounds.getMinX() - LAYOUT_TOLERANCE, () ->
+                "window left edge outside " + describeWindowAgainstBounds(stage, visualBounds));
+        assertTrue(stage.getY() >= visualBounds.getMinY() - LAYOUT_TOLERANCE, () ->
+                "window top edge outside " + describeWindowAgainstBounds(stage, visualBounds));
+        assertTrue(stage.getX() + stage.getWidth() <= visualBounds.getMaxX() + LAYOUT_TOLERANCE, () ->
+                "window right edge outside " + describeWindowAgainstBounds(stage, visualBounds));
+        assertTrue(stage.getY() + stage.getHeight() <= visualBounds.getMaxY() + LAYOUT_TOLERANCE, () ->
+                "window bottom edge outside " + describeWindowAgainstBounds(stage, visualBounds));
+    }
+
+    private String describeWindowAgainstBounds(Stage stage, Rectangle2D visualBounds) {
+        return String.format("visual bounds %s: stage=[x=%.2f,y=%.2f,width=%.2f,height=%.2f,"
+                        + "minHeight=%.2f,maxHeight=%.2f], scene=[width=%.2f,height=%.2f]",
+                format(visualBounds), stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight(),
+                stage.getMinHeight(), stage.getMaxHeight(),
+                stage.getScene().getWidth(), stage.getScene().getHeight());
     }
 
     private void assertNodeWithinScene(Node node, DialogPane pane) {
