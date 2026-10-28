@@ -69,6 +69,8 @@
         "appendix-instructions-for-manual-testing": "Appendix: Instructions for manual testing",
         "command-input-and-diagnostics": "Command input and diagnostics",
         "contact-validation-and-missing-add-fields": "Contact validation and missing add fields",
+        "email-character-rules": "Email character rules",
+        "email-length-limits": "Email length limits",
         "strict-prefixes-and-quoted-addresses": "Strict prefixes and quoted addresses",
         "quoted-names-and-tags": "Quoted names and tags",
         "clearing-all-contacts": "Clearing all contacts",
