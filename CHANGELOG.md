@@ -44,6 +44,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Report when `edit` leaves all contact values unchanged instead of claiming the contact was edited, including repeated values, clearing already-empty fields, and reordered identical tag sets; unchanged edits continue to skip saving.
 - Split the dense Developer Guide parser diagram into focused dispatch and utility views, moving explanatory notes and command inheritance into prose (#225).
 - Report a data file with an extra JSON value after its closing brace as unreadable JSON rather than a file-system error (#267, #269).
 - Name the affected contact, when its name is valid, alongside its position in data-file load errors such as an invalid email, and tell users they can enter `reload` instead of only restarting after recovering the data file (#277).
@@ -66,6 +67,7 @@ The format is based on Keep a Changelog.
 - Scroll the contact list to a newly added contact until it is visible, then stop retrying so manual scrolling is not overridden.
 - Use locale-independent, case-insensitive alphabetical ordering for tags in contact cards and detailed views.
 - Render detailed-view tags with brackets and escape literal backslashes and square brackets.
+- Escape literal backslashes and square brackets in tags shown by `add`, `edit` and `delete` confirmations, as `view` does, so a single tag such as `first][second` is no longer indistinguishable from the two tags `first` and `second` (#268).
 - Keep the current screen visible when a command fails instead of forcing a return to the contact list.
 - Give bare and invalid `clear` confirmations distinct guidance without changing `clear confirm` behaviour.
 - Reject extra arguments to `help` and `exit`, consistently with `reload`, rather than opening Help or exiting unexpectedly.
