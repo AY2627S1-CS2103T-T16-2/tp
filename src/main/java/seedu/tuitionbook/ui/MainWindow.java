@@ -182,8 +182,10 @@ public class MainWindow extends UiPart<Stage> {
             Rectangle2D primaryScreenBounds) {
         Point savedPosition = guiSettings.getWindowCoordinates();
         if (savedPosition == null) {
-            primaryStage.setHeight(guiSettings.getWindowHeight());
-            primaryStage.setWidth(guiSettings.getWindowWidth());
+            primaryStage.setHeight(Math.min(Math.max(1, guiSettings.getWindowHeight()),
+                    primaryScreenBounds.getHeight()));
+            primaryStage.setWidth(Math.min(Math.max(1, guiSettings.getWindowWidth()),
+                    primaryScreenBounds.getWidth()));
             return;
         }
 

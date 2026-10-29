@@ -94,8 +94,7 @@ public class MainWindowTest {
             Rectangle2D primaryBounds = Screen.getPrimary().getVisualBounds();
             FakeLogic logic = new FakeLogic();
             logic.guiSettings = new GuiSettings(primaryBounds.getWidth() + 100,
-                    primaryBounds.getHeight() + 100, (int) primaryBounds.getMaxX() + 1000,
-                    (int) primaryBounds.getMaxY() + 1000);
+                    primaryBounds.getHeight() + 100, 100000, 100000);
             Stage stage = new Stage();
 
             new MainWindow(stage, logic, Path.of("synthetic.json"));
@@ -104,6 +103,35 @@ public class MainWindowTest {
             assertTrue(stage.getY() >= primaryBounds.getMinY());
             assertTrue(stage.getX() + stage.getWidth() <= primaryBounds.getMaxX());
             assertTrue(stage.getY() + stage.getHeight() <= primaryBounds.getMaxY());
+        });
+    }
+
+    @Test
+    public void restoreWindowBounds_noSavedPosition_clampsSizeToPrimaryScreen() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryScreen = new Rectangle2D(0, 0, 1280, 720);
+            GuiSettings oversizedSettingsWithoutPosition = new GuiSettings() {
+                @Override
+                public double getWindowWidth() {
+                    return 5000;
+                }
+
+                @Override
+                public double getWindowHeight() {
+                    return 4000;
+                }
+            };
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, new FakeLogic(), Path.of("synthetic.json"));
+            double originalX = stage.getX();
+            double originalY = stage.getY();
+
+            mainWindow.restoreWindowBounds(oversizedSettingsWithoutPosition, List.of(primaryScreen), primaryScreen);
+
+            assertEquals(1280, stage.getWidth());
+            assertEquals(720, stage.getHeight());
+            assertEquals(originalX, stage.getX());
+            assertEquals(originalY, stage.getY());
         });
     }
 
