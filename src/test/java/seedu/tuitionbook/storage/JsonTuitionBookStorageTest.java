@@ -3,6 +3,7 @@ package seedu.tuitionbook.storage;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
 import static seedu.tuitionbook.testutil.TypicalPersons.ALICE;
@@ -537,6 +538,32 @@ public class JsonTuitionBookStorageTest {
 
         assertEquals(originalContents, Files.readString(filePath));
         assertFalse(Files.exists(temporaryFile[0]));
+    }
+
+    @Test
+    public void saveTuitionBook_saveAndCleanupFail_preservesSaveFailureAndSuppressesCleanupFailure() throws Exception {
+        Path filePath = testFolder.resolve("AtomicSaveTuitionBook.json");
+        Files.writeString(filePath, "{\"persons\":[]}");
+        IOException saveFailure = new IOException("simulated replacement failure");
+        IOException cleanupFailure = new IOException("simulated cleanup failure");
+        JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath) {
+            @Override
+            protected void replaceFile(Path source, Path target) throws IOException {
+                throw saveFailure;
+            }
+
+            @Override
+            protected void deleteTemporaryFile(Path temporaryFile) throws IOException {
+                throw cleanupFailure;
+            }
+        };
+
+        IOException thrown = org.junit.jupiter.api.Assertions.assertThrows(IOException.class, () ->
+                storage.saveTuitionBook(getTypicalTuitionBook()));
+
+        assertSame(saveFailure, thrown);
+        assertEquals(1, thrown.getSuppressed().length);
+        assertSame(cleanupFailure, thrown.getSuppressed()[0]);
     }
 
     @Test
