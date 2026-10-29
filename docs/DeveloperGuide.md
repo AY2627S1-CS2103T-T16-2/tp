@@ -499,7 +499,21 @@ US18/US19 needs are supported through generic tags: `t/Sec4 t/AMath` records a l
 
 #### Tag identity and compatibility
 
-[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. `Tag` trims surrounding ASCII spaces for both command and JSON construction, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
+[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. `Tag` trims surrounding ASCII spaces for both command and JSON construction, while internal spaces remain significant. For example, these are different tags:
+
+One internal space:
+
+```text
+Sec 4
+```
+
+Two internal spaces:
+
+```text
+Sec  4
+```
+
+Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
 
 Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Surrounding ASCII spaces are trimmed when tags are loaded; tags that differ only by that padding are merged into one, and the merged value is written on the next save. Any other narrowing of validation or identity still requires an explicit compatibility plan.
 
@@ -918,7 +932,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
+7.  At startup, TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
 8.  TuitionBook shall allow at most one guarded application instance per application home directory while allowing application copies in separate home directories to run independently.
 
 ### Glossary
@@ -986,8 +1000,24 @@ Use a fresh, disposable folder with an empty contact list.
    Expected: The contact is added with the entered punctuation and phone formatting preserved.
 1. Enter `add r/student n/JOHN O’CONNOR p/+65/9123/4567x89`.<br>
    Expected: TuitionBook reports that the contact already exists because phone formatting and the annotation are ignored, and the extension marker is normalized, for identity comparison.
-1. Enter `add r/student n/John@Doe p/91234567`, then `add r/student n/John Doe p/(65 9123-4567`, then `add r/student n/John Doe p/9123//4567`, then `add r/student n/John Doe p/91234567 (home  phone)`, then `add r/student n/John Doe p/91234567 e/peter..jack@example.com`.<br>
-   Expected: Each command reports the relevant name, phone, or email constraint; no contact is added.
+1. Enter the following command, whose phone annotation has one space between `home` and `phone`:
+
+   ```text
+   add r/student n/Jane Doe p/92345678 (home phone)
+   ```
+
+   Expected: Jane Doe is added with the displayed phone number unchanged.
+1. Enter each of the following commands separately. The fourth command has two spaces between `home` and `phone`:
+
+   ```text
+   add r/student n/John@Doe p/91234567
+   add r/student n/John Doe p/(65 9123-4567
+   add r/student n/John Doe p/9123//4567
+   add r/student n/John Doe p/91234567 (home  phone)
+   add r/student n/John Doe p/91234567 e/peter..jack@example.com
+   ```
+
+   Expected: Each command reports the relevant name, phone, or email constraint; no additional contact is added.
 1. Enter `add r/student n/-Amy p/91234567`, then `add r/student n/Amy p/91234567 a/"   "`, then `add r/student n/Amy p/91234567 t/café`.<br>
    Expected: The errors are `Names must start with a letter or number.`, `Addresses must contain at least one visible character.` and `Tag names may contain only English letters, digits (0-9), spaces, punctuation and symbols from a standard English keyboard.` respectively; no contact is added.
 1. Enter `add r/student n/John Doe e/john@example.com a/123 Main Street`, then `add e/john@example.com a/123 Main Street`.<br>
@@ -1287,10 +1317,12 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. `add r/student n/GROẞ Klein p/91230006`
 1. `add r/student n/José Tan p/91230007` (the `é` is entered as `e` followed by a combining acute accent)
 
-1. Enter `find gr`, `find rac`, `find ace`, and `find GRACE` one at a time.<br>
+1. Enter `find gr`.<br>
+   Expected: Grace Tan and GROẞ Klein are shown in their original contact order and the result reports `2 person(s) listed!`.
+1. Enter `find rac`, `find ace`, and `find GRACE` one at a time.<br>
    Expected: Each command shows only Grace Tan and reports `1 person(s) listed!`.
 1. Enter `find tan`.<br>
-   Expected: Grace Tan and A.B Tan are shown in their original order and the result reports `2 person(s) listed!`.
+   Expected: Grace Tan, A.B Tan, and José Tan are shown in their original contact order and the result reports `3 person(s) listed!`.
 1. Enter `find rac bob`.<br>
    Expected: Grace Tan and Bob Lim are shown once each in their original order and the result reports `2 person(s) listed!`.
 1. Enter `find ışık`, then `find ışı`.<br>
@@ -1434,7 +1466,21 @@ add r/student n/Dana Lee p/91234564 t/inactive t/math
 
 Tags support spaces and printable ASCII punctuation so tutors can use natural spaced labels. Existing tags remain valid without changing the JSON format. Once users save these broader tag names, reverting to the previous single-hyphen restriction would reject valid saved contacts; any future narrowing requires an explicit compatibility or migration plan. Internal spaces remain significant. Optional enclosing quotes are command syntax and are not stored.
 
-Internal spacing is deliberately not normalized: `Sec 4` (one space) and `Sec  4` (two spaces) represent distinct tag strings. Case-insensitive list filtering does not collapse spaces, so a filter for one does not match the other. Command parsing trims surrounding whitespace only. Preserve this distinction in validation, persistence, and filtering tests; changing it would alter tag identity and matching behaviour.
+Internal spacing is deliberately not normalized. The following values represent distinct tag strings:
+
+One internal space:
+
+```text
+Sec 4
+```
+
+Two internal spaces:
+
+```text
+Sec  4
+```
+
+Case-insensitive list filtering does not collapse spaces, so a filter for one does not match the other. Command parsing trims surrounding whitespace only. Preserve this distinction in validation, persistence, and filtering tests; changing it would alter tag identity and matching behaviour.
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
 
@@ -1444,17 +1490,37 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: The existing tags are replaced with `Sec 4`, `Math/Science`, and `C++`.
 1. Enter `list r/student t/SEC 4 t/math/science`.<br>
    Expected: Alex Lim appears and the result reports `1 person(s) listed!`.
-1. Enter `list t/Sec  4` (two spaces between `Sec` and `4`), then `list t/C+`.<br>
+1. Enter the following command, with two spaces between `Sec` and `4`:
+
+   ```text
+   list t/Sec  4
+   ```
+
+   Then enter `list t/C+`.<br>
    Expected: Both commands report `0 person(s) listed!`; spacing and punctuation must match exactly.
 1. Enter `list t/`.<br>
    Expected: The command is rejected with the tag constraint message; contacts are unchanged.
 1. Close and relaunch the application.<br>
    Expected: Alex Lim still has the tags `Sec 4`, `Math/Science`, and `C++`. Enter `list r/student t/sec 4 t/c++` and verify that Alex appears.
-1. Close TuitionBook. Open `data/tuitionbook.json` in the disposable folder, replace Alex's `tags` array with `[" Math ", "Math", " Sec  4 "]`, save the file, and relaunch TuitionBook.
+1. Close TuitionBook. Open `data/tuitionbook.json` in the disposable folder, replace Alex's `tags` array with the following value, save the file, and relaunch TuitionBook:
+
+   ```json
+   [" Math ", "Math", " Sec  4 "]
+   ```
+
 1. Enter `list t/Math`.<br>
-   Expected: Alex appears with one `Math` tag and one `Sec  4` tag. The padded and unpadded `Math` values normalize to the same tag, while its internal spacing is retained.
+   Expected: Alex appears with one `Math` tag and the following tag, which has two internal spaces. The padded and unpadded `Math` values normalize to the same tag, while internal spacing is retained.
+
+   ```text
+   Sec  4
+   ```
+
 1. Enter `untag 1 t/Math`, then close TuitionBook and inspect Alex's tags in `data/tuitionbook.json`.<br>
-   Expected: `Math` is removed. The remaining tag is stored as `Sec  4` without surrounding spaces.
+   Expected: `Math` is removed. The remaining tag is stored without surrounding spaces and with two internal spaces:
+
+   ```json
+   ["Sec  4"]
+   ```
 1. Relaunch TuitionBook, enter `list`, then `edit 1 t/first t/second`.<br>
    Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
 1. Enter `edit 1 t/first][second`.<br>
