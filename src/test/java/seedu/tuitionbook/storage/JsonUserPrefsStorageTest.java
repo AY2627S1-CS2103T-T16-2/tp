@@ -2,6 +2,7 @@ package seedu.tuitionbook.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import seedu.tuitionbook.commons.core.GuiSettings;
 import seedu.tuitionbook.commons.exceptions.DataLoadingException;
+import seedu.tuitionbook.model.ReadOnlyUserPrefs;
 import seedu.tuitionbook.model.UserPrefs;
 
 public class JsonUserPrefsStorageTest {
@@ -126,6 +128,28 @@ public class JsonUserPrefsStorageTest {
         jsonUserPrefsStorage.saveUserPrefs(original);
         readBack = jsonUserPrefsStorage.readUserPrefs().get();
         assertEquals(original, readBack);
+    }
+
+    @Test
+    public void saveUserPrefs_writeFailure_preservesExistingFileAndCleansUpTemporaryFile() throws Exception {
+        Path prefsFilePath = testFolder.resolve("AtomicPrefs.json");
+        String originalContents = "{\"guiSettings\":{}}";
+        Files.writeString(prefsFilePath, originalContents);
+        Path[] temporaryFile = new Path[1];
+        JsonUserPrefsStorage storage = new JsonUserPrefsStorage(prefsFilePath) {
+            @Override
+            protected void writeJsonFile(ReadOnlyUserPrefs userPrefs, Path targetFile) throws IOException {
+                temporaryFile[0] = targetFile;
+                Files.writeString(targetFile, "partial JSON");
+                throw new IOException("simulated write failure");
+            }
+        };
+
+        assertThrows(IOException.class, () -> storage.saveUserPrefs(getTypicalUserPrefs()));
+
+        assertEquals(originalContents, Files.readString(prefsFilePath));
+        assertNotNull(temporaryFile[0]);
+        assertFalse(Files.exists(temporaryFile[0]));
     }
 
 }

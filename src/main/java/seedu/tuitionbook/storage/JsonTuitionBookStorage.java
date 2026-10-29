@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import seedu.tuitionbook.commons.core.LogsCenter;
@@ -162,11 +163,27 @@ public class JsonTuitionBookStorage {
         Files.createDirectories(absoluteFilePath.getParent());
         Path temporaryFile = Files.createTempFile(absoluteFilePath.getParent(),
                 absoluteFilePath.getFileName() + ".", ".tmp");
+        IOException saveFailure = null;
         try {
             writeJsonFile(new JsonSerializableTuitionBook(tuitionBook), temporaryFile);
             replaceFile(temporaryFile, absoluteFilePath);
+        } catch (IOException ioe) {
+            saveFailure = ioe;
+            throw ioe;
         } finally {
-            Files.deleteIfExists(temporaryFile);
+            cleanUpTemporaryFile(temporaryFile, saveFailure);
+        }
+    }
+
+    private void cleanUpTemporaryFile(Path temporaryFile, IOException saveFailure) throws IOException {
+        try {
+            deleteTemporaryFile(temporaryFile);
+        } catch (IOException cleanupFailure) {
+            logger.log(Level.WARNING, "Could not remove temporary data file at " + temporaryFile, cleanupFailure);
+            if (saveFailure == null) {
+                throw cleanupFailure;
+            }
+            saveFailure.addSuppressed(cleanupFailure);
         }
     }
 
@@ -176,6 +193,10 @@ public class JsonTuitionBookStorage {
 
     protected void replaceFile(Path source, Path target) throws IOException {
         Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    protected void deleteTemporaryFile(Path temporaryFile) throws IOException {
+        Files.deleteIfExists(temporaryFile);
     }
 
     /**
