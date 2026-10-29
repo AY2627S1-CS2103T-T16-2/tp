@@ -1174,6 +1174,9 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
    1. Relaunch the app using the same terminal command.<br>
        Expected: The most recent window size and location are retained.
 
+   1. Close TuitionBook. In `preferences.json`, change `windowCoordinates` to `{"x":100000,"y":100000}`, then relaunch the app.<br>
+      Expected: TuitionBook opens fully within the primary screen instead of appearing not to open. The saved size is retained when it fits; otherwise, it is reduced to the primary screen's usable size. Existing contacts remain unchanged.
+
 1. Recovering from null window preferences
 
    1. Close TuitionBook. In the folder containing the JAR, replace the contents of `preferences.json` with `{"guiSettings": null}`.
