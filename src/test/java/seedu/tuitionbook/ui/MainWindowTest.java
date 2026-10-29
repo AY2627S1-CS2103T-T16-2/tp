@@ -26,6 +26,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Bounds;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -37,6 +38,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.tuitionbook.commons.core.GuiSettings;
@@ -84,6 +86,54 @@ public class MainWindowTest {
             new MainWindow(stage, new FakeLogic(), Path.of("synthetic.json"));
             assertEquals("TuitionBook", stage.getTitle());
         });
+    }
+
+    @Test
+    public void mainWindow_savedPositionOutsideCurrentScreens_fitsWithinPrimaryScreen() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryBounds = Screen.getPrimary().getVisualBounds();
+            FakeLogic logic = new FakeLogic();
+            logic.guiSettings = new GuiSettings(primaryBounds.getWidth() + 100,
+                    primaryBounds.getHeight() + 100, (int) primaryBounds.getMaxX() + 1000,
+                    (int) primaryBounds.getMaxY() + 1000);
+            Stage stage = new Stage();
+
+            new MainWindow(stage, logic, Path.of("synthetic.json"));
+
+            assertTrue(stage.getX() >= primaryBounds.getMinX());
+            assertTrue(stage.getY() >= primaryBounds.getMinY());
+            assertTrue(stage.getX() + stage.getWidth() <= primaryBounds.getMaxX());
+            assertTrue(stage.getY() + stage.getHeight() <= primaryBounds.getMaxY());
+        });
+    }
+
+    @Test
+    public void mainWindow_savedPositionOnCurrentScreen_preservesBounds() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryBounds = Screen.getPrimary().getVisualBounds();
+            int x = (int) Math.ceil(primaryBounds.getMinX()) + 20;
+            int y = (int) Math.ceil(primaryBounds.getMinY()) + 20;
+            double width = Math.min(700, primaryBounds.getWidth() - 40);
+            double height = Math.min(500, primaryBounds.getHeight() - 40);
+            FakeLogic logic = new FakeLogic();
+            logic.guiSettings = new GuiSettings(width, height, x, y);
+            Stage stage = new Stage();
+
+            new MainWindow(stage, logic, Path.of("synthetic.json"));
+
+            assertEquals(new Rectangle2D(x, y, width, height),
+                    new Rectangle2D(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight()));
+        });
+    }
+
+    @Test
+    public void fitWindowWithinScreen_savedPositionOnSecondaryScreen_preservesPosition() {
+        Rectangle2D secondaryScreen = new Rectangle2D(-1280, 0, 1280, 984);
+        Rectangle2D savedBounds = new Rectangle2D(-1100, 100, 700, 500);
+
+        Rectangle2D restoredBounds = MainWindow.fitWindowWithinScreen(savedBounds, secondaryScreen);
+
+        assertEquals(new Rectangle2D(-1100, 100, 700, 500), restoredBounds);
     }
 
     @Test

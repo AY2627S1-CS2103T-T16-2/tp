@@ -26,6 +26,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Keep the restored main window within a current screen when saved monitor coordinates are no longer available.
 - Write preferences through an atomic temporary-file replacement, and preserve primary contact-save failures when temporary-file cleanup also fails.
 - Report unchanged edits without saving or claiming that contact values changed.
 - Allow students and guardians to share a name and phone number while retaining duplicate checks within each role.

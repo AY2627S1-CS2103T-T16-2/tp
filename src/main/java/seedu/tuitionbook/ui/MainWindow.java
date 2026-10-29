@@ -2,11 +2,14 @@ package seedu.tuitionbook.ui;
 
 import static seedu.tuitionbook.model.Model.SHOW_ALL_PERSONS_REFRESH_COMMAND;
 
+import java.awt.Point;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
@@ -14,6 +17,7 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import seedu.tuitionbook.commons.core.GuiSettings;
 import seedu.tuitionbook.commons.core.LogsCenter;
@@ -82,7 +86,7 @@ public class MainWindow extends UiPart<Stage> {
         contactViewQuery.setTooltip(contactViewQueryTooltip);
 
         // Configure the UI
-        setWindowDefaultSize(logic.getGuiSettings());
+        restoreWindowBounds(logic.getGuiSettings());
 
         setAccelerators();
 
@@ -166,15 +170,39 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Sets the default size based on {@code guiSettings}.
+     * Restores the saved size and position, fitting the window within the current screens when necessary.
      */
-    private void setWindowDefaultSize(GuiSettings guiSettings) {
-        primaryStage.setHeight(guiSettings.getWindowHeight());
-        primaryStage.setWidth(guiSettings.getWindowWidth());
-        if (guiSettings.getWindowCoordinates() != null) {
-            primaryStage.setX(guiSettings.getWindowCoordinates().getX());
-            primaryStage.setY(guiSettings.getWindowCoordinates().getY());
+    private void restoreWindowBounds(GuiSettings guiSettings) {
+        Point savedPosition = guiSettings.getWindowCoordinates();
+        if (savedPosition == null) {
+            primaryStage.setHeight(guiSettings.getWindowHeight());
+            primaryStage.setWidth(guiSettings.getWindowWidth());
+            return;
         }
+
+        Rectangle2D savedBounds = new Rectangle2D(savedPosition.getX(), savedPosition.getY(),
+                Math.max(1, guiSettings.getWindowWidth()), Math.max(1, guiSettings.getWindowHeight()));
+        List<Screen> screens = Screen.getScreensForRectangle(savedBounds.getMinX(), savedBounds.getMinY(),
+                savedBounds.getWidth(), savedBounds.getHeight());
+        Rectangle2D targetScreen = (screens.isEmpty() ? Screen.getPrimary() : screens.getFirst()).getVisualBounds();
+        Rectangle2D restoredBounds = fitWindowWithinScreen(savedBounds, targetScreen);
+        primaryStage.setWidth(restoredBounds.getWidth());
+        primaryStage.setHeight(restoredBounds.getHeight());
+        primaryStage.setX(restoredBounds.getMinX());
+        primaryStage.setY(restoredBounds.getMinY());
+    }
+
+    /** Fits a saved window rectangle within a current screen's visual bounds. */
+    static Rectangle2D fitWindowWithinScreen(Rectangle2D savedBounds, Rectangle2D targetScreen) {
+        double width = Math.min(savedBounds.getWidth(), targetScreen.getWidth());
+        double height = Math.min(savedBounds.getHeight(), targetScreen.getHeight());
+        double x = clamp(savedBounds.getMinX(), targetScreen.getMinX(), targetScreen.getMaxX() - width);
+        double y = clamp(savedBounds.getMinY(), targetScreen.getMinY(), targetScreen.getMaxY() - height);
+        return new Rectangle2D(x, y, width, height);
+    }
+
+    private static double clamp(double value, double minimum, double maximum) {
+        return Math.max(minimum, Math.min(value, maximum));
     }
 
     /**
