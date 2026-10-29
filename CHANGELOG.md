@@ -22,7 +22,7 @@ The format is based on Keep a Changelog.
 - Simplify command feedback, validation errors, the User Guide and in-app Help, including guidance on quoted values and save-failure rollback.
 - Convert pasted tabs and line separators to spaces without executing the command until Enter is pressed.
 - Improve startup and reload diagnostics with affected contacts, guardian-link repair details and recovery steps specific to the failure.
-- Clarify manual file editing, recovery, filtering, index behaviour and diagnostic-log retention in the guides; update examples, use cases, diagrams and acknowledgements.
+- Reorganise the User Guide into command reference, task walkthrough, advanced input and data/recovery sections; clarify rendered spacing, best-effort invalid-data diagnostics, manual file editing, recovery, filtering, index behaviour and diagnostic-log retention; update examples, use cases, diagrams and acknowledgements (#261, #283, #284, #285).
 
 ### Fixed
 
