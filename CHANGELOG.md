@@ -17,6 +17,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Reorganised the User Guide into command reference, task walkthrough, advanced input and data/recovery sections; clarified rendered spacing, command-format recovery, quoted and unquoted escaping, working-set counters, case-variant tag filters and best-effort invalid-data diagnostics (#261, #283, #284, #285).
 - Accept the full unquoted ASCII email local-part character set, including punctuation at either end, while rejecting leading, trailing and consecutive periods, spaces and double quotes; retain the email length limits and domain rules, and clarify how emails containing field-like text such as `t/` are entered.
 - Consolidated the Developer Guide's AI acknowledgement to identify Codex and Claude, their extensive use in TuitionBook-specific development, and human oversight through team code review (#149).
 - Added assertions that execution-dependent save decisions are queried only after a command execution attempt and required every command to declare whether it can mutate contact data for pre-execution rollback checks.
