@@ -23,22 +23,22 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 Index examples refer to the [sample contacts](#sample-contacts-for-examples). Each example starts from the full sample list.
 
-Action     | Format, Examples
------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear**  | `clear confirm`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
-**Exit**   | `exit`
-**Reload** | `reload`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]...` (searches names)<br> e.g., `find rac bob`
-**Help**   | `help`
-**Link**   | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
-**List**   | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/active t/MATH`
-**Tag**    | `tag INDEX t/TAG [t/TAG]...`<br> e.g., `tag 1 t/Math t/Sec 4`
-**Untag**  | `untag INDEX t/TAG [t/TAG]...`<br> e.g., `untag 3 t/Math`
-**Unlink** | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
-**View**   | `view INDEX [v/]`<br> e.g., `view 1 v/`
+Action     | What it does | Format, example
+-----------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+**Add**    | Adds a student or guardian contact. | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Clear**  | Deletes **every contact**. | `clear confirm`
+**Delete** | Deletes the contact at the selected index. | `delete INDEX`<br> e.g., `delete 3`
+**Edit**   | Changes details of the selected contact. | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Exit**   | Closes TuitionBook. | `exit`
+**Reload** | Reloads contacts from the data file. | `reload`
+**Find**   | Searches contact names. | `find KEYWORD [MORE_KEYWORDS]...`<br> e.g., `find rac bob`
+**Help**   | Opens the command help window. | `help`
+**Link**   | Links a student to a guardian. | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
+**List**   | Shows all contacts or filters them by role and tags. | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/active t/MATH`
+**Tag**    | Adds one or more tags to a contact. | `tag INDEX t/TAG [t/TAG]...`<br> e.g., `tag 1 t/Math t/Sec 4`
+**Untag**  | Removes one or more tags from a contact. | `untag INDEX t/TAG [t/TAG]...`<br> e.g., `untag 3 t/Math`
+**Unlink** | Removes a student's guardian link. | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
+**View**   | Shows full details for a contact. | `view INDEX [v/]`<br> e.g., `view 1 v/`
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -156,43 +156,19 @@ Example: `add r/student n/Sam Lee p/98760001 e/samlee@example.com t/Math`
 * `g/` cannot be used with `add`. Add the contact first, then use [`link`](#linking-a-student-to-a-guardian-link).
 * If the new contact matches the current filter, it is added to the end of the displayed list. Otherwise it is saved but not shown, and the result tells you how to find it with `list`.
 
-**Field rules**
+**Contact details at a glance**
 
-* `NAME`:
-  * must start with a letter or number, and can be up to 100 characters long.
-  * may contain letters from any language, numbers, accents, spaces, periods (`.`), apostrophes (`'` or `’`), forward slashes (`/`) and hyphens (`-`). Other symbols, such as `@`, `#` or double quotes, are not allowed.
-  * is saved exactly as you type it, including capital letters and punctuation. Spaces at the start or end are ignored.
-* `PHONE`:
-  * must contain at least 3 digits (0-9) in the main number, not counting any label or extension, and may start with `+`.
-  * can be split into groups of digits using spaces, a hyphen (`-`) or a slash (`/`), for example `9123 4567`, `9123-4567` or `+65/9123/4567`. A group can also be put in brackets, as in `+65 (9123) 4567`.
-  * can end with a label in brackets after a space, such as `(HP)` or `(Office 2)`. A label contains English letters, digits and single spaces, with at least one letter.
-  * can end with an extension written as `x123`, `ext 123` or `ext. 123`.
-  * is displayed exactly as you type it. For example, `+65 (9123) 4567 (HP) ext. 89` is accepted.
-* `EMAIL` must look like `name@example.com`:
-  * The whole email can be up to 254 characters long, including the `@` and periods.
-  * Before the `@`: up to 64 characters, using English letters, digits (0-9), periods (`.`), and these symbols: `` ! # $ % & ' * + - / = ? ^ _ ` { | } ~ ``. A period cannot be first or last, and two periods cannot appear in a row. The other allowed symbols can appear at the start or end; for example, `_alice+@example.com` is accepted. Spaces and double quotes (`"`) are not allowed.
-  * Slashes inside an email do not start another field: `e/alice.t/user@example.com t/Math` stores email `alice.t/user@example.com` and tag `Math`. If an email starts with text such as `t/`, put it directly after `e/`: `e/t/user@example.com`. A space before `t/` starts a tag field, so `edit 1 e/ t/user@example.com` clears the email and sets the tag to `user@example.com`.
-  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part can be up to 63 characters long, must start and end with a letter or digit, and the last part must be at least 2 characters long.
-* `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
-  * Accent marks on their own do not count as visible characters.
-  * Hidden control characters (other than tabs) and broken characters left over from copied text are rejected; retype the address if this happens.
-* Each `TAG`:
-  * may contain English letters, digits (0-9), spaces, and punctuation and symbols from a standard English keyboard, for example `Sec 4`, `Math--Science`, `C++`, `$50/hr` or `Mrs. Lim's`. Letters with accents, other languages and other symbols (such as `—`) are not allowed.
-  * cannot be blank. Spaces at the start or end are ignored.
-  * keeps the exact spacing inside it. The commands below differ only in the space between `Sec` and `4`; the second command contains two spaces. They store different tags and do not match each other in `list`:
+* `NAME`: The contact's name, for example `Sam Lee`, `Mary-Jane O'Neil` or `陈俊杰`.
+* `PHONE`: The number you use to contact them, for example `98760001`, `+65 9876 0001` or `6123 4567 (Office) ext. 89`.
+* `EMAIL`: An optional email address, for example `samlee@example.com`.
+* `ADDRESS`: An optional one-line home address, for example `123 Clementi Road, #01-01`.
+* `TAG`: An optional label for organising contacts, for example `Math`, `Sec 4` or `Active`. A contact can have any number of tags, including none.
 
-    ```text
-    add r/student n/One Space p/90000001 t/Sec 4
-    add r/student n/Two Spaces p/90000002 t/Sec  4
-    ```
-
-    As a visible-space illustration, the values are `Sec·4` and `Sec··4`, where each `·` represents one space and is not typed.
+These examples illustrate common values; they are not a complete list of what is allowed. See [Detailed contact field rules](#detailed-contact-field-rules) for every constraint and exception.
 
 For values containing prefix-like text and for literal quotes or backslashes, see [Quoted values and escaping](#quoted-values-and-escaping).
 
 <box type="tip" seamless>
-
-**Tip:** A contact can have any number of tags, including none.
 
 TuitionBook stops you from adding the same person twice. Two contacts count as the same person when they have the same role, the same name **and** the same phone number. A student and a guardian can therefore share a name and phone number. When comparing:
 
@@ -441,7 +417,11 @@ Format: `exit`
 
 ### Organising levels, subjects and status with tags
 
-Choose a consistent way of naming tags, for example `Sec4` for level, `AMath` for subject, and `Active` or `Inactive` for status. Tags are free-form labels that you choose; TuitionBook doesn't check them against any list. Tag filters ignore letter case, but spaces and punctuation must match.
+<box type="tip" seamless>
+
+**Tip:** Choose a consistent way of naming tags, for example `Sec4` for level, `AMath` for subject, and `Active` or `Inactive` for status. Tags are free-form labels that you choose; TuitionBook doesn't check them against any list. Tag filters ignore letter case, but spaces and punctuation must match.
+
+</box>
 
 This independent workflow uses its own contact, Alex Tan. To try it, start a new, empty folder used only for practice contacts, launch TuitionBook there, then enter these steps in order:
 
@@ -452,7 +432,11 @@ This independent workflow uses its own contact, Alex Tan. To try it, start a new
 1. Enter `list r/student t/Inactive`, then `edit 1 t/Active t/Sec4 t/AMath` to label Alex active again.
 1. Enter `list` to show every contact regardless of status tags.
 
-`Inactive` is just a label: it doesn't hide, archive or lock the contact, and it doesn't affect guardian links. To add or remove one label without retyping the others, use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag). Unlike `list`, these commands treat `Math` and `math` as different stored tags.
+<box type="tip" seamless>
+
+**Remember:** `Inactive` is only a label. It doesn't hide, archive or lock the contact, and it doesn't affect guardian links. To add or remove one label without retyping the others, use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag). Unlike `list`, these commands treat `Math` and `math` as different stored tags.
+
+</box>
 
 ### Keeping displayed indexes stable
 
@@ -479,6 +463,42 @@ Deleting is the exception: contacts below the deleted one move up. Running `list
 --------------------------------------------------------------------------------------------------------------------
 
 ## Advanced command input
+
+### Detailed contact field rules
+
+These rules apply when adding or editing a contact and when TuitionBook reads contacts from its data file.
+
+* `NAME`:
+  * must start with a letter or number, and can be up to 100 characters long.
+  * may contain letters from any language, numbers, accents, spaces, periods (`.`), apostrophes (`'` or `’`), forward slashes (`/`) and hyphens (`-`). Other symbols, such as `@`, `#` or double quotes, are not allowed.
+  * is saved exactly as you type it, including capital letters and punctuation. Spaces at the start or end are ignored.
+* `PHONE`:
+  * must contain at least 3 digits (0-9) in the main number, not counting any label or extension, and may start with `+`.
+  * can be split into groups of digits using spaces, a hyphen (`-`) or a slash (`/`), for example `9123 4567`, `9123-4567` or `+65/9123/4567`. A group can also be put in brackets, as in `+65 (9123) 4567`.
+  * can end with a label in brackets after a space, such as `(HP)` or `(Office 2)`. A label contains English letters, digits and single spaces, with at least one letter.
+  * can end with an extension written as `x123`, `ext 123` or `ext. 123`.
+  * is displayed exactly as you type it. For example, `+65 (9123) 4567 (HP) ext. 89` is accepted.
+* `EMAIL` must look like `name@example.com`:
+  * The whole email can be up to 254 characters long, including the `@` and periods.
+  * Before the `@`: up to 64 characters, using English letters, digits (0-9), periods (`.`), and these symbols: `` ! # $ % & ' * + - / = ? ^ _ ` { | } ~ ``. A period cannot be first or last, and two periods cannot appear in a row. The other allowed symbols can appear at the start or end; for example, `_alice+@example.com` is accepted. Spaces and double quotes (`"`) are not allowed.
+  * Slashes inside an email do not start another field: `e/alice.t/user@example.com t/Math` stores email `alice.t/user@example.com` and tag `Math`. If an email starts with text such as `t/`, put it directly after `e/`: `e/t/user@example.com`. A space before `t/` starts a tag field, so `edit 1 e/ t/user@example.com` clears the email and sets the tag to `user@example.com`.
+  * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part can be up to 63 characters long, must start and end with a letter or digit, and the last part must be at least 2 characters long.
+* `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
+  * Accent marks on their own do not count as visible characters.
+  * Hidden control characters (other than tabs) and broken characters left over from copied text are rejected; retype the address if this happens.
+* Each `TAG`:
+  * may contain English letters, digits (0-9), spaces, and punctuation and symbols from a standard English keyboard, for example `Sec 4`, `Math--Science`, `C++`, `$50/hr` or `Mrs. Lim's`. Letters with accents, other languages and other symbols (such as `—`) are not allowed.
+  * cannot be blank. Spaces at the start or end are ignored.
+  * keeps the exact spacing inside it. The commands below differ only in the space between `Sec` and `4`; the second command contains two spaces. They store different tags and do not match each other in `list`:
+
+    ```text
+    add r/student n/One Space p/90000001 t/Sec 4
+    add r/student n/Two Spaces p/90000002 t/Sec  4
+    ```
+
+    As a visible-space illustration, the values are `Sec·4` and `Sec··4`, where each `·` represents one space and is not typed.
+
+For values containing prefix-like text and for literal quotes or backslashes, see [Quoted values and escaping](#quoted-values-and-escaping).
 
 ### Field boundaries and copied text
 
@@ -531,11 +551,11 @@ Close TuitionBook on both computers and back up both data files. Copy the applic
 
 ### Editing the data file
 
-Your contacts are saved in `data/tuitionbook.json`, inside the folder that contains the TuitionBook JAR. Settings and log files are kept in the same folder. The data file is a JSON text file, so you can edit it with a text editor if you're comfortable doing so.
+Your contacts are saved in `data/tuitionbook.json`, inside the folder that contains the TuitionBook JAR. Settings and log files are kept in the same folder. Normally, manage contacts through TuitionBook's commands and do not edit the JSON file yourself. Manual editing is an advanced option for deliberate data-file work or recovery when the instructions below require it.
 
 <box type="warning" seamless>
 
-**Edit the data file only if you're confident you can do so correctly.** If TuitionBook can't read the file, it starts with an empty contact list (see [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file) below).
+**Avoid manual editing unless it is necessary for recovery or a deliberate advanced task.** A small JSON mistake can make the whole file unreadable. If TuitionBook can't read the file, it starts with an empty contact list (see [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file) below).
 </box>
 
 To edit the file:
