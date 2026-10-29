@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import seedu.tuitionbook.commons.exceptions.IllegalValueException;
 import seedu.tuitionbook.commons.util.JsonUtil;
 import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.person.Email;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
@@ -95,6 +96,17 @@ public class JsonSerializableTuitionBookTest {
                 person("123e4567-e89b-12d3-a456-426614174001", "student", null, "-Bob", "92345678")));
 
         assertThrows(IllegalValueException.class, "Contact 2 in the file: " + Name.MESSAGE_INVALID_START,
+                tuitionBook::toModelType);
+    }
+
+    @Test
+    public void toModelType_invalidEmailWithValidName_prefixesPositionAndName() {
+        JsonSerializableTuitionBook tuitionBook = new JsonSerializableTuitionBook(List.of(
+                person("123e4567-e89b-12d3-a456-426614174000", "student", null, "Alice", "91234567"),
+                new JsonAdaptedPerson("123e4567-e89b-12d3-a456-426614174001", "student", null, "Bob Tan",
+                        "92345678", "bob@@example.com", null, List.of())));
+
+        assertThrows(IllegalValueException.class, "Contact 2 in the file (\"Bob Tan\"): " + Email.MESSAGE_FORMAT,
                 tuitionBook::toModelType);
     }
 

@@ -86,9 +86,13 @@ The sections below give more details of each component.
 
 The **API** of this component is specified in [`Ui.java`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/ui/Ui.java)
 
-<puml src="diagrams/UiClassDiagram.puml" alt="Structure of the UI Component"/>
+<puml src="diagrams/UiClassDiagram.puml" alt="Overview of the UI component"/>
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. `UiManager` coordinates the UI with `Logic` and displays the startup notice when one is available.
+
+`MainWindow`'s UI parts are expanded in the following diagram. It shows the concrete UI parts, their common abstract `UiPart` base class, the relationships managed by `MainWindow`, and the UI parts that display `Person` data or open the User Guide.
+
+<puml src="diagrams/UiPartsClassDiagram.puml" alt="Detailed UI parts and their relationships"/>
 
 `CommandBox` uses `CommandTextField`, a `TextField` subclass that converts pasted tabs and line separators to spaces before JavaFX filters them. This preserves word boundaries while keeping each command on one line. Pasted text is inserted into the field but is not executed until the user presses <kbd>Enter</kbd>.
 
@@ -132,16 +136,26 @@ How the `Logic` component works:
 1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. The second diagram shows the successful save path. If saving throws an `IOException` or `AccessDeniedException`, `LogicManager` restores the contacts and exact working set that existed before the command, then throws a `CommandException`; those rollback calls are deliberately omitted from the diagram.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
-Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
+The following partial class diagram focuses on parser dispatch and command creation. Argument-parsing utilities are shown separately below; command inheritance is omitted.
 
-<puml src="diagrams/ParserClasses.puml" alt="Representative parser classes and their dependencies"/>
+<puml src="diagrams/ParserClasses.puml" alt="Parser dispatch, command creation and delegation to the tag parsing helper"/>
 
-How the parsing works:
+*Parser dispatch and command creation.*
+
 * `TuitionBookParser` creates a command-specific parser for `add`, `edit`, `tag`, `untag`, `delete`, `clear`, `find`, `list`, `link`, `unlink`, and `view`. Each implements `Parser<T extends Command>` for its command type. The diagram shows `AddCommandParser` and `TagCommandParser` as representative examples; the remaining command-specific parsers are omitted.
-* `AddCommandParser` uses `ArgumentTokenizer`, `ArgumentMultimap`, the `Prefix` constants in `CliSyntax`, and `ParserUtil` to parse arguments and construct an `AddCommand`. `EditCommandParser`, `ListCommandParser`, and `ViewCommandParser` also use these utilities. Other parsers use only the helpers they need; for example, `DeleteCommandParser`, `LinkCommandParser`, and `UnlinkCommandParser` use `ParserUtil` to parse indexes.
 * `TagCommandParser` and `UntagCommandParser` delegate argument parsing to the package-private `TagModificationCommandParser` helper, passing their respective command constructor references. The helper uses the same tokenization and validation utilities and invokes the supplied constructor after parsing. It does not implement `Parser`.
-* `ArgumentTokenizer` creates an `ArgumentMultimap`, which stores argument values keyed by `Prefix`. `CliSyntax` defines the recognized prefix constants; `ParserUtil` parses values and indexes without depending on `Prefix`.
+* All commands inherit from `Command`. `AddCommand` extends it directly, while `TagCommand` and `UntagCommand` extend the abstract `TagModificationCommand`.
 * `TuitionBookParser` creates `HelpCommand`, `ExitCommand`, and `ReloadCommand` directly, without a command-specific parser, after rejecting non-blank arguments. In all cases it returns the resulting object as a `Command`.
+
+The next diagram focuses on the shared argument-parsing utilities, using `AddCommandParser` as a representative caller.
+
+<puml src="diagrams/ParserUtilities.puml" alt="AddCommandParser dependencies on shared argument-parsing utilities and prefix relationships"/>
+
+*Shared argument-parsing utilities.*
+
+* `AddCommandParser` uses `ArgumentTokenizer`, `ArgumentMultimap`, the `Prefix` constants in `CliSyntax`, and `ParserUtil` to parse arguments and construct an `AddCommand`. `EditCommandParser`, `ListCommandParser`, and `ViewCommandParser` also use these utilities. Other parsers use only the helpers they need; for example, `DeleteCommandParser`, `LinkCommandParser`, and `UnlinkCommandParser` use `ParserUtil` to parse indexes.
+* `TagModificationCommandParser` uses the same four utilities as `AddCommandParser`; its repeated dependencies are omitted from this diagram.
+* `ArgumentTokenizer` creates an `ArgumentMultimap`, which stores argument values keyed by `Prefix`. `CliSyntax` defines the recognized prefix constants; `ParserUtil` parses values and indexes without depending on `Prefix`.
 
 #### Command-input boundary
 
@@ -149,9 +163,13 @@ How the parsing works:
 
 As a fallback for raw input that reaches it without command-box conversion, `TuitionBookParser` rejects actual line breaks before trimming or dispatching, using Java's `\R` definition (CR/LF, vertical tab, form feed, NEL, line separator and paragraph separator). The error asks the user to remove the line break. This also applies inside quotes and at the input edges; the parser does not split or join multiple commands. Normal GUI paste therefore does not produce this line-break diagnostic.
 
+After the line-break check, the parser rejects other ISO control characters except tab anywhere in the raw command, before tokenization or trimming, with `Your command contains a hidden control character, often from copied text. Retype the command.` JavaFX may remove some controls before the command box can observe them; this check applies to characters that reach the parser. All parser trimming and role normalization use `StringUtil.trimAsciiWhitespace`, which removes only ASCII space, tab, LF, vertical tab, form feed and CR. Other controls remain available to field validation even for direct parser or role callers. In particular, NUL beside an index cannot become a valid index, and an optional field containing only NUL cannot become an instruction to clear it. Quoted values use the same trimming rule after decoding.
+
 Only the extracted command word is lowercased with `Locale.ROOT`. Prefixes, arguments, quoted values, tag identity and the exact `confirm` keyword are not case-normalised. This keeps command lookup independent of the computer's locale without changing contact data.
 
-`ParserUtil.checkForUnsupportedSpaces` diagnoses NBSP (`U+00A0`) and ideographic/full-width space (`U+3000`) only in command words, no-argument command tails and positional-index text. It does not scan field values. Indexed command parsers perform this check before wrapping ordinary invalid-index errors in command-specific usage, and `link` checks before splitting its two indexes. `parseIndex` also checks direct callers. Other invisible-character policies and field validation remain outside this change.
+`ParserUtil.checkForUnsupportedSpaces` diagnoses every non-ASCII code point for which `Character.isSpaceChar` is true (including NBSP `U+00A0`, narrow NBSP `U+202F`, figure space `U+2007` and ideographic space `U+3000`), plus the zero-width spaces `U+180E`, `U+200B`, `U+2060` and `U+FEFF`, only in command words, no-argument command tails and positional-index text. Under Java 25, this also covers every non-ASCII `Character.isWhitespace` code point. It does not scan field values. Indexed command parsers perform this check before wrapping ordinary invalid-index errors in command-specific usage, and `link` checks before splitting its two indexes. `parseIndex` also checks direct callers. Field validation remains the responsibility of each value object.
+
+Lookalike characters are rejected at syntax boundaries instead of being folded to ASCII. The command word must be ASCII before it is lowercased, because Unicode case mapping turns the Kelvin sign `U+212A` into `k` (so `lin\u212A` would otherwise run `link`). `Role` accepts only ASCII input for the same reason: uppercasing `ſtudent`, `ﬆudent` or `guardıan` produces a valid role name. `StringUtil.isNonZeroUnsignedInteger` accepts only ASCII digits before calling `Integer.parseInt`, which otherwise accepts full-width, Arabic-Indic and other Unicode decimal digits; this prevents `delete １` from deleting contact 1. Prefixes are already restricted to ASCII letters by the tokenizer, and phone, email and tag validation are ASCII-only, so lookalikes there are rejected as ordinary field errors. Names deliberately accept letters from any script, so `Аmy` (Cyrillic `А`) and `Amy` are distinct names and are not treated as duplicates; duplicate identity uses NFC case folding, not visual similarity or compatibility (NFKC) folding.
 
 These failures occur during parsing, before command execution, model mutation or contact saving. `help`, `exit` and `reload` with extra arguments never produce an executable command. See [Command input and diagnostics](#command-input-and-diagnostics) for manual scenarios.
 
@@ -188,7 +206,7 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
-`JsonUtil` removes an optional UTF-8 BOM and decodes file bytes with a strict UTF-8 decoder before passing the text to Jackson, while retaining the same string-based parsing for in-memory callers. Invalid UTF-8 and other encoded files are therefore rejected instead of being accepted with replacement characters or silently converted on the next save. The shared mapper also requires the input to end after one JSON value and rejects duplicate property names at any object depth. These checks prevent malformed, trailing, or conflicting content from being accepted and then discarded by a later save. For the configured contact file, parsing failure enters the existing malformed-file recovery path, which moves the original bytes unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
+`JsonUtil` removes an optional UTF-8 BOM and decodes file bytes with a strict UTF-8 decoder before passing the text to Jackson, while retaining the same string-based parsing for in-memory callers. Invalid UTF-8 and other encoded files are therefore rejected instead of being accepted with replacement characters or silently converted on the next save. The shared mapper also requires the input to end after one JSON value and rejects duplicate property names at any object depth. Contact-file reads additionally reject unknown properties at every object depth, while preference-file reads retain their existing unknown-property tolerance. These checks prevent malformed, trailing, conflicting or misspelled contact fields from being accepted and then discarded by a later save. For the configured contact file, parsing failure enters the existing malformed-file recovery path, which moves the original bytes unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
 
 `DataLoadingException` walks its cause chain to produce bounded user guidance for permission denial, invalid contact values, invalid UTF-8 or JSON, and other file-system failures. It does not expose exception types, paths from the cause, or stack traces. `MainApp` carries this guidance through `StartupNotice`; `UiManager` combines it with the actual backup outcome. `ReloadCommand` uses the same guidance while retaining the current contacts and filter after a failed read.
 
@@ -242,9 +260,15 @@ The working set preserves indexes across non-deleting mutations and compacts the
 
 ### Contact field validation
 
+The email local part accepts the unquoted ASCII `atext` characters from [RFC 5322 section 3.2.3](https://www.rfc-editor.org/rfc/rfc5322.html#section-3.2.3), with periods separating nonempty sections. Periods cannot be first, last or consecutive; other allowed punctuation can appear at either edge or form the entire local part. Spaces, double quotes, backslashes, unsupported punctuation and non-ASCII characters are rejected. Domain-label character and edge rules are unchanged. This does not add quoted-local-part parsing or CLI quoting for email values.
+
+`ArgumentTokenizer` recognizes field prefixes only after an ASCII space. Prefix-like text inside an email, such as `alice.t/user@example.com` or `t/user@example.com` immediately after `e/`, remains part of that email. A space before `t/` starts a real tag field instead; `edit 1 e/ t/user@example.com` clears the email and replaces the tags. The tokenizer needs no email-specific exception because supported emails contain no spaces.
+
+Email addresses contain at most 254 ASCII characters in total, at most 64 before the `@`, and at most 63 in each domain label (the parts separated by periods). ASCII character counts equal byte counts. These limits follow the [SMTP local-part and path limits](https://www.rfc-editor.org/rfc/rfc5321.html#section-4.5.3.1) (allowing for the enclosing angle brackets in the 256-byte path limit) and [DNS label limit](https://www.rfc-editor.org/rfc/rfc1035.html#section-2.3.4). `Email.isValidEmail` applies all limits and `Email.getConstraintMessage` reports the violated limit; construction, add/edit parsing, startup loading and reload share these checks. Existing files containing an over-limit email are rejected through the existing whole-file recovery flow; no values are truncated or migrated. The documented ASCII syntax subset remains in force; these checks do not establish mailbox existence or full RFC support.
+
 `Name`, `Phone`, `Email`, and `Address` are model value objects that enforce their constraints at construction. Command parsers trim surrounding input whitespace before constructing these objects, but do not otherwise normalize or truncate accepted values. Names support Unicode letters, numbers and combining marks plus ordinary ASCII spaces (U+0020) and the documented punctuation, including straight and right curly apostrophes, and contain at most 100 Unicode code points. Other Unicode whitespace is not valid inside a name. Phone validation uses a linear parser shared with identity normalization. It accepts an optional leading `+`; plain or parenthesized digit groups separated by one or more ASCII spaces, one hyphen, or one slash; at most one trailing parenthesized annotation; and an optional numeric `x`, `ext`, or `ext.` extension. An annotation is separated from the main number by at least one ASCII space, contains at least one ASCII letter, and otherwise contains only ASCII letters, digits, and single internal spaces. The parser rejects malformed or nested parentheses, empty groups, doubled or trailing punctuation separators, malformed annotations, unsupported letters, and malformed or repeated extensions. Email validation implements the documented ASCII local-part and domain-label subset, including apostrophes and internal consecutive hyphens used by punycode labels, while rejecting consecutive periods.
 
-Addresses contain at most 200 Unicode code points and must contain at least one meaningful visible code point. `Address` excludes code points for which `Character.isWhitespace` or `Character.isSpaceChar` is true, and code points in the Unicode control (`Cc`) or format (`Cf`) categories, when deciding whether content is nonblank. These excluded code points may coexist with visible text, so legitimate combining marks or formatting characters do not make an otherwise visible address invalid. LF, vertical tab, form feed, CR, NEL, line separator and paragraph separator characters are always rejected so every stored address is single-line.
+Addresses contain at most 200 Unicode code points and must contain at least one meaningful visible code point. `Address` excludes code points for which `Character.isWhitespace` or `Character.isSpaceChar` is true, code points in the Unicode control (`Cc`), format (`Cf`) or surrogate (`Cs`) categories, and combining marks (`Mn`, `Mc`, `Me`), when deciding whether content is nonblank; a mark cannot render without a base character. Spaces, formatting characters and combining marks may coexist with visible text, so they do not make an otherwise visible address invalid. LF, vertical tab, form feed, CR, NEL, line separator and paragraph separator characters are always rejected so every stored address is single-line. Other control characters except tab, and unpaired surrogates, are rejected with `Address.MESSAGE_INVALID_CHARACTERS`: an unpaired surrogate cannot be encoded as UTF-8 and would otherwise be silently replaced with `?` on save, and control characters such as NUL are invisible in the UI. Because storage uses the same validation, a data file containing these values through JSON escapes such as `\ud800` or `\u0000` is rejected and preserved through the normal recovery flow.
 
 `NameComparisonUtil#toUnicodeComparisonForm` centralizes the locale-independent transformation used for Unicode name comparison: NFC normalization, lowercase with `Locale.ROOT`, uppercase with `Locale.ROOT`, then NFC normalization again. Lowercasing before uppercasing makes both `Groß` and `GROẞ` become `GROSS`; it also makes `Straße` and `STRASSE` equal and preserves canonical equivalence between composed and decomposed accents. This standard-library sequence is not complete Unicode case folding and does not promise that every linguistically equivalent spelling compares equally.
 
@@ -884,7 +908,7 @@ If the configured data file is missing, TuitionBook starts with an empty contact
 
 #### Malformed-file recovery policy
 
-When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path and bounded cause-specific guidance to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows appropriate permission, encoding/JSON, contact-value, or file-system recovery steps in both a warning dialog and the result display. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and presents the same cause-specific guidance before asking the user to reload or restart.
+When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path and bounded cause-specific guidance to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows appropriate permission, encoding/JSON, contact-value, or file-system recovery steps in both a warning dialog and the result display. The warning keeps the specific problem and backup outcome in its main content while placing numbered restoration steps and each labelled full path once in an expandable, scrollable **Recovery details** section. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and presents the same cause-specific guidance before asking the user to reload or restart.
 
 ### Non-Functional Requirements
 
@@ -940,14 +964,19 @@ Use a fresh, disposable folder with an empty contact list. These steps describe 
    Expected: Both are rejected. Command-word casing does not relax confirmation or field-prefix syntax; the existing contact is unchanged.
 1. For the remaining diagnostic tests, replace each bracketed token with the actual character before submitting; do not type the bracketed name literally. A text editor's Unicode insertion feature can supply these characters.
    * `delete[NBSP]1` and `delete 1[NBSP]`, with `[NBSP]` replaced by U+00A0.
-   * `link 1[IDEOGRAPHIC SPACE]2`, with the token replaced by U+3000.<br>
+   * `link 1[IDEOGRAPHIC SPACE]2`, with the token replaced by U+3000.
+   * `view[NARROW NBSP]1` and `delete 1[ZERO WIDTH SPACE]`, with the tokens replaced by U+202F and U+200B.<br>
    Expected: `Your command contains an unusual space character, often from copied text. Retype the spaces using the spacebar.` is shown; no contact is changed or deleted.
+1. Enter `delete １` (full-width digit one, U+FF11), `delete ١` (Arabic-Indic digit one, U+0661), `lin[KELVIN SIGN] 1 1` (U+212A) and `аdd r/student n/Lookalike p/93456789` (Cyrillic `а`, U+0430) separately.<br>
+   Expected: `delete` reports an invalid-format error with its usage, and the other two report `Unknown command.`; no contact is deleted, linked or added.
 1. Enter `EdIt 1 a/Blk[NBSP]12[IDEOGRAPHIC SPACE]Road`, substituting actual U+00A0 and U+3000 characters inside the address.<br>
    Expected: The address is accepted unchanged under its field rules; syntax diagnostics do not normalise address data.
 1. Enter `ExIt`, restart the app, and enter `view 1`.<br>
    Expected: Normal exit works, there is still exactly one contact, and its name, tag and updated address retain their case and spacing.
+1. Enter `edit 1 a/" " e/ t/`, then `reload` and `view 1`.<br>
+   Expected: The same contact remains with its name, phone and role unchanged; its address, email and tags are absent. Ordinary whitespace and deliberately empty optional fields remain supported.
 
-Pasted tabs and line separators are converted to spaces by the command box, including inside quoted names. Verify this separately using [Pasting separators into the command box](#pasting-separators-into-the-command-box); do not expect a U+2028/U+2029 rejection from normal GUI paste. Raw line-break rejection is a parser fallback covered by `TuitionBookParserTest.parseCommand_lineBreaks_reportCodePointBeforeTrimmingOrDispatch` and the rejected-syntax tests in `LogicManagerTest`, including checks that contacts and stored bytes stay unchanged.
+Pasted tabs and line separators are converted to spaces by the command box, including inside quoted names. Verify this separately using [Pasting separators into the command box](#pasting-separators-into-the-command-box); do not expect a U+2028/U+2029 rejection from normal GUI paste. Raw line-break rejection is a parser fallback covered by `TuitionBookParserTest.parseCommand_lineBreaks_reportedBeforeTrimmingOrDispatch`. JavaFX may remove hidden controls before parsing, so raw control rejection is covered by `TuitionBookParserTest.parseCommand_hiddenControls_rejectedBeforeTrimmingOrDispatch` and `LogicManagerTest.execute_hiddenControls_preserveContactsRelationshipsWorkingSetAndFile`, including checks that contacts, guardian links, the working set and stored bytes stay unchanged without a save attempt.
 
 ### Contact validation and missing add fields
 
@@ -967,6 +996,32 @@ Use a fresh, disposable folder with an empty contact list.
    Expected: TuitionBook reports `Names may only contain letters, numbers, accent marks, spaces, periods (.), apostrophes (' or ’), forward slashes (/), and hyphens (-).` because names accept only ordinary ASCII spaces (U+0020), not other Unicode space characters.
 1. Close TuitionBook and keep separate copies of the valid `data/tuitionbook.json`. In disposable copies, replace the stored address with each of `"\u2003"`, `"\u200B\uFEFF\u2060\u200E"`, `"\u0000\u001F\u007F"`, and `"Line 1\nLine 2"`. In another copy, use the visible address `"Cafe\u0301\u200B Road"`. Launch TuitionBook against each edited file separately.<br>
    Expected: The whitespace-only, format-only, control-only, and line-breaking addresses follow the invalid-data recovery path. The visible `Café Road` address loads with its combining and format code points preserved. A successful invalid-file backup preserves the original bytes and permits new saving; a failed backup leaves the original in place and blocks saving.
+1. In separate disposable copies of the valid data file, replace a contact's stored role with `"\u0000student"` and `"guardian\u001f"`, then launch TuitionBook against each file.<br>
+   Expected: Both follow the invalid-data recovery path with a role constraint error. The hidden control is rejected rather than trimmed into an accepted role; a successful backup preserves the original contents.
+
+### Email character rules
+
+Use a fresh, disposable folder with an empty contact list.
+
+1. Enter `add r/student n/Email Symbols p/91234567 e/!alice+@example.com`, then `edit 1 e/_alice~@example.com`.<br>
+   Expected: Both commands succeed. `view 1` shows `_alice~@example.com`; restarting preserves that exact value.
+1. Enter each command separately: `edit 1 e/.alice@example.com`, `edit 1 e/alice.@example.com`, and `edit 1 e/alice..smith@example.com`.<br>
+   Expected: Leading/trailing periods report `The part of an email before the @ cannot start or end with a period.` Consecutive periods report `The part of an email before the @ cannot have two periods in a row.` The stored email remains `_alice~@example.com`.
+1. Enter `edit 1 e/alice smith@example.com`, then `edit 1 e/"alice"@example.com`.<br>
+   Expected: Both commands report the allowed email characters; neither changes the contact. Double quotes are not interpreted as CLI quoting for email values.
+1. Enter `edit 1 e/alice.t/user@example.com t/Math`, then `edit 1 e/t/user@example.com t/Science`.<br>
+   Expected: The email is first `alice.t/user@example.com`, then `t/user@example.com`. Only the separate, space-prefixed `t/` changes the tags to `Math`, then `Science`. Restarting preserves the second email and its single tag.
+
+### Email length limits
+
+Use a fresh, disposable folder for these commands. These examples use a 64-character local part and a 65-character local part respectively.
+
+1. Enter `add r/student n/Email Boundary p/91234567 e/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com`.<br>
+   Expected: The contact is added. Close and reopen TuitionBook; the email is retained unchanged.
+1. Enter `add r/student n/Too Long p/98765432 e/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com`, then `edit 1 n/Changed e/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com`.<br>
+   Expected: Both commands report `The part of an email before the @ must be at most 64 characters long.` No contact is added or edited, including the proposed name change.
+1. Close TuitionBook and back up the disposable data file. Replace the stored email with `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com` and reopen TuitionBook.<br>
+   Expected: The file is rejected with an invalid-contact email-length explanation and the existing recovery notice. If backing up succeeds, the original file is moved unchanged to a sibling backup and the contact list starts empty; if backing up fails, the original remains in place and saving is blocked. No email is shortened or migrated.
 
 ### Strict prefixes and quoted addresses
 
@@ -1064,7 +1119,7 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
    1. Download the JAR file and copy it into an empty folder.
 
    1. Open a terminal and run `java -jar` followed by the quoted path to the JAR, as described in the UG's [Quick start](UserGuide.md#quick-start).<br>
-      Expected: The GUI opens with an empty contact list and an information dialog explaining that no data file was found. The window size may not be optimal.
+      Expected: The GUI opens with an empty contact list and a compact information dialog explaining that no contact data file was found and that adding a contact will create one. Its wrapped body text uses normal weight and does not repeat the absolute data path shown in the status bar. The window size may not be optimal.
 
    1. Dismiss the dialog and immediately type `list` without clicking the main window.<br>
       Expected: Typing appears in the command box and Enter runs the command.
@@ -1402,6 +1457,8 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: `Math` is removed. The remaining tag is stored as `Sec  4` without surrounding spaces.
 1. Relaunch TuitionBook, enter `list`, then `edit 1 t/first t/second`.<br>
    Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
+1. Enter `edit 1 t/first][second`.<br>
+   Expected: The confirmation ends with `Tags: [first\]\[second]`: one tag whose brackets are escaped, distinguishable from the two separate tags `[first]` and `[second]` in the previous step's confirmation.
 1. Enter `edit 1 t/`.<br>
    Expected: All of Alex's tags are cleared, as before.
 
@@ -1409,7 +1466,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 `LogicManager` uses `canMutate()` to snapshot contacts and exact working-set membership, order, predicate and refresh command before commands that can change data. After successful execution, it saves only when `requiresSave()` returns true; it does not compare the complete contact list. Each contact-changing command starts with a false save decision, resets it at the start of every execution, and sets it only after changing contact data. These commands override `canMutate()` to remain true independently of their latest save decision. Reusing a command after an earlier change therefore cannot cause a stale save request on a later no-change or rejected execution. Read-only commands and `reload` always return false from `requiresSave()`.
 
-`link` requests saving only after creating or replacing a relationship; `unlink` only after removing one. `edit` compares the selected contact's stored values with its proposed replacement and requests saving only when they differ; the replacement preserves the persistent ID. An unchanged edit preserves the working set, as do other unchanged mutations. `clear` checks whether the complete book contains any contacts, including hidden contacts. Successful additions and deletions always request saving. Filter changes alone do not trigger saving. Actual changes retain the existing save-failure rollback.
+`link` requests saving only after creating or replacing a relationship; `unlink` only after removing one. `edit` compares the selected contact's stored values with its proposed replacement and requests saving only when they differ; the replacement preserves the persistent ID. An unchanged edit reports `No changes made: the specified values already match NAME` and preserves the working set, as do other unchanged mutations. The comparison uses stored values, so spelling, capitalization and phone-format changes still count as edits; tag order does not. `clear` checks whether the complete book contains any contacts, including hidden contacts. Successful additions and deletions always request saving. Filter changes alone do not trigger saving. Actual changes retain the existing save-failure rollback.
 
 **Performance:** The save decision no longer scans all contacts: it uses the command's mutation outcome, an emptiness check for `clear`, or a comparison of the selected contact for `edit`. Comparing that contact's fields and tags still depends on their sizes. Before executing a command for which `canMutate()` is true, `LogicManager` creates a rollback snapshot through `new TuitionBook(existingBook)` → `resetData` → `setPersons(List)` → `personsAreUnique`. For a valid book of n distinct contacts, this validation performs `n(n - 1) / 2` pairwise identity comparisons: 499,500 for 1,000 contacts. Each comparison first compares roles, then normalizes and compares names when the roles match, and also normalizes and compares phone numbers when the normalized names match. Snapshot creation therefore takes O(n²) time for fixed contact-field sizes, in addition to its O(n) reference copying; the comparison costs also depend on field lengths. The snapshot is created even when the command ultimately makes no change and skips saving. Avoiding unnecessary saves does not remove this cost or make overall command execution constant-time. No benchmark has established a user-visible speedup, and this complexity analysis alone does not establish whether the two-second performance NFR is met.
 
@@ -1421,7 +1478,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Configure the data file or its folder so saving fails, then enter `edit 2 t/Science`.<br>
       Expected: A save error is reported and Sam's tag remains `Math`. This establishes the save-failure precondition; permission controls differ by operating system.
    1. Enter `link 2 1`, `edit 2 n/Sam Student`, and `edit 2 t/Math`.<br>
-      Expected: Each command completes without a save error and contacts remain unchanged. The link command reports that the relationship already exists.
+      Expected: Each command completes without a save error and contacts remain unchanged. The link command reports that the relationship already exists. Each edit reports `No changes made: the specified values already match Sam Student` Repeating `edit 2 e/`, `edit 2 a/`, or `edit 2 t/Math t/Math` also reports no changes because those fields already match.
    1. Restore write access, then enter `edit 2 t/Science`, `unlink 2`, and `unlink 2` again.<br>
       Expected: The tag change and first unlink persist; the second unlink reports no linked guardian. Restart and verify that Sam has tag `Science` and no guardian link.
 
@@ -1467,7 +1524,10 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. In a fresh, disposable folder, add `add r/student n/Alex Yeoh p/87438807`, close TuitionBook, and keep a separate copy of the valid `data/tuitionbook.json`.
 
    1. Replace the data file's contents with `{broken`. Configure permissions so the app can read the file but cannot move it to a backup, then launch TuitionBook. Permission controls differ by operating system; verify that the startup warning explicitly reports backup failure before continuing.<br>
-      Expected: the original file remains in place and saving is blocked. A successful backup means this scenario's precondition was not established.
+      Expected: the collapsed warning heading says **Saving is paused to protect your data file**. The complete specific loading problem remains readable in the main message, which also states that the original file remains in place and saving is disabled. The **OK** button is visible and keyboard reachable. A successful backup means this scenario's precondition was not established.
+
+   1. Expand **Recovery details** and resize the dialog to approximately 536×420 logical pixels.<br>
+      Expected: The steps distinguish entering `reload` while TuitionBook remains open from closing and restarting. The original path appears once in a labelled, selectable, read-only field. The short details content does not reserve a large empty viewport; if scrolling is needed, it is vertical only. The complete problem, outcome and **OK** button remain reachable.
 
    1. Enter `find Nobody`. While the app stays open, record any current contacts you need and copy the malformed file to a separate safe location. Enter no contact-changing commands during file recovery. Restore normal permissions and replace the malformed file with a copy of the saved valid file, keeping both separate copies. Enter `reload`.<br>
       Expected: the empty working set resets to the full loaded list containing Alex Yeoh, and saving is enabled. Reload does not rewrite the restored file or either separate copy. Merely correcting the file without reloading would leave the write block set.
@@ -1506,7 +1566,16 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Place the JAR file in a fresh, disposable folder. Create a `data` folder beside the JAR file, then create `data/tuitionbook.json` containing exactly `{broken`. Keep a copy of this malformed file for comparison.
 
    1. Launch TuitionBook.<br>
-      Expected: TuitionBook opens with an empty contact list and a warning. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+      Expected: TuitionBook opens with an empty contact list and a compact warning headed **Your contacts are safe in a backup**. The main message reports that the file is not in a format TuitionBook can read, states that the original file is preserved unchanged in a backup file, and warns that newly saved contacts cannot be merged automatically. The original bytes are in `data/tuitionbook.json.backup` (or the next available numbered backup), and `data/tuitionbook.json` is absent.
+
+   1. Expand **Recovery details**.<br>
+      Expected: Numbered restoration steps say to fix the backup file, separately save any new data file, note that the two files cannot be merged automatically, replace the new file with the corrected backup, then either enter `reload` while TuitionBook remains open or close and restart. They also say to re-enter contacts that existed only in the separately saved new file as needed. The backup and new data paths each appear once in a labelled, selectable, read-only field.
+
+   1. On a display configured to 1280×720 at 150% scaling, or using an equivalent 853×480 logical visual area, inspect the collapsed and expanded dialog, then resize it to approximately 536×420 logical pixels.<br>
+      Expected: The dialog remains within the visible screen. Its complete specific problem and backup outcome are not shortened with ellipses. The **OK** button remains visible, clickable and keyboard reachable. The expanded recovery viewport is no taller than its content unless limited by the available screen, shrinks before the main labels or button bar, scrolls vertically when needed, and never scrolls horizontally. Both full paths remain selectable and reachable.
+
+   1. Dismiss the warning.<br>
+      Expected: The result display retains the cause, backup and restoration summary.
 
    1. Enter `help`.<br>
       Expected: The help window opens and the result area displays `Opened help window.` No storage error is displayed.
@@ -1528,8 +1597,14 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[{"name":"Amy Tan","phone":"81234567"},{"name":"-Ben","phone":"82345678"}]}`.<br>
       Expected: The warning includes `The file contains invalid contact data. Contact 2 in the file: Names must start with a letter or number.` TuitionBook opens with an empty contact list and moves the original file unchanged to a backup.
 
+   1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[{"name":"Amy Tan","phone":"81234567"},{"name":"Ben Lim","phone":"82345678","email":"ben@@example.com"}]}`.<br>
+      Expected: The warning includes `The file contains invalid contact data. Contact 2 in the file ("Ben Lim"): Emails must be in the format name@example.com.` TuitionBook opens with an empty contact list and moves the original file unchanged to a backup.
+
    1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}`.<br>
       Expected: TuitionBook rejects the duplicate `persons` property, opens with an empty contact list, and moves the original file unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
+
+   1. Close TuitionBook and repeat in another fresh, disposable folder with `data/tuitionbook.json` containing exactly `{"persons":[{"name":"Amy Tan","phone":"81234567","Email":"amy@example.com","tags":[]}]}`.<br>
+      Expected: TuitionBook rejects the unrecognised `Email` field instead of loading Amy without an email. The warning tells the user to check field spelling and letter case, the app opens with an empty contact list, and the original file is moved unchanged to `data/tuitionbook.json.backup` (or the next available numbered backup).
 
 1. Handling UTF-8 encoding and read-permission failures
 

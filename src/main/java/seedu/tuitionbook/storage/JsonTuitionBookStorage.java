@@ -76,7 +76,7 @@ public class JsonTuitionBookStorage {
         boolean isConfiguredFile = isConfiguredFilePath(filePath);
 
         try {
-            Optional<JsonSerializableTuitionBook> jsonTuitionBook = JsonUtil.readJsonFile(
+            Optional<JsonSerializableTuitionBook> jsonTuitionBook = JsonUtil.readJsonFileRejectingUnknownFields(
                     filePath, JsonSerializableTuitionBook.class);
             if (jsonTuitionBook.isEmpty()) {
                 if (isConfiguredFile) {

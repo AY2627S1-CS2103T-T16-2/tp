@@ -1,5 +1,6 @@
 package seedu.tuitionbook.commons.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.tuitionbook.testutil.Assert.assertThrows;
@@ -43,6 +44,47 @@ public class StringUtilTest {
         // EP: valid numbers, should return true
         assertTrue(StringUtil.isNonZeroUnsignedInteger("1")); // Boundary value
         assertTrue(StringUtil.isNonZeroUnsignedInteger("10"));
+    }
+
+    @Test
+    public void isNonZeroUnsignedInteger_nonAsciiDigits_returnsFalse() {
+        // Integer#parseInt accepts these digits, so they must be rejected explicitly.
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\uFF11")); // full-width 1
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\u0661")); // Arabic-Indic 1
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\u0967")); // Devanagari 1
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("1\uFF10")); // ASCII 1 followed by full-width 0
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\uD835\uDFCF")); // mathematical bold 1
+    }
+
+    @Test
+    public void isNonZeroUnsignedInteger_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> StringUtil.isNonZeroUnsignedInteger(null));
+    }
+
+    //---------------- Tests for isAscii --------------------------------------
+
+    @Test
+    public void isAscii() {
+        assertTrue(StringUtil.isAscii(""));
+        assertTrue(StringUtil.isAscii("link \u0000~\u007F"));
+        assertFalse(StringUtil.isAscii("lin\u212A")); // Kelvin sign
+        assertFalse(StringUtil.isAscii("\u0430dd")); // Cyrillic a
+        assertFalse(StringUtil.isAscii("\u00a0"));
+        assertThrows(NullPointerException.class, () -> StringUtil.isAscii(null));
+    }
+
+    @Test
+    public void trimAsciiWhitespace_preservesControlsUnicodeAndInternalWhitespace() {
+        assertEquals("", StringUtil.trimAsciiWhitespace(""));
+        assertEquals("", StringUtil.trimAsciiWhitespace(" \t\r\n\u000b\f"));
+        assertEquals("Amy", StringUtil.trimAsciiWhitespace(" \t\r\nAmy\f\u000b "));
+        assertEquals("Amy", StringUtil.trimAsciiWhitespace("Amy"));
+        assertEquals("A\t B", StringUtil.trimAsciiWhitespace(" A\t B "));
+        for (String value : new String[] {"\u0000Amy\u0000", "\u001bAmy\u001b", "\u001cAmy\u001c",
+            "\u007fAmy\u007f", "\u00a0Amy\u00a0", "\u2003Amy\u2003", "\u200bAmy\u200b"}) {
+            assertEquals(value, StringUtil.trimAsciiWhitespace(" \t" + value + "\t "));
+        }
+        assertThrows(NullPointerException.class, () -> StringUtil.trimAsciiWhitespace(null));
     }
 
 

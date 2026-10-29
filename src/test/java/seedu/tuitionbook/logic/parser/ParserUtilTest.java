@@ -71,6 +71,62 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parseIndex_otherUnicodeSpaces_reportsCorrection() {
+        for (char space : new char[] {'\u2007', '\u202f', '\u2003', '\u2009', '\u205f', '\u1680', '\u200b', '\ufeff',
+            '\u2060', '\u180e'}) {
+            for (String input : List.of(space + "1", "1" + space, "1" + space + "2")) {
+                assertThrows(ParseException.class, ParserUtil.MESSAGE_UNSUPPORTED_SPACE, () ->
+                        ParserUtil.parseIndex(input));
+            }
+        }
+    }
+
+    @Test
+    public void parseIndex_nonAsciiDigits_throwsInvalidIndex() {
+        for (String input : List.of("\uFF11", "\u0661", "\u0967", "1\uFF10", "\uD835\uDFCF")) {
+            assertThrows(ParseException.class, MESSAGE_INVALID_INDEX, () -> ParserUtil.parseIndex(input));
+        }
+    }
+
+    @Test
+    public void parseIndex_unpairedSurrogateOrControlCharacter_throwsInvalidIndex() {
+        for (String input : List.of("\uD800", "1\uDC00", "1\u00002", "\u0000")) {
+            assertThrows(ParseException.class, MESSAGE_INVALID_INDEX, () -> ParserUtil.parseIndex(input));
+        }
+    }
+
+    @Test
+    public void parseIndex_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseIndex(null));
+    }
+
+    @Test
+    public void parseValues_edgeControlCharacters_areNotTrimmedIntoValidValues() {
+        for (char control : new char[] {'\u0000', '\u0001', '\u001b', '\u001c', '\u007f', '\u0080', '\u009f'}) {
+            for (String index : List.of(control + "1", "1" + control)) {
+                assertThrows(ParseException.class, MESSAGE_INVALID_INDEX, () -> ParserUtil.parseIndex(index));
+            }
+            for (String padding : List.of(control + " ", " " + control)) {
+                assertThrows(ParseException.class, () -> ParserUtil.parseName(padding + VALID_NAME + padding));
+                assertThrows(ParseException.class, () -> ParserUtil.parsePhone(padding + VALID_PHONE + padding));
+                assertThrows(ParseException.class, () -> ParserUtil.parseEmail(padding + VALID_EMAIL + padding));
+                assertThrows(ParseException.class, () -> ParserUtil.parseTag(padding + VALID_TAG_1 + padding));
+                assertThrows(ParseException.class, Role.MESSAGE_CONSTRAINTS, () ->
+                        ParserUtil.parseRole(padding + VALID_ROLE_STUDENT + padding));
+                assertThrows(ParseException.class, Address.MESSAGE_INVALID_CHARACTERS, () ->
+                        ParserUtil.parseAddress(padding + VALID_ADDRESS + padding));
+            }
+        }
+    }
+
+    @Test
+    public void parseRole_nonAsciiLookalike_throwsParseException() {
+        for (String role : List.of("\u017Ftudent", "guard\u0131an", "\uFB06udent", "\u0455tudent")) {
+            assertThrows(ParseException.class, Role.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseRole(role));
+        }
+    }
+
+    @Test
     public void parseName_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> ParserUtil.parseName((String) null));
     }

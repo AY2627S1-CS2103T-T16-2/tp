@@ -1,0 +1,56 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor UI_COLOR_T4
+skinparam classBackgroundColor UI_COLOR
+skinparam ClassFontSize 15
+skinparam PackageFontSize 16
+skinparam ArrowFontSize 12
+skinparam ArrowFontStyle plain
+skinparam nodesep 8
+skinparam ranksep 18
+scale max 800 width
+
+package "UI parts" {
+    abstract class UiPart
+    class MainWindow
+    class CommandBox
+    class ResultDisplay
+    class PersonListPanel
+    class PersonCard
+    class DetailDisplay
+    class StatusBarFooter
+    class HelpWindow
+}
+
+class CommandTextField
+class Person #9D0012
+
+MainWindow *-down-> "1" HelpWindow
+MainWindow *-down-> "0..1" PersonListPanel
+MainWindow *-down-> "0..1" DetailDisplay
+MainWindow *-down-> "0..1" ResultDisplay
+MainWindow ..> CommandBox : <<create>>
+MainWindow ..> StatusBarFooter : <<create>>
+CommandBox ..> CommandTextField : FXML injects
+
+note right of UiPart
+All in the "UI parts" box
+(except UiPart) inherit from UiPart
+end note
+
+
+PersonListPanel ..> PersonCard : <<create>>
+PersonListPanel -right-> "*" Person : working set and\ncomplete list
+PersonCard -down-> "1" Person : displays
+
+' Arrange the detailed view in a few readable horizontal bands.
+MainWindow -[hidden]right-> CommandBox
+CommandBox -[hidden]right-> ResultDisplay
+ResultDisplay -[hidden]down-> PersonListPanel
+PersonListPanel -[hidden]right-> PersonCard
+PersonCard -[hidden]right-> DetailDisplay
+DetailDisplay -[hidden]down-> StatusBarFooter
+StatusBarFooter -[hidden]right-> HelpWindow
+
+@enduml

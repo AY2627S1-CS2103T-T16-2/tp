@@ -66,6 +66,25 @@ public class JsonTuitionBookStorageTest {
     public Path testFolder;
 
     @Test
+    public void readTuitionBook_overlengthEmails_preservesOriginalThroughExistingRecovery() throws Exception {
+        String[] emails = {"a".repeat(65) + "@example.com", "a@" + "b".repeat(64) + ".com",
+            "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62)};
+        for (int i = 0; i < emails.length; i++) {
+            Path file = testFolder.resolve("overlength-email-" + i + ".json");
+            JsonTuitionBookStorage storage = new JsonTuitionBookStorage(file);
+            TuitionBook book = new TuitionBook();
+            book.addPerson(new PersonBuilder().withEmail("valid@example.com").build());
+            storage.saveTuitionBook(book);
+            Files.writeString(file, Files.readString(file).replace("valid@example.com", emails[i]));
+            byte[] originalBytes = Files.readAllBytes(file);
+
+            assertThrows(DataLoadingException.class, storage::readTuitionBook);
+            assertFalse(Files.exists(file));
+            assertArrayEquals(originalBytes, Files.readAllBytes(file.resolveSibling(file.getFileName() + ".backup")));
+        }
+    }
+
+    @Test
     public void readTuitionBook_nullFilePath_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> readTuitionBook(null));
     }
@@ -124,6 +143,69 @@ public class JsonTuitionBookStorageTest {
     }
 
     @Test
+    public void readTuitionBook_nullOrMistypedContactList_movesDataToBackupAndAllowsSaving() throws Exception {
+        for (String contents : List.of("{\"persons\":null}", "{}", "{\"persons\":{}}", "{\"persons\":[[]]}",
+                "[]", "\"text\"")) {
+            assertMalformedDataIsBackedUpAndSavingIsAllowed(contents);
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json"));
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json.backup"));
+        }
+    }
+
+    @Test
+    public void readTuitionBook_mistypedContactValues_movesDataToBackupAndAllowsSaving() throws Exception {
+        String prefix = "{\"persons\":[{\"id\":\"123e4567-e89b-12d3-a456-426614174000\",\"role\":\"student\",";
+        for (String contact : List.of("\"name\":{\"a\":1},\"phone\":\"912\"}]}",
+                "\"name\":\"Amy\",\"phone\":\"912\",\"tags\":\"Math\"}]}",
+                "\"name\":\"Amy\",\"phone\":\"912\",\"tags\":[123]}]}")) {
+            assertMalformedDataIsBackedUpAndSavingIsAllowed(prefix + contact);
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json"));
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json.backup"));
+        }
+    }
+
+    @Test
+    public void readTuitionBook_nullOptionalValues_loadsContactWithoutThem() throws Exception {
+        Path filePath = testFolder.resolve("NullOptionalTuitionBook.json");
+        Files.writeString(filePath, """
+                {"persons":[{"id":"123e4567-e89b-12d3-a456-426614174000","role":"student","guardianId":null,
+                "name":"Amy","phone":"912","email":null,"address":null,"tags":null}]}
+                """);
+
+        Person person = new JsonTuitionBookStorage(filePath).readTuitionBook().orElseThrow().getPersonList().get(0);
+
+        assertTrue(person.getGuardianId().isEmpty());
+        assertTrue(person.getEmail().isEmpty());
+        assertTrue(person.getAddress().isEmpty());
+        assertTrue(person.getTags().isEmpty());
+    }
+
+    @Test
+    public void readTuitionBook_escapedUnpairedSurrogateOrNulAddress_movesDataToBackupAndAllowsSaving()
+            throws Exception {
+        String prefix = "{\"persons\":[{\"id\":\"123e4567-e89b-12d3-a456-426614174000\",\"role\":\"student\","
+                + "\"name\":\"Amy\",\"phone\":\"912\",\"address\":";
+        for (String address : List.of("\"Blk \\ud800\"", "\"Blk\\u0000 1\"", "\"\\u0301\"")) {
+            assertMalformedDataIsBackedUpAndSavingIsAllowed(prefix + address + "}]}");
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json"));
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json.backup"));
+        }
+    }
+
+    @Test
+    public void readTuitionBook_controlPaddedRoles_movesDataToBackupAndAllowsSaving() throws Exception {
+        for (String role : List.of("\\u0000student", "guardian\\u001f")) {
+            String contents = """
+                    {"persons":[{"id":"123e4567-e89b-12d3-a456-426614174000","role":"%s",
+                    "name":"Amy","phone":"91234567"}]}
+                    """.formatted(role);
+            assertMalformedDataIsBackedUpAndSavingIsAllowed(contents);
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json"));
+            Files.delete(testFolder.resolve("MalformedTuitionBook.json.backup"));
+        }
+    }
+
+    @Test
     public void readTuitionBook_trailingJson_movesDataToBackupAndAllowsSaving() throws Exception {
         assertMalformedDataIsBackedUpAndSavingIsAllowed("""
                 {"persons":[]}
@@ -150,6 +232,24 @@ public class JsonTuitionBookStorageTest {
         assertMalformedDataIsBackedUpAndSavingIsAllowed("""
                 {"persons":[],"persons":[{"name":"Hidden Student","phone":"81234567","tags":[]}]}
                 """);
+    }
+
+    @Test
+    public void readTuitionBook_unknownRootField_movesDataToBackupAndAllowsSaving() throws Exception {
+        assertMalformedDataIsBackedUpAndSavingIsAllowed("""
+                {"persons":[],"unexpected":true}
+                """);
+    }
+
+    @Test
+    public void readTuitionBook_unknownContactField_movesDataToBackupAndAllowsSaving() throws Exception {
+        DataLoadingException exception = assertMalformedDataIsBackedUpAndSavingIsAllowed("""
+                {"persons":[{"name":"Test Student","phone":"81234567",
+                 "Email":"student@example.com","tags":[]}]}
+                """);
+        assertEquals("The data file contains a field TuitionBook does not recognise. Check that every field name "
+                + "uses the spelling and letter case shown in the User Guide before trying again.",
+                exception.getUserFacingGuidance());
     }
 
     @Test
@@ -572,17 +672,19 @@ public class JsonTuitionBookStorageTest {
         assertMalformedDataIsBackedUpAndSavingIsAllowed(contents);
     }
 
-    private void assertMalformedDataIsBackedUpAndSavingIsAllowed(String contents) throws Exception {
+    private DataLoadingException assertMalformedDataIsBackedUpAndSavingIsAllowed(String contents) throws Exception {
         Path filePath = testFolder.resolve("MalformedTuitionBook.json");
         Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".backup");
         Files.writeString(filePath, contents);
         JsonTuitionBookStorage storage = new JsonTuitionBookStorage(filePath);
 
-        assertThrows(DataLoadingException.class, storage::readTuitionBook);
+        DataLoadingException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                DataLoadingException.class, storage::readTuitionBook);
         assertFalse(Files.exists(filePath));
         assertEquals(contents, Files.readString(backupPath));
         storage.saveTuitionBook(new TuitionBook());
         assertTrue(Files.exists(filePath));
         assertEquals(contents, Files.readString(backupPath));
+        return exception;
     }
 }

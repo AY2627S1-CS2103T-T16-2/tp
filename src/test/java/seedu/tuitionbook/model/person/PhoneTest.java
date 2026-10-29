@@ -49,6 +49,27 @@ public class PhoneTest {
     }
 
     @Test
+    public void isValidPhone_nonAsciiDigitsAndSeparators_returnsFalse() {
+        String[] invalidPhones = {
+            "\uFF19\uFF11\uFF12\uFF13", // full-width digits
+            "\u0669\u0661\u0662\u0663", // Arabic-Indic digits
+            "912\uFF13", // one full-width digit
+            "\uFF0B65 91234567", // full-width plus sign
+            "9123\u20134567", // en dash separator
+            "9123\u22124567", // minus sign separator
+            "9123\u22154567", // division slash separator
+            "9123\u00a04567", // no-break space separator
+            "9123\u202f4567", // narrow no-break space separator
+            "9123\u200b4567", // zero-width space
+            "91234567 (H\u0420)", // Cyrillic letter in annotation
+            "91234567 \u0445123" // Cyrillic letter as extension marker
+        };
+        for (String phone : invalidPhones) {
+            assertFalse(Phone.isValidPhone(phone), phone);
+        }
+    }
+
+    @Test
     public void isValidPhone() {
         // null phone number
         assertThrows(NullPointerException.class, () -> Phone.isValidPhone(null));

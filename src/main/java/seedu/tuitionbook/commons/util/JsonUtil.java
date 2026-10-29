@@ -39,6 +39,8 @@ public class JsonUtil {
             .configure(JsonParser.Feature.STRICT_DUPLICATE_DETECTION, true)
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+    private static final ObjectMapper strictObjectMapper = objectMapper.copy()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
 
     static <T> void serializeObjectToJsonFile(Path jsonFile, T objectToSerialize) throws IOException {
         FileUtil.writeToFile(jsonFile, toJsonString(objectToSerialize));
@@ -46,6 +48,11 @@ public class JsonUtil {
 
     static <T> T deserializeObjectFromJsonFile(Path jsonFile, Class<T> classOfObjectToDeserialize)
             throws IOException {
+        return deserializeObjectFromJsonFile(jsonFile, classOfObjectToDeserialize, objectMapper);
+    }
+
+    private static <T> T deserializeObjectFromJsonFile(Path jsonFile, Class<T> classOfObjectToDeserialize,
+            ObjectMapper mapper) throws IOException {
         byte[] contents = Files.readAllBytes(jsonFile);
         int jsonStart = hasUtf8Bom(contents) ? UTF_8_BOM.length : 0;
         String json = StandardCharsets.UTF_8.newDecoder()
@@ -53,7 +60,9 @@ public class JsonUtil {
                 .onUnmappableCharacter(CodingErrorAction.REPORT)
                 .decode(ByteBuffer.wrap(contents, jsonStart, contents.length - jsonStart))
                 .toString();
-        return fromJsonString(json, classOfObjectToDeserialize);
+        try (JsonParser parser = mapper.getFactory().createParser(json)) {
+            return fromJsonParser(parser, classOfObjectToDeserialize, mapper);
+        }
     }
 
     private static boolean hasUtf8Bom(byte[] contents) {
@@ -73,12 +82,17 @@ public class JsonUtil {
      */
     public static <T> Optional<T> readJsonFile(
             Path filePath, Class<T> classOfObjectToDeserialize) throws DataLoadingException {
+        return readJsonFile(filePath, classOfObjectToDeserialize, objectMapper);
+    }
+
+    private static <T> Optional<T> readJsonFile(Path filePath, Class<T> classOfObjectToDeserialize,
+            ObjectMapper mapper) throws DataLoadingException {
         requireNonNull(filePath);
 
         T jsonFile;
 
         try {
-            jsonFile = deserializeObjectFromJsonFile(filePath, classOfObjectToDeserialize);
+            jsonFile = deserializeObjectFromJsonFile(filePath, classOfObjectToDeserialize, mapper);
         } catch (NoSuchFileException e) {
             return Optional.empty();
         } catch (IOException e) {
@@ -91,6 +105,17 @@ public class JsonUtil {
         }
 
         return Optional.of(jsonFile);
+    }
+
+    /**
+     * Returns the JSON object from the given file while rejecting fields not declared by the target type.
+     * Returns {@code Optional.empty()} if the file is not found.
+     *
+     * @throws DataLoadingException if loading the JSON file fails
+     */
+    public static <T> Optional<T> readJsonFileRejectingUnknownFields(
+            Path filePath, Class<T> classOfObjectToDeserialize) throws DataLoadingException {
+        return readJsonFile(filePath, classOfObjectToDeserialize, strictObjectMapper);
     }
 
     /**
@@ -115,12 +140,13 @@ public class JsonUtil {
      */
     public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
         try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
-            return fromJsonParser(parser, instanceClass);
+            return fromJsonParser(parser, instanceClass, objectMapper);
         }
     }
 
-    private static <T> T fromJsonParser(JsonParser parser, Class<T> instanceClass) throws IOException {
-        T result = objectMapper.readValue(parser, instanceClass);
+    private static <T> T fromJsonParser(JsonParser parser, Class<T> instanceClass, ObjectMapper mapper)
+            throws IOException {
+        T result = mapper.readValue(parser, instanceClass);
         if (parser.nextToken() != null) {
             throw new JsonParseException(parser, "Unexpected trailing JSON content.");
         }
