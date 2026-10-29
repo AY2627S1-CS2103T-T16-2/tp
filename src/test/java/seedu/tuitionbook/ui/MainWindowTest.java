@@ -127,13 +127,19 @@ public class MainWindowTest {
     }
 
     @Test
-    public void fitWindowWithinScreen_savedPositionOnSecondaryScreen_preservesPosition() {
-        Rectangle2D secondaryScreen = new Rectangle2D(-1280, 0, 1280, 984);
-        Rectangle2D savedBounds = new Rectangle2D(-1100, 100, 700, 500);
+    public void restoreWindowBounds_savedWindowSpansScreens_usesScreenContainingTopLeft() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryScreen = new Rectangle2D(0, 0, 1920, 1040);
+            Rectangle2D secondaryScreen = new Rectangle2D(-1280, 0, 1280, 984);
+            GuiSettings savedSettings = new GuiSettings(700, 500, -100, 100);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, new FakeLogic(), Path.of("synthetic.json"));
 
-        Rectangle2D restoredBounds = MainWindow.fitWindowWithinScreen(savedBounds, secondaryScreen);
+            mainWindow.restoreWindowBounds(savedSettings, List.of(primaryScreen, secondaryScreen), primaryScreen);
 
-        assertEquals(new Rectangle2D(-1100, 100, 700, 500), restoredBounds);
+            assertEquals(new Rectangle2D(-700, 100, 700, 500),
+                    new Rectangle2D(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight()));
+        });
     }
 
     @Test

@@ -173,6 +173,13 @@ public class MainWindow extends UiPart<Stage> {
      * Restores the saved size and position, fitting the window within the current screens when necessary.
      */
     private void restoreWindowBounds(GuiSettings guiSettings) {
+        List<Rectangle2D> screenBounds = Screen.getScreens().stream().map(Screen::getVisualBounds).toList();
+        restoreWindowBounds(guiSettings, screenBounds, Screen.getPrimary().getVisualBounds());
+    }
+
+    /** Restores saved bounds using the supplied screens, which permits deterministic multi-screen testing. */
+    void restoreWindowBounds(GuiSettings guiSettings, List<Rectangle2D> screenBounds,
+            Rectangle2D primaryScreenBounds) {
         Point savedPosition = guiSettings.getWindowCoordinates();
         if (savedPosition == null) {
             primaryStage.setHeight(guiSettings.getWindowHeight());
@@ -182,9 +189,11 @@ public class MainWindow extends UiPart<Stage> {
 
         Rectangle2D savedBounds = new Rectangle2D(savedPosition.getX(), savedPosition.getY(),
                 Math.max(1, guiSettings.getWindowWidth()), Math.max(1, guiSettings.getWindowHeight()));
-        List<Screen> screens = Screen.getScreensForRectangle(savedBounds.getMinX(), savedBounds.getMinY(),
-                savedBounds.getWidth(), savedBounds.getHeight());
-        Rectangle2D targetScreen = (screens.isEmpty() ? Screen.getPrimary() : screens.getFirst()).getVisualBounds();
+        Rectangle2D targetScreen = screenBounds.stream()
+                .filter(screen -> screen.contains(savedBounds.getMinX(), savedBounds.getMinY()))
+                .findFirst()
+                .or(() -> screenBounds.stream().filter(screen -> screen.intersects(savedBounds)).findFirst())
+                .orElse(primaryScreenBounds);
         Rectangle2D restoredBounds = fitWindowWithinScreen(savedBounds, targetScreen);
         primaryStage.setWidth(restoredBounds.getWidth());
         primaryStage.setHeight(restoredBounds.getHeight());
