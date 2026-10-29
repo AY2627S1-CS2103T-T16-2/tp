@@ -3,6 +3,10 @@
 !include <office/Concepts/documents>
 !include <office/Users/user>
 !include style.puml
+scale 520 width
+skinparam ClassFontSize 18
+skinparam nodesep 25
+skinparam ranksep 30
 
 Package " "<<Rectangle>>{
     Class UI UI_COLOR
