@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.ModelManager;
+import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
 import seedu.tuitionbook.model.tag.Tag;
@@ -230,7 +232,9 @@ public class TagModificationCommandTest {
     public void equals_distinguishesOperationIndexAndTags() {
         TagCommand tag = new TagCommand(INDEX_FIRST_PERSON, tags("Math"));
         assertEquals(tag, tag);
-        assertEquals(tag, new TagCommand(INDEX_FIRST_PERSON, tags("Math")));
+        TagCommand tagCopy = new TagCommand(INDEX_FIRST_PERSON, tags("Math"));
+        assertEquals(tag, tagCopy);
+        assertEquals(tag.hashCode(), tagCopy.hashCode());
         assertEquals(new UntagCommand(INDEX_FIRST_PERSON, tags("Math")),
                 new UntagCommand(INDEX_FIRST_PERSON, tags("Math")));
         assertNotEquals(tag, new UntagCommand(INDEX_FIRST_PERSON, tags("Math")));
@@ -242,11 +246,11 @@ public class TagModificationCommandTest {
     }
 
     private static Model modelWith(Person... persons) {
-        Model model = new ModelManager();
+        TuitionBook tuitionBook = new TuitionBook();
         for (Person person : persons) {
-            model.addPerson(person);
+            tuitionBook.addPerson(person);
         }
-        return model;
+        return new ModelManager(tuitionBook, new UserPrefs());
     }
 
     private static Set<Tag> tags(String... names) {

@@ -112,6 +112,11 @@ public class LinkCommand extends Command {
     }
 
     @Override
+    public int hashCode() {
+        return java.util.Objects.hash(studentIndex, guardianIndex);
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this).add("studentIndex", studentIndex).add("guardianIndex", guardianIndex)
                 .toString();

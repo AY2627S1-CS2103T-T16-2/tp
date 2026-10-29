@@ -159,6 +159,11 @@ public class ViewCommand extends Command {
     }
 
     @Override
+    public int hashCode() {
+        return java.util.Objects.hash(targetIndex, shouldShowFullLinkedDetails);
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("targetIndex", targetIndex)

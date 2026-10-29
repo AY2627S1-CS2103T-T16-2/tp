@@ -122,6 +122,11 @@ abstract class TagModificationCommand extends Command {
     }
 
     @Override
+    public int hashCode() {
+        return java.util.Objects.hash(getClass(), index, tags);
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this).add("index", index).add("tags", tags).toString();
     }

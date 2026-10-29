@@ -9,6 +9,7 @@ import static seedu.tuitionbook.testutil.TypicalPersons.ALICE;
 import static seedu.tuitionbook.testutil.TypicalPersons.BENSON;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
@@ -101,6 +102,94 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void addPerson_studentLinkedToMissingGuardian_rejectedWithoutMutation() {
+        Person orphanedStudent = new PersonBuilder().withGuardianId(UUID.randomUUID()).build();
+
+        assertThrows(IllegalArgumentException.class, () -> modelManager.addPerson(orphanedStudent));
+
+        assertTrue(modelManager.getTuitionBook().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void addPerson_studentLinkedToStudent_rejectedWithoutMutation() {
+        Person existingStudent = new PersonBuilder().withName("Existing Student").withPhone("90000001").build();
+        Person linkedStudent = new PersonBuilder().withName("Linked Student").withPhone("90000002")
+                .withGuardianId(existingStudent.getId()).build();
+        modelManager.addPerson(existingStudent);
+
+        assertThrows(IllegalArgumentException.class, () -> modelManager.addPerson(linkedStudent));
+
+        assertEquals(List.of(existingStudent), modelManager.getTuitionBook().getPersonList());
+    }
+
+    @Test
+    public void addPerson_duplicateId_rejectedWithoutMutation() {
+        Person original = new PersonBuilder().withName("Original Student").withPhone("90000001").build();
+        Person duplicateId = new PersonBuilder().withName("Different Guardian").withPhone("90000002")
+                .withRole(Role.GUARDIAN).withId(original.getId()).build();
+        modelManager.addPerson(original);
+
+        assertThrows(IllegalArgumentException.class, () -> modelManager.addPerson(duplicateId));
+
+        assertEquals(List.of(original), modelManager.getTuitionBook().getPersonList());
+    }
+
+    @Test
+    public void setPerson_changedGuardianRoleOrId_rejectedWithoutMutation() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withGuardian(guardian).build();
+        modelManager.addPerson(guardian);
+        modelManager.addPerson(student);
+        List<Person> originalPersons = List.copyOf(modelManager.getTuitionBook().getPersonList());
+
+        Person changedRole = new PersonBuilder(guardian).withRole(Role.STUDENT).build();
+        Person changedId = new PersonBuilder(guardian).withId(UUID.randomUUID()).build();
+        assertThrows(IllegalArgumentException.class, () -> modelManager.setPerson(guardian, changedRole));
+        assertThrows(IllegalArgumentException.class, () -> modelManager.setPerson(guardian, changedId));
+
+        assertEquals(originalPersons, modelManager.getTuitionBook().getPersonList());
+    }
+
+    @Test
+    public void setPerson_studentLinkedToMissingGuardian_rejectedWithoutMutation() {
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000001").build();
+        modelManager.addPerson(student);
+        Person orphanedEdit = new PersonBuilder(student).withGuardianId(UUID.randomUUID()).build();
+
+        assertThrows(IllegalArgumentException.class, () -> modelManager.setPerson(student, orphanedEdit));
+
+        assertEquals(List.of(student), modelManager.getTuitionBook().getPersonList());
+    }
+
+    @Test
+    public void deletePerson_equalTargetWithDifferentId_clearsActualGuardianLinks() {
+        Person guardian = new PersonBuilder().withName("Grace Guardian").withPhone("90000001")
+                .withRole(Role.GUARDIAN).build();
+        Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
+                .withGuardian(guardian).build();
+        modelManager.addPerson(guardian);
+        modelManager.addPerson(student);
+        Person equalGuardianWithDifferentId = new PersonBuilder(guardian).withId(UUID.randomUUID()).build();
+
+        modelManager.deletePerson(equalGuardianWithDifferentId);
+
+        assertEquals(List.of(student.clearGuardian()), modelManager.getTuitionBook().getPersonList());
+    }
+
+    @Test
+    public void setTuitionBook_studentLinkedToMissingGuardian_rejectedWithoutMutation() {
+        modelManager.addPerson(ALICE);
+        TuitionBook invalidReplacement = new TuitionBook();
+        invalidReplacement.addPerson(new PersonBuilder().withGuardianId(UUID.randomUUID()).build());
+
+        assertThrows(IllegalArgumentException.class, () -> modelManager.setTuitionBook(invalidReplacement));
+
+        assertEquals(List.of(ALICE), modelManager.getTuitionBook().getPersonList());
+    }
+
+    @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredPersonList().remove(0));
     }
@@ -181,6 +270,7 @@ public class ModelManagerTest {
         modelManager = new ModelManager(tuitionBook, userPrefs);
         ModelManager modelManagerCopy = new ModelManager(tuitionBook, userPrefs);
         assertTrue(modelManager.equals(modelManagerCopy));
+        assertEquals(modelManager.hashCode(), modelManagerCopy.hashCode());
 
         // same object -> returns true
         assertTrue(modelManager.equals(modelManager));
