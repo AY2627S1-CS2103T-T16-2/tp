@@ -45,6 +45,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Corrected Developer Guide manual-test results for Unicode substring search, preserved significant repeated spaces in copyable tag, JSON, and phone examples, and distinguished startup recovery from reload outcomes (#262, #288).
 - Split the UI UML documentation into a component overview and a detailed UI-parts diagram with a note documenting the relevant inheritance relationships while retaining standard UML notation.
 - Reject unrecognised fields in the contact data file and preserve the original file through load recovery, preventing misspelled or incorrectly cased field names from silently discarding values (#292).
 - Reject lookalike and invisible characters at command-syntax boundaries: non-ASCII digits are no longer accepted as indexes (so `delete １` no longer deletes contact 1), a Kelvin-sign `linK` no longer runs `link`, `ſtudent`/`guardıan` are no longer accepted as roles, and every Unicode or zero-width space in command words and indexes now shows the unusual-space hint (#142).
