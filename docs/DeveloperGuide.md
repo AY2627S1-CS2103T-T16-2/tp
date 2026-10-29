@@ -499,7 +499,21 @@ US18/US19 needs are supported through generic tags: `t/Sec4 t/AMath` records a l
 
 #### Tag identity and compatibility
 
-[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. `Tag` trims surrounding ASCII spaces for both command and JSON construction, while internal spaces remain significant (`Sec 4` and `Sec  4` differ). Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
+[#155](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/155), implemented in [#160](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/160), deliberately broadens #152's single-hyphen rule to allow natural spaced labels and printable ASCII punctuation. `Tag` trims surrounding ASCII spaces for both command and JSON construction, while internal spaces remain significant. For example, these are different tags:
+
+One internal space:
+
+```text
+Sec 4
+```
+
+Two internal spaces:
+
+```text
+Sec  4
+```
+
+Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
 
 Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Surrounding ASCII spaces are trimmed when tags are loaded; tags that differ only by that padding are merged into one, and the merged value is written on the next save. Any other narrowing of validation or identity still requires an explicit compatibility plan.
 
@@ -521,14 +535,14 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 ### Use cases
 
-(For all use cases below, the **System** is `TuitionBook` and the **Actor** is the `Private tutor`, unless specified otherwise.)
+(For all use cases below, **System** refers to `TuitionBook` and **User** refers to the `Private tutor`, unless specified otherwise.)
 
-**Use case: UC01 Add a contact**
+#### Use case: UC01 Add a contact
 
 **MSS**
 
 1.  User requests to add a contact, providing the contact's role, name, and phone number, and optionally its email address, home address, and tags.
-2.  TuitionBook adds the contact and displays confirmation, including its role.
+2.  System adds the contact and displays confirmation, including its role.
 
     Use case ends.
 
@@ -536,17 +550,23 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 1a. A provided detail is invalid, or a mandatory detail is missing.
 
-    * 1a1. TuitionBook shows an error message describing the invalid input.
+    * 1a1. System shows an error message describing the invalid input.
 
       Use case ends.
 
-* 1b. A contact with the same role, normalised name, and normalised phone number already exists.
+* 1b. An existing contact has the same role, normalised name, and normalised phone number as the proposed contact.
 
-    * 1b1. TuitionBook informs the user that the contact already exists.
+    * 1b1. System informs the User that the contact already exists.
 
       Use case ends.
 
-**Use case: UC02 Link a guardian to a student**
+* 2a. System cannot save the added contact.
+
+    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+
+      Use case ends.
+
+#### Use case: UC02 Link a guardian to a student
 
 **Preconditions**
 
@@ -559,7 +579,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  User requests to link a displayed student to a displayed guardian.
-2.  TuitionBook records the guardian link and displays confirmation of the relationship.
+2.  System records the guardian link and displays confirmation of the relationship.
 
     Use case ends.
 
@@ -567,29 +587,35 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 1a. Either specified index is missing, malformed, or does not refer to a contact in the current list.
 
-    * 1a1. TuitionBook shows an error message.
+    * 1a1. System explains that one or both specified indexes are invalid.
 
       Use case ends.
 
 * 1b. The contact selected as the student is not a student, or the contact selected as the guardian is not a guardian.
 
-    * 1b1. TuitionBook shows an error message describing the role mismatch.
+    * 1b1. System shows an error message describing the role mismatch.
 
       Use case ends.
 
 * 1c. The student is already linked to a different guardian.
 
-    * 1c1. TuitionBook replaces the guardian link and displays confirmation of the replacement relationship.
+    * 1c1. System replaces the guardian link and displays confirmation of the replacement relationship.
 
       Use case ends.
 
 * 1d. The student is already linked to the specified guardian.
 
-    * 1d1. TuitionBook reports that the relationship already exists without changing it.
+    * 1d1. System reports that the relationship already exists without changing it.
 
       Use case ends.
 
-**Use case: UC03 Unlink a guardian from a student**
+* 2a. System cannot save the new or replacement guardian link.
+
+    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+
+      Use case ends.
+
+#### Use case: UC03 Unlink a guardian from a student
 
 **Preconditions**
 
@@ -602,7 +628,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  User requests to unlink a displayed student.
-2.  TuitionBook removes the guardian link and displays confirmation naming the student and former guardian.
+2.  System removes the guardian link and displays confirmation naming the student and former guardian.
 
     Use case ends.
 
@@ -610,23 +636,29 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 1a. The specified index is missing, malformed, or does not refer to a contact in the current list.
 
-    * 1a1. TuitionBook shows an error message.
+    * 1a1. System explains that the specified index is invalid.
 
       Use case ends.
 
 * 1b. The selected contact is not a student.
 
-    * 1b1. TuitionBook shows an error message describing the role mismatch.
+    * 1b1. System shows an error message describing the role mismatch.
 
       Use case ends.
 
 * 1c. The selected student has no guardian link.
 
-    * 1c1. TuitionBook reports that the student has no linked guardian without changing it.
+    * 1c1. System reports that the student has no linked guardian without changing it.
 
       Use case ends.
 
-**Use case: UC04 Edit a contact**
+* 2a. System cannot save the removed guardian link.
+
+    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+
+      Use case ends.
+
+#### Use case: UC04 Edit a contact
 
 **Preconditions**
 
@@ -634,37 +666,49 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 **MSS**
 
-1.  User submits an edit request identifying a contact by its index in the current contact list and providing one or more replacement contact details.
-2.  TuitionBook updates the supplied details, retains all unspecified details, and displays confirmation.
+1.  User requests to edit a contact in the current contact list, providing one or more replacement contact details.
+2.  System updates the supplied details, retains all unspecified details, and displays confirmation.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The specified index does not refer to a contact in the current list.
+* 1a. The specified index is missing, malformed, or does not refer to a contact in the current contact list.
 
-    * 1a1. TuitionBook shows an error message.
+    * 1a1. System explains that the specified index is invalid.
 
       Use case ends.
 
 * 1b. The request is invalid.
 
-    * 1b1. TuitionBook shows an error message describing the invalid request.
+    * 1b1. System shows an error message describing the invalid request.
 
       Use case ends.
 
-* 1c. The requested update would duplicate another contact.
+* 1c. The requested update would give the contact the same role, normalised name, and normalised phone number as another contact.
 
-    * 1c1. TuitionBook informs the user that the contact already exists.
+    * 1c1. System informs the User that the contact already exists.
 
       Use case ends.
 
-**Use case: UC05 Find contacts by name**
+* 2a. The supplied details are identical to the contact's stored details.
+
+    * 2a1. System reports the edit as successful without changing or saving contact data.
+
+      Use case ends.
+
+* 2b. System cannot save the edited contact.
+
+    * 2b1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+
+      Use case ends.
+
+#### Use case: UC05 Find contacts by name
 
 **MSS**
 
-1.  User submits a find request with one or more name substrings.
-2.  TuitionBook applies the documented locale-independent Unicode comparison form to each stored name and requested substring, then displays each contact whose transformed name contains at least one transformed substring using literal matching. Search does not apply duplicate identity's ASCII-space trimming or collapsing. Other contact fields and linked contact names are not searched.
+1.  User requests contacts whose names contain one or more supplied substrings.
+2.  System displays each contact whose name matches at least one supplied substring according to the documented name-matching rules. Details other than the contact's name are not searched.
 
     Use case ends.
 
@@ -672,11 +716,11 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 1a. No name substring is provided.
 
-    * 1a1. TuitionBook shows an error message describing the invalid request.
+    * 1a1. System explains that at least one name substring is required.
 
       Use case ends.
 
-**Use case: UC06 View contact details**
+#### Use case: UC06 View contact details
 
 **Preconditions**
 
@@ -684,21 +728,20 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 **MSS**
 
-1.  User submits a view request identifying a contact by its index in the current contact list.
-2.  TuitionBook displays the contact's role, contact details, and tags.
-3.  TuitionBook displays relationship details: for a student, the linked guardian's contact information or an indication that no guardian is linked; for a guardian, the names of linked students or an indication that none are linked.
+1.  User requests to view a contact in the current contact list and chooses the level of detail for linked contacts.
+2.  System displays the selected contact and its recorded relationships at the requested level of detail.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The specified index does not refer to a contact in the current list.
+* 1a. The specified index is missing, malformed, or does not refer to a contact in the current contact list.
 
-    * 1a1. TuitionBook shows an error message.
+    * 1a1. System explains that the specified index is invalid.
 
       Use case ends.
 
-**Use case: UC07 Delete a contact**
+#### Use case: UC07 Delete a contact
 
 **Preconditions**
 
@@ -711,84 +754,56 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  User requests to delete a displayed contact.
-2.  TuitionBook deletes the contact and clears any guardian links involving it, retaining all other contacts.
-3.  TuitionBook reports the deletion and, where applicable, the number and names of students whose guardian links were cleared.
+2.  System deletes the contact and clears any guardian links involving it, retaining all other contacts.
+3.  System reports the deletion and, where applicable, the number and names of students whose guardian links were cleared.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The specified index does not refer to a contact in the current list.
+* 1a. The specified index is missing, malformed, or does not refer to a contact in the current contact list.
 
-    * 1a1. TuitionBook shows an error message.
-
-      Use case ends.
-
-* 2a. TuitionBook cannot save the deletion.
-
-    * 2a1. TuitionBook shows a storage error, restores the deleted contact and any guardian links cleared by the request, restores the exact previous working set (membership, order and originating query), and does not report a successful deletion.
+    * 1a1. System explains that the specified index is invalid.
 
       Use case ends.
 
-**Use case: UC08 Filter contacts by role**
+* 2a. System cannot save the deletion.
+
+    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+
+      Use case ends.
+
+#### Use case: UC08 Filter contacts
 
 **MSS**
 
-1.  User requests contacts with a specified role.
-2.  TuitionBook replaces the active filter, displays only contacts with that role, and reports the number of matches.
+1.  User requests contacts matching a specified role, one or more specified tags, or both.
+2.  System replaces the active filter, displays the contacts matching all supplied criteria, and reports the number of matches.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The request is malformed, or the supplied role is invalid.
+* 1a. The request is malformed, or a supplied role or tag is invalid.
 
-    * 1a1. TuitionBook shows an error message describing the invalid request and retains the active filter.
-
-      Use case ends.
-
-* 2a. No contact has the specified role.
-
-    * 2a1. TuitionBook displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
+    * 1a1. System shows an error message describing the invalid request and retains the active filter.
 
       Use case ends.
 
-**Use case: UC09 Filter contacts by tags**
+* 2a. No contact matches all supplied criteria.
+
+    * 2a1. System displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
+
+      Use case ends.
+
+#### Use case: UC09 Reload contact data
 
 **MSS**
 
-1.  User requests contacts tagged with both `Sec4` and `AMath`, for example by entering `list t/Sec4 t/AMath`.
-2.  TuitionBook replaces the active filter, displays only contacts that match every supplied tag by complete name case-insensitively and, if specified, the role, and reports the number of matches.
-
-    Use case ends.
-
-**Extensions**
-
-* 1a. User also specifies a role, for example by entering `list r/student t/Sec4 t/AMath`.
-
-    * 1a1. TuitionBook applies the role together with every supplied tag as the new filter.
-
-      Use case resumes from step 2.
-
-* 1b. The request is malformed, or a supplied tag or role is invalid.
-
-    * 1b1. TuitionBook shows an error message describing the invalid request and retains the active filter.
-
-      Use case ends.
-
-* 2a. No contact matches every supplied criterion.
-
-    * 2a1. TuitionBook displays an empty contact list, reports zero matches, and retains the new filter as the active filter.
-
-      Use case ends.
-
-**Use case: UC10 Reload contact data**
-
-**MSS**
-
-1.  Private tutor submits a reload request.
-2.  TuitionBook reads the configured data file, replaces the current contacts with the loaded contacts, and resets the working set to all loaded contacts in contact-list order.
-3.  TuitionBook enables saving and reports the number of loaded contacts. If guardian links are repaired, it lists each affected contact's name, UUID, guardian ID when present, and repair reason.
+1.  User requests to reload the contact data.
+2.  System loads the contacts from the configured data file.
+3.  System replaces the current contacts and displays all loaded contacts in contact-list order.
+4.  System enables saving and reports the number of loaded contacts.
 
     Use case ends.
 
@@ -796,32 +811,32 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 2a. The configured data file is missing.
 
-    * 2a1. TuitionBook replaces the current contacts and working set with empty lists, enables saving, and reports that zero contacts were loaded.
+    * 2a1. System replaces the current contacts and current contact list with empty lists, enables saving, and reports that zero contacts were loaded.
 
       Use case ends.
 
 * 2b. The file contains invalid guardian links but all contacts are otherwise valid.
 
-    * 2b1. TuitionBook loads the contacts without those links, resets the working set to all loaded contacts in contact-list order, and reports the number of links repaired in memory for the tutor to review before saving.
-    The result lists every affected contact, contact ID, guardian ID when present, and repair reason for the tutor to review before saving.
+    * 2b1. System loads the contacts without those links.
+    * 2b2. System reports the repaired guardian links.
 
       Use case resumes from step 3.
 
-* 2c. TuitionBook cannot read the file but preserves it in a backup.
+* 2c. System cannot read the file but preserves it in a backup.
 
-    * 2c1. TuitionBook retains the current contacts and exact working set (membership, order and originating query), enables saving, and reports the backup path with permission, encoding/JSON, contact-value, or file-system guidance for restoring the preserved data before reloading again.
+    * 2c1. System retains the current contacts and current contact list, enables saving, and reports the backup path and recovery guidance.
 
       Use case ends.
 
-* 2d. TuitionBook cannot read the file or preserve it in a backup.
+* 2d. System cannot read the file or preserve it in a backup.
 
-    * 2d1. TuitionBook retains the current contacts and exact working set (membership, order and originating query), leaves the original file in place, blocks saving, and reports the cause-specific action required before the original is moved or reloaded.
+    * 2d1. System retains the current contacts and current contact list, leaves the original file in place, blocks saving to protect it, and reports recovery guidance.
 
       Use case ends.
 
 See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
-**Use case: UC11 Clear all contacts**
+#### Use case: UC10 Clear all contacts
 
 **Preconditions**
 
@@ -829,38 +844,83 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 
 **Guarantee**
 
-* On success, no contacts remain. TuitionBook does not provide an undo operation for a successful clear.
+* On success, no contacts remain. System does not provide an undo operation for a successful clear.
 
 **MSS**
 
-1.  User requests to clear all contacts using the exact confirmation keyword, by entering `clear confirm`.
-2.  TuitionBook removes every stored contact, including contacts hidden by the active filter, saves the empty contact list, and reports completion.
+1.  User requests and confirms the clearing of all contacts.
+2.  System removes every stored contact, including contacts hidden by the active filter, and reports completion.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. The confirmation keyword is missing or incorrect, or the request contains other arguments.
+* 1a. User does not provide the required confirmation.
 
-    * 1a1. TuitionBook shows the required `clear confirm` format and retains all contacts and the active filter.
-
-      Use case ends.
-
-* 2a. TuitionBook cannot save the cleared contact list.
-
-    * 2a1. TuitionBook shows a storage error, restores all contacts and guardian links, retains the previously active filter, and does not report a successful clear.
+    * 1a1. System informs the User that confirmation is required and retains all contacts and the active filter.
 
       Use case ends.
 
-**List-filter command rule**
+* 2a. System cannot save the cleared contact list.
+
+    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+
+      Use case ends.
+
+#### Use case: UC11 Modify a contact's tags
+
+**Preconditions**
+
+* At least one contact is visible in the current contact list.
+
+**MSS**
+
+1.  User requests to add or remove one or more specified tags from a contact in the current contact list.
+2.  System adds or removes the specified tags, retains the contact's other tags, and reports the result.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The specified index is missing, malformed, or does not refer to a contact in the current contact list.
+
+    * 1a1. System explains that the specified index is invalid.
+
+      Use case ends.
+
+* 1b. The request is malformed, or a supplied tag is invalid.
+
+    * 1b1. System shows an error message describing the invalid request.
+
+      Use case ends.
+
+* 2a. None of the requested tags would change the contact.
+
+    * 2a1. System reports that no tags changed without saving the contact.
+
+      Use case ends.
+
+* 2b. Only some tags requested for removal are present on the contact.
+
+    * 2b1. System removes the tags that are present, retains the other tags, and reports the requested tags that were not present.
+
+      Use case ends.
+
+* 2c. System cannot save the changed tags.
+
+    * 2c1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+
+      Use case ends.
+
+#### List-filter command rule
 
 Each `list` query replaces the working set: bare `list` displays all contacts, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria in contact-list order. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
-**Startup data rule**
+#### Startup data rule
 
 If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not change the separate recovery behaviour for a malformed data file.
 
-**Malformed-file recovery policy**
+#### Malformed-file recovery policy
 
 When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path and bounded cause-specific guidance to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows appropriate permission, encoding/JSON, contact-value, or file-system recovery steps in both a warning dialog and the result display. The warning keeps the specific problem and backup outcome in its main content while placing numbered restoration steps and each labelled full path once in an expandable, scrollable **Recovery details** section. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and presents the same cause-specific guidance before asking the user to reload or restart.
 
@@ -872,7 +932,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
-7.  TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
+7.  At startup, TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
 8.  TuitionBook shall allow at most one guarded application instance per application home directory while allowing application copies in separate home directories to run independently.
 
 ### Glossary
@@ -940,8 +1000,24 @@ Use a fresh, disposable folder with an empty contact list.
    Expected: The contact is added with the entered punctuation and phone formatting preserved.
 1. Enter `add r/student n/JOHN O’CONNOR p/+65/9123/4567x89`.<br>
    Expected: TuitionBook reports that the contact already exists because phone formatting and the annotation are ignored, and the extension marker is normalized, for identity comparison.
-1. Enter `add r/student n/John@Doe p/91234567`, then `add r/student n/John Doe p/(65 9123-4567`, then `add r/student n/John Doe p/9123//4567`, then `add r/student n/John Doe p/91234567 (home  phone)`, then `add r/student n/John Doe p/91234567 e/peter..jack@example.com`.<br>
-   Expected: Each command reports the relevant name, phone, or email constraint; no contact is added.
+1. Enter the following command, whose phone annotation has one space between `home` and `phone`:
+
+   ```text
+   add r/student n/Jane Doe p/92345678 (home phone)
+   ```
+
+   Expected: Jane Doe is added with the displayed phone number unchanged.
+1. Enter each of the following commands separately. The fourth command has two spaces between `home` and `phone`:
+
+   ```text
+   add r/student n/John@Doe p/91234567
+   add r/student n/John Doe p/(65 9123-4567
+   add r/student n/John Doe p/9123//4567
+   add r/student n/John Doe p/91234567 (home  phone)
+   add r/student n/John Doe p/91234567 e/peter..jack@example.com
+   ```
+
+   Expected: Each command reports the relevant name, phone, or email constraint; no additional contact is added.
 1. Enter `add r/student n/-Amy p/91234567`, then `add r/student n/Amy p/91234567 a/"   "`, then `add r/student n/Amy p/91234567 t/café`.<br>
    Expected: The errors are `Names must start with a letter or number.`, `Addresses must contain at least one visible character.` and `Tag names may contain only English letters, digits (0-9), spaces, punctuation and symbols from a standard English keyboard.` respectively; no contact is added.
 1. Enter `add r/student n/John Doe e/john@example.com a/123 Main Street`, then `add e/john@example.com a/123 Main Street`.<br>
@@ -1241,10 +1317,12 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. `add r/student n/GROẞ Klein p/91230006`
 1. `add r/student n/José Tan p/91230007` (the `é` is entered as `e` followed by a combining acute accent)
 
-1. Enter `find gr`, `find rac`, `find ace`, and `find GRACE` one at a time.<br>
+1. Enter `find gr`.<br>
+   Expected: Grace Tan and GROẞ Klein are shown in their original contact order and the result reports `2 person(s) listed!`.
+1. Enter `find rac`, `find ace`, and `find GRACE` one at a time.<br>
    Expected: Each command shows only Grace Tan and reports `1 person(s) listed!`.
 1. Enter `find tan`.<br>
-   Expected: Grace Tan and A.B Tan are shown in their original order and the result reports `2 person(s) listed!`.
+   Expected: Grace Tan, A.B Tan, and José Tan are shown in their original contact order and the result reports `3 person(s) listed!`.
 1. Enter `find rac bob`.<br>
    Expected: Grace Tan and Bob Lim are shown once each in their original order and the result reports `2 person(s) listed!`.
 1. Enter `find ışık`, then `find ışı`.<br>
@@ -1388,7 +1466,21 @@ add r/student n/Dana Lee p/91234564 t/inactive t/math
 
 Tags support spaces and printable ASCII punctuation so tutors can use natural spaced labels. Existing tags remain valid without changing the JSON format. Once users save these broader tag names, reverting to the previous single-hyphen restriction would reject valid saved contacts; any future narrowing requires an explicit compatibility or migration plan. Internal spaces remain significant. Optional enclosing quotes are command syntax and are not stored.
 
-Internal spacing is deliberately not normalized: `Sec 4` (one space) and `Sec  4` (two spaces) represent distinct tag strings. Case-insensitive list filtering does not collapse spaces, so a filter for one does not match the other. Command parsing trims surrounding whitespace only. Preserve this distinction in validation, persistence, and filtering tests; changing it would alter tag identity and matching behaviour.
+Internal spacing is deliberately not normalized. The following values represent distinct tag strings:
+
+One internal space:
+
+```text
+Sec 4
+```
+
+Two internal spaces:
+
+```text
+Sec  4
+```
+
+Case-insensitive list filtering does not collapse spaces, so a filter for one does not match the other. Command parsing trims surrounding whitespace only. Preserve this distinction in validation, persistence, and filtering tests; changing it would alter tag identity and matching behaviour.
 
 Use a fresh, disposable folder and start the application with an empty contact list. Do not use real contact data.
 
@@ -1398,17 +1490,37 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: The existing tags are replaced with `Sec 4`, `Math/Science`, and `C++`.
 1. Enter `list r/student t/SEC 4 t/math/science`.<br>
    Expected: Alex Lim appears and the result reports `1 person(s) listed!`.
-1. Enter `list t/Sec  4` (two spaces between `Sec` and `4`), then `list t/C+`.<br>
+1. Enter the following command, with two spaces between `Sec` and `4`:
+
+   ```text
+   list t/Sec  4
+   ```
+
+   Then enter `list t/C+`.<br>
    Expected: Both commands report `0 person(s) listed!`; spacing and punctuation must match exactly.
 1. Enter `list t/`.<br>
    Expected: The command is rejected with the tag constraint message; contacts are unchanged.
 1. Close and relaunch the application.<br>
    Expected: Alex Lim still has the tags `Sec 4`, `Math/Science`, and `C++`. Enter `list r/student t/sec 4 t/c++` and verify that Alex appears.
-1. Close TuitionBook. Open `data/tuitionbook.json` in the disposable folder, replace Alex's `tags` array with `[" Math ", "Math", " Sec  4 "]`, save the file, and relaunch TuitionBook.
+1. Close TuitionBook. Open `data/tuitionbook.json` in the disposable folder, replace Alex's `tags` array with the following value, save the file, and relaunch TuitionBook:
+
+   ```json
+   [" Math ", "Math", " Sec  4 "]
+   ```
+
 1. Enter `list t/Math`.<br>
-   Expected: Alex appears with one `Math` tag and one `Sec  4` tag. The padded and unpadded `Math` values normalize to the same tag, while its internal spacing is retained.
+   Expected: Alex appears with one `Math` tag and the following tag, which has two internal spaces. The padded and unpadded `Math` values normalize to the same tag, while internal spacing is retained.
+
+   ```text
+   Sec  4
+   ```
+
 1. Enter `untag 1 t/Math`, then close TuitionBook and inspect Alex's tags in `data/tuitionbook.json`.<br>
-   Expected: `Math` is removed. The remaining tag is stored as `Sec  4` without surrounding spaces.
+   Expected: `Math` is removed. The remaining tag is stored without surrounding spaces and with two internal spaces:
+
+   ```json
+   ["Sec  4"]
+   ```
 1. Relaunch TuitionBook, enter `list`, then `edit 1 t/first t/second`.<br>
    Expected: Alex has two tags, `first` and `second`, not one tag containing `t/`. Field prefixes still delimit values.
 1. Enter `edit 1 t/first][second`.<br>
