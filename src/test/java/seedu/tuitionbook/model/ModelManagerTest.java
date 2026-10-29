@@ -18,6 +18,7 @@ import seedu.tuitionbook.model.person.NameContainsKeywordsPredicate;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.PersonMatchesListFilterPredicate;
 import seedu.tuitionbook.model.person.Role;
+import seedu.tuitionbook.model.person.exceptions.PersonNotFoundException;
 import seedu.tuitionbook.testutil.PersonBuilder;
 import seedu.tuitionbook.testutil.TuitionBookBuilder;
 
@@ -161,6 +162,17 @@ public class ModelManagerTest {
         assertThrows(IllegalArgumentException.class, () -> modelManager.setPerson(student, orphanedEdit));
 
         assertEquals(List.of(student), modelManager.getTuitionBook().getPersonList());
+    }
+
+    @Test
+    public void setPerson_missingTargetWithInvalidEdit_throwsPersonNotFoundException() {
+        Person missingTarget = new PersonBuilder().build();
+        Person invalidEdit = new PersonBuilder(missingTarget).withId(UUID.randomUUID())
+                .withRole(Role.GUARDIAN).build();
+
+        assertThrows(PersonNotFoundException.class, () -> modelManager.setPerson(missingTarget, invalidEdit));
+
+        assertTrue(modelManager.getTuitionBook().getPersonList().isEmpty());
     }
 
     @Test
