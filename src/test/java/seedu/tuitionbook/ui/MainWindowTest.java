@@ -26,6 +26,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Bounds;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -37,6 +38,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import seedu.tuitionbook.commons.core.GuiSettings;
@@ -83,6 +85,131 @@ public class MainWindowTest {
             Stage stage = new Stage();
             new MainWindow(stage, new FakeLogic(), Path.of("synthetic.json"));
             assertEquals("TuitionBook", stage.getTitle());
+        });
+    }
+
+    @Test
+    public void mainWindow_savedPositionOutsideCurrentScreens_fitsWithinPrimaryScreen() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryBounds = Screen.getPrimary().getVisualBounds();
+            FakeLogic logic = new FakeLogic();
+            logic.guiSettings = new GuiSettings(primaryBounds.getWidth() + 100,
+                    primaryBounds.getHeight() + 100, 100000, 100000);
+            Stage stage = new Stage();
+
+            new MainWindow(stage, logic, Path.of("synthetic.json"));
+
+            assertTrue(stage.getX() >= primaryBounds.getMinX());
+            assertTrue(stage.getY() >= primaryBounds.getMinY());
+            assertTrue(stage.getX() + stage.getWidth() <= primaryBounds.getMaxX());
+            assertTrue(stage.getY() + stage.getHeight() <= primaryBounds.getMaxY());
+        });
+    }
+
+    @Test
+    public void restoreWindowBounds_noSavedPosition_clampsSizeToPrimaryScreen() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryScreen = new Rectangle2D(0, 0, 1280, 720);
+            GuiSettings oversizedSettingsWithoutPosition = new GuiSettings() {
+                @Override
+                public double getWindowWidth() {
+                    return 5000;
+                }
+
+                @Override
+                public double getWindowHeight() {
+                    return 4000;
+                }
+            };
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, new FakeLogic(), Path.of("synthetic.json"));
+            double originalX = stage.getX();
+            double originalY = stage.getY();
+
+            mainWindow.restoreWindowBounds(oversizedSettingsWithoutPosition, List.of(primaryScreen), primaryScreen);
+
+            assertEquals(1280, stage.getWidth());
+            assertEquals(720, stage.getHeight());
+            assertEquals(originalX, stage.getX());
+            assertEquals(originalY, stage.getY());
+
+            GuiSettings undersizedSettingsWithoutPosition = new GuiSettings() {
+                @Override
+                public double getWindowWidth() {
+                    return 1;
+                }
+
+                @Override
+                public double getWindowHeight() {
+                    return 1;
+                }
+            };
+            mainWindow.restoreWindowBounds(undersizedSettingsWithoutPosition, List.of(primaryScreen), primaryScreen);
+
+            assertEquals(stage.getMinWidth(), stage.getWidth());
+            assertEquals(stage.getMinHeight(), stage.getHeight());
+        });
+    }
+
+    @Test
+    public void mainWindow_savedUndersizedBoundsNearBottomRight_fitsMinimumSizeWhenShown() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryBounds = Screen.getPrimary().getVisualBounds();
+            int x = (int) Math.floor(primaryBounds.getMaxX()) - 1;
+            int y = (int) Math.floor(primaryBounds.getMaxY()) - 1;
+            FakeLogic logic = new FakeLogic();
+            logic.guiSettings = new GuiSettings(1, 1, x, y);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+
+            try {
+                mainWindow.fillInnerParts();
+                mainWindow.show();
+
+                assertTrue(stage.getWidth() >= stage.getMinWidth());
+                assertTrue(stage.getHeight() >= stage.getMinHeight());
+                assertTrue(stage.getX() >= primaryBounds.getMinX());
+                assertTrue(stage.getY() >= primaryBounds.getMinY());
+                assertTrue(stage.getX() + stage.getWidth() <= primaryBounds.getMaxX() + VIEWPORT_TOLERANCE);
+                assertTrue(stage.getY() + stage.getHeight() <= primaryBounds.getMaxY() + VIEWPORT_TOLERANCE);
+            } finally {
+                stage.hide();
+            }
+        });
+    }
+
+    @Test
+    public void mainWindow_savedPositionOnCurrentScreen_preservesBounds() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryBounds = Screen.getPrimary().getVisualBounds();
+            int x = (int) Math.ceil(primaryBounds.getMinX()) + 20;
+            int y = (int) Math.ceil(primaryBounds.getMinY()) + 20;
+            double width = Math.min(700, primaryBounds.getWidth() - 40);
+            double height = Math.min(500, primaryBounds.getHeight() - 40);
+            FakeLogic logic = new FakeLogic();
+            logic.guiSettings = new GuiSettings(width, height, x, y);
+            Stage stage = new Stage();
+
+            new MainWindow(stage, logic, Path.of("synthetic.json"));
+
+            assertEquals(new Rectangle2D(x, y, width, height),
+                    new Rectangle2D(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight()));
+        });
+    }
+
+    @Test
+    public void restoreWindowBounds_savedWindowSpansScreens_usesScreenContainingTopLeft() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryScreen = new Rectangle2D(0, 0, 1920, 1040);
+            Rectangle2D secondaryScreen = new Rectangle2D(-1280, 0, 1280, 984);
+            GuiSettings savedSettings = new GuiSettings(700, 500, -100, 100);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, new FakeLogic(), Path.of("synthetic.json"));
+
+            mainWindow.restoreWindowBounds(savedSettings, List.of(primaryScreen, secondaryScreen), primaryScreen);
+
+            assertEquals(new Rectangle2D(-700, 100, 700, 500),
+                    new Rectangle2D(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight()));
         });
     }
 
