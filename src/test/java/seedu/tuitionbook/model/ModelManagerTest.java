@@ -103,6 +103,13 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void deletePerson_missingTarget_throwsPersonNotFoundException() {
+        assertThrows(PersonNotFoundException.class, () -> modelManager.deletePerson(ALICE));
+
+        assertTrue(modelManager.getTuitionBook().getPersonList().isEmpty());
+    }
+
+    @Test
     public void addPerson_studentLinkedToMissingGuardian_rejectedWithoutMutation() {
         Person orphanedStudent = new PersonBuilder().withGuardianId(UUID.randomUUID()).build();
 
