@@ -132,6 +132,49 @@ public class MainWindowTest {
             assertEquals(720, stage.getHeight());
             assertEquals(originalX, stage.getX());
             assertEquals(originalY, stage.getY());
+
+            GuiSettings undersizedSettingsWithoutPosition = new GuiSettings() {
+                @Override
+                public double getWindowWidth() {
+                    return 1;
+                }
+
+                @Override
+                public double getWindowHeight() {
+                    return 1;
+                }
+            };
+            mainWindow.restoreWindowBounds(undersizedSettingsWithoutPosition, List.of(primaryScreen), primaryScreen);
+
+            assertEquals(stage.getMinWidth(), stage.getWidth());
+            assertEquals(stage.getMinHeight(), stage.getHeight());
+        });
+    }
+
+    @Test
+    public void mainWindow_savedUndersizedBoundsNearBottomRight_fitsMinimumSizeWhenShown() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            Rectangle2D primaryBounds = Screen.getPrimary().getVisualBounds();
+            int x = (int) Math.floor(primaryBounds.getMaxX()) - 1;
+            int y = (int) Math.floor(primaryBounds.getMaxY()) - 1;
+            FakeLogic logic = new FakeLogic();
+            logic.guiSettings = new GuiSettings(1, 1, x, y);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+
+            try {
+                mainWindow.fillInnerParts();
+                mainWindow.show();
+
+                assertTrue(stage.getWidth() >= stage.getMinWidth());
+                assertTrue(stage.getHeight() >= stage.getMinHeight());
+                assertTrue(stage.getX() >= primaryBounds.getMinX());
+                assertTrue(stage.getY() >= primaryBounds.getMinY());
+                assertTrue(stage.getX() + stage.getWidth() <= primaryBounds.getMaxX() + VIEWPORT_TOLERANCE);
+                assertTrue(stage.getY() + stage.getHeight() <= primaryBounds.getMaxY() + VIEWPORT_TOLERANCE);
+            } finally {
+                stage.hide();
+            }
         });
     }
 

@@ -182,15 +182,16 @@ public class MainWindow extends UiPart<Stage> {
             Rectangle2D primaryScreenBounds) {
         Point savedPosition = guiSettings.getWindowCoordinates();
         if (savedPosition == null) {
-            primaryStage.setHeight(Math.min(Math.max(1, guiSettings.getWindowHeight()),
+            primaryStage.setHeight(Math.min(Math.max(primaryStage.getMinHeight(), guiSettings.getWindowHeight()),
                     primaryScreenBounds.getHeight()));
-            primaryStage.setWidth(Math.min(Math.max(1, guiSettings.getWindowWidth()),
+            primaryStage.setWidth(Math.min(Math.max(primaryStage.getMinWidth(), guiSettings.getWindowWidth()),
                     primaryScreenBounds.getWidth()));
             return;
         }
 
         Rectangle2D savedBounds = new Rectangle2D(savedPosition.getX(), savedPosition.getY(),
-                Math.max(1, guiSettings.getWindowWidth()), Math.max(1, guiSettings.getWindowHeight()));
+                Math.max(primaryStage.getMinWidth(), guiSettings.getWindowWidth()),
+                Math.max(primaryStage.getMinHeight(), guiSettings.getWindowHeight()));
         Rectangle2D targetScreen = screenBounds.stream()
                 .filter(screen -> screen.contains(savedBounds.getMinX(), savedBounds.getMinY()))
                 .findFirst()
