@@ -69,27 +69,21 @@ public class JsonUserPrefsStorage {
         Files.createDirectories(absoluteFilePath.getParent());
         Path temporaryFile = Files.createTempFile(absoluteFilePath.getParent(),
                 absoluteFilePath.getFileName() + ".", ".tmp");
-        IOException saveFailure = null;
         try {
             writeJsonFile(userPrefs, temporaryFile);
             replaceFile(temporaryFile, absoluteFilePath);
-        } catch (IOException ioe) {
-            saveFailure = ioe;
-            throw ioe;
-        } finally {
+        } catch (IOException | RuntimeException | Error saveFailure) {
             cleanUpTemporaryFile(temporaryFile, saveFailure);
+            throw saveFailure;
         }
     }
 
-    private void cleanUpTemporaryFile(Path temporaryFile, IOException saveFailure) throws IOException {
+    private void cleanUpTemporaryFile(Path temporaryFile, Throwable saveFailure) {
         try {
             deleteTemporaryFile(temporaryFile);
         } catch (IOException cleanupFailure) {
             logger.log(Level.WARNING, "Could not remove temporary preference file at " + temporaryFile,
                     cleanupFailure);
-            if (saveFailure == null) {
-                throw cleanupFailure;
-            }
             saveFailure.addSuppressed(cleanupFailure);
         }
     }
