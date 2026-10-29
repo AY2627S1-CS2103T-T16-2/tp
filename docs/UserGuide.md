@@ -184,10 +184,9 @@ Example: `add r/student n/Sam Lee p/98760001 e/samlee@example.com t/Math`
     ```text
     add r/student n/One Space p/90000001 t/Sec 4
     add r/student n/Two Spaces p/90000002 t/Sec  4
-                                                        ^^ two spaces here
     ```
 
-    Retype or copy the command lines themselves when testing; the carets are an explanation, not part of a command. As a visible-space illustration, the values are `Sec·4` and `Sec··4`, where each `·` represents one space and is not typed.
+    As a visible-space illustration, the values are `Sec·4` and `Sec··4`, where each `·` represents one space and is not typed.
 
 For values containing prefix-like text and for literal quotes or backslashes, see [Quoted values and escaping](#quoted-values-and-escaping).
 
@@ -415,7 +414,13 @@ Reads your contacts from the data file again and shows the full list.
 `reload` **replaces** the contacts in the app with the contents of the file. It does not combine them, so any contact that is only in the app will be lost.
 </box>
 
-For everyday edits to the data file, close TuitionBook, edit the file, then reopen it. Use `reload` when fixing the file while TuitionBook stays open. Follow the authoritative steps under [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file), using `reload` instead of reopening when the warning permits it.
+For everyday edits to the data file, close TuitionBook, edit the file, then reopen it. Use this recovery path only when fixing an unreadable file while TuitionBook stays open:
+
+1. Read and follow the specific warning, including its cause and file locations. Don't add or change contacts during recovery. Note any contacts created since the failure so you can re-enter them later.
+1. Before replacing or moving any file, copy the current data file, if it exists, and any existing backup to a safe place. A backup exists only if TuitionBook says it preserved the unreadable file and shows its location.
+1. If the unreadable file was preserved in a backup, fix a copy of that backup and put the corrected copy at the data-file location shown in the warning. If preservation failed, saving remains blocked: correct the original file at the shown data-file location, or move it aside and put a corrected copy there.
+1. Once the corrected file is at the data-file location, enter `reload`. Check the result message and the full contact list before making changes. A successful reload enables saving; a failed reload keeps the current in-memory contacts and tells you whether the unreadable file was preserved or saving remains blocked.
+1. Re-enter any noted contacts that are missing. TuitionBook replaces the in-memory contacts with the corrected file; it does not merge contacts or files.
 
 More about `reload`:
 
