@@ -26,6 +26,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Write preferences through an atomic temporary-file replacement, and preserve primary contact-save failures when temporary-file cleanup also fails.
 - Report unchanged edits without saving or claiming that contact values changed.
 - Allow students and guardians to share a name and phone number while retaining duplicate checks within each role.
 - Make duplicate detection consistent for Unicode names and formatted phone numbers, and make name searches consistent across equivalent Unicode spellings.
