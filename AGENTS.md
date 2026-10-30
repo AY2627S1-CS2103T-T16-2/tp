@@ -4,6 +4,8 @@
 
 * Preserve uncommitted work; never overwrite another contributor's changes.
 * Do not commit, push, publish issues/reviews/releases, or deploy without permission.
+* **The v1.6 feature freeze is active.** Follow the freeze rules below before
+  changing functional code; user approval does not waive mandatory course limits.
 * **Never push directly to the team repository's `master` (`upstream/master`).** Land
   every change through a reviewed pull request from a fork or feature branch, and do
   not leave local branches tracking or defaulting their pushes to `upstream/master`.
@@ -40,6 +42,31 @@ and authoritative project documentation > this file's defaults. Higher-priority
 agent safety/permission instructions still apply. Surface conflicting sources
 with the user; do not invent prohibitions, approvals, evidence or grade guarantees.
 **Course sources checked: 2026-10-04.** Recheck live rules when the task depends on them.
+
+## Active v1.6 feature freeze
+
+**Freeze rules rechecked: 2026-10-30**, against the [timeline][timeline],
+[v1.5 schedule][alpha] and [v1.6 freeze/submission rules][release]. The freeze
+starts **2026-10-30 at 10:00 SGT**; final submission is **2026-11-03 at 14:00 SGT**.
+
+* Prioritise necessary, low-risk fixes; defer optional enhancements and refactoring.
+  The course limits change volume, not change type; this is a conservative working
+  default, not a claim that the course categorically prohibits new features.
+* Each member's limit is **15% of their functional LoC or 150 LoC, whichever is
+  higher**. The dashboard measures freeze-period edits against functional LoC
+  attributed to that member at the end of v1.6. The course allows a five-percentage-
+  point tolerance (up to 20%); do not plan to consume that tolerance.
+* All edits to code files under `src/main` count, including comments, blank lines
+  and cosmetic refactoring. Tests, documentation and non-code files are exempt.
+* Before functional edits, identify the responsible human, check their dashboard
+  usage and pending changes, and estimate the proposed change's impact. A local
+  diff is an estimate, not proof of the dashboard's final count. Stop for clarification
+  if attribution or remaining budget is unclear; do not assume unused quota.
+* Keep fixes small and verify regressions. Exemption from the quota does not remove
+  testing, documentation, attribution or approval requirements elsewhere in this file.
+* After the submission deadline, a separate **30-day code freeze** applies:
+  repository code updates require teaching-team permission, except changes related
+  to an approved late submission. Issue, milestone and PR updates remain allowed.
 
 ## Mandatory course requirements
 
@@ -99,8 +126,9 @@ These summarise explicit requirements in the [overview][overview] and
    members and target milestone, and assign incoming PRs to the appropriate milestone.
    Before closing a milestone, reconcile it with actual delivery and move unfinished
    issues/PRs to a future milestone; do not count unfinished work as released.
-2. Before code changes, check the active iteration and any freeze restrictions using
-   the sources below. Stop for clarification if permission or remaining budget is unclear.
+2. Before code changes, apply the active v1.6 feature freeze rules above and recheck
+   the live course sources for any subsequent restrictions. Stop for clarification
+   if permission or remaining budget is unclear.
 3. Trace parser → command → model → storage/UI and read related tests. Resolve
    contradictions between approved intent, documentation, tests and implementation
    before choosing a fix; never edit docs merely to legitimise a defect.
@@ -219,7 +247,7 @@ supporting output or artifact references), **Not verified** (with reasons), and
 rules were followed is not verification evidence.
 Use the response or existing issue/PR; do not create extra reports or instruction
 files unless requested. Keep shared guidance tool-neutral, outside published docs,
-and limited to stable instructions rather than dated feature-status claims.
+and limited to stable instructions plus the explicitly dated active freeze rules above.
 
 [overview]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-overview.html
 [constraints]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-constraints.html
