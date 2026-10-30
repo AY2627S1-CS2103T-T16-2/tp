@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.ModelManager;
+import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Name;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
@@ -104,10 +106,10 @@ public class CommandSaveDecisionTest {
     }
 
     private static Model modelWith(Person... persons) {
-        Model model = new ModelManager();
+        TuitionBook tuitionBook = new TuitionBook();
         for (Person person : persons) {
-            model.addPerson(person);
+            tuitionBook.addPerson(person);
         }
-        return model;
+        return new ModelManager(tuitionBook, new UserPrefs());
     }
 }

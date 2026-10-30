@@ -16,6 +16,7 @@ import seedu.tuitionbook.logic.commands.exceptions.CommandException;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.ModelManager;
 import seedu.tuitionbook.model.TuitionBook;
+import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.PersonHasRolePredicate;
 import seedu.tuitionbook.model.person.Role;
@@ -148,23 +149,6 @@ public class ViewCommandTest {
     }
 
     @Test
-    public void execute_studentWithMissingGuardian_showsNoGuardian() throws CommandException {
-        Person missingGuardian = new PersonBuilder().withName("Missing Guardian").withRole(Role.GUARDIAN).build();
-        Person student = new PersonBuilder().withName("Sam Tan").withRole(Role.STUDENT)
-                .withGuardian(missingGuardian).build();
-        Model model = modelWith(student);
-
-        String expected = "Name: Sam Tan\n"
-                + "Role: STUDENT\n"
-                + "Phone: 85355255\n"
-                + "Email: amy@gmail.com\n"
-                + "Address: 123, Jurong West Ave 6, #08-111\n"
-                + "Tags: -\n\n"
-                + ViewCommand.MESSAGE_NO_GUARDIAN;
-        assertViewWithoutMutation(model, FIRST_INDEX, expected);
-    }
-
-    @Test
     public void execute_guardianWithMultipleStudents_showsNamesInTuitionBookOrder() throws CommandException {
         Person guardian = new PersonBuilder().withName("Grace Tan").withRole(Role.GUARDIAN).build();
         Person firstStudent = new PersonBuilder().withName("Zoe Tan").withPhone("81234567")
@@ -267,7 +251,9 @@ public class ViewCommandTest {
     @Test
     public void equalsAndToString() {
         ViewCommand firstCommand = new ViewCommand(FIRST_INDEX);
-        assertEquals(firstCommand, new ViewCommand(FIRST_INDEX));
+        ViewCommand firstCommandCopy = new ViewCommand(FIRST_INDEX);
+        assertEquals(firstCommand, firstCommandCopy);
+        assertEquals(firstCommand.hashCode(), firstCommandCopy.hashCode());
         assertFalse(firstCommand.equals(new ViewCommand(SECOND_INDEX)));
         assertFalse(firstCommand.equals(new ViewCommand(FIRST_INDEX, true)));
         assertFalse(firstCommand.equals(null));
@@ -277,11 +263,11 @@ public class ViewCommandTest {
     }
 
     private static Model modelWith(Person... persons) {
-        Model model = new ModelManager();
+        TuitionBook tuitionBook = new TuitionBook();
         for (Person person : persons) {
-            model.addPerson(person);
+            tuitionBook.addPerson(person);
         }
-        return model;
+        return new ModelManager(tuitionBook, new UserPrefs());
     }
 
     private static void assertViewWithoutMutation(Model model, Index index, String expected) throws CommandException {

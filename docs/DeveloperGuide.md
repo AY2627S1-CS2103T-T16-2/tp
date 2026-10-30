@@ -264,6 +264,8 @@ The working set preserves indexes across non-deleting mutations and compacts the
 
 `setPerson` updates displayed values in place, including contacts that no longer match. Matching additions append; nonmatching additions remain hidden. The add command checks its own contact UUID and prepares location guidance, independently of contact-list ordering; LogicManager returns that feedback only after any required save succeeds. Deletion removes the UUID and compacts survivors without rerunning the query; deleting a guardian also updates linked students. `setTuitionBook`, used by successful reload and clear, resets to the full unfiltered book. Restart constructs a new full working set. Rejected and unchanged mutations preserve the view.
 
+`ModelManager` validates its public contact-mutation boundary before changing live data. Contact IDs must remain unique, `setPerson` cannot change a contact's persistent ID or role, and every stored guardian ID must resolve to a contact whose role is guardian. Add, replace and whole-book replacement operations validate a prospective contact list first, so a rejected API call leaves both the contact list and working set unchanged. Deleting a guardian remains valid because the model clears its students' links before removing it.
+
 `PersonListViewState` copies UUID membership/order and retains the predicate and query. On an actual save failure, `LogicManager` restores contacts, then this snapshot, preserving appended rows and retained exceptions exactly. Every query supplies explicit refresh text; there is no implicit show-all fallback for arbitrary predicates. The query accessor is named `getPersonListQueryPredicate()` because retained displayed contacts may no longer match it. Actual membership comes from the displayed list or snapshot UUIDs. The JSON schema is unchanged and contains no working-set state. Refreshing displayed values requires an O(n) UUID lookup; no constant-time or benchmark claim is made.
 
 `PersonListPanel` supplies each card with a notice when its current values fail the originating predicate. Match status is derived from current data, so it clears when a contact matches again and is correct after rollback. Mutating-command feedback gives the query to refresh; hidden additions explain how to locate the saved contact. Deletion warns that subsequent indexes may have changed.
@@ -1194,6 +1196,9 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
 
    1. Relaunch the app using the same terminal command.<br>
        Expected: The most recent window size and location are retained.
+
+   1. Close TuitionBook. In `preferences.json`, change `windowCoordinates` to `{"x":100000,"y":100000}`, then relaunch the app.<br>
+      Expected: TuitionBook opens fully within the primary screen instead of appearing not to open. The saved size is retained when it fits; otherwise, it is reduced to the primary screen's usable size. Existing contacts remain unchanged.
 
 1. Recovering from null window preferences
 

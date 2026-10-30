@@ -3,6 +3,7 @@ package seedu.tuitionbook.model.person;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import seedu.tuitionbook.commons.util.ToStringBuilder;
@@ -52,6 +53,11 @@ public class PersonMatchesListFilterPredicate implements Predicate<Person> {
             return false;
         }
         return role == that.role && tags.equals(that.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(role, tags);
     }
 
     @Override

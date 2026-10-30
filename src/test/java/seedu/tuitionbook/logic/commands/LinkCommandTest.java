@@ -126,9 +126,7 @@ public class LinkCommandTest {
                 .withRole(Role.GUARDIAN).build();
         Person student = new PersonBuilder().withName("Student").withPhone("90000001")
                 .withGuardian(guardian).build();
-        ModelManager model = new ModelManager(new seedu.tuitionbook.model.TuitionBook(), new UserPrefs());
-        model.addPerson(student);
-        model.addPerson(guardian);
+        ModelManager model = modelWith(student, guardian);
 
         assertCommandFailure(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(3)), model,
                 invalidGuardianIndexMessage(2));
@@ -173,7 +171,9 @@ public class LinkCommandTest {
     public void equals_and_toString() {
         LinkCommand command = new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(2));
         assertTrue(command.equals(command));
-        assertTrue(command.equals(new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(2))));
+        LinkCommand commandCopy = new LinkCommand(Index.fromOneBased(1), Index.fromOneBased(2));
+        assertTrue(command.equals(commandCopy));
+        assertEquals(command.hashCode(), commandCopy.hashCode());
         assertFalse(command.equals(null));
         assertFalse(command.equals(new ClearCommand()));
         assertFalse(command.equals(new LinkCommand(Index.fromOneBased(2), Index.fromOneBased(1))));
@@ -195,9 +195,9 @@ public class LinkCommandTest {
     }
 
     private static ModelManager modelWith(Person... persons) {
-        ModelManager model = new ModelManager(new TuitionBook(), new UserPrefs());
-        Arrays.stream(persons).forEach(model::addPerson);
-        return model;
+        TuitionBook tuitionBook = new TuitionBook();
+        Arrays.stream(persons).forEach(tuitionBook::addPerson);
+        return new ModelManager(tuitionBook, new UserPrefs());
     }
 
     private static ModelManager modelWithStudentAndGuardian() {

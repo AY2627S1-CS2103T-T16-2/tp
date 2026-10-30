@@ -3,6 +3,7 @@ package seedu.tuitionbook.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -114,7 +115,6 @@ public class ViewCommand extends Command {
                 return;
             }
         }
-        result.append("\n\n").append(MESSAGE_NO_GUARDIAN);
     }
 
     private static void appendLinkedStudents(StringBuilder result, Person guardian, List<Person> allPersons,
@@ -156,6 +156,11 @@ public class ViewCommand extends Command {
         }
         return targetIndex.equals(otherViewCommand.targetIndex)
                 && shouldShowFullLinkedDetails == otherViewCommand.shouldShowFullLinkedDetails;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(targetIndex, shouldShowFullLinkedDetails);
     }
 
     @Override

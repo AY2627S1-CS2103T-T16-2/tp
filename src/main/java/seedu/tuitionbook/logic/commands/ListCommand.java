@@ -110,6 +110,11 @@ public class ListCommand extends Command {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hashCode(predicate);
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("predicate", predicate)
