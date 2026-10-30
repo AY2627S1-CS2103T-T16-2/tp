@@ -645,6 +645,42 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_userGuideEscapeExamples_preserveStoredTagsAndFeedbackAfterReload() throws Exception {
+        logic.execute("add r/student n/Sam Student p/91234567");
+        String[] commands = {
+            "tag 1 t/\"\\\"\"",
+            "tag 1 t/\\\"",
+            "tag 1 t/\"\\\\\"",
+            "tag 1 t/\\\\"
+        };
+        String[] storedValues = {"\"", "\\\"", "\\", "\\\\"};
+        String[] feedbackValues = {"\"\\\"\"", "\"\\\\\\\"\"", "\"\\\\\"", "\"\\\\\\\\\""};
+
+        for (int i = 0; i < commands.length; i++) {
+            logic.execute("edit 1 t/");
+            assertEquals("Added tags to Sam Student: " + feedbackValues[i] + ".",
+                    logic.execute(commands[i]).getFeedbackToUser(), commands[i]);
+            logic.execute("reload");
+            assertEquals(Set.of(new Tag(storedValues[i])), logic.getPersonList().getFirst().getTags(), commands[i]);
+        }
+    }
+
+    @Test
+    public void execute_userGuideCaseVariantFilters_matchEquivalentConditionsAndDistinctTags() throws Exception {
+        logic.execute("add r/student n/Ana p/90000001 t/friends");
+        logic.execute("add r/student n/Ben p/90000002 t/friendS t/Math");
+        logic.execute("add r/student n/Cara p/90000003 t/friends t/friendS t/math");
+        logic.execute("reload");
+        List<Person> contacts = List.copyOf(logic.getPersonList());
+        assertEquals(Set.of(new Tag("friends"), new Tag("friendS"), new Tag("math")), contacts.get(2).getTags());
+
+        logic.execute("list t/friends t/friendS");
+        assertEquals(contacts, logic.getFilteredPersonList());
+        logic.execute("list t/friends t/Math");
+        assertEquals(contacts.subList(1, 3), logic.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_escapedTagQuotes_addEditFilterAndReloadPreserveLiteralValues() throws Exception {
         logic.execute("add r/student n/Sam Student p/91234567 t/\"\\\"Sec 4\\\"\""
                 + " t/\"meet \\\"at a/c room\\\"\" t/\"C:\\\\Math\\\\\"");

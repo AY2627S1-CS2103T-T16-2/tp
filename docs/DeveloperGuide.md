@@ -499,6 +499,26 @@ This record reconciles [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issue
 
 US20 undo/redo is excluded from the final release. There is no command history that can restore a successful deletion or clear operation; users should back up the data file before bulk changes. General confirmation prompts are also excluded. The later [#141](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/141) decision adds a specific safeguard: `clear confirm` is required, and the message explicitly includes contacts hidden by filters. `delete INDEX` remains immediate. Save-failure rollback is implemented and restores contacts and the exact working set (membership, order and originating query) after a failed save; it is distinct from user-invoked undo and does not reverse a successful command.
 
+#### Bulk deletion proposal (future functionality)
+
+[#287](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/287) tracks planning only in v1.6. Bulk deletion is not implemented or promised for v1.6; the supported command remains `delete INDEX`. The following proposed contract requires team approval before implementation.
+
+The target workflow is to list or filter obsolete contacts, inspect their displayed indexes, then delete several selected contacts together. Proposed syntax: `delete INDEX [INDEX]...`, for example `delete 2 5 7`.
+
+* Resolve every index against the original displayed working set before changing any contacts. Hidden contacts cannot be selected. Delete the resolved contact identities together, then compact the surviving rows once, preserving their order and the originating query.
+* Treat repeated indexes as one selection: `delete 2 2 5` would delete the original contacts 2 and 5 once each.
+* Reject the entire command if any index is malformed, non-positive or outside the displayed list. Mixed valid/invalid input, such as `delete 2 999` in a five-row list, must leave contacts, links, working-set membership and persisted data unchanged.
+* Remove guardian links to deleted guardians from surviving students. Deleting a student must retain its guardian and other students; deleting both endpoints must leave no dangling links. Report the deleted contacts and affected surviving students.
+* Persist the complete successful operation once through the existing save/rollback boundary. On save failure, restore all contacts, guardian links and the exact prior working set, including its query, and report failure without claiming a successful deletion. This rollback would not provide undo after a successful save.
+
+Before implementation, verify non-adjacent selections, repeated indexes, invalid and mixed selections, filtered and retained rows, guardian/student combinations, restart persistence and save-failure recovery with synthetic contacts in disposable storage.
+
+#### Copying from contact cards (future functionality)
+
+[#306](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/306) records the inability to select and copy text directly from contact-list cards. Cards render their fields as JavaFX `Label` controls. The existing workaround is `view INDEX`, or `view INDEX v/` for full linked-contact details: `DetailDisplay` uses a read-only `TextArea` that supports text selection and copying. Command feedback also uses a read-only `TextArea`.
+
+Direct copying from contact cards remains a future enhancement, not implemented or promised for v1.6. Evaluate selectable card fields or an explicit copy action for individual values such as phone numbers, email addresses and addresses. Before implementation, agree the interaction and verify exact stored values are copied without display truncation or added formatting, contacts remain read-only, clipboard contents change only on an explicit copy action, and keyboard command entry, scrolling and layout remain usable across the supported platforms and display sizes. The existing exclusion of contact-to-clipboard commands remains unchanged; any new command requires a separate scope decision.
+
 #### Help and notes
 
 The earlier US12 descope was reversed by [#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93): Help now includes an offline command summary, with browser access to the full UG and Copy URL as a fallback. It is a static syntax summary, not a context-sensitive help system.
@@ -1304,6 +1324,8 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 1. Enter `view 1`.<br>
    Expected: The contact list is replaced by Alex Yeoh's details and `Bernice Yu (99272758)`. The result area displays `Viewing contact: Alex Yeoh`.
+1. Click in the details pane, select `87438807` and copy it with Ctrl+C on Windows/Linux or Cmd+C on macOS. Paste into a disposable text editor.<br>
+   Expected: `87438807` is pasted. The details pane cannot be edited and no contact data changes. Text on the contact-list cards themselves is not selectable.
 1. Enter `view 1 v/`.<br>
    Expected: Bernice Yu's full guardian details appear after Alex Yeoh's details. Alex's tags appear as `[!tag], [10], [Alpha], [alpha], [C:\\Math\\], [Math, Science], [zebra]`, regardless of the system locale. The tag containing a comma remains one bracketed tag, and each stored backslash is displayed as two backslashes.
 1. Enter `view 2`.<br>

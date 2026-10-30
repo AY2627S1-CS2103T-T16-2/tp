@@ -6,9 +6,9 @@
 
 # TuitionBook User Guide
 
-TuitionBook helps **private one-to-one home tutors** manage students, guardians and their contact details in one place. Link students to guardians to find the right person to call, keep home addresses for visits, and use tags to organise contacts by level, subject or status. Typed commands are the primary way to work with the desktop app; your contacts are stored locally.
+TuitionBook helps **private one-to-one home tutors** manage students, guardians and their contact details in one place. Link students to guardians to find the right person to call, keep home addresses for visits, and use tags to organise contacts by level, subject or status. You mainly use typed commands to work with the desktop app, which stores your contacts locally.
 
-This guide helps English-speaking tutors set up TuitionBook, record contacts and find the right person to call. You do not need programming knowledge. The interface is in English; contact names can contain letters from other languages, subject to the rules under each command.
+This guide helps English-speaking tutors set up TuitionBook, record contacts and find the right person to call. You do not need programming knowledge. The interface is in English, but contact names can contain letters from other languages, subject to the rules under each command.
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then use the [Command reference](#command-reference) for each command's rules and examples. The [Task walkthroughs](#task-walkthroughs) combine commands for common jobs, while [Data and backups](#data-and-backups) covers saving, transfer and recovery. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, *index* and *JSON*.
 
@@ -49,7 +49,7 @@ Before you begin, install Java `25` or later and choose a folder where you can c
 1. Check Java by opening a terminal (Terminal on macOS/Linux, or PowerShell on Windows) and entering `java -version`.<br>
    **Expected:** The version starts with `25` or a later number. If Java is missing or older, follow the [Java installation guide](https://se-education.org/guides/tutorials/javaInstallation.html) before continuing. **Mac users:** Follow the [macOS Java instructions](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 1. Download the `.jar` file for the version you want from [GitHub Releases](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases), then copy it into your chosen folder.
-1. In the terminal, run one of the commands below. Replace the example path with the actual path and filename of your downloaded JAR; keep the surrounding quotes.
+1. In the terminal, run one of the commands below. Replace the example path with the actual path and filename of your downloaded JAR, keeping the surrounding quotes.
 
    * **macOS/Linux:** `java -jar "/path/to/tuitionbook.jar"`
    * **Windows:** `java -jar "C:\path\to\tuitionbook.jar"`
@@ -62,11 +62,11 @@ Before you begin, install Java `25` or later and choose a folder where you can c
 1. Enter `list`.<br>
    **Expected:** All your contacts appear again. The index beside each contact is the number to use in commands such as `view 1`.
 1. Enter `help` to see the command summary. Close the Help window when you are done, then enter `exit` in the main window.<br>
-   **Expected:** TuitionBook closes. Successful contact changes have already been saved; there is no separate Save command.
+   **Expected:** TuitionBook closes. Successful contact changes have already been saved, so there is no separate Save command.
 1. Run the same terminal launch command again.<br>
    **Expected:** John Doe is still present. To try the examples in the [Command reference](#command-reference), add the [sample contacts](#sample-contacts-for-examples) next. You can also follow the [status-tag workflow](#organising-levels-subjects-and-status-with-tags).
 
-The command box is where you enter instructions; the result area reports success or errors; the contact list shows your current [working set](#keeping-displayed-indexes-stable). The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
+Enter instructions in the command box and check the result area for success or error messages. The contact list shows the [contacts you are currently working with](#keeping-displayed-indexes-stable). The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -129,7 +129,7 @@ Index | Name | Role | Tags | Guardian link
 4 | Bob Lim | Guardian | - | -
 5 | Alex Yeoh | Student | `Active` | -
 
-Unless a section says otherwise, each example starts from this full list. Examples written as numbered steps continue from the previous step; enter them in order. Examples that change contacts, such as `edit` or `delete`, change the results of later examples. To start again, enter `clear confirm` **only in the new, empty folder you chose for practice**, then re-enter the sample contacts.
+Unless a section says otherwise, each example starts from this full list. Enter numbered examples in order, as each step continues from the previous one. Examples that change contacts, such as `edit` or `delete`, change the results of later examples. To start again, enter `clear confirm` **only in the new, empty folder you chose for practice**, then re-enter the sample contacts.
 
 ### Viewing help: `help`
 
@@ -164,7 +164,7 @@ Example: `add r/student n/Sam Lee p/98760001 e/samlee@example.com t/Math`
 * `ADDRESS`: An optional one-line home address, for example `123 Clementi Road, #01-01`.
 * `TAG`: An optional label for organising contacts, for example `Math`, `Sec 4` or `Active`. A contact can have any number of tags, including none.
 
-These examples illustrate common values; they are not a complete list of what is allowed. See [Detailed contact field rules](#detailed-contact-field-rules) for every constraint and exception.
+These examples illustrate common values. See [Detailed contact field rules](#detailed-contact-field-rules) for the full range of allowed values and any exceptions.
 
 For values containing prefix-like text and for literal quotes or backslashes, see [Quoted values and escaping](#quoted-values-and-escaping).
 
@@ -194,9 +194,9 @@ Shows all contacts, or only the contacts with a given role and/or tags.
 Format: `list [r/ROLE] [t/TAG]...`
 
 * `list` on its own shows every contact in its original order.
-* `r/student` shows only students; `r/guardian` shows only guardians. You can give `r/` only once.
+* Use `r/student` to show only students or `r/guardian` to show only guardians. You can give `r/` only once.
 * Each `t/TAG` adds a condition: a contact is shown only if it has **all** the tags you list. Tags must match completely, but letter case doesn't matter, so `t/math` matches `Math`.
-* Spaces and punctuation inside a tag must match exactly. Using `·` only to make spaces visible here, `Sec··4` does not match `Sec·4`; the [add examples](#adding-a-contact-add) show the copyable commands. `active` also does not match `active!`.
+* Spaces and punctuation inside a tag must match exactly. Using `·` only to make spaces visible here, `Sec··4` does not match `Sec·4`. You can copy the commands from the [add examples](#adding-a-contact-add). `active` also does not match `active!`.
 * Stored tags keep their exact letter case, so one contact can have both `friends` and `friendS`. Filtering ignores that case: repeated case-equivalent conditions do not narrow the results.
 * To filter by a tag that contains `r/` or `t/` after a space, use double quotes: `list t/"study t/weekly"`. See [Quoted values and escaping](#quoted-values-and-escaping).
 * If nothing matches, the list is empty and the result shows `0 person(s) listed!`. Enter `list` to see everyone again.
@@ -209,11 +209,11 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Tags are sorted alphabetically and wrap onto more rows when needed.
 * If a value is too long for the card, it is shortened with `…`. Hover over it to see the full text, or use `view INDEX v/` to see every detail.
 
-The bar above the cards explains the current list. **Matching** counts displayed contacts that still satisfy the query; **Retained** counts displayed contacts that stopped matching but remain so their indexes do not suddenly change. Hidden contacts count in neither number. For a filtered view, **Shown = Matching + Retained**. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable) for why rows are retained and how to refresh them.
+The bar above the cards explains the current list. **Matching** counts displayed contacts that still satisfy the query. **Retained** counts displayed contacts that stopped matching but remain so their indexes do not suddenly change. Hidden contacts count in neither number. For a filtered view, **Shown = Matching + Retained**. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable) for why rows are retained and how to refresh them.
 
 **Case variants and AND filtering**
 
-Suppose three contacts have these stored tags: Ana has only `friends`; Ben has `friendS` and `Math`; Cara has `friends`, `friendS` and `math`.
+Suppose Ana has only the tag `friends`, Ben has `friendS` and `Math`, and Cara has `friends`, `friendS` and `math`.
 
 Query | Result | Why
 ------|--------|----
@@ -229,11 +229,21 @@ Shows a contact's full details, together with their guardian or linked students,
 Format: `view INDEX [v/]`
 
 * `INDEX` is the number shown beside the contact in the current list.
-* Without `v/`, linked contacts are shown as `NAME (PHONE)`. A student shows their guardian; a guardian lists their students.
+* Without `v/`, linked contacts are shown as `NAME (PHONE)`. For a student, you see their guardian. For a guardian, you see their students.
 * Add `v/` to show the linked contacts' full details too.
 * If there is no link, the result shows `No guardian linked.` or `No students linked.` Linked contacts are shown even if the current filter hides them.
 * Missing details are shown as `-`. Tags are sorted alphabetically and each is shown in square brackets, such as `[Math]`. A backslash is added before any `[`, `]` or `\` inside a tag so you can tell where each tag ends.
 * `view` doesn't change any contacts or the current filter.
+
+**Copying contact details**
+
+To copy a phone number, email address or other contact details:
+
+1. Enter `view INDEX`. Use `view INDEX v/` if you also need full details of linked contacts.
+1. Click in the details pane and select the text you need.
+1. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> on Windows/Linux or <kbd>Cmd</kbd>+<kbd>C</kbd> on macOS to copy the text, then paste the text where you need it.
+
+You can copy text from this pane, but cannot edit it. Copying does not change your contacts. Text on contact-list cards cannot be selected.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 
@@ -252,7 +262,7 @@ Edits an existing contact in TuitionBook.
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
 * `INDEX` is the number shown beside the contact in the current list (1, 2, 3, …).
-* Give at least one field to change. The new value replaces the old one; fields you leave out stay the same.
+* Give at least one field to change. The new value replaces the old one, while fields you leave out stay the same.
 * If all supplied values already match the contact, `edit` reports `No changes made: the specified values already match NAME` and does not save.
 * All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`: `edit 1 n/"Rina a/p Kaur"`.
 * To remove an email or address, type `e/` or `a/` with nothing after it. `a/""` also removes the address.
@@ -286,7 +296,7 @@ Removes only the specified tags while keeping the contact's other tags.
 Format: `untag INDEX t/TAG [t/TAG]...`
 
 * Works like [`tag`](#adding-tags-to-a-contact-tag): same index, tag rules and double quotes.
-* Each tag must match exactly, including letter case and spacing. `untag 1 t/math` does not remove `Math`; instead, the result suggests the correct spelling: `Tag "math" not found, did you mean "Math"?`
+* Each tag must match exactly, including letter case and spacing. If you enter `untag 1 t/math`, `Math` stays in place and the result suggests the correct spelling: `Tag "math" not found, did you mean "Math"?`
 * Tags the contact doesn't have are skipped and listed under `Tags not present:`. If none of them are present, nothing changes.
 * To remove every tag at once, use `edit INDEX t/` instead.
 
@@ -341,7 +351,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]...`
 Examples using the [sample contacts](#sample-contacts-for-examples):
 * `find gr`, `find rac`, `find ace`, and `find GRACE` each list only Grace Tan.
 * `find rac bob` lists Grace Tan and Bob Lim, whose names contain `rac` or `bob`.
-* `find alex john` lists John Doe and Alex Yeoh. Any other contacts with `alex` or `john` anywhere in their names would also appear. If no names match, the list is empty; use `list` to show every contact again.
+* `find alex john` lists John Doe and Alex Yeoh. Any other contacts with `alex` or `john` anywhere in their names would also appear. If no names match, the list is empty. Enter `list` to show every contact again.
 
 <span id="deleting-a-person-delete"></span>
 
@@ -395,8 +405,8 @@ For everyday edits to the data file, close TuitionBook, edit the file, then reop
 1. Read and follow the specific warning, including its cause and file locations. Don't add or change contacts during recovery. Note any contacts created since the failure so you can re-enter them later.
 1. Before replacing or moving any file, copy the current data file, if it exists, and any existing backup to a safe place. A backup exists only if TuitionBook says it preserved the unreadable file and shows its location.
 1. If the unreadable file was preserved in a backup, fix a copy of that backup and put the corrected copy at the data-file location shown in the warning. If preservation failed, saving remains blocked: correct the original file at the shown data-file location, or move it aside and put a corrected copy there.
-1. Once the corrected file is at the data-file location, enter `reload`. Check the result message and the full contact list before making changes. A successful reload enables saving; a failed reload keeps the current in-memory contacts and tells you whether the unreadable file was preserved or saving remains blocked.
-1. Re-enter any noted contacts that are missing. TuitionBook replaces the in-memory contacts with the corrected file; it does not merge contacts or files.
+1. Once the corrected file is at the data-file location, enter `reload`. Check the result message and the full contact list before making changes. A successful reload enables saving. If reload fails, your currently loaded contacts stay in place and the result tells you whether the unreadable file was preserved or saving remains blocked.
+1. Re-enter any noted contacts that are missing. TuitionBook replaces the currently loaded contacts with those from the corrected file. Contacts and files are not merged.
 
 More about `reload`:
 
@@ -419,7 +429,7 @@ Format: `exit`
 
 <box type="tip" seamless>
 
-**Tip:** Choose a consistent way of naming tags, for example `Sec4` for level, `AMath` for subject, and `Active` or `Inactive` for status. Tags are free-form labels that you choose; TuitionBook doesn't check them against any list. Tag filters ignore letter case, but spaces and punctuation must match.
+**Tip:** Choose a consistent way of naming tags, for example `Sec4` for level, `AMath` for subject, and `Active` or `Inactive` for status. You choose your own tags, and TuitionBook doesn't check them against any list. Tag filters ignore letter case, but spaces and punctuation must match.
 
 </box>
 
@@ -454,11 +464,11 @@ To verify this with the [sample contacts](#sample-contacts-for-examples), start 
 1. `list t/Active`<br>
    **Expected:** Grace Tan (1) and Alex Yeoh (2) are listed. The counters show `Shown: 2 of 5 contacts · Matching: 2 · Retained: 0`.
 1. `untag 1 t/Active`<br>
-   **Expected:** Grace remains visible at index 1 with **No longer matches the query**, and Alex remains at index 2. Removing the required tag decreases Matching to 1 and increases Retained to 1; Shown remains 2.
+   **Expected:** Grace remains visible at index 1 with **No longer matches the query**, and Alex remains at index 2. Removing the required tag decreases Matching to 1 and increases Retained to 1, while Shown remains 2.
 1. `list t/Active`<br>
    **Expected:** Rerunning the originating query refreshes membership. Grace is removed from this displayed list and only Alex is shown at index 1, with Matching 1 and Retained 0.
 
-Deleting is the exception: contacts below the deleted one move up. Running `list` or `find`, `reload`, `clear confirm`, or restarting can also change indexes; `reload` and restarting show the full list. An index is a position in the current displayed list, not a permanent contact number.
+Deleting is the exception: contacts below the deleted one move up. Running `list` or `find`, `reload`, `clear confirm`, or restarting can also change indexes. Both `reload` and restarting show the full list. An index is a position in the current displayed list, not a permanent contact number.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -480,16 +490,16 @@ These rules apply when adding or editing a contact and when TuitionBook reads co
   * is displayed exactly as you type it. For example, `+65 (9123) 4567 (HP) ext. 89` is accepted.
 * `EMAIL` must look like `name@example.com`:
   * The whole email can be up to 254 characters long, including the `@` and periods.
-  * Before the `@`: up to 64 characters, using English letters, digits (0-9), periods (`.`), and these symbols: `` ! # $ % & ' * + - / = ? ^ _ ` { | } ~ ``. A period cannot be first or last, and two periods cannot appear in a row. The other allowed symbols can appear at the start or end; for example, `_alice+@example.com` is accepted. Spaces and double quotes (`"`) are not allowed.
+  * Before the `@`: up to 64 characters, using English letters, digits (0-9), periods (`.`), and these symbols: `` ! # $ % & ' * + - / = ? ^ _ ` { | } ~ ``. A period cannot be first or last, and two periods cannot appear in a row. The other allowed symbols can appear at the start or end. For example, `_alice+@example.com` is accepted. Spaces and double quotes (`"`) are not allowed.
   * Slashes inside an email do not start another field: `e/alice.t/user@example.com t/Math` stores email `alice.t/user@example.com` and tag `Math`. If an email starts with text such as `t/`, put it directly after `e/`: `e/t/user@example.com`. A space before `t/` starts a tag field, so `edit 1 e/ t/user@example.com` clears the email and sets the tag to `user@example.com`.
   * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part can be up to 63 characters long, must start and end with a letter or digit, and the last part must be at least 2 characters long.
 * `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
   * Accent marks on their own do not count as visible characters.
-  * Hidden control characters (other than tabs) and broken characters left over from copied text are rejected; retype the address if this happens.
+  * If an address is rejected because it contains hidden control characters (other than tabs) or broken characters from copied text, retype it.
 * Each `TAG`:
   * may contain English letters, digits (0-9), spaces, and punctuation and symbols from a standard English keyboard, for example `Sec 4`, `Math--Science`, `C++`, `$50/hr` or `Mrs. Lim's`. Letters with accents, other languages and other symbols (such as `—`) are not allowed.
   * cannot be blank. Spaces at the start or end are ignored.
-  * keeps the exact spacing inside it. The commands below differ only in the space between `Sec` and `4`; the second command contains two spaces. They store different tags and do not match each other in `list`:
+  * keeps the exact spacing inside it. The commands below differ only in the space between `Sec` and `4`, with two spaces in the second command. They store different tags and do not match each other in `list`:
 
     ```text
     add r/student n/One Space p/90000001 t/Sec 4
@@ -503,7 +513,7 @@ For values containing prefix-like text and for literal quotes or backslashes, se
 ### Field boundaries and copied text
 
 * Command words, prefixes, roles and indexes must use ordinary English letters and the digits 0-9. Lookalike characters, such as a Cyrillic `а`, a full-width `ｌｉｓｔ` or a full-width index `１`, are not recognised.
-* Type spaces with the spacebar. Text copied from a website or PDF can contain special spaces that look ordinary; TuitionBook rejects these in command words and indexes. Retype copied spaces or any command that produces a hidden-control-character error.
+* Type spaces with the spacebar. TuitionBook rejects special spaces in command words and indexes. These can look like ordinary spaces when copied from a website or PDF. Retype copied spaces or any command that produces a hidden-control-character error.
 * `help`, `exit` and `reload` take nothing after the command word.
 * In `add`, `edit`, `list`, `tag` and `untag`, a space followed by English letters and `/` starts a new field. An unknown marker such as `ee/` is rejected instead of being silently saved. Quote a whole value when this kind of text belongs inside it.
 
@@ -541,13 +551,13 @@ TuitionBook saves automatically after every command that changes your contacts o
 * If saving fails, the command is undone and an error explains what to check. Fix the problem, then enter the command again.
 * If TuitionBook can't read your data file when it starts, it shows a warning. It usually moves the unreadable file to a backup and starts with an empty list, and you can keep working. If it can't make the backup, it won't save anything until you fix or move the file and then run `reload` or restart. See [Editing the data file](#editing-the-data-file).
 
-Only one TuitionBook window can use a folder at a time. If you start it again from the same folder, the second copy shows an error and closes without touching your contacts. To run a separate copy, put the JAR in a different folder; each folder has its own contacts and settings.
+Only one TuitionBook window can use a folder at a time. If you start it again from the same folder, the second copy shows an error and closes without touching your contacts. To run a separate copy, put the JAR in a different folder. Each folder has its own contacts and settings.
 
-TuitionBook creates a file named `.tuitionbook.lock` in its folder to make this check. It's safe to leave this file after closing the app, but **don't delete it while TuitionBook is running**. This check only works between copies of this version of TuitionBook; it doesn't stop other programs from editing the data file.
+TuitionBook creates a file named `.tuitionbook.lock` in its folder to make this check. It's safe to leave this file after closing the app, but **don't delete it while TuitionBook is running**. This check only works between copies of this version of TuitionBook. Other programs can still edit the data file.
 
 ### Transferring contacts to another computer
 
-Close TuitionBook on both computers and back up both data files. Copy the application JAR and `data/tuitionbook.json` together, keeping the data file in the `data` folder beside the JAR. Copying over an existing data file **replaces** its contacts; TuitionBook does not merge files. Open TuitionBook only after copying is complete.
+Close TuitionBook on both computers and back up both data files. Copy the application JAR and `data/tuitionbook.json` together, keeping the data file in the `data` folder beside the JAR. Copying over an existing data file **replaces** its contacts. TuitionBook does not merge files. Open TuitionBook only after copying is complete.
 
 ### Editing the data file
 
@@ -612,10 +622,10 @@ If TuitionBook can't create the backup, it leaves the file where it is and won't
 * **Terminal**: The window where you enter the Java launch command. Once TuitionBook opens, enter contact-management commands in its command box instead.
 * **Prefix**: A short marker such as `n/` or `t/` that tells TuitionBook what the value after it is (here, a name or a tag).
 * **Contact**: A record representing either a student or a guardian, with a name, phone number, and optional email address, home address, and tags.
-* **Role**: Whether a contact is a `student` or a `guardian`. Entered in any casing; shown as a `STUDENT` or `GUARDIAN` badge on the contact card.
-* **Guardian link**: A recorded association from a student to a guardian. A student has at most one guardian link; a guardian can be linked to multiple students.
+* **Role**: Whether a contact is a `student` or a `guardian`. You can enter the role in any letter case. It appears as a `STUDENT` or `GUARDIAN` badge on the contact card.
+* **Guardian link**: A recorded association from a student to a guardian. A student can be linked to at most one guardian, while a guardian can be linked to multiple students.
 * **Index**: The number shown beside a contact in the current list, starting from 1. Commands such as `edit`, `delete` and `view` use it to pick a contact. It can change after `delete`, `list`, `find`, `reload`, `clear confirm` or a restart.
-* **Working set**: The contacts shown by your last `list` or `find`. Changing a contact doesn't remove it from the working set, even if it no longer matches; run the command again to refresh. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable).
+* **Working set**: The contacts shown by your last `list` or `find`. Changing a contact keeps it in the displayed list, even if it no longer matches. Run the command again to refresh the list. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable).
 * **Tag**: An optional label you choose for a contact, such as `Sec4` or `AMath`, used for organising and filtering.
 * **Home folder**: The folder containing the TuitionBook JAR. Your data file, settings and log files are kept here.
 * **Data file**: The local JSON file (`data/tuitionbook.json`) that stores your contacts and guardian links between sessions.
@@ -635,7 +645,7 @@ Find the symptom below and try the suggested action. Error messages appear in th
 | `TuitionBook is already running` | TuitionBook is already open from the same folder | Use or close the existing window. To run a separate copy, put the JAR in a different folder. Don't delete `.tuitionbook.lock` while TuitionBook is running. |
 | `TuitionBook could not start safely` | TuitionBook could not create its `.tuitionbook.lock` file, for example because you can't save files in that folder | Check that you are allowed to create files in the JAR's folder, or move the JAR to a folder you own, then try again. |
 | `Unknown command.` | A misspelled or unsupported command word | Type one of the command words in the [Command summary](#command-summary), such as `list` or `find`. The surrounding code styling in this guide is not part of what you type. Command-word letter case does not matter. |
-| `Invalid command format!` | Something required is missing, or values are in the wrong order | Follow that command's usage and example shown with the error. `add` and `find` have no index; `edit` starts with its contact index; `link` starts with the student index followed by the guardian index. |
+| `Invalid command format!` | Something required is missing, or values are in the wrong order | Follow that command's usage and example shown with the error. Use no index for `add` and `find`. Start `edit` with the contact index. For `link`, enter the student index followed by the guardian index. |
 | `Commands must be entered on a single line.` | The command contains a line break | Remove the line break or replace it with a space, then try again. |
 | `Your command contains an unusual space character` | The command was copied from a website or document that uses special spaces | Retype the spaces around the command word and index using the spacebar, then try again. |
 | `Missing required field(s): ...` | An `add` command is missing `r/ROLE`, `n/NAME` or `p/PHONE` | Add every field named in the message. |
@@ -649,14 +659,14 @@ Find the symptom below and try the suggested action. Error messages appear in th
 
 ### Reporting a problem or unclear instruction
 
-Check [Limitations and known issues](#limitations-and-known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots; do not upload your contact file. Review diagnostic logs before sharing them because they may contain information entered during earlier commands.
+Check [Limitations and known issues](#limitations-and-known-issues) first. If you still need help, search the [project issue tracker](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues) and report the problem there. Include your release version, operating system, exact command, expected result and actual message. For a documentation problem, link the section that was unclear. Use invented contact details in examples and hide real names, phone numbers, addresses and local paths in screenshots. Keep your contact file private and do not upload it. Review diagnostic logs before sharing them because they may contain information entered during earlier commands.
 
 --------------------------------------------------------------------------------------------------------------------
 
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Follow [Transferring contacts to another computer](#transferring-contacts-to-another-computer). Remember that replacing the destination data file replaces its contacts; files are not merged.
+**A**: Follow [Transferring contacts to another computer](#transferring-contacts-to-another-computer). Remember that replacing the destination data file replaces its contacts. Files are not merged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -671,3 +681,4 @@ Check [Limitations and known issues](#limitations-and-known-issues) first. If yo
 5. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Keep a separate backup of the data file before bulk changes so you can recover removed contacts.
 6. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts, one for each role. The two contacts can have the same name and phone number.
 7. **If the data file has a mistake, TuitionBook starts with an empty contact list and a warning.** When it can, TuitionBook moves the original file unchanged to a backup. If it cannot create that backup, saving stays blocked. See [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file) for both recovery paths.
+8. **Contact-list card text cannot be selected for copying.** Use the [details pane opened by `view INDEX`](#viewing-a-contact-view) to select and copy contact details instead.
