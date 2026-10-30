@@ -12,6 +12,7 @@ Planned release; not yet released.
 
 ### Changed
 
+- Complete the remaining User Guide review follow-ups (#261): add an [annotated app screenshot](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/v1.6/docs/images/ug-main-window.png), explain supported English language settings, clarify linked-contact view examples, separate examples from surrounding prose and enable copy buttons on command blocks using the existing documentation framework.
 - Rephrase semicolon-heavy User Guide prose into shorter sentences and smoother explanations.
 - Record the proposed bulk contact deletion contract for future evaluation (#287), covering original displayed indexes, duplicate and invalid selections, guardian links and save-failure rollback; bulk deletion remains unimplemented.
 - Document the `view INDEX` workaround for copying contact details and record direct copying from contact-list cards as a future enhancement (#306).
