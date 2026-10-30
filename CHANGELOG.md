@@ -13,6 +13,7 @@ Planned release; not yet released.
 ### Changed
 
 - Record the proposed bulk contact deletion contract for future evaluation (#287), covering original displayed indexes, duplicate and invalid selections, guardian links and save-failure rollback; bulk deletion remains unimplemented.
+- Document the `view INDEX` workaround for copying contact details and record direct copying from contact-list cards as a future enhancement (#306).
 
 ## [v1.5] - 2026-10-28
 

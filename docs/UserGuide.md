@@ -235,6 +235,16 @@ Format: `view INDEX [v/]`
 * Missing details are shown as `-`. Tags are sorted alphabetically and each is shown in square brackets, such as `[Math]`. A backslash is added before any `[`, `]` or `\` inside a tag so you can tell where each tag ends.
 * `view` doesn't change any contacts or the current filter.
 
+**Copying contact details**
+
+To copy a phone number, email address or other contact details:
+
+1. Enter `view INDEX`. Use `view INDEX v/` if you also need full details of linked contacts.
+1. Click in the details pane and select the text you need.
+1. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> on Windows/Linux or <kbd>Cmd</kbd>+<kbd>C</kbd> on macOS to copy the text, then paste the text where you need it.
+
+You can copy text from this pane, but cannot edit it. Copying does not change your contacts. Text on contact-list cards cannot be selected.
+
 Examples using the [sample contacts](#sample-contacts-for-examples):
 
 * `view 1` replaces the contact list with John Doe's details and shows `Guardian: Betsy Crowe (91234567)`.
@@ -671,3 +681,4 @@ Check [Limitations and known issues](#limitations-and-known-issues) first. If yo
 5. **`delete` and `clear confirm` cannot be undone.** The `clear` command requires the explicit lowercase confirmation keyword, but `delete` asks for no confirmation. Keep a separate backup of the data file before bulk changes so you can recover removed contacts.
 6. **Each contact has exactly one role.** A person who is both a guardian and a student (e.g. an older sibling who pays for a younger one) needs two separate contacts, one for each role. The two contacts can have the same name and phone number.
 7. **If the data file has a mistake, TuitionBook starts with an empty contact list and a warning.** When it can, TuitionBook moves the original file unchanged to a backup. If it cannot create that backup, saving stays blocked. See [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file) for both recovery paths.
+8. **Contact-list card text cannot be selected for copying.** Use the [details pane opened by `view INDEX`](#viewing-a-contact-view) to select and copy contact details instead.
