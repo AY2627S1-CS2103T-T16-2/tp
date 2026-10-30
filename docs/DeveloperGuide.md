@@ -499,6 +499,20 @@ This record reconciles [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issue
 
 US20 undo/redo is excluded from the final release. There is no command history that can restore a successful deletion or clear operation; users should back up the data file before bulk changes. General confirmation prompts are also excluded. The later [#141](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/141) decision adds a specific safeguard: `clear confirm` is required, and the message explicitly includes contacts hidden by filters. `delete INDEX` remains immediate. Save-failure rollback is implemented and restores contacts and the exact working set (membership, order and originating query) after a failed save; it is distinct from user-invoked undo and does not reverse a successful command.
 
+#### Bulk deletion proposal (future functionality)
+
+[#287](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/287) tracks planning only in v1.6. Bulk deletion is not implemented or promised for v1.6; the supported command remains `delete INDEX`. The following proposed contract requires team approval before implementation.
+
+The target workflow is to list or filter obsolete contacts, inspect their displayed indexes, then delete several selected contacts together. Proposed syntax: `delete INDEX [INDEX]...`, for example `delete 2 5 7`.
+
+* Resolve every index against the original displayed working set before changing any contacts. Hidden contacts cannot be selected. Delete the resolved contact identities together, then compact the surviving rows once, preserving their order and the originating query.
+* Treat repeated indexes as one selection: `delete 2 2 5` would delete the original contacts 2 and 5 once each.
+* Reject the entire command if any index is malformed, non-positive or outside the displayed list. Mixed valid/invalid input, such as `delete 2 999` in a five-row list, must leave contacts, links, working-set membership and persisted data unchanged.
+* Remove guardian links to deleted guardians from surviving students. Deleting a student must retain its guardian and other students; deleting both endpoints must leave no dangling links. Report the deleted contacts and affected surviving students.
+* Persist the complete successful operation once through the existing save/rollback boundary. On save failure, restore all contacts, guardian links and the exact prior working set, including its query, and report failure without claiming a successful deletion. This rollback would not provide undo after a successful save.
+
+Before implementation, verify non-adjacent selections, repeated indexes, invalid and mixed selections, filtered and retained rows, guardian/student combinations, restart persistence and save-failure recovery with synthetic contacts in disposable storage.
+
 #### Help and notes
 
 The earlier US12 descope was reversed by [#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93): Help now includes an offline command summary, with browser access to the full UG and Copy URL as a fallback. It is a static syntax summary, not a context-sensitive help system.
