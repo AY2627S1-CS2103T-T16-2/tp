@@ -746,7 +746,10 @@ public class UiManagerStartupTest {
         assertTrue(detailsScroller.getViewportBounds().getWidth() > 0);
         assertTrue(detailsScroller.getViewportBounds().getHeight() >= 50);
         assertTrue(detailsScroller.getViewportBounds().getHeight()
-                <= detailsScroller.getContent().getLayoutBounds().getHeight() + LAYOUT_TOLERANCE);
+                <= detailsScroller.getContent().getLayoutBounds().getHeight() + LAYOUT_TOLERANCE, () ->
+                        "Recovery viewport is taller than its content: viewport="
+                        + detailsScroller.getViewportBounds() + ", content="
+                        + detailsScroller.getContent().getLayoutBounds());
         assertEquals(ScrollPane.ScrollBarPolicy.NEVER, detailsScroller.getHbarPolicy());
         assertTrue(detailsScroller.getContent().getLayoutBounds().getWidth()
                 <= detailsScroller.getViewportBounds().getWidth() + LAYOUT_TOLERANCE);
@@ -880,13 +883,26 @@ public class UiManagerStartupTest {
 
     /**
      * Runs {@code inspection} once the dialog's self-correction has settled: the stage respects its
-     * minimum height and the scene has caught up with the stage size. Platforms apply programmatic
-     * window changes asynchronously, so the dialog's refit can take a few pulses to land. Gives up
+     * minimum height, the scene has caught up with the stage size, and the recovery viewport and
+     * content sizes agree across consecutive observations. Platforms apply programmatic window
+     * changes asynchronously, so the dialog's refit can take a few pulses to land. Gives up
      * after {@code remainingAttempts} pulses and runs the inspection anyway so assertions still report.
      */
     private void runAfterDialogSettles(Stage stage, int remainingAttempts, Runnable inspection) {
+        runAfterDialogSettles(stage, remainingAttempts, inspection, List.of());
+    }
+
+    private void runAfterDialogSettles(Stage stage, int remainingAttempts, Runnable inspection,
+                                      List<Double> previousLayout) {
         Platform.runLater(() -> {
             DialogPane pane = (DialogPane) stage.getScene().getRoot();
+            ScrollPane scroller = (ScrollPane) pane.lookup("#recoveryDetailsScroll");
+            Bounds contentBounds = scroller.getContent().getLayoutBounds();
+            List<Double> currentLayout = List.of(stage.getWidth(), stage.getHeight(),
+                    stage.getScene().getWidth(), stage.getScene().getHeight(),
+                    scroller.getWidth(), scroller.getHeight(),
+                    scroller.getViewportBounds().getWidth(), scroller.getViewportBounds().getHeight(),
+                    contentBounds.getWidth(), contentBounds.getHeight());
             double decorationWidth = rememberedDecoration(stage, "loadFailureDecorationWidth");
             double decorationHeight = rememberedDecoration(stage, "loadFailureDecorationHeight");
             boolean settled = stage.getHeight() >= stage.getMinHeight() - LAYOUT_TOLERANCE
@@ -895,12 +911,14 @@ public class UiManagerStartupTest {
                     && Math.abs(stage.getScene().getHeight() + decorationHeight - stage.getHeight())
                             <= LAYOUT_TOLERANCE
                     && pane.minHeight(stage.getScene().getWidth())
-                            <= stage.getScene().getHeight() + LAYOUT_TOLERANCE;
+                            <= stage.getScene().getHeight() + LAYOUT_TOLERANCE
+                    && currentLayout.equals(previousLayout);
             if (!settled && remainingAttempts > 0) {
                 // Space the retries out: chained runLater calls can all run within the same frame,
                 // before the platform delivers the window's new size to the scene.
                 PauseTransition pause = new PauseTransition(Duration.millis(25));
-                pause.setOnFinished(event -> runAfterDialogSettles(stage, remainingAttempts - 1, inspection));
+                pause.setOnFinished(event ->
+                        runAfterDialogSettles(stage, remainingAttempts - 1, inspection, currentLayout));
                 pause.play();
                 return;
             }
