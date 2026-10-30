@@ -14,7 +14,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 * Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
-**Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
+**Version:** This guide describes the current source and the published v1.5 release. The v1.5 JAR includes the command-input changes, stable working sets, strict prefix checks and quoted addresses described here; the older v1.4 JAR does not. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for other published versions.
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
@@ -42,9 +42,9 @@ Refer to the guide [_Setting up and getting started_](SettingUp.md).
 
 ### Architecture
 
-<puml src="diagrams/ArchitectureDiagram.puml" width="280" />
+<puml src="diagrams/ArchitectureDiagram.puml" width="520" />
 
-The architecture diagram above shows the main components. The following sections explain their responsibilities and the direction of calls between them.
+The architecture diagram above shows the main components and their relationships. A solid arrow shows a direct runtime connection through which the source component calls or supplies data to the target component. A dashed arrow shows a dependency or use without claiming a persistent runtime connection: the User uses the UI, Storage uses Model types, and Storage reads and writes the data file. The sequence diagrams below show the order of calls for particular commands.
 
 The following provides a quick overview of the main components and their interactions.
 
@@ -78,7 +78,7 @@ Each of the four main components (also shown in the diagram above),
 
 For example, the `Logic` component defines its API in `Logic.java` and implements it in `LogicManager.java`. Other components interact with a component through its interface rather than its concrete class, preventing them from coupling to that component's implementation, as illustrated in the following partial class diagram.
 
-<puml src="diagrams/ComponentManagers.puml" width="300" />
+<puml src="diagrams/ComponentManagers.puml" width="520" />
 
 The sections below give more details of each component.
 
@@ -113,7 +113,7 @@ The `UI` component,
 
 Here's a (partial) class diagram of the `Logic` component:
 
-<puml src="diagrams/LogicClassDiagram.puml" width="550"/>
+<puml src="diagrams/LogicClassDiagram.puml" width="700"/>
 
 The following sequence diagrams show the same `execute("delete 1")` call in two focused parts so that their labels remain readable at normal browser zoom. The first diagram expands command parsing and uses a reference frame for the remaining execution.
 
@@ -121,7 +121,7 @@ The following sequence diagrams show the same `execute("delete 1")` call in two 
 
 *Parsing `delete 1` and creating the `DeleteCommand`.*
 
-The second diagram expands command execution and persistence. Its opening reference frame represents the parsing interactions shown above.
+The second diagram begins after the parsing interactions shown above have returned `d:DeleteCommand` to `LogicManager`. It expands command execution and persistence.
 
 <puml src="diagrams/DeleteExecutionSequenceDiagram.puml" alt="LogicManager executing DeleteCommand, updating the model and saving TuitionBook" />
 
@@ -176,7 +176,7 @@ These failures occur during parsing, before command execution, model mutation or
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/model/Model.java)
 
-<puml src="diagrams/ModelClassDiagram.puml" width="550" />
+<puml src="diagrams/ModelClassDiagram.puml" width="650" />
 
 
 The `Model` component,
@@ -185,6 +185,12 @@ The `Model` component,
 * keeps ordered contact UUIDs, an originating predicate and a copyable refresh command. It resolves displayed UUIDs to the latest `Person` values and exposes an unmodifiable `ObservableList<Person>` for the UI. Ordinary mutations do not reevaluate existing membership; query commands explicitly replace it.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
+
+The component diagram above separates the working-set and preference relationships from the contact-domain relationships below so that their associations do not converge on `Person` in one crowded figure.
+
+<puml src="diagrams/PersonClassDiagram.puml" width="650" />
+
+`TuitionBook` owns its `UniquePersonList`, which contains all contacts. Each `Person` owns its value objects and tags. The self-association represents a student's optional guardian ID; the object stores that UUID rather than a direct `Person` reference.
 
 
 <box type="info" seamless>
@@ -199,12 +205,18 @@ The `Model` component,
 
 **API** : [`Storage.java`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/storage/Storage.java)
 
-<puml src="diagrams/StorageClassDiagram.puml" width="1000" />
+<puml src="diagrams/StorageClassDiagram.puml" width="650" />
 
 The `Storage` component,
 * can save both TuitionBook data and user preference data in JSON format, and read them back into corresponding objects.
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
+
+`JsonTuitionBookStorage` saves through a temporary file and atomically replaces the configured contact data file. When a load fails, it tries to move the configured file to an unused sibling `.backup[.n]` path; if that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the component diagram.
+
+The following diagram focuses separately on conversion between contact JSON and model data. `PersonLoadResult` carries a repaired contact and its optional `GuardianLinkRepair`; `JsonSerializableTuitionBook` collects all such diagnostics into `TuitionBookLoadResult` in JSON order.
+
+<puml src="diagrams/StorageDataConversionDiagram.puml" width="850" />
 
 `JsonUtil` removes an optional UTF-8 BOM and decodes file bytes with a strict UTF-8 decoder before passing the text to Jackson, while retaining the same string-based parsing for in-memory callers. Invalid UTF-8 and other encoded files are therefore rejected instead of being accepted with replacement characters or silently converted on the next save. The shared mapper also requires the input to end after one JSON value and rejects duplicate property names at any object depth. Contact-file reads additionally reject unknown properties at every object depth, while preference-file reads retain their existing unknown-property tolerance. These checks prevent malformed, trailing, conflicting or misspelled contact fields from being accepted and then discarded by a later save. For the configured contact file, parsing failure enters the existing malformed-file recovery path, which moves the original bytes unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
 
@@ -306,7 +318,7 @@ Undo/redo is descoped from the final release under [scope decision 4.1](#decisio
 
 #### Proposed Implementation
 
-The proposed undo/redo mechanism is facilitated by `VersionedTuitionBook`. It extends `TuitionBook` with an undo/redo history, stored internally as an `tuitionBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+The proposed undo/redo mechanism is facilitated by `VersionedTuitionBook`. It extends `TuitionBook` with an undo/redo history, stored internally as a list named `tuitionBookStateList` and a `currentStatePointer`. Additionally, it implements the following operations:
 
 * `VersionedTuitionBook#commit()` -- Saves the current TuitionBook state in its history.
 * `VersionedTuitionBook#undo()` -- Restores the previous TuitionBook state from its history.
@@ -432,7 +444,7 @@ Priority represents importance to the target user and does not indicate whether 
 
 `Scope` is a planning classification, not a claim about the current implementation state. `MVP` identifies requirements in the agreed minimum TuitionBook product, while `Beyond MVP` identifies requirements outside that minimum, including implemented, scheduled, deferred, and descoped stories. The table retains these stories as a record of user needs; inclusion does not promise delivery.
 
-The MVP was delivered in v1.3. The v1.4 implementation also supports unlinking, tag filtering with an optional role, name-substring search, an offline command summary, `clear confirm`, quoted names and tags with supported escapes, incremental `tag`/`untag` commands, and reloading the contact file. These features are implemented in this source revision; the versioned release and its changelog identify what has been published. `find` searches names only, while `list [r/ROLE] [t/TAG]...` requires all supplied tags and the optional role to match; neither combines role and name filtering.
+The MVP was delivered in v1.3. The published v1.5 release also supports unlinking, tag filtering with an optional role, name-substring search, an offline command summary, `clear confirm`, quoted names, addresses and tags with supported escapes, incremental `tag`/`untag` commands, and reloading the contact file. `find` searches names only, while `list [r/ROLE] [t/TAG]...` requires all supplied tags and the optional role to match; neither combines role and name filtering.
 
 * **Tag-based organisation**: academic level, subject and active/inactive status are supported through generic tags and tag filtering. There are no dedicated academic fields or inactive/archive states. See the scope decisions below for the workflow and its limitations.
 * **Descoped**: dedicated level/subject fields, dedicated inactive/archive functionality, sorting, area search, notes, contact-to-clipboard commands, import/export commands and undo are excluded from the final release. Copying the User Guide URL remains supported. These decisions do not exclude generic tags or the implemented in-app command summary.
@@ -445,17 +457,17 @@ The MVP was delivered in v1.3. The v1.4 implementation also supports unlinking, 
 | `***` | MVP | private tutor | have my contacts, roles, and guardian links stored locally and saved automatically | continue using the same information after restarting TuitionBook |
 | `***` | MVP | private tutor | link a student to at most one guardian | record who is responsible for that student |
 | `***` | MVP | private tutor | view a student's details together with the linked guardian's details | contact the appropriate guardian without manually searching through separate records |
-| `**` | MVP | private tutor | view a guardian together with the students linked to that guardian | identify all students under that guardian |
 | `***` | MVP | private tutor | delete a contact and remove any affected guardian links without deleting other contacts | remove obsolete contact information while keeping the remaining contact records and relationships valid |
+| `**` | MVP | private tutor | view a guardian together with the students linked to that guardian | identify all students under that guardian |
 | `**` | MVP | private tutor | edit a contact's information | keep the contact's details accurate and up to date |
 | `**` | MVP | private tutor | find contacts by name | retrieve a contact without scanning the entire contact list |
 | `**` | MVP | private tutor | clear all stored contact data | start over when the existing dataset is no longer needed |
 | `**` | MVP | private tutor | access help for TuitionBook | recall how to use the application and its commands |
 | `**` | MVP | private tutor | exit TuitionBook using a command | close the application without switching to a mouse-driven action |
+| `**` | MVP | private tutor | assign tags to contacts | organise contacts using flexible labels |
 | `**` | Beyond MVP | private tutor | filter contacts by student or guardian role | focus on the relevant type of contact |
 | `**` | Beyond MVP | private tutor | record a student's academic level and subject or subjects | keep track of what I teach each student |
 | `**` | Beyond MVP | private tutor | filter students by academic level and/or subject | find students studying a particular subject at a given level |
-| `**` | MVP | private tutor | assign tags to contacts | organise contacts using flexible labels |
 | `**` | Beyond MVP | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
 | `*` | Beyond MVP | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
 | `*` | Beyond MVP | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
@@ -491,7 +503,7 @@ US20 undo/redo is excluded from the final release. There is no command history t
 
 The earlier US12 descope was reversed by [#93](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/93): Help now includes an offline command summary, with browser access to the full UG and Copy URL as a fallback. It is a static syntax summary, not a context-sensitive help system.
 
-US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Name quoting under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) was extended to tags by [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163). The v1.5 development source also supports quoted addresses alongside strict unknown-prefix checks for #193/#201. Quoted names, addresses and tags support `\"` for a literal double quote and `\\` for a literal backslash, subject to field validation. This protects embedded prefixes in those quoted fields; it does not add notes or quoting for every field. See [Quoted field parsing](#quoted-field-parsing).
+US29 free-text notes remain excluded. Notes would need a deliberate syntax for text containing field-like prefixes; simply introducing another prefixed field could interpret part of a note as another argument. Name quoting under [#97](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/97) was extended to tags by [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163). The published v1.5 release also supports quoted addresses alongside strict unknown-prefix checks for #193/#201. Quoted names, addresses and tags support `\"` for a literal double quote and `\\` for a literal backslash, subject to field validation. This protects embedded prefixes in those quoted fields; it does not add notes or quoting for every field. See [Quoted field parsing](#quoted-field-parsing).
 
 #### Academic grouping and inactive contacts
 
@@ -515,7 +527,7 @@ Two internal spaces:
 Sec  4
 ```
 
-Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; the v1.5 development build rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
+Stored tag identity is case-sensitive; filtering compares complete tags case-insensitively. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a value and are not stored; inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; v1.5 rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
 
 Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Surrounding ASCII spaces are trimmed when tags are loaded; tags that differ only by that padding are merged into one, and the merged value is written on the next save. Any other narrowing of validation or identity still requires an explicit compatibility plan.
 
@@ -539,9 +551,16 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 (For all use cases below, **System** refers to `TuitionBook` and **User** refers to the `Private tutor`, unless specified otherwise.)
 
+| | | |
+|---|---|---|
+| [UC01 Add a contact](#use-case-uc01-add-a-contact) | [UC02 Link a guardian](#use-case-uc02-link-a-guardian-to-a-student) | [UC03 Unlink a guardian](#use-case-uc03-unlink-a-guardian-from-a-student) |
+| [UC04 Edit a contact](#use-case-uc04-edit-a-contact) | [UC05 Find contacts](#use-case-uc05-find-contacts-by-name) | [UC06 View contact details](#use-case-uc06-view-contact-details) |
+| [UC07 Delete a contact](#use-case-uc07-delete-a-contact) | [UC08 Filter contacts](#use-case-uc08-filter-contacts) | [UC09 Reload contact data](#use-case-uc09-reload-contact-data) |
+| [UC10 Clear all contacts](#use-case-uc10-clear-all-contacts) | [UC11 Modify tags](#use-case-uc11-modify-contact-tags) | |
+
 #### Use case: UC01 Add a contact
 
-**MSS**
+**Main Success Scenario (MSS)**
 
 1.  User requests to add a contact, providing the contact's role, name, and phone number, and optionally its email address, home address, and tags.
 2.  System adds the contact and displays confirmation, including its role.
@@ -581,7 +600,8 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  User requests to link a displayed student to a displayed guardian.
-2.  System records the guardian link and displays confirmation of the relationship.
+2.  System records the guardian link.
+3.  System saves the changed relationship and displays confirmation.
 
     Use case ends.
 
@@ -601,9 +621,9 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 1c. The student is already linked to a different guardian.
 
-    * 1c1. System replaces the guardian link and displays confirmation of the replacement relationship.
+    * 1c1. System replaces the guardian link.
 
-      Use case ends.
+      Use case resumes from step 3.
 
 * 1d. The student is already linked to the specified guardian.
 
@@ -611,9 +631,9 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-* 2a. System cannot save the new or replacement guardian link.
+* 3a. System cannot save the new or replacement guardian link.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -869,7 +889,7 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 
       Use case ends.
 
-#### Use case: UC11 Modify a contact's tags
+#### Use case: UC11 Modify contact tags
 
 **Preconditions**
 
@@ -878,7 +898,8 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 **MSS**
 
 1.  User requests to add or remove one or more specified tags from a contact in the current contact list.
-2.  System adds or removes the specified tags, retains the contact's other tags, and reports the result.
+2.  System adds or removes the specified tags and retains the contact's other tags.
+3.  System saves any changed tags and reports the result.
 
     Use case ends.
 
@@ -904,13 +925,13 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 
 * 2b. Only some tags requested for removal are present on the contact.
 
-    * 2b1. System removes the tags that are present, retains the other tags, and reports the requested tags that were not present.
+    * 2b1. System removes the tags that are present and retains the other tags.
 
-      Use case ends.
+      Use case resumes from step 3, which also reports the requested tags that were not present.
 
-* 2c. System cannot save the changed tags.
+* 3a. System cannot save the changed tags.
 
-    * 2c1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -928,11 +949,11 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 
 ### Non-Functional Requirements
 
-1.  TuitionBook shall run without an application installer on any mainstream desktop operating system with Java `25` or later installed.
-2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, tagging, untagging, linking, or unlinking command shall complete within two seconds for a data set of 1,000 contacts, measured from command submission to the result being displayed.
+1.  TuitionBook shall run without an application installer on each environment in the supported-OS test matrix, with Java `25` installed.
+2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, tagging, untagging, linking, or unlinking command shall complete within two seconds for a 1,000-contact performance workload whose names, phone numbers, emails, and addresses are within their documented length limits, with at most five tags of at most 50 printable ASCII characters per contact. Measure from command submission to the result being displayed. This defines the workload to benchmark; it does not claim that a benchmark has already passed.
 3.  All documented add, edit, delete, list, find, filter, view, tag, untag, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
-5.  TuitionBook shall store contact data only in a local, human-editable text file and shall not transmit contact data to an external service.
+5.  TuitionBook shall use one local, human-editable text file as the authoritative contact store and shall not transmit contact data to an external service. It may create local sibling text-file backups to preserve unreadable contact data during recovery.
 6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
 7.  At startup, TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
 8.  TuitionBook shall allow at most one guarded application instance per application home directory while allowing application copies in separate home directories to run independently.
@@ -941,14 +962,14 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 
 * **Contact**: A record in TuitionBook representing either a student or a guardian, with a name, phone number, and optional email address, home address, and tags.
 * **Current contact list**: The displayed working set, including retained contacts that no longer match its originating query; index-based commands refer to positions in this list.
-* **Contact ID**: A unique, persistent identifier assigned by TuitionBook to a contact.
+* **Contact ID**: A unique identifier assigned by TuitionBook to a contact. IDs stored in the current data format persist across loads. When a legacy record has no ID, the ID generated while loading is provisional until a successful contact save writes it to the current data file; restarting before that save can generate a different ID.
 * **Data file**: The local text file that stores TuitionBook contacts and their recorded guardian links between application sessions.
 * **Filter**: The originating query condition used to establish a working set, classify additions and identify retained contacts that no longer match. TuitionBook supports a name filter or a combined role-and-tag filter. The role is optional, and all supplied tags must match exactly, ignoring case. An explicit query replaces the working set; later edits do not automatically recompute membership.
 * **Guardian**: A contact with the `guardian` role. A guardian contact may have zero or more recorded student links; these links record information in TuitionBook and do not establish or determine real-world responsibility.
 * **Guardian link**: A recorded association from a student to a guardian contact. A student has at most one guardian link, while a guardian can be linked to multiple students.
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
 * **Index**: A positive one-based position in the current working set, used by index-based commands. Indexes can change after deletion compacts the working set, an explicit query, a successful reload, clear or restart.
-* **Mainstream OS**: Windows, macOS, or a commonly used Linux distribution.
+* **Supported-OS test matrix**: Windows 11, macOS 15, and Ubuntu 24.04 LTS, each with Java `25`. These are reference environments for verifying the cross-platform requirement, not a claim that the current release has been executed on every environment; report actual platform checks separately.
 * **Normalised name**: A UTF-8 name converted to its duplicate-identity form: leading and trailing ASCII spaces are removed, each internal run of ASCII spaces is collapsed to one, and the shared Unicode comparison form is applied while the original display value remains unchanged. Search uses only the Unicode comparison form, without this space normalization.
 * **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: ASCII spaces, hyphens, slashes, and numeric-group parentheses are removed; the optional annotation is ignored; a leading `+` is retained; and `x`, `ext`, and `ext.` become `x` while retaining the extension digits. Country-code equivalence is not applied in the MVP.
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
@@ -970,7 +991,7 @@ Use these scenarios to check visible behaviour and persistence. Start with [Laun
 
 ### Command input and diagnostics
 
-Use a fresh, disposable folder with an empty contact list. These steps describe the v1.5 development build, not the released v1.4 JAR.
+Use the published v1.5 JAR in a fresh, disposable folder with an empty contact list. These behaviours are not present in the older v1.4 JAR.
 
 1. Enter `AdD r/student n/Case Sensitive p/91234567 a/12 Main Road t/Math`, then `LiSt` and `ViEw 1`.<br>
    Expected: One contact is stored and displayed; the name remains `Case Sensitive`, the address `12 Main Road`, and the tag `Math`.
@@ -1057,7 +1078,7 @@ Use a fresh, disposable folder for these commands. These examples use a 64-chara
 
 ### Strict prefixes and quoted addresses
 
-Use a fresh, disposable folder with an empty contact list. These steps target the v1.5 development build, not the published v1.4 JAR.
+Use the published v1.5 JAR in a fresh, disposable folder with an empty contact list. These behaviours are not present in the older v1.4 JAR.
 
 1. Enter `add r/student n/Amy p/91234567 a/"20 Main Road, c/o Rina a/p Kaur" t/"Advanced Math/Science"`, then `view 1`.<br>
    Expected: One student is stored. The address is `20 Main Road, c/o Rina a/p Kaur`, the phone is `91234567` and the tag is `Advanced Math/Science`; enclosing quotes are absent.
@@ -1284,7 +1305,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `view 1`.<br>
    Expected: The contact list is replaced by Alex Yeoh's details and `Bernice Yu (99272758)`. The result area displays `Viewing contact: Alex Yeoh`.
 1. Enter `view 1 v/`.<br>
-   Expected: Bernice Yu's full guardian details appear after Alex Yeoh's details. Alex's tags appear as `[!tag], [10], [Alpha], [alpha], [C:\\\\Math\\\\], [Math, Science], [zebra]`, regardless of the system locale. The tag containing a comma remains one bracketed tag, and backslashes are escaped.
+   Expected: Bernice Yu's full guardian details appear after Alex Yeoh's details. Alex's tags appear as `[!tag], [10], [Alpha], [alpha], [C:\\Math\\], [Math, Science], [zebra]`, regardless of the system locale. The tag containing a comma remains one bracketed tag, and each stored backslash is displayed as two backslashes.
 1. Enter `view 2`.<br>
    Expected: The detail view shows Bernice Yu's details, followed by `Alex Yeoh (87438807)` under linked students.
 1. Enter `view 2 v/`.<br>
@@ -1292,7 +1313,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 1. Enter `view 3`, then `view 4`.<br>
    Expected: The unlinked student reports `No guardian linked.` and the guardian without students reports `No students linked.`
 1. Enter `list r/student`, then `view 1 v/`.<br>
-   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored list remains filtered to students. Note that `add`, `edit`, `link`, and `unlink` clear the active filter, while `list` and `find` replace it, so they are unsuitable for this check.
+   Expected: Bernice Yu's details still appear. Enter `help`, close the help window, and confirm that the restored list remains filtered to students. `add`, `edit`, `link`, and `unlink` preserve the active working set; `list` and `find` replace it, while successful `reload` and `clear confirm` reset it to the full list. Use `list` or `find` only after completing this check.
 1. Enter `view 0`, `view 99`, `view`, `view 1 extra`, and `view 1 v/details` while the detail view is visible.<br>
    Expected: Each command reports an index or format error and leaves the detail view visible; no contact data changes.
 
@@ -1549,7 +1570,7 @@ Run each scenario below independently in a fresh, disposable folder. An ordinary
    1. Configure the data file or its folder so saving fails, then enter `edit 2 t/Science`.<br>
       Expected: A save error is reported and Sam's tag remains `Math`. This establishes the save-failure precondition; permission controls differ by operating system.
    1. Enter `link 2 1`, `edit 2 n/Sam Student`, and `edit 2 t/Math`.<br>
-      Expected: Each command completes without a save error and contacts remain unchanged. The link command reports that the relationship already exists. Each edit reports `No changes made: the specified values already match Sam Student` Repeating `edit 2 e/`, `edit 2 a/`, or `edit 2 t/Math t/Math` also reports no changes because those fields already match.
+      Expected: Each command completes without a save error and contacts remain unchanged. The link command reports that the relationship already exists. Each edit reports `No changes made: the specified values already match Sam Student`. Repeating `edit 2 e/`, `edit 2 a/`, or `edit 2 t/Math t/Math` also reports no changes because those fields already match.
    1. Restore write access, then enter `edit 2 t/Science`, `unlink 2`, and `unlink 2` again.<br>
       Expected: The tag change and first unlink persist; the second unlink reports no linked guardian. Restart and verify that Sam has tag `Science` and no guardian link.
 

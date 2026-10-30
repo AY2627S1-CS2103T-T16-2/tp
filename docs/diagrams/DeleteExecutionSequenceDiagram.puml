@@ -2,7 +2,7 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
-title Executing and saving DeleteCommand
+title Executing and saving a previously parsed DeleteCommand
 
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
@@ -18,13 +18,8 @@ box Storage STORAGE_COLOR_T1
 participant "s:Storage" as Storage STORAGE_COLOR
 end box
 
-[-> LogicManager : execute("delete 1")
+[-> LogicManager : continue execute with d
 activate LogicManager
-
-ref over LogicManager, DeleteCommand
-Parse input and create d
-(see the previous diagram)
-end ref
 
 LogicManager -> DeleteCommand : canMutate()
 activate DeleteCommand

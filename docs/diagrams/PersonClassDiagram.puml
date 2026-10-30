@@ -1,0 +1,34 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor MODEL_COLOR
+skinparam classBackgroundColor MODEL_COLOR
+
+Class TuitionBook
+Class UniquePersonList
+Class Person
+Class "<<enumeration>>\nRole" as Role
+Class Address
+Class Email
+Class Name
+Class Phone
+Class Tag
+
+TuitionBook *-down-> "1" UniquePersonList
+UniquePersonList -down-> "*" Person
+
+Person -left-> "1" Role
+Person *-left-> "1" Name
+Person *-left-> "1" Phone
+Person *-right-> "0..1" Email
+Person *-right-> "0..1" Address
+Person *-right-> "*" Tag
+Person "* student" --> "0..1 guardian" Person
+
+legend bottom
+  Every Person has an internal UUID id. A student's guardian link is
+  stored as the guardian's id in its guardianId field, not as a direct
+  Person reference. Only a student may link a guardian, and one guardian
+  may be linked by many students.
+end legend
+@enduml
