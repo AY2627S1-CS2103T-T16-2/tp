@@ -64,9 +64,42 @@ starts **2026-10-30 at 10:00 SGT**; final submission is **2026-11-03 at 14:00 SG
   if attribution or remaining budget is unclear; do not assume unused quota.
 * Keep fixes small and verify regressions. Exemption from the quota does not remove
   testing, documentation, attribution or approval requirements elsewhere in this file.
+* **Freeze priorities:** favour quota-exempt work first: making the UG readable
+  under [Writing for users](#writing-for-users), keeping the DG accurate, and
+  adding tests. Treat [Code and test essentials](#code-and-test-essentials) as
+  applying only to the small code fixes that are still necessary. Rewording a
+  message in `src/main` is a code edit that counts towards the quota, so check
+  budget before changing message text.
 * After the submission deadline, a separate **30-day code freeze** applies:
   repository code updates require teaching-team permission, except changes related
   to an approved late submission. Issue, milestone and PR updates remain allowed.
+
+## Writing for users
+
+The UG, error messages, Help window and startup dialogs are read by tutors with no
+programming knowledge. Write for them, not for developers; the DG may stay technical.
+
+* Use plain words. In user-facing text, do not use character codes (`U+0020`) or terms
+  such as ASCII, Unicode, code point, UUID, NFC, normalise, token, parser, substring,
+  literal, validation or working set. Say "spaces", "English letters", "digits (0-9)",
+  "part of a name" or "the backup file" instead.
+* Use technical terms only where users must type or see them (for example `JSON`
+  key names in the data-file section), and explain them in passing.
+* Keep sentences short and lead with what the user should do. Give one rule per bullet,
+  and split field rules into sub-lists rather than long paragraphs.
+* Stay accurate while simplifying. Do not say "digits" when only 0-9 are accepted,
+  "exactly as you typed" when spaces are trimmed, or a fixed backup path when the
+  path can vary. State real limits plainly instead.
+* Error messages report the specific rule broken, briefly, like "This person already
+  exists in TuitionBook." Leave niche guidance (quoting, escapes) to the UG, and keep a
+  UG tip explaining when to wrap names, addresses and tags in double quotes.
+* Quote messages in the UG and DG manual tests exactly as the app shows them, and
+  update both when a message changes. Data-file load details are cut off at
+  `DataLoadingException.MAX_GUIDANCE_DETAIL_LENGTH`, so keep those messages, including
+  the "Contact N in the file" prefix and any contact name, within that limit.
+* Keep UG headings unchanged where possible, because the DG links to their anchors.
+* Check UG changes by building the docs, confirming every in-page link resolves, and
+  searching the diff for the jargon listed above.
 
 ## Mandatory course requirements
 
@@ -181,6 +214,9 @@ course discourages timestamp changes that interfere with progress tracking.
 
 ## Code and test essentials
 
+During the freeze, these apply to the small code fixes that are still necessary;
+see the freeze priorities above.
+
 * Follow the 2103t Java standards and existing component boundaries. Avoid duplicated
   logic, oversized methods and catch-and-ignore handling. Use project logging and
   exceptions appropriately; assertions must not be the only input validation.
@@ -231,7 +267,7 @@ seek clarification before proceeding with work that depends on it. Do not guess.
 |---|---|
 | Feature/design/dependency changes | Relevant approved issue/spec, UG/DG, [constraints][constraints] and [expectations][expectations]. |
 | Tests or alpha testing | [Testing guide](docs/Testing.md), neighbouring tests and [course alpha-testing guidance][alpha]. |
-| UG/DG/diagram changes | [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading], [requirements notation][notation] and [NFR definitions][requirements]. |
+| UG/DG/diagram changes | [Writing for users](#writing-for-users) for the UG and user-facing text, [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading], [requirements notation][notation] and [NFR definitions][requirements]. |
 | Iteration planning or Git/PR actions | [Timeline][timeline], its active week's instructions and [GitHub workflow][github]. |
 | Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. Verify any eligibility for a DG "Planned Enhancements" appendix against the live [deliverables][deliverables] and [PE rules][pe] before relying on it. |
 | PE reports/responses/evaluations | [PE rules][pe] for the active phase and [grading][grading]; verify facts, impact and allowed issue edits, not presumed severity. |
