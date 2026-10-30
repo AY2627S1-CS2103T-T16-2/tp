@@ -259,7 +259,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Use `r/student` to show only students or `r/guardian` to show only guardians. You can give `r/` only once.
 * Each `t/TAG` adds a condition: a contact is shown only if it has **all** the tags you list. Tags must match completely, but letter case doesn't matter, so `t/math` matches `Math`.
 * Spaces and punctuation inside a tag must match exactly. For example, `Sec··4` does not match `Sec·4` (Using `·` as a placeholder for one space to make spaces visible here). You can copy the commands from the [add examples](#adding-a-contact-add). `active` also does not match `active!`.
-* Stored tags keep their exact letter case, so one contact can have both `friends` and `friendS`. Filtering ignores that case (e.g. Searching `friends` will show all entries with the `friends` tags AND entries with the `friendS` tags).
+* Stored tags keep their exact letter case, so one contact can have both `friends` and `friendS`. Filtering ignores letter case. For example, `list t/friends` matches contacts tagged `friends`, `friendS` or any other letter-case variation.
 * To filter by a tag that contains `r/` or `t/` after a space, use double quotes: `list t/"study t/weekly"`. See [Quoted values and escaping](#quoted-values-and-escaping).
 * If nothing matches, the list is empty and the result shows `0 person(s) listed!`. Enter `list` to see everyone again.
 * To link a student to a guardian after filtering, enter `list` first so that both contacts are shown.
@@ -305,7 +305,7 @@ To copy a phone number, email address or other contact details:
 1. Click in the details pane and select the text you need.
 1. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> on Windows/Linux or <kbd>Cmd</kbd>+<kbd>C</kbd> on macOS to copy the text, then paste the text where you need it.
 
-Take note that copying is only enabled in the details pane, while text on contact-list cards cannot be selected for copying.
+To copy contact details, use the details pane. Text on contact-list cards cannot be selected. You can also select and copy text from the result area.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 
