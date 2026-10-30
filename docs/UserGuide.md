@@ -23,7 +23,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 Index examples refer to the [sample contacts](#sample-contacts-for-examples). Each example starts from the full sample list.
 
-Action     | What it does | Format, example
+Action     | What it does | Format and example
 -----------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | Adds a student or guardian contact. | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
 **Clear**  | Deletes **every contact**. | `clear confirm`
@@ -230,7 +230,7 @@ These differences are ignored only for this check. TuitionBook still saves each 
 A young student without their own phone number can use their guardian's phone number and email. They remain separate contacts because their roles differ, even if their names are the same.
 </box>
 
-Examples (each adds a new contact after the existing ones, so the [sample contacts](#sample-contacts-for-examples) keep indexes 1 to 5 in an unfiltered list):
+Examples:
 
 ```text
 add r/student n/Sam Lee p/98760001 e/samlee@example.com a/John street, block 123, #01-01
@@ -258,8 +258,8 @@ Format: `list [r/ROLE] [t/TAG]...`
 * `list` on its own shows every contact in its original order.
 * Use `r/student` to show only students or `r/guardian` to show only guardians. You can give `r/` only once.
 * Each `t/TAG` adds a condition: a contact is shown only if it has **all** the tags you list. Tags must match completely, but letter case doesn't matter, so `t/math` matches `Math`.
-* Spaces and punctuation inside a tag must match exactly. Using `·` only to make spaces visible here, `Sec··4` does not match `Sec·4`. You can copy the commands from the [add examples](#adding-a-contact-add). `active` also does not match `active!`.
-* Stored tags keep their exact letter case, so one contact can have both `friends` and `friendS`. Filtering ignores that case: repeated case-equivalent conditions do not narrow the results.
+* Spaces and punctuation inside a tag must match exactly. For example, `Sec··4` does not match `Sec·4` (Using `·` as a placeholder for one space to make spaces visible here). You can copy the commands from the [add examples](#adding-a-contact-add). `active` also does not match `active!`.
+* Stored tags keep their exact letter case, so one contact can have both `friends` and `friendS`. Filtering ignores that case (e.g. Searching `friends` will show all entries with the `friends` tags AND entries with the `friendS` tags).
 * To filter by a tag that contains `r/` or `t/` after a space, use double quotes: `list t/"study t/weekly"`. See [Quoted values and escaping](#quoted-values-and-escaping).
 * If nothing matches, the list is empty and the result shows `0 person(s) listed!`. Enter `list` to see everyone again.
 * To link a student to a guardian after filtering, enter `list` first so that both contacts are shown.
@@ -271,7 +271,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Tags are sorted alphabetically and wrap onto more rows when needed.
 * If a value is too long for the card, it is shortened with `…`. Hover over it to see the full text, or use `view INDEX v/` to see every detail.
 
-The bar above the cards explains the current list. **Matching** counts displayed contacts that still satisfy the query. **Retained** counts displayed contacts that stopped matching but remain so their indexes do not suddenly change. Hidden contacts count in neither number. For a filtered view, **Shown = Matching + Retained**. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable) for why rows are retained and how to refresh them.
+The bar above the cards explains the current list. **Matching** counts displayed contacts that still satisfy the query. **Retained** counts displayed contacts that stopped matching (usually after edits) but remain so their indexes do not suddenly change. Hidden contacts count in neither number. For a filtered view, **Shown = Matching + Retained**. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable) for why rows are retained and how to refresh them.
 
 **Case variants and AND filtering**
 
@@ -286,7 +286,7 @@ Use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-c
 
 ### Viewing a contact: `view`
 
-Shows a contact's full details, together with their guardian or linked students, in place of the contact list. The list comes back after your next successful command. If a command fails, the details stay on screen so that you can fix the command.
+Shows a contact's full details together with their guardian or linked students.
 
 Format: `view INDEX [v/]`
 
@@ -305,7 +305,7 @@ To copy a phone number, email address or other contact details:
 1. Click in the details pane and select the text you need.
 1. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> on Windows/Linux or <kbd>Cmd</kbd>+<kbd>C</kbd> on macOS to copy the text, then paste the text where you need it.
 
-You can copy text from this pane, but cannot edit it. Copying does not change your contacts. Text on contact-list cards cannot be selected.
+Take note that copying is only enabled in the details pane, while text on contact-list cards cannot be selected for copying.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 
@@ -326,7 +326,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `INDEX` is the number shown beside the contact in the current list (1, 2, 3, …).
 * Give at least one field to change. The new value replaces the old one, while fields you leave out stay the same.
 * If all supplied values already match the contact, `edit` reports `No changes made: the specified values already match NAME` and does not save.
-* All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`: `edit 1 n/"Rina a/p Kaur"`.
+* All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`, such as `edit 1 n/"Rina a/p Kaur"`.
 * To remove an email or address, type `e/` or `a/` with nothing after it. `a/""` also removes the address.
 * **Giving `t/` replaces all of the contact's tags.** Retype any tags you want to keep, or use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag) to change one tag at a time. To remove every tag, type `t/` with nothing after it.
 * You cannot change a contact's role (`r/`) or guardian (`g/`) with `edit`. Use `link` and `unlink` to change guardian links. If you include `r/` or `g/`, nothing is changed and the result explains what to do instead.
@@ -346,8 +346,7 @@ Format: `tag INDEX t/TAG [t/TAG]...`
 * `INDEX` is the number shown beside the contact in the current list. Students and guardians can both be tagged.
 * Give at least one tag. Tags follow the same rules as [`add`](#adding-a-contact-add).
 * `Math` and `math` are saved as two different tags, even though `list` treats them as the same.
-* The result lists only the tags that were newly added, each in double quotes. If the contact already has every tag you gave, nothing changes.
-* The contact keeps its place in the list, even if it no longer matches the current filter.
+* The result lists only the tags that were newly added. If the contact already has every tag you gave, nothing changes.
 * Use double quotes for a tag containing text like `t/` or `p/` after a space: `tag 1 t/"study t/weekly"` adds one tag, `study t/weekly`. See [Quoted values and escaping](#quoted-values-and-escaping) for literal quotes, backslashes and feedback formatting.
 
 Example using the [sample contacts](#sample-contacts-for-examples):
@@ -358,7 +357,7 @@ Grace Tan (3) has `Active`, `Math` and `Sec 4`. Enter:
 tag 3 t/Science t/Math
 ```
 
-This adds `Science` while keeping her existing tags, and reports `Added tags to Grace Tan: "Science".` `Math` is not listed because it was already present. Continue using `add` to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
+This adds `Science` while keeping her existing tags, and reports `Added tags to Grace Tan: "Science".` `Math` is not listed because it was already present. Use `add` instead to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
 
 ### Removing tags from a contact: `untag`
 
@@ -367,9 +366,10 @@ Removes only the specified tags while keeping the contact's other tags.
 Format: `untag INDEX t/TAG [t/TAG]...`
 
 * Works like [`tag`](#adding-tags-to-a-contact-tag): same index, tag rules and double quotes.
-* Each tag must match exactly, including letter case and spacing. If you enter `untag 1 t/math`, `Math` stays in place and the result suggests the correct spelling: `Tag "math" not found, did you mean "Math"?`
+* Each tag must match exactly, including letter case and spacing.
 * Tags the contact doesn't have are skipped and listed under `Tags not present:`. If none of them are present, nothing changes.
 * To remove every tag at once, use `edit INDEX t/` instead.
+* The contact keeps its place in the list, even if it no longer matches the current filter.
 
 Examples continuing from the [`tag` example](#adding-tags-to-a-contact-tag), where Grace Tan (3) has `Active`, `Math`, `Science` and `Sec 4`. Enter them in order:
 
