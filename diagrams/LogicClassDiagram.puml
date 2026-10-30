@@ -6,9 +6,8 @@ skinparam classBackgroundColor LOGIC_COLOR
 
 package Logic as LogicPackage {
 
-package "Parser Classes" as ParserClasses{
-}
-Class XYZCommand
+Class TuitionBookParser
+Class "XYZCommand\n<<representative>>" as XYZCommand
 Class CommandResult
 Class "{abstract}\nCommand" as Command
 
@@ -17,31 +16,30 @@ Class "<<interface>>\nLogic" as Logic
 Class LogicManager
 }
 
-package Model {
-Class HiddenModel #FFFFFF
-}
-
-package Storage {
-}
+Class "<<interface>>\nModel" as Model MODEL_COLOR
+Class "<<interface>>\nStorage" as Storage STORAGE_COLOR
 
 Class HiddenOutside #FFFFFF
 HiddenOutside ..> Logic
 
 LogicManager .right.|> Logic
-LogicManager -right->"1" ParserClasses
-ParserClasses ..> XYZCommand : <<create>>
+LogicManager --> "1" TuitionBookParser
+TuitionBookParser ..> XYZCommand : <<create>>
 
 XYZCommand -up-|> Command
 LogicManager .left.> Command : <<call>>
 
 LogicManager --> Model
 LogicManager --> Storage
-Storage --[hidden] Model
-Command .[hidden]up.> Storage
 Command .right.> Model
-note right of XYZCommand: XYZCommand = AddCommand, \nFindCommand, etc
+Command .right.> Storage
+note left of XYZCommand: XYZCommand represents a concrete command,\nsuch as AddCommand or FindCommand.
 
 Logic ..> CommandResult
-LogicManager .down.> CommandResult
 Command .up.> CommandResult : <<create>>
+
+TuitionBookParser -[hidden]right- LogicManager
+LogicManager -[hidden]right- Command
+Command -[hidden]down- Model
+Model -[hidden]right- Storage
 @enduml
