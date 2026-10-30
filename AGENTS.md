@@ -108,6 +108,11 @@ These summarise explicit requirements in the [overview][overview] and
 
 ## Design recommendations — not additional prohibitions
 
+* Avoid semicolons in documentation and user-facing prose unless the user explicitly
+  overrides this style default. Prefer smooth, connected sentences or shorter
+  sentences. Preserve semicolons required by code or command syntax, literal test
+  data and exact quotations such as application messages. Do not change application
+  behaviour or message text solely to remove semicolons.
 * Prefer efficient CLI workflows, low interaction effort, minimal networking with
   suitable fallbacks, and easy-to-test features. These are design recommendations
   from the course; specific approved product guarantees remain binding.
