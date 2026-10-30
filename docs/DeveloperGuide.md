@@ -14,7 +14,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 * Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
-**Version:** This guide describes the current source and the published v1.5 release. The v1.5 JAR includes the command-input changes, stable working sets, strict prefix checks and quoted addresses described here; the older v1.4 JAR does not. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for other published versions.
+**Version:** This guide describes the current source during development of v1.6. The published v1.5 JAR includes the command-input changes, stable working sets, strict prefix checks and quoted addresses described here; the older v1.4 JAR does not. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for other published versions.
 
 TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
