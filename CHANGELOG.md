@@ -26,6 +26,7 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 
+- Reject model API calls that would break guardian relationships or change persistent contact identity, and provide consistent hash codes for value-equal objects.
 - Keep the restored main window within a current screen when saved monitor coordinates are no longer available.
 - Write preferences through an atomic temporary-file replacement, and preserve primary contact-save failures when temporary-file cleanup also fails.
 - Report unchanged edits without saving or claiming that contact values changed.

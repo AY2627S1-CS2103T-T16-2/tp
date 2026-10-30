@@ -5,6 +5,7 @@ import static seedu.tuitionbook.commons.util.AppUtil.checkArgument;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -119,6 +120,11 @@ abstract class TagModificationCommand extends Command {
         }
         TagModificationCommand otherCommand = (TagModificationCommand) other;
         return index.equals(otherCommand.index) && tags.equals(otherCommand.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClass(), index, tags);
     }
 
     @Override

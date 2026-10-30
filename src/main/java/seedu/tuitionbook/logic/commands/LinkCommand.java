@@ -3,6 +3,7 @@ package seedu.tuitionbook.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 
 import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.commons.util.ToStringBuilder;
@@ -109,6 +110,11 @@ public class LinkCommand extends Command {
         }
         return studentIndex.equals(otherLinkCommand.studentIndex)
                 && guardianIndex.equals(otherLinkCommand.guardianIndex);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(studentIndex, guardianIndex);
     }
 
     @Override

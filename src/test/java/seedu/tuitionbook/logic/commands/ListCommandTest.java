@@ -253,8 +253,12 @@ public class ListCommandTest {
         assertTrue(listStudentsCommand.equals(listStudentsCommand));
 
         // same values -> returns true
-        assertTrue(listAllCommand.equals(new ListCommand()));
-        assertTrue(listStudentsCommand.equals(new ListCommand(new PersonHasRolePredicate(Role.STUDENT))));
+        ListCommand listAllCommandCopy = new ListCommand();
+        ListCommand listStudentsCommandCopy = new ListCommand(new PersonHasRolePredicate(Role.STUDENT));
+        assertTrue(listAllCommand.equals(listAllCommandCopy));
+        assertEquals(listAllCommand.hashCode(), listAllCommandCopy.hashCode());
+        assertTrue(listStudentsCommand.equals(listStudentsCommandCopy));
+        assertEquals(listStudentsCommand.hashCode(), listStudentsCommandCopy.hashCode());
 
         // different types -> returns false
         assertFalse(listAllCommand.equals(1));

@@ -46,6 +46,7 @@ public class FindCommandTest {
         // same values -> returns true
         FindCommand findFirstCommandCopy = new FindCommand(firstPredicate);
         assertTrue(findFirstCommand.equals(findFirstCommandCopy));
+        assertEquals(findFirstCommand.hashCode(), findFirstCommandCopy.hashCode());
 
         // different types -> returns false
         assertFalse(findFirstCommand.equals(1));

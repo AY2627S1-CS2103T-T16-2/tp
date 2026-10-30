@@ -43,7 +43,9 @@ public class PersonHasRolePredicateTest {
         assertTrue(studentPredicate.equals(studentPredicate));
 
         // same values -> returns true
-        assertTrue(studentPredicate.equals(new PersonHasRolePredicate(Role.STUDENT)));
+        PersonHasRolePredicate studentPredicateCopy = new PersonHasRolePredicate(Role.STUDENT);
+        assertTrue(studentPredicate.equals(studentPredicateCopy));
+        assertEquals(studentPredicate.hashCode(), studentPredicateCopy.hashCode());
 
         // different types -> returns false
         assertFalse(studentPredicate.equals(1));

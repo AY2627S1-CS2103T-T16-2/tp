@@ -123,6 +123,7 @@ public class AddCommandTest {
         // same values -> returns true
         AddCommand addAliceCommandCopy = new AddCommand(alice);
         assertTrue(addAliceCommand.equals(addAliceCommandCopy));
+        assertEquals(addAliceCommand.hashCode(), addAliceCommandCopy.hashCode());
 
         // different types -> returns false
         assertFalse(addAliceCommand.equals(1));

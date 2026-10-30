@@ -57,8 +57,11 @@ public class PersonMatchesListFilterPredicateTest {
     public void equals() {
         PersonMatchesListFilterPredicate predicate = new PersonMatchesListFilterPredicate(
                 Role.STUDENT, List.of("active", "math"));
+        PersonMatchesListFilterPredicate predicateCopy = new PersonMatchesListFilterPredicate(
+                Role.STUDENT, List.of("active", "math"));
         assertTrue(predicate.equals(predicate));
-        assertTrue(predicate.equals(new PersonMatchesListFilterPredicate(Role.STUDENT, List.of("active", "math"))));
+        assertTrue(predicate.equals(predicateCopy));
+        assertEquals(predicate.hashCode(), predicateCopy.hashCode());
         assertFalse(predicate.equals(null));
         assertFalse(predicate.equals(1));
         assertFalse(predicate.equals(new PersonMatchesListFilterPredicate(Role.GUARDIAN, List.of("active", "math"))));

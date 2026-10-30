@@ -18,6 +18,7 @@ import seedu.tuitionbook.commons.core.index.Index;
 import seedu.tuitionbook.logic.Messages;
 import seedu.tuitionbook.model.Model;
 import seedu.tuitionbook.model.ModelManager;
+import seedu.tuitionbook.model.TuitionBook;
 import seedu.tuitionbook.model.UserPrefs;
 import seedu.tuitionbook.model.person.Person;
 import seedu.tuitionbook.model.person.Role;
@@ -184,6 +185,7 @@ public class DeleteCommandTest {
         // same values -> returns true
         DeleteCommand deleteFirstCommandCopy = new DeleteCommand(INDEX_FIRST_PERSON);
         assertTrue(deleteFirstCommand.equals(deleteFirstCommandCopy));
+        assertEquals(deleteFirstCommand.hashCode(), deleteFirstCommandCopy.hashCode());
 
         // different types -> returns false
         assertFalse(deleteFirstCommand.equals(1));
@@ -204,10 +206,10 @@ public class DeleteCommandTest {
     }
 
     private Model modelWith(Person... persons) {
-        Model model = new ModelManager();
+        TuitionBook tuitionBook = new TuitionBook();
         for (Person person : List.of(persons)) {
-            model.addPerson(person);
+            tuitionBook.addPerson(person);
         }
-        return model;
+        return new ModelManager(tuitionBook, new UserPrefs());
     }
 }

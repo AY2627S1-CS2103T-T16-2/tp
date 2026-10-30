@@ -903,8 +903,7 @@ public class LogicManagerTest {
                 .withRole(Role.GUARDIAN).build();
         Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
                 .withRole(Role.STUDENT).withGuardian(guardian).build();
-        model.addPerson(student);
-        model.addPerson(guardian);
+        model = modelWithPersons(student, guardian);
         JsonTuitionBookStorage tuitionBookStorage = new JsonTuitionBookStorage(dataFilePath);
         logic = new LogicManager(model, new StorageManager(tuitionBookStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("UnlinkRoundTripPrefs.json"))));
@@ -975,9 +974,7 @@ public class LogicManagerTest {
                 .withRole(Role.GUARDIAN).build();
         Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
                 .withRole(Role.STUDENT).withGuardian(guardian).build();
-        Model failedSaveModel = new ModelManager(new TuitionBook(), new UserPrefs());
-        failedSaveModel.addPerson(student);
-        failedSaveModel.addPerson(guardian);
+        Model failedSaveModel = modelWithPersons(student, guardian);
         failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.GUARDIAN, "list r/guardian");
         Logic failedSaveLogic = new LogicManager(failedSaveModel,
                 storageThatFailsOnSave(temporaryFolder.resolve("deleteLinkedGuardian.json")));
@@ -998,9 +995,7 @@ public class LogicManagerTest {
                 .withRole(Role.GUARDIAN).build();
         Person student = new PersonBuilder().withName("Sam Student").withPhone("90000002")
                 .withRole(Role.STUDENT).withGuardian(guardian).build();
-        Model failedSaveModel = new ModelManager(new TuitionBook(), new UserPrefs());
-        failedSaveModel.addPerson(student);
-        failedSaveModel.addPerson(guardian);
+        Model failedSaveModel = modelWithPersons(student, guardian);
         failedSaveModel.updateFilteredPersonList(person -> person.getRole() == Role.STUDENT, "list r/student");
         Logic failedSaveLogic = new LogicManager(failedSaveModel,
                 storageThatFailsOnSave(temporaryFolder.resolve("unlink.json")));
@@ -1087,15 +1082,13 @@ public class LogicManagerTest {
         for (int i = 0; i < commands.length; i++) {
             String command = commands[i];
             Path tuitionBookFilePath = temporaryFolder.resolve("MalformedTuitionBook" + i + ".json");
-            Model fallbackModel = new ModelManager(new TuitionBook(), new UserPrefs());
             Person guardian = new PersonBuilder().withName("Grace Guardian").withRole(Role.GUARDIAN).build();
             Person student = new PersonBuilder().withName("Sam Student").withRole(Role.STUDENT)
                     .withGuardian(guardian).build();
             if (command.startsWith("link")) {
                 student = student.clearGuardian();
             }
-            fallbackModel.addPerson(student);
-            fallbackModel.addPerson(guardian);
+            Model fallbackModel = modelWithPersons(student, guardian);
             Logic blockedLogic = createLogicWithRecoveredStorage(tuitionBookFilePath, fallbackModel);
             Path backupPath = tuitionBookFilePath.resolveSibling(tuitionBookFilePath.getFileName() + ".backup");
             byte[] originalContents = Files.readAllBytes(backupPath);
@@ -1410,6 +1403,14 @@ public class LogicManagerTest {
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
         ModelManager expectedModel = new ModelManager();
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+    }
+
+    private static Model modelWithPersons(Person... persons) {
+        TuitionBook tuitionBook = new TuitionBook();
+        for (Person person : persons) {
+            tuitionBook.addPerson(person);
+        }
+        return new ModelManager(tuitionBook, new UserPrefs());
     }
 
     private static class CountingTuitionBookStorage extends JsonTuitionBookStorage {
