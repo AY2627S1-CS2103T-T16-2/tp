@@ -468,7 +468,7 @@ To verify this with the [sample contacts](#sample-contacts-for-examples), start 
 1. `list t/Active`<br>
    **Expected:** Rerunning the originating query refreshes membership. Grace is removed from this displayed list and only Alex is shown at index 1, with Matching 1 and Retained 0.
 
-Deleting is the exception: contacts below the deleted one move up. Running `list` or `find`, `reload`, `clear confirm`, or restarting can also change indexes. Both `reload` and restarting show the full list. An index is a position in the current displayed list, not a permanent contact number.
+Deleting is the exception: contacts below the deleted one move up. Running `list`, `find`, `reload`, `clear confirm`, or restarting can also change indexes. Both `reload` and restarting show the full list.
 
 --------------------------------------------------------------------------------------------------------------------
 
