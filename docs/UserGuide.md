@@ -21,73 +21,6 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 ## Command summary
 
-Index examples refer to the [sample contacts](#sample-contacts-for-examples). Each example starts from the full sample list.
-
-Action     | What it does | Format and example
------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | Adds a student or guardian contact. | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear**  | Deletes **every contact**. | `clear confirm`
-**Delete** | Deletes the contact at the selected index. | `delete INDEX`<br> e.g., `delete 3`
-**Edit**   | Changes details of the selected contact. | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
-**Exit**   | Closes TuitionBook. | `exit`
-**Reload** | Reloads contacts from the data file. | `reload`
-**Find**   | Searches contact names. | `find KEYWORD [MORE_KEYWORDS]...`<br> e.g., `find rac bob`
-**Help**   | Opens the command help window. | `help`
-**Link**   | Links a student to a guardian. | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
-**List**   | Shows all contacts or filters them by role and tags. | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/active t/MATH`
-**Tag**    | Adds one or more tags to a contact. | `tag INDEX t/TAG [t/TAG]...`<br> e.g., `tag 1 t/Math t/Sec 4`
-**Untag**  | Removes one or more tags from a contact. | `untag INDEX t/TAG [t/TAG]...`<br> e.g., `untag 3 t/Math`
-**Unlink** | Removes a student's guardian link. | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
-**View**   | Shows full details for a contact. | `view INDEX [v/]`<br> e.g., `view 1 v/`
-
---------------------------------------------------------------------------------------------------------------------
-
-## Quick start
-
-Before you begin, install Java `25` or later and choose a folder where you can create files. TuitionBook saves its data beside the application JAR. To try the sample contacts without mixing them with real contacts, use a new, empty folder. TuitionBook enforces one running copy per folder.
-
-1. Check Java by opening a terminal (Terminal on macOS/Linux, or PowerShell on Windows) and entering `java -version`.<br>
-   **Expected:** The version starts with `25` or a later number. If Java is missing or older, follow the [Java installation guide](https://se-education.org/guides/tutorials/javaInstallation.html) before continuing. **Mac users:** Follow the [macOS Java instructions](https://se-education.org/guides/tutorials/javaInstallationMac.html).
-1. Download the `.jar` file for the version you want from [GitHub Releases](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases), then copy it into your chosen folder.
-1. In the terminal, run one of the commands below. Replace the example path with the actual path and filename of your downloaded JAR, keeping the surrounding quotes.
-
-   * **macOS/Linux:** `java -jar "/path/to/tuitionbook.jar"`
-   * **Windows:** `java -jar "C:\path\to\tuitionbook.jar"`
-
-   **Expected:** The TuitionBook window opens. In a fresh folder, the contact list is empty and a dialog explains that no data file was found. Dismiss the dialog. If the window does not open, see [Troubleshooting](#troubleshooting).
-1. Click the command box labelled `Enter command here...`, type `add r/student n/John Doe p/98765432`, and press <kbd>Enter</kbd>.<br>
-   **Expected:** John Doe appears as a student with a displayed index. The result area confirms the addition. A guardian link, email and home address are optional.
-1. Enter `find John` in the same command box.<br>
-   **Expected:** John Doe appears in the results. In this fresh sample list, the result area reports `1 person(s) listed!`.
-1. Enter `list`.<br>
-   **Expected:** All your contacts appear again. The index beside each contact is the number to use in commands such as `view 1`.
-1. Enter `help` to see the command summary. Close the Help window when you are done, then enter `exit` in the main window.<br>
-   **Expected:** TuitionBook closes. Successful contact changes have already been saved, so there is no separate Save command.
-1. Run the same terminal launch command again.<br>
-   **Expected:** John Doe is still present. To try the examples in the [Command reference](#command-reference), add the [sample contacts](#sample-contacts-for-examples) next. You can also follow the [status-tag workflow](#organising-levels-subjects-and-status-with-tags).
-
-Enter instructions in the command box and check the result area for success or error messages. The contact list shows the [contacts you are currently working with](#keeping-displayed-indexes-stable). The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
-
-The screenshot below shows TuitionBook with the [sample contacts](#sample-contacts-for-examples). The command `view 1` is typed but has not been run yet.
-
-<annotate src="images/ug-main-window.png" width="900" alt="TuitionBook showing the command box, result area and sample student and guardian contact cards with displayed indexes">
-  <a-point x="88%" y="6.5%" label="1" color="#ffffff" opacity="1" content="Command box: type one command here and press Enter to run it." />
-  <a-point x="88%" y="12%" label="2" color="#ffffff" opacity="1" content="Result area: check here for confirmation or help with an error." />
-  <a-point x="88%" y="49%" label="3" color="#ffffff" opacity="1" content="Contact list: each card shows a student or guardian and their details." />
-  <a-point x="15%" y="26%" label="4" color="#ffffff" opacity="1" content="Displayed indexes: use the number beside a contact in commands such as view 1." />
-</annotate>
-
-1. **Command box:** enter a command here.
-1. **Result area:** read the confirmation or error message.
-1. **Contact list:** see contact details, tags and guardian links.
-1. **Displayed indexes:** use these numbers to choose contacts for commands such as `view`, `edit` and `delete`. They can change when the list changes.
-
---------------------------------------------------------------------------------------------------------------------
-
-<a id="features"></a>
-
-## Command reference
-
 <box type="info" seamless>
 
 **How to read command formats:**<br>
@@ -121,8 +54,77 @@ Names, addresses and tags sometimes contain text that looks like a prefix, such 
 * `a/"20 Main Road, c/o Rina a/p Kaur"`
 * `t/"study t/weekly"`
 
-The quotes are not saved. You don't need quotes for slashes that don't follow a space, such as `t/Math/Science`, or just because a value contains spaces. See [Quoted values and escaping](#quoted-values-and-escaping) for the full rules.
+The surrounding quotes are not saved. Spaces alone do not require quotes: `t/Sec 4` works. A slash within a word also works without quotes: `t/Math/Science`. Use quotes when the value contains a space followed by text such as `a/`, `s/` or `t/`. See [Quoted values and escaping](#quoted-values-and-escaping) for the full rules.
 </box>
+
+Index examples refer to the [sample contacts](#sample-contacts-for-examples). Each example starts from the full sample list.
+
+Action     | What it does | Format and example
+-----------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+**Add**    | Adds a student or guardian contact. | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Clear**  | Deletes **every contact**. | `clear confirm`
+**Delete** | Deletes the contact at the selected index. | `delete INDEX`<br> e.g., `delete 3`
+**Edit**   | Changes details of the selected contact. | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Exit**   | Closes TuitionBook. | `exit`
+**Reload** | Reloads contacts from the data file. | `reload`
+**Find**   | Searches contact names. | `find KEYWORD [MORE_KEYWORDS]...`<br> e.g., `find rac bob`<br> Matches **any** keyword (`rac` or `bob`).
+**Help**   | Opens the command help window. | `help`
+**Link**   | Links a student to a guardian. | `link STUDENT_INDEX GUARDIAN_INDEX` <br> e.g., `link 1 2`
+**List**   | Shows all contacts or filters them by role and tags. | `list [r/ROLE] [t/TAG]...`<br> e.g., `list r/student t/active t/MATH`
+**Tag**    | Adds one or more tags to a contact. | `tag INDEX t/TAG [t/TAG]...`<br> e.g., `tag 1 t/Math t/Sec 4`
+**Untag**  | Removes one or more tags from a contact. | `untag INDEX t/TAG [t/TAG]...`<br> e.g., `untag 3 t/Math`
+**Unlink** | Removes a student's guardian link. | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
+**View**   | Shows full details for a contact. | `view INDEX [v/]`<br> e.g., `view 1 v/` <br> Adding optional `v/` shows full details of the linked guardian or students.
+
+--------------------------------------------------------------------------------------------------------------------
+
+## Quick start
+
+Before you begin, install Java `25` or later and choose a folder where you can create files. TuitionBook saves its data beside the application JAR. To try the sample contacts without mixing them with real contacts, use a new, empty folder. TuitionBook enforces one running copy per folder.
+
+1. Check Java by opening a terminal (Terminal on macOS/Linux, or PowerShell on Windows) and entering `java -version`.<br>
+   **Expected:** The version starts with `25` or a later number. If Java is missing or older, follow the [Java installation guide](https://se-education.org/guides/tutorials/javaInstallation.html) before continuing. **Mac users:** Follow the [macOS Java instructions](https://se-education.org/guides/tutorials/javaInstallationMac.html).
+1. Download the `.jar` file for the version you want from [GitHub Releases](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases), then copy it into your chosen folder.
+1. In the terminal, run one of the commands below. Replace the example path with the actual path and filename of your downloaded JAR, keeping the surrounding quotes.
+
+   * **macOS/Linux:** `java -jar "/path/to/tuitionbook.jar"`
+   * **Windows:** `java -jar "C:\path\to\tuitionbook.jar"`
+
+   **Expected:** The TuitionBook window opens. In a fresh folder, the contact list is empty and a dialog explains that no data file was found. Dismiss the dialog. If the window does not open, see [Troubleshooting](#troubleshooting).
+1. Click the command box labelled `Enter command here...`, type `add r/student n/John Doe p/98765432`, and press <kbd>Enter</kbd>.<br>
+   **Expected:** John Doe appears as a student with a displayed index. The result area confirms the addition. A guardian link, email and home address are optional.
+1. Enter `find John` in the same command box.<br>
+   **Expected:** John Doe appears in the results. In this fresh sample list, the result area reports `1 person(s) listed!`.
+1. Enter `list`.<br>
+   **Expected:** All your contacts appear again. The index beside each contact is the number to use in commands such as `view 1`.
+1. Enter `help` to see the command summary. Close the Help window when you are done, then enter `exit` in the main window.<br>
+   **Expected:** TuitionBook closes. Successful contact changes have already been saved, so there is no separate Save command.
+1. Run the same terminal launch command again.<br>
+   **Expected:** John Doe is still present. To try the examples in the [Command reference](#command-reference), add the [sample contacts](#sample-contacts-for-examples) next. You can also follow the [status-tag workflow](#organising-levels-subjects-and-status-with-tags).
+
+Enter instructions in the command box and check the result area for success or error messages. The contact list shows the [contacts you are currently working with](#keeping-displayed-indexes-stable). The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
+
+<a id="app-overview"></a>
+
+The screenshot below shows TuitionBook with the [sample contacts](#sample-contacts-for-examples). The command `view 1` is typed but has not been run yet.
+
+<annotate src="images/ug-main-window.png" width="900" alt="TuitionBook showing the command box, result area and sample student and guardian contact cards with displayed indexes">
+  <a-point x="88%" y="6.5%" label="1" color="#ffffff" opacity="1" content="Command box: type one command here and press Enter to run it." />
+  <a-point x="88%" y="12%" label="2" color="#ffffff" opacity="1" content="Result area: check here for confirmation or help with an error." />
+  <a-point x="88%" y="49%" label="3" color="#ffffff" opacity="1" content="Contact list: each card shows a student or guardian and their details." />
+  <a-point x="15%" y="26%" label="4" color="#ffffff" opacity="1" content="Displayed indexes: use the number beside a contact in commands such as view 1." />
+</annotate>
+
+1. **Command box:** enter a command here.
+1. **Result area:** read the confirmation or error message.
+1. **Contact list:** see contact details, tags and guardian links.
+1. **Displayed indexes:** use these numbers to choose contacts for commands such as `view`, `edit` and `delete`. They can change when the list changes.
+
+--------------------------------------------------------------------------------------------------------------------
+
+<a id="features"></a>
+
+## Command reference
 
 ### Sample contacts for examples
 
@@ -165,7 +167,7 @@ Index-based examples in this guide use the following sample contacts. Use a **ne
    ```
 
 
-Then enter `list`. The list should show:
+Then enter `list`. The table below lists the expected contacts and indexes. For how these appear in the app, see the [annotated screenshot](#app-overview).
 
 Index | Name | Role | Tags | Guardian link
 ------|------|------|------|--------------
@@ -203,7 +205,7 @@ add r/student n/Sam Lee p/98760001 e/samlee@example.com t/Math
 
 * `ROLE`, `NAME` and `PHONE` are required. Email, address and tags are optional.
 * `ROLE` is `student` or `guardian` (any letter case, using ordinary English letters).
-* `g/` cannot be used with `add`. Add the contact first, then use [`link`](#linking-a-student-to-a-guardian-link).
+* To link a student to a guardian, add both contacts first, then use [`link`](#linking-a-student-to-a-guardian-link).
 * If the new contact matches the current filter, it is added to the end of the displayed list. Otherwise it is saved but not shown, and the result tells you how to find it with `list`.
 
 **Contact details at a glance**
@@ -279,7 +281,7 @@ Suppose Ana has only the tag `friends`, Ben has `friendS` and `Math`, and Cara h
 
 Query | Result | Why
 ------|--------|----
-`list t/friends t/friendS` | Ana, Ben and Cara | Both conditions mean the same case-insensitive match. Repeating it does not require both stored spellings and does not create OR filtering.
+`list t/friends t/friendS` | Ana, Ben and Cara | Both conditions match the same tag regardless of letter case, so repeating the condition does not narrow the results. A contact does not need both stored spellings.
 `list t/friends t/Math` | Ben and Cara | These are different conditions, so normal **AND** filtering requires one friends-equivalent tag and one Math-equivalent tag.
 
 Use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag) when the exact stored spelling matters.
@@ -329,7 +331,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`, such as `edit 1 n/"Rina a/p Kaur"`.
 * To remove an email or address, type `e/` or `a/` with nothing after it. `a/""` also removes the address.
 * **Giving `t/` replaces all of the contact's tags.** Retype any tags you want to keep, or use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag) to change one tag at a time. To remove every tag, type `t/` with nothing after it.
-* You cannot change a contact's role (`r/`) or guardian (`g/`) with `edit`. Use `link` and `unlink` to change guardian links. If you include `r/` or `g/`, nothing is changed and the result explains what to do instead.
+* You cannot change a contact's role or guardian link with `edit`. Use `link` and `unlink` to change guardian links instead.
 * The edited contact keeps its place in the list, even if it no longer matches the current filter.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
@@ -469,29 +471,32 @@ This deletes every contact and cannot be undone. If you might need your contacts
 
 ### Reloading contacts: `reload`
 
-Format: `reload`
+Reads your saved contact file again without restarting TuitionBook. Use it to retry loading a file after correcting a problem.
 
-Reads your contacts from the data file again and shows the full list.
+Format: `reload`
 
 <box type="warning" seamless>
 
-`reload` **replaces** the contacts in the app with the contents of the file. It does not combine them, so any contact that is only in the app will be lost.
+A successful `reload` **replaces** the contacts currently in the app with those in the file. Contacts are not combined. Before reloading, note any contacts that exist only in the app so you can re-enter them afterwards.
 </box>
 
-For everyday edits to the data file, close TuitionBook, edit the file, then reopen it. Use this recovery path only when fixing an unreadable file while TuitionBook stays open:
+**What happens when you reload**
 
-1. Read and follow the specific warning, including its cause and file locations. Don't add or change contacts during recovery. Note any contacts created since the failure so you can re-enter them later.
-1. Before replacing or moving any file, copy the current data file, if it exists, and any existing backup to a safe place. A backup exists only if TuitionBook says it preserved the unreadable file and shows its location.
-1. If the unreadable file was preserved in a backup, fix a copy of that backup and put the corrected copy at the data-file location shown in the warning. If preservation failed, saving remains blocked: correct the original file at the shown data-file location, or move it aside and put a corrected copy there.
-1. Once the corrected file is at the data-file location, enter `reload`. Check the result message and the full contact list before making changes. A successful reload enables saving. If reload fails, your currently loaded contacts stay in place and the result tells you whether the unreadable file was preserved or saving remains blocked.
-1. Re-enter any noted contacts that are missing. TuitionBook replaces the currently loaded contacts with those from the corrected file. Contacts and files are not merged.
+* **The file loads:** its contacts replace the contacts in the app, and the full list is shown without a filter. Saving is enabled, but TuitionBook checks write permissions when it next tries to save.
+* **The file is missing:** the contact list becomes empty and the filter is cleared. Reload does not create a new file.
+* **The file cannot be read:** your current contacts and filter stay unchanged. Follow the result message, which tells you whether the unreadable file was backed up and whether saving is enabled or blocked. A failed reload differs from a startup load failure, which starts with an empty contact list.
+* **The file contains invalid guardian links:** the contacts load, but those links are removed in the app. The result identifies the affected contacts and explains why. Review them before making changes, because the next successful save writes the repaired links to the file.
 
-More about `reload`:
+**Recovering while TuitionBook stays open**
 
-* If a command was undone because saving failed, `reload` does not redo it. Enter it again afterwards.
-* If the data file doesn't exist, the contact list becomes empty.
-* If the file still can't be read, your current contacts and list stay as they are. This differs from a startup load failure, which starts with an empty list. TuitionBook moves the unreadable file to a backup when it can and tells you where.
-* If some guardian links in the file are invalid, the contacts still load but those links are removed. The result lists each affected contact and why its link was removed.
+For routine manual edits, close TuitionBook, edit the file, then reopen it. If you are correcting a loading problem while the app stays open:
+
+1. Read the warning and note its file locations. Avoid adding or changing contacts during recovery. Note any contacts created since the problem began so you can re-enter them if needed.
+1. Before changing or moving files, copy the current data file, if it exists, and any existing backup somewhere safe. A backup exists only if TuitionBook says it preserved the unreadable file.
+1. If a backup was created, fix a copy and put the corrected file at the data-file location shown in the warning. If the backup failed, correct the original file or move it aside and put a corrected file in its place.
+1. Enter `reload`. Check the result and contact list before making changes. If loading succeeds, re-enter any missing contacts you noted. If it fails, follow the new warning before trying again.
+
+Reload does not repeat a command that was undone after a save failure. Fix the saving problem and enter that command again yourself.
 
 ### Exiting the program: `exit`
 
