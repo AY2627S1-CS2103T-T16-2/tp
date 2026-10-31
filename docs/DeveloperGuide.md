@@ -421,7 +421,7 @@ Contact storage and diagnostic logs are separate. `ClearCommand` clears all cont
 **Target user profile**:
 
 * is a private one-to-one tutor who travels to students' homes
-* manages a significant number of students and guardians
+* manages a significant number of students and guardians, up to the 1,000 contacts covered by the [performance requirement](#non-functional-requirements)
 * needs to maintain student and guardian contact information and their relationships in one place
 * needs to retrieve the relevant guardian's contact details and home-address information quickly
 * benefits from grouping contacts by academic level, subject, tags, or area
@@ -970,7 +970,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 ### Non-Functional Requirements
 
 1.  TuitionBook shall run without an application installer on each environment in the supported-OS test matrix, with Java `25` installed.
-2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, tagging, untagging, linking, or unlinking command shall complete within two seconds for a 1,000-contact performance workload whose names, phone numbers, emails, and addresses are within their documented length limits, with at most five tags of at most 50 printable ASCII characters per contact. Measure from command submission to the result being displayed. This defines the workload to benchmark; it does not claim that a benchmark has already passed.
+2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, tagging, untagging, linking, or unlinking command shall complete within two seconds for a 1,000-contact performance workload whose names, phone numbers, emails, and addresses are within their documented length limits, with at most five tags of at most 50 printable ASCII characters per contact. Measure from command submission to the result being displayed. This defines the workload to benchmark; it does not claim that a benchmark has already passed. Books larger than 1,000 contacts are outside the supported scope. Commands that can change contacts first create a rollback snapshot whose duplicate check grows quadratically with the number of contacts (see [Saving data](#saving-data)), so they may take several seconds on books of several thousand contacts.
 3.  All documented add, edit, delete, list, find, filter, view, tag, untag, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
 4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
 5.  TuitionBook shall use one local, human-editable text file as the authoritative contact store and shall not transmit contact data to an external service. It may create local sibling text-file backups to preserve unreadable contact data during recovery.
