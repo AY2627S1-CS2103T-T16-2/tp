@@ -74,7 +74,7 @@ Action     | What it does | Format and example
 **Tag**    | Adds one or more tags to a contact. | `tag INDEX t/TAG [t/TAG]...`<br> e.g., `tag 1 t/Math t/Sec 4`
 **Untag**  | Removes one or more tags from a contact. | `untag INDEX t/TAG [t/TAG]...`<br> e.g., `untag 3 t/Math`
 **Unlink** | Removes a student's guardian link. | `unlink STUDENT_INDEX`<br> e.g., `unlink 1`
-**View**   | Shows full details for a contact. | `view INDEX [v/]`<br> e.g., `view 1 v/` <br> Adding optional `v/` shows full details of the linked guardian or students.
+**View**   | Shows full details for a contact. | `view INDEX [v/]`<br> e.g., `view 1 v/` <br> Adding optional `v/` also shows full details of any linked contacts.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -109,8 +109,8 @@ Enter instructions in the command box and check the result area for success or e
 The screenshot below shows TuitionBook with the [sample contacts](#sample-contacts-for-examples). The command `view 1` is typed but has not been run yet.
 
 <annotate src="images/ug-main-window.png" width="900" alt="TuitionBook showing the command box, result area and sample student and guardian contact cards with displayed indexes">
-  <a-point x="88%" y="6.5%" label="1" color="#ffffff" opacity="1" content="Command box: type one command here and press Enter to run it." />
-  <a-point x="88%" y="12%" label="2" color="#ffffff" opacity="1" content="Result area: check here for confirmation or help with an error." />
+  <a-point x="20%" y="6.5%" label="1" color="#ffffff" opacity="1" content="Command box: type one command here and press Enter to run it." />
+  <a-point x="20%" y="12%" label="2" color="#ffffff" opacity="1" content="Result area: check here for confirmation or help with an error." />
   <a-point x="88%" y="49%" label="3" color="#ffffff" opacity="1" content="Contact list: each card shows a student or guardian and their details." />
   <a-point x="15%" y="26%" label="4" color="#ffffff" opacity="1" content="Displayed indexes: use the number beside a contact in commands such as view 1." />
 </annotate>
@@ -169,10 +169,10 @@ Index-based examples in this guide use the following sample contacts. Use a **ne
 
 Then enter `list`. The table below lists the expected contacts and indexes. For how these appear in the app, see the [annotated screenshot](#app-overview).
 
-Index | Name | Role | Tags | Guardian link
-------|------|------|------|--------------
+Index | Name | Role | Tags | Linked contacts
+------|------|------|------|----------------
 1 | John Doe | Student | - | Betsy Crowe
-2 | Betsy Crowe | Guardian | `family` | -
+2 | Betsy Crowe | Guardian | `family` | John Doe
 3 | Grace Tan | Student | `Active`, `Math`, `Sec 4` | -
 4 | Bob Lim | Guardian | - | -
 5 | Alex Yeoh | Student | `Active` | -
@@ -232,7 +232,7 @@ These differences are ignored only for this check. TuitionBook still saves each 
 A young student without their own phone number can use their guardian's phone number and email. They remain separate contacts because their roles differ, even if their names are the same.
 </box>
 
-Examples:
+More examples:
 
 ```text
 add r/student n/Sam Lee p/98760001 e/samlee@example.com a/John street, block 123, #01-01
@@ -288,7 +288,7 @@ Use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-c
 
 ### Viewing a contact: `view`
 
-Shows a contact's full details together with their guardian or linked students.
+Shows the selected contact's full details and information about any linked guardian or students.
 
 Format: `view INDEX [v/]`
 
