@@ -12,6 +12,7 @@ Planned release; not yet released.
 
 ### Changed
 
+- Move command-format guidance before the User Guide summary table, clarify quoting, keyword matching, optional linked-contact details and equivalent tag filters, and simplify reload outcomes and recovery steps (#261).
 - Update the guide version notices for v1.6 development and link to the User Guide preserved with the published v1.5 release.
 - Complete the remaining User Guide review follow-ups (#261): add an [annotated app screenshot](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/v1.6/docs/images/ug-main-window.png), explain supported English language settings, clarify linked-contact view examples, separate examples from surrounding prose and enable copy buttons on command blocks using the existing documentation framework.
 - Rephrase semicolon-heavy User Guide prose into shorter sentences and smoother explanations.
