@@ -8,11 +8,11 @@
 
 TuitionBook helps **private one-to-one home tutors** manage students, guardians and their contact details in one place. Link students to guardians to find the right person to call, keep home addresses for visits, and use tags to organise contacts by level, subject or status. You mainly use typed commands to work with the desktop app, which stores your contacts locally.
 
-This guide helps English-speaking tutors set up TuitionBook, record contacts and find the right person to call. You do not need programming knowledge. The interface is in English, but contact names can contain letters from other languages, subject to the rules under each command.
+This guide helps English-speaking tutors set up TuitionBook, record contacts and find the right person to call. You do not need programming knowledge. Use TuitionBook with your operating system set to an English language setting, such as English (Singapore), English (United Kingdom) or English (United States). Contact names can contain letters from other languages, subject to the rules under each command.
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then use the [Command reference](#command-reference) for each command's rules and examples. The [Task walkthroughs](#task-walkthroughs) combine commands for common jobs, while [Data and backups](#data-and-backups) covers saving, transfer and recovery. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, *index* and *JSON*.
 
-**Version:** This guide describes v1.5, which has not been released yet. Some features described here, such as stable list numbering, stricter prefix checks and quoted addresses, are not in the v1.4 JAR. If you downloaded an older version, use the guide for that version instead: the [v1.4 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) or the [v1.3 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These open on GitHub, so they look plainer than this page.
+**Version:** v1.5 has been released. This guide is being updated for v1.6, which is still in development. If you are using the v1.5 JAR, refer to the [v1.5 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.5/docs/UserGuide.md) saved with that release. Guides for earlier versions are also available: [v1.4](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) and [v1.3](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These release-specific guides open on GitHub, so they look plainer than this page.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -23,7 +23,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 Index examples refer to the [sample contacts](#sample-contacts-for-examples). Each example starts from the full sample list.
 
-Action     | What it does | Format, example
+Action     | What it does | Format and example
 -----------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | Adds a student or guardian contact. | `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...` <br> e.g., `add r/student n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
 **Clear**  | Deletes **every contact**. | `clear confirm`
@@ -68,6 +68,20 @@ Before you begin, install Java `25` or later and choose a folder where you can c
 
 Enter instructions in the command box and check the result area for success or error messages. The contact list shows the [contacts you are currently working with](#keeping-displayed-indexes-stable). The [view command](#viewing-a-contact-view) temporarily replaces the list with full contact details.
 
+The screenshot below shows TuitionBook with the [sample contacts](#sample-contacts-for-examples). The command `view 1` is typed but has not been run yet.
+
+<annotate src="images/ug-main-window.png" width="900" alt="TuitionBook showing the command box, result area and sample student and guardian contact cards with displayed indexes">
+  <a-point x="88%" y="6.5%" label="1" color="#ffffff" opacity="1" content="Command box: type one command here and press Enter to run it." />
+  <a-point x="88%" y="12%" label="2" color="#ffffff" opacity="1" content="Result area: check here for confirmation or help with an error." />
+  <a-point x="88%" y="49%" label="3" color="#ffffff" opacity="1" content="Contact list: each card shows a student or guardian and their details." />
+  <a-point x="15%" y="26%" label="4" color="#ffffff" opacity="1" content="Displayed indexes: use the number beside a contact in commands such as view 1." />
+</annotate>
+
+1. **Command box:** enter a command here.
+1. **Result area:** read the confirmation or error message.
+1. **Contact list:** see contact details, tags and guardian links.
+1. **Displayed indexes:** use these numbers to choose contacts for commands such as `view`, `edit` and `delete`. They can change when the list changes.
+
 --------------------------------------------------------------------------------------------------------------------
 
 <a id="features"></a>
@@ -93,6 +107,8 @@ Enter instructions in the command box and check the result area for success or e
 
 * Enter one command at a time and press <kbd>Enter</kbd> to run it. If you paste text containing tabs or line breaks, they become spaces. Pasting never runs a command by itself, so check the text before pressing <kbd>Enter</kbd>.
 
+Move your pointer over a command block to show its copy button. Click it to copy the example, then paste it into TuitionBook. Run one command at a time. You can still select and copy text yourself.
+
 For copied-text problems, unusual characters, field boundaries and escaping, see [Advanced command input](#advanced-command-input).
 </box>
 
@@ -112,12 +128,42 @@ The quotes are not saved. You don't need quotes for slashes that don't follow a 
 
 Index-based examples in this guide use the following sample contacts. Use a **new, empty folder used only for practice contacts**, not one containing real contacts. Starting from an empty contact list, enter these commands in order. If you completed the [Quick start](#quick-start), John Doe already exists, so skip the first command.
 
-1. `add r/student n/John Doe p/98765432`
-1. `add r/guardian n/Betsy Crowe p/91234567 t/family`
-1. `add r/student n/Grace Tan p/87654321 t/Active t/Math t/Sec 4`
-1. `add r/guardian n/Bob Lim p/96543210`
-1. `add r/student n/Alex Yeoh p/87438807 t/Active`
-1. `link 1 2`
+1. Add John Doe as a student:
+
+   ```text
+   add r/student n/John Doe p/98765432
+   ```
+
+1. Add Betsy Crowe as a guardian:
+
+   ```text
+   add r/guardian n/Betsy Crowe p/91234567 t/family
+   ```
+
+1. Add Grace Tan and her tags:
+
+   ```text
+   add r/student n/Grace Tan p/87654321 t/Active t/Math t/Sec 4
+   ```
+
+1. Add Bob Lim as a guardian:
+
+   ```text
+   add r/guardian n/Bob Lim p/96543210
+   ```
+
+1. Add Alex Yeoh as a student:
+
+   ```text
+   add r/student n/Alex Yeoh p/87438807 t/Active
+   ```
+
+1. Link John Doe to Betsy Crowe:
+
+   ```text
+   link 1 2
+   ```
+
 
 Then enter `list`. The list should show:
 
@@ -147,7 +193,11 @@ Adds a student or guardian contact to TuitionBook.
 
 Format: `add r/ROLE n/NAME p/PHONE [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 
-Example: `add r/student n/Sam Lee p/98760001 e/samlee@example.com t/Math`
+Example:
+
+```text
+add r/student n/Sam Lee p/98760001 e/samlee@example.com t/Math
+```
 
 **Required and optional fields**
 
@@ -180,12 +230,24 @@ These differences are ignored only for this check. TuitionBook still saves each 
 A young student without their own phone number can use their guardian's phone number and email. They remain separate contacts because their roles differ, even if their names are the same.
 </box>
 
-Examples (each adds a new contact after the existing ones, so the [sample contacts](#sample-contacts-for-examples) keep indexes 1 to 5 in an unfiltered list):
+Examples:
 
-* `add r/student n/Sam Lee p/98760001 e/samlee@example.com a/John street, block 123, #01-01`
-* `add r/guardian n/Mary Lee p/1234567 t/family`
-* `add r/student n/Alex Lim p/91234567 t/Sec-4 t/referred-by-Mrs-Lim`
-* `add r/student n/"Rina a/p Kaur" p/91234567 a/123 Main Street`
+```text
+add r/student n/Sam Lee p/98760001 e/samlee@example.com a/John street, block 123, #01-01
+```
+
+```text
+add r/guardian n/Mary Lee p/1234567 t/family
+```
+
+```text
+add r/student n/Alex Lim p/91234567 t/Sec-4 t/referred-by-Mrs-Lim
+```
+
+```text
+add r/student n/"Rina a/p Kaur" p/91234567 a/123 Main Street
+```
+
 
 ### Listing contacts: `list`
 
@@ -196,8 +258,8 @@ Format: `list [r/ROLE] [t/TAG]...`
 * `list` on its own shows every contact in its original order.
 * Use `r/student` to show only students or `r/guardian` to show only guardians. You can give `r/` only once.
 * Each `t/TAG` adds a condition: a contact is shown only if it has **all** the tags you list. Tags must match completely, but letter case doesn't matter, so `t/math` matches `Math`.
-* Spaces and punctuation inside a tag must match exactly. Using `·` only to make spaces visible here, `Sec··4` does not match `Sec·4`. You can copy the commands from the [add examples](#adding-a-contact-add). `active` also does not match `active!`.
-* Stored tags keep their exact letter case, so one contact can have both `friends` and `friendS`. Filtering ignores that case: repeated case-equivalent conditions do not narrow the results.
+* Spaces and punctuation inside a tag must match exactly. For example, `Sec··4` does not match `Sec·4` (Using `·` as a placeholder for one space to make spaces visible here). You can copy the commands from the [add examples](#adding-a-contact-add). `active` also does not match `active!`.
+* Stored tags keep their exact letter case, so one contact can have both `friends` and `friendS`. Filtering ignores letter case. For example, `list t/friends` matches contacts tagged `friends`, `friendS` or any other letter-case variation.
 * To filter by a tag that contains `r/` or `t/` after a space, use double quotes: `list t/"study t/weekly"`. See [Quoted values and escaping](#quoted-values-and-escaping).
 * If nothing matches, the list is empty and the result shows `0 person(s) listed!`. Enter `list` to see everyone again.
 * To link a student to a guardian after filtering, enter `list` first so that both contacts are shown.
@@ -209,7 +271,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * Tags are sorted alphabetically and wrap onto more rows when needed.
 * If a value is too long for the card, it is shortened with `…`. Hover over it to see the full text, or use `view INDEX v/` to see every detail.
 
-The bar above the cards explains the current list. **Matching** counts displayed contacts that still satisfy the query. **Retained** counts displayed contacts that stopped matching but remain so their indexes do not suddenly change. Hidden contacts count in neither number. For a filtered view, **Shown = Matching + Retained**. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable) for why rows are retained and how to refresh them.
+The bar above the cards explains the current list. **Matching** counts displayed contacts that still satisfy the query. **Retained** counts displayed contacts that stopped matching (usually after edits) but remain so their indexes do not suddenly change. Hidden contacts count in neither number. For a filtered view, **Shown = Matching + Retained**. See [Keeping displayed indexes stable](#keeping-displayed-indexes-stable) for why rows are retained and how to refresh them.
 
 **Case variants and AND filtering**
 
@@ -224,7 +286,7 @@ Use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-c
 
 ### Viewing a contact: `view`
 
-Shows a contact's full details, together with their guardian or linked students, in place of the contact list. The list comes back after your next successful command. If a command fails, the details stay on screen so that you can fix the command.
+Shows a contact's full details together with their guardian or linked students.
 
 Format: `view INDEX [v/]`
 
@@ -243,14 +305,14 @@ To copy a phone number, email address or other contact details:
 1. Click in the details pane and select the text you need.
 1. Press <kbd>Ctrl</kbd>+<kbd>C</kbd> on Windows/Linux or <kbd>Cmd</kbd>+<kbd>C</kbd> on macOS to copy the text, then paste the text where you need it.
 
-You can copy text from this pane, but cannot edit it. Copying does not change your contacts. Text on contact-list cards cannot be selected.
+To copy contact details, use the details pane. Text on contact-list cards cannot be selected. You can also select and copy text from the result area.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
 
 * `view 1` replaces the contact list with John Doe's details and shows `Guardian: Betsy Crowe (91234567)`.
-* `view 1 v/` also shows Betsy Crowe's full contact details.
+* `view 1 v/` shows John Doe's details together with his guardian Betsy Crowe's full contact details.
 * `view 2` replaces the contact list with Betsy Crowe's details and lists `John Doe (98765432)` as a linked student.
-* `view 2 v/` also shows John Doe's full contact details.
+* `view 2 v/` shows Betsy Crowe's details together with her linked student John Doe's full contact details.
 * `list r/student` followed by `view 1 v/` still shows Betsy Crowe's details, although guardians are hidden from the list.
 
 <span id="editing-a-person-edit"></span>
@@ -264,13 +326,14 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]...`
 * `INDEX` is the number shown beside the contact in the current list (1, 2, 3, …).
 * Give at least one field to change. The new value replaces the old one, while fields you leave out stay the same.
 * If all supplied values already match the contact, `edit` reports `No changes made: the specified values already match NAME` and does not save.
-* All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`: `edit 1 n/"Rina a/p Kaur"`.
+* All values follow the same rules as [`add`](#adding-a-contact-add), including using double quotes when a value contains text like `a/`, such as `edit 1 n/"Rina a/p Kaur"`.
 * To remove an email or address, type `e/` or `a/` with nothing after it. `a/""` also removes the address.
 * **Giving `t/` replaces all of the contact's tags.** Retype any tags you want to keep, or use [`tag`](#adding-tags-to-a-contact-tag) and [`untag`](#removing-tags-from-a-contact-untag) to change one tag at a time. To remove every tag, type `t/` with nothing after it.
 * You cannot change a contact's role (`r/`) or guardian (`g/`) with `edit`. Use `link` and `unlink` to change guardian links. If you include `r/` or `g/`, nothing is changed and the result explains what to do instead.
 * The edited contact keeps its place in the list, even if it no longer matches the current filter.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
+
 *  `edit 1 p/91110000 e/johndoe@example.com` changes John Doe's phone number to `91110000` and adds the email address `johndoe@example.com`.
 *  `edit 2 n/Betsy Crower t/` renames Betsy Crowe to `Betsy Crower` and removes her `family` tag. John Doe stays linked to her.
 
@@ -283,11 +346,18 @@ Format: `tag INDEX t/TAG [t/TAG]...`
 * `INDEX` is the number shown beside the contact in the current list. Students and guardians can both be tagged.
 * Give at least one tag. Tags follow the same rules as [`add`](#adding-a-contact-add).
 * `Math` and `math` are saved as two different tags, even though `list` treats them as the same.
-* The result lists only the tags that were newly added, each in double quotes. If the contact already has every tag you gave, nothing changes.
-* The contact keeps its place in the list, even if it no longer matches the current filter.
+* The result lists only the tags that were newly added. If the contact already has every tag you gave, nothing changes.
 * Use double quotes for a tag containing text like `t/` or `p/` after a space: `tag 1 t/"study t/weekly"` adds one tag, `study t/weekly`. See [Quoted values and escaping](#quoted-values-and-escaping) for literal quotes, backslashes and feedback formatting.
 
-Example using the [sample contacts](#sample-contacts-for-examples): Grace Tan (3) has `Active`, `Math` and `Sec 4`. `tag 3 t/Science t/Math` adds `Science` while keeping her existing tags, and reports `Added tags to Grace Tan: "Science".` `Math` is not listed because it was already present. Continue using `add` to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
+Example using the [sample contacts](#sample-contacts-for-examples):
+
+Grace Tan (3) has `Active`, `Math` and `Sec 4`. Enter:
+
+```text
+tag 3 t/Science t/Math
+```
+
+This adds `Science` while keeping her existing tags, and reports `Added tags to Grace Tan: "Science".` `Math` is not listed because it was already present. Use `add` instead to supply a new contact's complete initial tag set, or `edit` to replace an existing contact's entire tag set.
 
 ### Removing tags from a contact: `untag`
 
@@ -296,9 +366,10 @@ Removes only the specified tags while keeping the contact's other tags.
 Format: `untag INDEX t/TAG [t/TAG]...`
 
 * Works like [`tag`](#adding-tags-to-a-contact-tag): same index, tag rules and double quotes.
-* Each tag must match exactly, including letter case and spacing. If you enter `untag 1 t/math`, `Math` stays in place and the result suggests the correct spelling: `Tag "math" not found, did you mean "Math"?`
+* Each tag must match exactly, including letter case and spacing.
 * Tags the contact doesn't have are skipped and listed under `Tags not present:`. If none of them are present, nothing changes.
 * To remove every tag at once, use `edit INDEX t/` instead.
+* The contact keeps its place in the list, even if it no longer matches the current filter.
 
 Examples continuing from the [`tag` example](#adding-tags-to-a-contact-tag), where Grace Tan (3) has `Active`, `Math`, `Science` and `Sec 4`. Enter them in order:
 
@@ -332,7 +403,13 @@ Format: `unlink STUDENT_INDEX`
 * If the student has no guardian, nothing changes.
 * The list order stays the same, and the cards update straight away.
 
-Example using the [sample contacts](#sample-contacts-for-examples): `unlink 1` removes John Doe's link to Betsy Crowe and reports `Unlinked student John Doe from guardian Betsy Crowe.` Both contacts remain. Running `unlink 1` again reports `Student John Doe has no linked guardian.`
+Example using the [sample contacts](#sample-contacts-for-examples):
+
+```text
+unlink 1
+```
+
+This removes John Doe's link to Betsy Crowe and reports `Unlinked student John Doe from guardian Betsy Crowe.` Both contacts remain. Running `unlink 1` again reports `Student John Doe has no linked guardian.`
 
 <span id="locating-persons-by-name-find"></span>
 
@@ -349,6 +426,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]...`
 * Symbols in keywords are searched for as ordinary text.
 
 Examples using the [sample contacts](#sample-contacts-for-examples):
+
 * `find gr`, `find rac`, `find ace`, and `find GRACE` each list only Grace Tan.
 * `find rac bob` lists Grace Tan and Bob Lim, whose names contain `rac` or `bob`.
 * `find alex john` lists John Doe and Alex Yeoh. Any other contacts with `alex` or `john` anywhere in their names would also appear. If no names match, the list is empty. Enter `list` to show every contact again.
