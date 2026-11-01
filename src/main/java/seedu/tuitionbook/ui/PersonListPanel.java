@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.animation.AnimationTimer;
+import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -288,6 +289,10 @@ public class PersonListPanel extends UiPart<Region> {
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */
     class PersonListViewCell extends ListCell<Person> {
+        PersonListViewCell() {
+            setPrefWidth(0);
+        }
+
         @Override
         protected void updateItem(Person person, boolean empty) {
             super.updateItem(person, empty);
@@ -302,7 +307,11 @@ public class PersonListPanel extends UiPart<Region> {
                 PersonListViewState state = viewState.get();
                 String notice = state.predicate().test(person) ? ""
                         : "No longer matches the query. Refresh with: " + state.refreshCommand();
-                setGraphic(new PersonCard(person, getIndex() + 1, relationshipSummary, notice).getRoot());
+                Region card = new PersonCard(person, getIndex() + 1, relationshipSummary, notice).getRoot();
+                card.maxWidthProperty().bind(Bindings.createDoubleBinding(() ->
+                        Math.max(0, getWidth() - snappedLeftInset() - snappedRightInset()),
+                        widthProperty(), insetsProperty()));
+                setGraphic(card);
             }
         }
     }

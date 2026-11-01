@@ -10,6 +10,10 @@ The format is based on Keep a Changelog.
 
 Planned release; not yet released.
 
+### Fixed
+
+- Keep long tags within contact cards during window resizing while preserving tag wrapping and full-value tooltips (#330).
+
 ### Changed
 
 - Move command-format guidance before the User Guide summary table, clarify quoting, keyword matching, optional linked-contact details and equivalent tag filters, and simplify reload outcomes and recovery steps (#261).
