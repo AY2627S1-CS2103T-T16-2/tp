@@ -94,7 +94,7 @@ Before you begin, install Java `25` or later and choose a folder where you can c
 1. Click the command box labelled `Enter command here...`, type `add r/student n/John Doe p/98765432`, and press <kbd>Enter</kbd>.<br>
    **Expected:** John Doe appears as a student with a displayed index. The result area confirms the addition. A guardian link, email and home address are optional.
 1. Enter `find John` in the same command box.<br>
-   **Expected:** John Doe appears in the results. In this fresh sample list, the result area reports `1 person(s) listed!`.
+   **Expected:** John Doe appears in the results. With only John Doe added, the result area reports `1 person(s) listed!`.
 1. Enter `list`.<br>
    **Expected:** All your contacts appear again. The index beside each contact is the number to use in commands such as `view 1`.
 1. Enter `help` to see the command summary. Close the Help window when you are done, then enter `exit` in the main window.<br>
@@ -260,7 +260,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 * `list` on its own shows every contact in its original order.
 * Use `r/student` to show only students or `r/guardian` to show only guardians. You can give `r/` only once.
 * Each `t/TAG` adds a condition: a contact is shown only if it has **all** the tags you list. Tags must match completely, but letter case doesn't matter, so `t/math` matches `Math`.
-* Spaces and punctuation inside a tag must match exactly. For example, `Sec··4` does not match `Sec·4` (Using `·` as a placeholder for one space to make spaces visible here). You can copy the commands from the [add examples](#adding-a-contact-add). `active` also does not match `active!`.
+* Spaces and punctuation inside a tag must match exactly. For example, `Sec··4` does not match `Sec·4` (Using `·` as a placeholder for one space to make spaces visible here). `active` also does not match `active!`.
 * Stored tags keep their exact letter case, so one contact can have both `friends` and `friendS`. Filtering ignores letter case. For example, `list t/friends` matches contacts tagged `friends`, `friendS` or any other letter-case variation.
 * To filter by a tag that contains `r/` or `t/` after a space, use double quotes: `list t/"study t/weekly"`. See [Quoted values and escaping](#quoted-values-and-escaping).
 * If nothing matches, the list is empty and the result shows `0 person(s) listed!`. Enter `list` to see everyone again.
@@ -268,7 +268,7 @@ Format: `list [r/ROLE] [t/TAG]...`
 
 **Reading a contact card**
 
-* Each card shows a `STUDENT` or `GUARDIAN` badge, followed by the contact's phone, email and address. Missing details are shown as `-`.
+* Each card shows a `STUDENT` or `GUARDIAN` badge, followed by some details of the contact, including the contact's phone, email and address. Missing details are shown as `-`.
 * A student's card has a `Guardian:` line with the guardian's name and phone number. A guardian's card has a `Students:` line listing their linked students, even students hidden by the current filter.
 * Tags are sorted alphabetically and wrap onto more rows when needed.
 * If a value is too long for the card, it is shortened with `…`. Hover over it to see the full text, or use `view INDEX v/` to see every detail.
@@ -564,7 +564,7 @@ These rules apply when adding or editing a contact and when TuitionBook reads co
 * `NAME`:
   * must start with a letter or number, and can be up to 100 characters long.
   * may contain letters from any language, numbers, accents, spaces, periods (`.`), apostrophes (`'` or `’`), forward slashes (`/`) and hyphens (`-`). Other symbols, such as `@`, `#` or double quotes, are not allowed.
-  * is saved exactly as you type it, including capital letters and punctuation. Spaces at the start or end are ignored.
+  * is saved exactly as you type it, including capital letters and punctuation. Spaces at the start or end are ignored when you type a command.
 * `PHONE`:
   * must contain at least 3 digits (0-9) in the main number, not counting any label or extension, and may start with `+`.
   * can be split into groups of digits using spaces, a hyphen (`-`) or a slash (`/`), for example `9123 4567`, `9123-4567` or `+65/9123/4567`. A group can also be put in brackets, as in `+65 (9123) 4567`.
@@ -576,7 +576,7 @@ These rules apply when adding or editing a contact and when TuitionBook reads co
   * Before the `@`: up to 64 characters, using English letters, digits (0-9), periods (`.`), and these symbols: `` ! # $ % & ' * + - / = ? ^ _ ` { | } ~ ``. A period cannot be first or last, and two periods cannot appear in a row. The other allowed symbols can appear at the start or end. For example, `_alice+@example.com` is accepted. Spaces and double quotes (`"`) are not allowed.
   * Slashes inside an email do not start another field: `e/alice.t/user@example.com t/Math` stores email `alice.t/user@example.com` and tag `Math`. If an email starts with text such as `t/`, put it directly after `e/`: `e/t/user@example.com`. A space before `t/` starts a tag field, so `edit 1 e/ t/user@example.com` clears the email and sets the tag to `user@example.com`.
   * After the `@`: a domain such as `example.com` or `school.edu.sg`, made of English letters, digits (0-9) and hyphens, separated by periods. Each part can be up to 63 characters long, must start and end with a letter or digit, and the last part must be at least 2 characters long.
-* `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored.
+* `ADDRESS` must fit on one line, can be up to 200 characters long, and must contain at least one visible character. It can contain any letters and symbols. Spaces at the start or end are ignored when you type a command.
   * Accent marks on their own do not count as visible characters.
   * If an address is rejected because it contains hidden control characters (other than tabs) or broken characters from copied text, retype it.
 * Each `TAG`:
@@ -666,13 +666,16 @@ If you are fixing the file after a problem and want to keep TuitionBook open, us
 * Each contact also has these fields, which TuitionBook manages for you:
   * `id`: a code that identifies the contact, in the format TuitionBook creates (known as a UUID), for example `123e4567-e89b-12d3-a456-426614174000`. Every contact needs one, except in files from older versions (see below). **Don't change it** or make up your own, such as `student-1`, and don't give two contacts the same `id`. Any of these makes the whole file unreadable.
   * `role`: `STUDENT` or `GUARDIAN`.
-  * `guardianId`: for a student, the `id` of their guardian, written in double quotes. It can be left out or set to `null` if the student has no guardian. Any other kind of value, such as a list, makes the file unreadable.
+  * `guardianId`: for a student, the `id` of their guardian, written in double quotes. It can be left out or set to `null` if the student has no guardian. A list, such as `[]`, makes the file unreadable. A number or `true`/`false` is treated as an [invalid guardian link](#invalid-guardian-links) and removed.
 * Two contacts with the same role, name and phone number count as duplicates, even if their `id`s differ, and make the file unreadable. A student and a guardian can share a name and phone number.
 * Use only the root field `persons` and the contact fields `id`, `role`, `guardianId`, `name`, `phone`, `email`, `address` and `tags`. Field names use the exact letter case shown here. An unrecognised field such as `Email` makes the file unreadable, so a typing mistake cannot silently discard a value.
 * The file must contain one set of contacts only. Extra text after the final `}`, or the same field name used twice in one contact, makes the file unreadable.
 * Spaces at the start or end of a tag are removed when the file is loaded, so `" Math "` becomes `"Math"`. Spaces inside a tag are kept.
+* A name in the file cannot start with a space, or the whole file becomes unreadable. Spaces at the end of a name, and at either end of an address, are kept as they are.
 * Don't put a backslash before a space (for example `"\ Math"`). This is not valid JSON and makes the whole file unreadable.
 * Files from older versions of TuitionBook still work. A contact without `id`, `role` and `guardianId` is loaded as a student with no guardian, and the missing fields are added the next time TuitionBook saves. If an older `data/addressbook.json` exists, TuitionBook moves it to `data/tuitionbook.json` the first time it starts. If it can't move the file (for example, because it isn't allowed to change that folder), it keeps using `data/addressbook.json` as your data file and tries again next time.
+
+<a id="invalid-guardian-links"></a>
 
 **Invalid guardian links**
 
@@ -728,7 +731,8 @@ Find the symptom below and try the suggested action. Error messages appear in th
 | `TuitionBook is already running` | TuitionBook is already open from the same folder | Use or close the existing window. To run a separate copy, put the JAR in a different folder. Don't delete `.tuitionbook.lock` while TuitionBook is running. |
 | `TuitionBook could not start safely` | TuitionBook could not create its `.tuitionbook.lock` file, for example because you can't save files in that folder | Check that you are allowed to create files in the JAR's folder, or move the JAR to a folder you own, then try again. |
 | `Unknown command.` | A misspelled or unsupported command word | Type one of the command words in the [Command summary](#command-summary), such as `list` or `find`. The surrounding code styling in this guide is not part of what you type. Command-word letter case does not matter. |
-| `Invalid command format!` | Something required is missing, or values are in the wrong order | Follow that command's usage and example shown with the error. Use no index for `add` and `find`. Start `edit` with the contact index. For `link`, enter the student index followed by the guardian index. |
+| `Invalid command format!` | Something required is missing, or values are in the wrong order | Follow that command's usage and example shown with the error. Use no index for `add` and `find`. Start `edit` with the contact index. |
+| `The first index must refer to a student.` or `The second index must refer to a guardian.` | The `link` indexes are in the wrong order, or a contact has the wrong role | Enter the student's index first, then the guardian's, for example `link 1 2`. |
 | `Commands must be entered on a single line.` | The command contains a line break | Remove the line break or replace it with a space, then try again. |
 | `Your command contains an unusual space character` | The command was copied from a website or document that uses special spaces | Retype the spaces around the command word and index using the spacebar, then try again. |
 | `Missing required field(s): ...` | An `add` command is missing `r/ROLE`, `n/NAME` or `p/PHONE` | Add every field named in the message. |
