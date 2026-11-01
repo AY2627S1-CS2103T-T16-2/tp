@@ -9,6 +9,7 @@ skinparam ArrowFontSize 12
 skinparam ArrowFontStyle plain
 skinparam nodesep 15
 skinparam ranksep 20
+skinparam padding 10
 scale max 800 width
 allowmixing
 
@@ -19,8 +20,8 @@ package UI {
     class StartupNotice
 }
 
-package Logic {
-    interface Logic #3333C4
+package "Logic" as LogicPackage {
+    interface "Logic" as LogicApi <<interface>> #3333C4
 }
 
 class MainApp #555555
@@ -29,12 +30,16 @@ MainApp --> "1" Ui : starts
 UiManager .up.|> Ui
 UiManager --> "0..1" MainWindow
 UiManager --> "0..1" StartupNotice : displays at startup
-UiManager --> "1" Logic
+UiManager -right-> "1" LogicApi
 
-MainWindow -up-> "1" Logic : commands and lists
+MainWindow -up-> "1" LogicApi : commands and lists
 
-note right of MainWindow
+note as UiPartsNote
 MainWindow's UI parts are expanded
 in the following diagram.
 end note
+' Keep PlantUML from merging the single note link into a speech-bubble attachment.
+' Layout technique adapted from https://forum.plantuml.net/20309/comments-notation-plantuml-according-standard-specification
+MainWindow -[hidden]down- UiPartsNote
+MainWindow .. UiPartsNote
 @enduml

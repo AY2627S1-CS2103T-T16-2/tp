@@ -23,6 +23,11 @@ Planned release; not yet released.
 - Correct User Guide details on contact cards, how the data file treats `guardianId` values and spaces around names and addresses, and the troubleshooting advice for `link` indexes in the wrong order.
 - Correct Developer Guide manual-test expectations for `clear` input variants and the initial-launch information dialog (#330).
 
+### Fixed
+
+- Correct the Developer Guide UI diagram's Logic interface connections, separate their multiplicities and use a dashed note connector.
+- Use a dashed note connector in the Developer Guide Logic class diagram.
+
 ## [v1.5] - 2026-10-28
 
 ### Added
