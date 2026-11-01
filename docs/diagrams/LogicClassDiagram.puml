@@ -33,7 +33,14 @@ LogicManager --> Model
 LogicManager --> Storage
 Command .right.> Model
 Command .right.> Storage
-note left of XYZCommand: XYZCommand represents a concrete command,\nsuch as AddCommand or FindCommand.
+note as RepresentativeCommandNote
+XYZCommand represents a concrete command,
+such as AddCommand or FindCommand.
+end note
+' Keep the note connector dashed, using the same layout technique as UiClassDiagram.
+' Source: https://forum.plantuml.net/20309/comments-notation-plantuml-according-standard-specification
+XYZCommand -[hidden]left- RepresentativeCommandNote
+XYZCommand .. RepresentativeCommandNote
 
 Logic ..> CommandResult
 Command .up.> CommandResult : <<create>>
