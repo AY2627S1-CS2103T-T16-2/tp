@@ -1174,7 +1174,7 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
    1. Put the JAR in an empty folder, launch it with `java -jar "tuitionbook.jar"`, dismiss the empty-data notice, and add `add r/student n/Alex Lock Test p/91234567`.
 
    1. Keep the first window open. From a second terminal, run the same launch command against the same JAR.<br>
-      Expected: The second launch promptly prints that TuitionBook is already running and shows an error telling you to use or close the existing window. It does not open a normal TuitionBook window. The first window remains usable, and its contact and window preferences are unchanged.
+      Expected: The second launch promptly prints that TuitionBook is already running and shows a **TuitionBook is already running** dialog with a readable explanation telling you to use or close the existing window. Its **OK** button is usable. After the dialog is dismissed, the second process exits without a secondary JavaFX exception or a normal TuitionBook window. The first instance remains usable, and its contact and window preferences are unchanged.
 
 1. Relaunch after normal exit
 
@@ -1258,12 +1258,12 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 1. Enter `add r/student n/Six Tags p/90000001 t/"Active Tuition Student" t/"Secondary Four Level" t/"Additional Mathematics" t/"English Language Study" t/"Physics Practical Prep" t/"Chemistry Practical Prep"`.
 1. Enter `add r/student n/One Tag p/90000002 t/Active`, then `add r/student n/No Tags p/90000003`.
-1. Resize the application to its minimum width.<br>
-   Expected: Six Tags' labels wrap above the phone line without obscuring any contact detail or the next card. Its card grows to fit the extra rows, while One Tag and No Tags remain compact. Tags remain alphabetically sorted.
+1. Enter `tag 1 t/ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ`.<br>
+   Expected: The long tag is added to Six Tags, and its existing tags are retained.
+1. Resize the application to its minimum width and hover over the shortened long tag.<br>
+   Expected: The long tag ends with an ellipsis, and its tooltip shows the complete value. The role badge remains visible, ordinary tags wrap without overlap, and the contact list has no horizontal scrollbar.
 1. Resize the application wide, then back to its minimum width.<br>
-   Expected: The Six Tags card shrinks and grows with the number of tag rows. No tags or contact details overlap at either width.
-1. Add one tag whose value is wider than the card, resize to the minimum width, and hover over the shortened tag.<br>
-   Expected: The tag ends with an ellipsis and its tooltip shows the complete value.
+   Expected: The contact list has no horizontal scrollbar at either width. After narrowing again, the role badge remains visible, the long tag retains its ellipsis and full-value tooltip, and ordinary tags wrap without overlap.
 
 ### Pasting separators into the command box
 
