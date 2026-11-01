@@ -746,13 +746,6 @@ Check [Limitations and known issues](#limitations-and-known-issues) first. If yo
 
 --------------------------------------------------------------------------------------------------------------------
 
-## FAQ
-
-**Q**: How do I transfer my data to another computer?<br>
-**A**: Follow [Transferring contacts to another computer](#transferring-contacts-to-another-computer). Remember that replacing the destination data file replaces its contacts. Files are not merged.
-
---------------------------------------------------------------------------------------------------------------------
-
 <a id="known-issues"></a>
 
 ## Limitations and known issues
