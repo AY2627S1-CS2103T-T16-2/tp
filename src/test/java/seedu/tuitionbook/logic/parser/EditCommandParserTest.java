@@ -57,6 +57,26 @@ public class EditCommandParserTest {
     private EditCommandParser parser = new EditCommandParser();
 
     @Test
+    public void parse_slashEmails_doNotIntroduceAdditionalEdits() {
+        for (String prefix : new String[]{"t/", "n/", "p/", "e/", "a/", "r/", "g/", "zz/"}) {
+            for (String localPart : new String[]{prefix + "user", "alice." + prefix + "user",
+                "alice/" + prefix, "alice//" + prefix + "user"}) {
+                String email = localPart + "@example.com";
+                String input = "1 e/" + email;
+                EditPersonDescriptor emailOnly = new EditPersonDescriptorBuilder().withEmail(email).build();
+
+                // Exact descriptor equality verifies that the email introduces no additional edits.
+                assertParseSuccess(parser, input, new EditCommand(INDEX_FIRST_PERSON, emailOnly));
+
+                EditPersonDescriptor withFields = new EditPersonDescriptorBuilder().withEmail(email)
+                        .withAddress("123 Road").withTags("Math").build();
+                assertParseSuccess(parser, input + " a/123 Road t/Math",
+                        new EditCommand(INDEX_FIRST_PERSON, withFields));
+            }
+        }
+    }
+
+    @Test
     public void parse_roleEdit_reportsRoleImmutability() {
         for (String input : List.of("1 r/guardian", "1 r/student", "1 r/", "1 r/anyRole",
                 "1 n/Updated r/guardian")) {
@@ -128,23 +148,23 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_invalidValue_failure() {
-        assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS); // invalid name
+        assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_INVALID_CHARACTERS); // invalid name
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS); // invalid phone
-        assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS); // invalid email
-        assertParseFailure(parser, "1" + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS); // invalid tag
+        assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_FORMAT); // invalid email
+        assertParseFailure(parser, "1" + INVALID_TAG_DESC, Tag.MESSAGE_INVALID_CHARACTERS); // invalid tag
 
         // invalid phone followed by valid email
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC + EMAIL_DESC_AMY, Phone.MESSAGE_CONSTRAINTS);
 
         // while parsing {@code PREFIX_TAG} alone will reset the tags of the {@code Person} being edited,
         // parsing it together with a valid tag results in error
-        assertParseFailure(parser, "1" + TAG_DESC_FRIEND + TAG_DESC_HUSBAND + TAG_EMPTY, Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1" + TAG_DESC_FRIEND + TAG_EMPTY + TAG_DESC_HUSBAND, Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1" + TAG_EMPTY + TAG_DESC_FRIEND + TAG_DESC_HUSBAND, Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1" + TAG_DESC_FRIEND + TAG_DESC_HUSBAND + TAG_EMPTY, Tag.MESSAGE_BLANK);
+        assertParseFailure(parser, "1" + TAG_DESC_FRIEND + TAG_EMPTY + TAG_DESC_HUSBAND, Tag.MESSAGE_BLANK);
+        assertParseFailure(parser, "1" + TAG_EMPTY + TAG_DESC_FRIEND + TAG_DESC_HUSBAND, Tag.MESSAGE_BLANK);
 
         // multiple invalid values, but only the first invalid value is captured
         assertParseFailure(parser, "1" + INVALID_NAME_DESC + INVALID_EMAIL_DESC + VALID_ADDRESS_AMY + VALID_PHONE_AMY,
-                Name.MESSAGE_CONSTRAINTS);
+                Name.MESSAGE_INVALID_CHARACTERS);
 
     }
 
@@ -187,7 +207,7 @@ public class EditCommandParserTest {
             assertParseSuccess(parser, input, new EditCommand(INDEX_FIRST_PERSON, cleared));
         }
         assertParseFailure(parser, "1 a/\"" + "X".repeat(Address.MAX_LENGTH + 1) + "\"",
-                Address.MESSAGE_CONSTRAINTS);
+                Address.MESSAGE_TOO_LONG);
         assertParseFailure(parser, "1 a/\"12 Road ee/literal", ArgumentTokenizer.MESSAGE_UNCLOSED_QUOTE);
         assertParseFailure(parser, "1 a/\"12 Road\" extra", ArgumentTokenizer.MESSAGE_TEXT_AFTER_QUOTE);
     }
@@ -223,13 +243,13 @@ public class EditCommandParserTest {
     @Test
     public void parse_nonAsciiTag_reportsTagConstraints() {
         for (String tag : new String[] {"caf\u00e9", "\u6570\u5b66", "\ud83d\ude00", "Sec\u00a04"}) {
-            assertParseFailure(parser, "1 t/" + tag, Tag.MESSAGE_CONSTRAINTS);
+            assertParseFailure(parser, "1 t/" + tag, Tag.MESSAGE_INVALID_CHARACTERS);
         }
     }
 
     @Test
     public void parse_internalTabTag_failure() {
-        assertParseFailure(parser, "1 " + PREFIX_TAG + "Ma\tth", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 " + PREFIX_TAG + "Ma\tth", Tag.MESSAGE_INVALID_CHARACTERS);
     }
 
     @Test
@@ -273,8 +293,8 @@ public class EditCommandParserTest {
         String overLengthName = "A".repeat(Name.MAX_LENGTH + 1);
         String overLengthAddress = "A".repeat(Address.MAX_LENGTH + 1);
 
-        assertParseFailure(parser, "1 " + PREFIX_NAME + overLengthName, Name.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 " + PREFIX_ADDRESS + overLengthAddress, Address.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 " + PREFIX_NAME + overLengthName, Name.MESSAGE_TOO_LONG);
+        assertParseFailure(parser, "1 " + PREFIX_ADDRESS + overLengthAddress, Address.MESSAGE_TOO_LONG);
     }
 
     @Test

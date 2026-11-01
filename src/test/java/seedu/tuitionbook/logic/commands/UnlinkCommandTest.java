@@ -79,7 +79,9 @@ public class UnlinkCommandTest {
         UnlinkCommand command = new UnlinkCommand(Index.fromOneBased(1));
 
         assertTrue(command.equals(command));
-        assertTrue(command.equals(new UnlinkCommand(Index.fromOneBased(1))));
+        UnlinkCommand commandCopy = new UnlinkCommand(Index.fromOneBased(1));
+        assertTrue(command.equals(commandCopy));
+        assertEquals(command.hashCode(), commandCopy.hashCode());
         assertFalse(command.equals(null));
         assertFalse(command.equals(new ClearCommand()));
         assertFalse(command.equals(new UnlinkCommand(Index.fromOneBased(2))));

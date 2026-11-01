@@ -37,8 +37,9 @@ import seedu.tuitionbook.ui.StartupNotice;
  */
 public class MainAppTest {
 
-    private static final String INVALID_JSON_GUIDANCE = "The data file is not valid UTF-8 JSON. Correct the encoding "
-            + "or JSON syntax in the preserved file before trying again.";
+    private static final String INVALID_JSON_GUIDANCE = "The data file is not in a format TuitionBook can read. "
+            + "Check the data file for mistakes such as a missing comma, quote or bracket, and save it as UTF-8 "
+            + "text before trying again.";
 
     @TempDir
     public Path testFolder;
@@ -261,6 +262,22 @@ public class MainAppTest {
     }
 
     @Test
+    public void loadStartupState_trailingJson_reportsJsonGuidanceAndPreservesOriginalBytes() throws Exception {
+        Path dataFile = testFolder.resolve("contacts.json");
+        byte[] originalContents = "{\"persons\":[]} {\"persons\":[]}".getBytes(StandardCharsets.UTF_8);
+        Files.write(dataFile, originalContents);
+
+        MainApp.StartupState state = MainApp.loadStartupState(storage(), new UserPrefs());
+
+        Path backupPath = dataFile.resolveSibling(dataFile.getFileName() + ".backup");
+        assertTrue(state.model().getTuitionBook().getPersonList().isEmpty());
+        assertEquals(StartupNotice.loadFailedBackedUp(backupPath, INVALID_JSON_GUIDANCE),
+                state.notice().orElseThrow());
+        assertFalse(Files.exists(dataFile));
+        assertArrayEquals(originalContents, Files.readAllBytes(backupPath));
+    }
+
+    @Test
     public void loadStartupState_invalidUtf8_reportsEncodingGuidanceAndPreservesBytes() throws Exception {
         // Scenario adapted from https://github.com/AY2627S1-CS2103T-T16-1/tp/issues/196
         Path dataFile = testFolder.resolve("contacts.json");
@@ -291,7 +308,8 @@ public class MainAppTest {
         StartupNotice notice = state.notice().orElseThrow();
         assertEquals(StartupNotice.Type.LOAD_FAILED_BACKED_UP, notice.type());
         assertTrue(notice.loadFailureGuidance().contains("invalid contact data"));
-        assertTrue(notice.loadFailureGuidance().contains(Phone.MESSAGE_CONSTRAINTS.substring(0, 100)));
+        assertTrue(notice.loadFailureGuidance().contains("Contact 1 in the file (\"Invalid Phone\"): "
+                + Phone.MESSAGE_CONSTRAINTS));
         assertFalse(Files.exists(dataFile));
         assertTrue(Files.exists(dataFile.resolveSibling(dataFile.getFileName() + ".backup")));
     }

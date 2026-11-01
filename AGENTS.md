@@ -4,6 +4,8 @@
 
 * Preserve uncommitted work; never overwrite another contributor's changes.
 * Do not commit, push, publish issues/reviews/releases, or deploy without permission.
+* **The v1.6 feature freeze is active.** Follow the freeze rules below before
+  changing functional code; user approval does not waive mandatory course limits.
 * **Never push directly to the team repository's `master` (`upstream/master`).** Land
   every change through a reviewed pull request from a fork or feature branch, and do
   not leave local branches tracking or defaulting their pushes to `upstream/master`.
@@ -40,6 +42,64 @@ and authoritative project documentation > this file's defaults. Higher-priority
 agent safety/permission instructions still apply. Surface conflicting sources
 with the user; do not invent prohibitions, approvals, evidence or grade guarantees.
 **Course sources checked: 2026-10-04.** Recheck live rules when the task depends on them.
+
+## Active v1.6 feature freeze
+
+**Freeze rules rechecked: 2026-10-30**, against the [timeline][timeline],
+[v1.5 schedule][alpha] and [v1.6 freeze/submission rules][release]. The freeze
+starts **2026-10-30 at 10:00 SGT**; final submission is **2026-11-03 at 14:00 SGT**.
+
+* Prioritise necessary, low-risk fixes; defer optional enhancements and refactoring.
+  The course limits change volume, not change type; this is a conservative working
+  default, not a claim that the course categorically prohibits new features.
+* Each member's limit is **15% of their functional LoC or 150 LoC, whichever is
+  higher**. The dashboard measures freeze-period edits against functional LoC
+  attributed to that member at the end of v1.6. The course allows a five-percentage-
+  point tolerance (up to 20%); do not plan to consume that tolerance.
+* All edits to code files under `src/main` count, including comments, blank lines
+  and cosmetic refactoring. Tests, documentation and non-code files are exempt.
+* Before functional edits, identify the responsible human, check their dashboard
+  usage and pending changes, and estimate the proposed change's impact. A local
+  diff is an estimate, not proof of the dashboard's final count. Stop for clarification
+  if attribution or remaining budget is unclear; do not assume unused quota.
+* Keep fixes small and verify regressions. Exemption from the quota does not remove
+  testing, documentation, attribution or approval requirements elsewhere in this file.
+* **Freeze priorities:** favour quota-exempt work first: making the UG readable
+  under [Writing for users](#writing-for-users), keeping the DG accurate, and
+  adding tests. Treat [Code and test essentials](#code-and-test-essentials) as
+  applying only to the small code fixes that are still necessary. Rewording a
+  message in `src/main` is a code edit that counts towards the quota, so check
+  budget before changing message text.
+* After the submission deadline, a separate **30-day code freeze** applies:
+  repository code updates require teaching-team permission, except changes related
+  to an approved late submission. Issue, milestone and PR updates remain allowed.
+
+## Writing for users
+
+The UG, error messages, Help window and startup dialogs are read by tutors with no
+programming knowledge. Write for them, not for developers; the DG may stay technical.
+
+* Use plain words. In user-facing text, do not use character codes (`U+0020`) or terms
+  such as ASCII, Unicode, code point, UUID, NFC, normalise, token, parser, substring,
+  literal, validation or working set. Say "spaces", "English letters", "digits (0-9)",
+  "part of a name" or "the backup file" instead.
+* Use technical terms only where users must type or see them (for example `JSON`
+  key names in the data-file section), and explain them in passing.
+* Keep sentences short and lead with what the user should do. Give one rule per bullet,
+  and split field rules into sub-lists rather than long paragraphs.
+* Stay accurate while simplifying. Do not say "digits" when only 0-9 are accepted,
+  "exactly as you typed" when spaces are trimmed, or a fixed backup path when the
+  path can vary. State real limits plainly instead.
+* Error messages report the specific rule broken, briefly, like "This person already
+  exists in TuitionBook." Leave niche guidance (quoting, escapes) to the UG, and keep a
+  UG tip explaining when to wrap names, addresses and tags in double quotes.
+* Quote messages in the UG and DG manual tests exactly as the app shows them, and
+  update both when a message changes. Data-file load details are cut off at
+  `DataLoadingException.MAX_GUIDANCE_DETAIL_LENGTH`, so keep those messages, including
+  the "Contact N in the file" prefix and any contact name, within that limit.
+* Keep UG headings unchanged where possible, because the DG links to their anchors.
+* Check UG changes by building the docs, confirming every in-page link resolves, and
+  searching the diff for the jargon listed above.
 
 ## Mandatory course requirements
 
@@ -81,6 +141,11 @@ These summarise explicit requirements in the [overview][overview] and
 
 ## Design recommendations — not additional prohibitions
 
+* Avoid semicolons in documentation and user-facing prose unless the user explicitly
+  overrides this style default. Prefer smooth, connected sentences or shorter
+  sentences. Preserve semicolons required by code or command syntax, literal test
+  data and exact quotations such as application messages. Do not change application
+  behaviour or message text solely to remove semicolons.
 * Prefer efficient CLI workflows, low interaction effort, minimal networking with
   suitable fallbacks, and easy-to-test features. These are design recommendations
   from the course; specific approved product guarantees remain binding.
@@ -99,8 +164,9 @@ These summarise explicit requirements in the [overview][overview] and
    members and target milestone, and assign incoming PRs to the appropriate milestone.
    Before closing a milestone, reconcile it with actual delivery and move unfinished
    issues/PRs to a future milestone; do not count unfinished work as released.
-2. Before code changes, check the active iteration and any freeze restrictions using
-   the sources below. Stop for clarification if permission or remaining budget is unclear.
+2. Before code changes, apply the active v1.6 feature freeze rules above and recheck
+   the live course sources for any subsequent restrictions. Stop for clarification
+   if permission or remaining budget is unclear.
 3. Trace parser → command → model → storage/UI and read related tests. Resolve
    contradictions between approved intent, documentation, tests and implementation
    before choosing a fix; never edit docs merely to legitimise a defect.
@@ -153,6 +219,9 @@ course discourages timestamp changes that interfere with progress tracking.
 
 ## Code and test essentials
 
+During the freeze, these apply to the small code fixes that are still necessary;
+see the freeze priorities above.
+
 * Follow the 2103t Java standards and existing component boundaries. Avoid duplicated
   logic, oversized methods and catch-and-ignore handling. Use project logging and
   exceptions appropriately; assertions must not be the only input validation.
@@ -203,7 +272,7 @@ seek clarification before proceeding with work that depends on it. Do not guess.
 |---|---|
 | Feature/design/dependency changes | Relevant approved issue/spec, UG/DG, [constraints][constraints] and [expectations][expectations]. |
 | Tests or alpha testing | [Testing guide](docs/Testing.md), neighbouring tests and [course alpha-testing guidance][alpha]. |
-| UG/DG/diagram changes | [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading], [requirements notation][notation] and [NFR definitions][requirements]. |
+| UG/DG/diagram changes | [Writing for users](#writing-for-users) for the UG and user-facing text, [Documentation guide](docs/Documentation.md), [deliverables][deliverables], [grading][grading], [requirements notation][notation] and [NFR definitions][requirements]. |
 | Iteration planning or Git/PR actions | [Timeline][timeline], its active week's instructions and [GitHub workflow][github]. |
 | Code/release changes near deadlines or after submission | [Timeline][timeline] and [freeze/submission rules][release]; verify current limits, permissions and required artifacts before acting. Verify any eligibility for a DG "Planned Enhancements" appendix against the live [deliverables][deliverables] and [PE rules][pe] before relying on it. |
 | PE reports/responses/evaluations | [PE rules][pe] for the active phase and [grading][grading]; verify facts, impact and allowed issue edits, not presumed severity. |
@@ -219,7 +288,7 @@ supporting output or artifact references), **Not verified** (with reasons), and
 rules were followed is not verification evidence.
 Use the response or existing issue/PR; do not create extra reports or instruction
 files unless requested. Keep shared guidance tool-neutral, outside published docs,
-and limited to stable instructions rather than dated feature-status claims.
+and limited to stable instructions plus the explicitly dated active freeze rules above.
 
 [overview]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-overview.html
 [constraints]: https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-constraints.html

@@ -28,8 +28,6 @@ public class ListCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Lists all persons, or only those matching the given role and tags.\n"
             + "Parameters: [" + PREFIX_ROLE + "ROLE] [" + PREFIX_TAG + "TAG]...\n"
-            + "Use double quotes around a tag containing a field prefix.\n"
-            + "Inside quoted tags, use \\\" for a literal quote and \\\\ for a literal backslash.\n"
             + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "student " + PREFIX_TAG + "Sec4";
 
     private final Predicate<Person> predicate;
@@ -109,6 +107,11 @@ public class ListCommand extends Command {
         }
 
         return Objects.equals(predicate, otherListCommand.predicate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(predicate);
     }
 
     @Override

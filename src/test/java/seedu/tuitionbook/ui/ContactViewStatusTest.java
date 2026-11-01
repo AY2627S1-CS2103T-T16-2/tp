@@ -47,6 +47,27 @@ public class ContactViewStatusTest {
     }
 
     @Test
+    public void viewDetails_phoneTextCanBeSelectedWithoutEditingContacts() throws Exception {
+        JavaFxTestUtil.runOnFxThread(() -> {
+            try (WindowFixture fixture = new WindowFixture(temporaryFolder)) {
+                fixture.execute("add r/student n/Alex Student p/90000001");
+                fixture.execute("view 1");
+                TextArea details = (TextArea) fixture.window.getRoot().getScene().lookup("#detailDisplay");
+                assertNotNull(details);
+                assertTrue(details.isVisible());
+                assertFalse(details.isEditable());
+                int phoneStart = details.getText().indexOf("90000001");
+                assertTrue(phoneStart >= 0);
+                details.selectRange(phoneStart, phoneStart + "90000001".length());
+                assertEquals("90000001", details.getSelectedText());
+                fixture.execute("reload");
+                fixture.execute("view 1");
+                assertTrue(details.getText().contains("90000001"));
+            }
+        });
+    }
+
+    @Test
     public void queries_distinguishUnfilteredEmptyAndAllMatchingViews() throws Exception {
         JavaFxTestUtil.runOnFxThread(() -> {
             try (WindowFixture fixture = new WindowFixture(temporaryFolder)) {
@@ -114,7 +135,7 @@ public class ContactViewStatusTest {
                     "delete 2", "tag 1 t/Active"}) {
                     fixture.execute(command);
                     TextArea result = (TextArea) fixture.window.getRoot().getScene().lookup("#resultDisplay");
-                    assertTrue(result.getText().contains("Could not save data"));
+                    assertTrue(result.getText().contains("Could not save your changes"));
                     fixture.assertQuery("list t/Active", 2, 2, 1, 1);
                 }
             }

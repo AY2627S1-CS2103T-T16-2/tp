@@ -43,14 +43,13 @@ public class EditCommand extends Command {
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_TAG + "TAG]...\n"
-            + "Use double quotes around a name, address or tag containing prefix-like text, for example "
-            + "n/\"Rina a/p Kaur\" or a/\"20 Road c/o Rina\".\n"
-            + "Inside quoted values, use \\\" for a literal quote and \\\\ for a literal backslash.\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
+    public static final String MESSAGE_NO_CHANGE =
+            "No changes made: the specified values already match %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_ROLE_NOT_EDITABLE =
             "A contact's role cannot be changed after it is added.";
@@ -107,10 +106,11 @@ public class EditCommand extends Command {
         }
 
         // createEditedPerson preserves the persistent ID; compare only the selected contact's stored values.
-        if (!personToEdit.equals(editedPerson)) {
-            model.setPerson(personToEdit, editedPerson);
-            requiresSave = true;
+        if (personToEdit.equals(editedPerson)) {
+            return new CommandResult(String.format(MESSAGE_NO_CHANGE, personToEdit.getName()));
         }
+        model.setPerson(personToEdit, editedPerson);
+        requiresSave = true;
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }
 
@@ -146,6 +146,11 @@ public class EditCommand extends Command {
 
         return index.equals(otherEditCommand.index)
                 && editPersonDescriptor.equals(otherEditCommand.editPersonDescriptor);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(index, editPersonDescriptor);
     }
 
     @Override
@@ -286,6 +291,11 @@ public class EditCommand extends Command {
                     && Objects.equals(tags, otherEditPersonDescriptor.tags)
                     && emailCleared == otherEditPersonDescriptor.emailCleared
                     && addressCleared == otherEditPersonDescriptor.addressCleared;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, phone, email, address, tags, emailCleared, addressCleared);
         }
 
         @Override

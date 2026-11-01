@@ -51,12 +51,9 @@ public class AddCommandTest {
     }
 
     @Test
-    public void messageUsage_exampleAppearsBeforeQuotedValueGuidance() {
-        int exampleIndex = AddCommand.MESSAGE_USAGE.indexOf("Example:");
-        int guidanceIndex = AddCommand.MESSAGE_USAGE.indexOf("Use double quotes");
-        assertTrue(exampleIndex >= 0);
-        assertTrue(guidanceIndex >= 0);
-        assertTrue(exampleIndex < guidanceIndex);
+    public void messageUsage_endsWithExampleWithoutQuotedValueGuidance() {
+        assertTrue(AddCommand.MESSAGE_USAGE.contains("Example:"));
+        assertFalse(AddCommand.MESSAGE_USAGE.contains("double quotes"));
     }
 
     @Test
@@ -126,6 +123,7 @@ public class AddCommandTest {
         // same values -> returns true
         AddCommand addAliceCommandCopy = new AddCommand(alice);
         assertTrue(addAliceCommand.equals(addAliceCommandCopy));
+        assertEquals(addAliceCommand.hashCode(), addAliceCommandCopy.hashCode());
 
         // different types -> returns false
         assertFalse(addAliceCommand.equals(1));

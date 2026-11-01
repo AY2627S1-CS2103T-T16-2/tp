@@ -1,0 +1,49 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor STORAGE_COLOR
+skinparam classBackgroundColor STORAGE_COLOR
+skinparam classAttributeIconSize 0
+show members
+
+package "Contact JSON conversion and load diagnostics" {
+Class JsonSerializableTuitionBook {
+    ~toModelTypeWithResult(): TuitionBookLoadResult
+}
+Class JsonAdaptedPerson {
+    -id: String
+    -role: String
+    -guardianId: String [0..1]
+    -name: String
+    -phone: String
+    -email: String [0..1]
+    -address: String [0..1]
+    ~toModelTypeWithResult(): PersonLoadResult
+}
+Class JsonAdaptedTag {
+    -tagName: String
+}
+Class "TuitionBookLoadResult\n<<record>>" as TuitionBookLoadResult {
+    -tuitionBook: ReadOnlyTuitionBook
+    -guardianLinkRepairs: List<GuardianLinkRepair>
+}
+Class "JsonAdaptedPerson.PersonLoadResult\n<<record>>" as PersonLoadResult {
+    -person: Person
+    -repair: GuardianLinkRepair [0..1]
+}
+Class "GuardianLinkRepair\n<<record>>" as GuardianLinkRepair {
+    -personName: String
+    -personId: UUID
+    -guardianId: String [0..1]
+    -reason: Reason
+}
+}
+
+JsonSerializableTuitionBook --> "0..*" JsonAdaptedPerson : persons
+JsonAdaptedPerson --> "0..*" JsonAdaptedTag : tags
+JsonSerializableTuitionBook ..> TuitionBookLoadResult : creates
+JsonAdaptedPerson ..> PersonLoadResult : creates
+TuitionBookLoadResult --> "0..*" GuardianLinkRepair : guardianLinkRepairs
+PersonLoadResult --> "0..1" GuardianLinkRepair : repair
+
+@enduml

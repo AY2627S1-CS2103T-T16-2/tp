@@ -240,7 +240,8 @@ public class CardDisplayUiTest {
             String maximumLengthName = "A".repeat(Name.MAX_LENGTH);
             String maximumLengthAddress = "X".repeat(Address.MAX_LENGTH);
             String longPhone = "9".repeat(200);
-            String longEmail = "a".repeat(200) + "@example.com";
+            String longEmail = "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(61);
+            assertEquals(254, longEmail.length());
             Person guardian = new PersonBuilder().withName(maximumLengthName).withRole(Role.GUARDIAN)
                     .withPhone(longPhone).withEmail(longEmail).build();
             Person student = new PersonBuilder().withName(maximumLengthName).withPhone(longPhone)

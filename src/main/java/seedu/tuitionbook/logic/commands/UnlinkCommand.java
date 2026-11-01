@@ -88,6 +88,11 @@ public class UnlinkCommand extends Command {
     }
 
     @Override
+    public int hashCode() {
+        return studentIndex.hashCode();
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this).add("studentIndex", studentIndex).toString();
     }

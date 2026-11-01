@@ -30,11 +30,13 @@
 * [User Guide]({{ baseUrl }}/UserGuide.html) :expanded:
   * [Command Summary]({{ baseUrl }}/UserGuide.html#command-summary)
   * [Quick Start]({{ baseUrl }}/UserGuide.html#quick-start)
-  * [Features]({{ baseUrl }}/UserGuide.html#features)
-  * [Troubleshooting]({{ baseUrl }}/UserGuide.html#troubleshooting)
+  * [Command Reference]({{ baseUrl }}/UserGuide.html#command-reference)
+  * [Task Walkthroughs]({{ baseUrl }}/UserGuide.html#task-walkthroughs)
+  * [Advanced Command Input]({{ baseUrl }}/UserGuide.html#advanced-command-input)
+  * [Data and Backups]({{ baseUrl }}/UserGuide.html#data-and-backups)
   * [Glossary]({{ baseUrl }}/UserGuide.html#glossary)
-  * [Known issues]({{ baseUrl }}/UserGuide.html#known-issues)
-  * [FAQ]({{ baseUrl }}/UserGuide.html#faq)
+  * [Troubleshooting]({{ baseUrl }}/UserGuide.html#troubleshooting)
+  * [Limitations and Known Issues]({{ baseUrl }}/UserGuide.html#limitations-and-known-issues)
 * [Developer Guide]({{ baseUrl }}/DeveloperGuide.html) :expanded:
   * [Acknowledgements]({{ baseUrl }}/DeveloperGuide.html#acknowledgements)
   * [Setting Up]({{ baseUrl }}/DeveloperGuide.html#setting-up-getting-started)

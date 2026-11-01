@@ -3,6 +3,7 @@ package seedu.tuitionbook.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -84,7 +85,7 @@ public class ViewCommand extends Command {
     private static void appendContactDetails(StringBuilder result, Person person) {
         String tags = person.getTags().stream()
                 .sorted(Tag.DISPLAY_COMPARATOR)
-                .map(tag -> formatTagForDetails(tag.tagName))
+                .map(Messages::formatTag)
                 .collect(Collectors.joining(", "));
         result.append("Name: ").append(person.getName()).append('\n')
                 .append("Role: ").append(person.getRole().name()).append('\n')
@@ -92,13 +93,6 @@ public class ViewCommand extends Command {
                 .append("Email: ").append(person.getEmail().map(Object::toString).orElse("-")).append('\n')
                 .append("Address: ").append(person.getAddress().map(Object::toString).orElse("-")).append('\n')
                 .append("Tags: ").append(tags.isEmpty() ? "-" : tags);
-    }
-
-    private static String formatTagForDetails(String tagName) {
-        String escapedTagName = tagName.replace("\\", "\\\\")
-                .replace("[", "\\[")
-                .replace("]", "\\]");
-        return "[" + escapedTagName + "]";
     }
 
     private static void appendGuardianDetails(StringBuilder result, Person student, List<Person> allPersons,
@@ -121,7 +115,6 @@ public class ViewCommand extends Command {
                 return;
             }
         }
-        result.append("\n\n").append(MESSAGE_NO_GUARDIAN);
     }
 
     private static void appendLinkedStudents(StringBuilder result, Person guardian, List<Person> allPersons,
@@ -163,6 +156,11 @@ public class ViewCommand extends Command {
         }
         return targetIndex.equals(otherViewCommand.targetIndex)
                 && shouldShowFullLinkedDetails == otherViewCommand.shouldShowFullLinkedDetails;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(targetIndex, shouldShowFullLinkedDetails);
     }
 
     @Override

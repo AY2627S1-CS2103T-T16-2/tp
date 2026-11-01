@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 
 import seedu.tuitionbook.logic.parser.Prefix;
 import seedu.tuitionbook.model.person.Person;
+import seedu.tuitionbook.model.tag.Tag;
 
 /**
  * Container for user visible messages.
@@ -17,7 +18,7 @@ public class Messages {
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX = "The contact index provided is invalid.";
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d person(s) listed!";
     public static final String MESSAGE_DUPLICATE_FIELDS =
-                "Multiple values specified for the following single-valued field(s): ";
+                "Each of these fields can only be given once: ";
 
     /**
      * Returns an error message indicating the duplicate prefixes.
@@ -61,8 +62,19 @@ public class Messages {
                 .append("; Address: ")
                 .append(person.getAddress().map(Object::toString).orElse("-"))
                 .append("; Tags: ");
-        person.getTags().forEach(builder::append);
+        person.getTags().forEach(tag -> builder.append(formatTag(tag)));
         return builder.toString();
+    }
+
+    /**
+     * Formats {@code tag} in brackets, escaping backslashes and brackets in its name so that adjacent tags
+     * remain distinguishable from a single tag containing brackets.
+     */
+    public static String formatTag(Tag tag) {
+        String escapedTagName = tag.tagName.replace("\\", "\\\\")
+                .replace("[", "\\[")
+                .replace("]", "\\]");
+        return "[" + escapedTagName + "]";
     }
 
 }

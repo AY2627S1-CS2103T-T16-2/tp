@@ -4,8 +4,10 @@ import static java.util.Objects.requireNonNull;
 import static seedu.tuitionbook.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -23,6 +25,12 @@ import seedu.tuitionbook.model.person.Role;
  * Represents the in-memory model of TuitionBook data.
  */
 public class ModelManager implements Model {
+    private static final String MESSAGE_DUPLICATE_CONTACT_ID = "Contact IDs must be unique.";
+    private static final String MESSAGE_INVALID_GUARDIAN_LINK =
+            "Every guardian link must refer to an existing contact with the guardian role.";
+    private static final String MESSAGE_CONTACT_ID_CHANGED = "A contact's ID cannot be changed.";
+    private static final String MESSAGE_CONTACT_ROLE_CHANGED = "A contact's role cannot be changed.";
+
     private static final Logger logger = LogsCenter.getLogger(ModelManager.class);
 
     private final TuitionBook tuitionBook;
@@ -43,6 +51,7 @@ public class ModelManager implements Model {
         logger.fine("Initializing with TuitionBook: " + tuitionBook + " and user prefs " + userPrefs);
 
         this.tuitionBook = new TuitionBook(tuitionBook);
+        validateRelationships(this.tuitionBook.getPersonList());
         this.userPrefs = new UserPrefs(userPrefs);
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, SHOW_ALL_PERSONS_REFRESH_COMMAND);
     }
@@ -73,7 +82,9 @@ public class ModelManager implements Model {
 
     @Override
     public void setTuitionBook(ReadOnlyTuitionBook tuitionBook) {
-        this.tuitionBook.resetData(tuitionBook);
+        TuitionBook replacement = new TuitionBook(requireNonNull(tuitionBook));
+        validateRelationships(replacement.getPersonList());
+        this.tuitionBook.resetData(replacement);
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, SHOW_ALL_PERSONS_REFRESH_COMMAND);
     }
 
@@ -95,9 +106,11 @@ public class ModelManager implements Model {
         // Apply every relationship update to a copy so the model changes only after the
         // complete deletion transaction has succeeded.
         TuitionBook updatedTuitionBook = new TuitionBook(tuitionBook);
+        int targetIndex = tuitionBook.getPersonList().indexOf(target);
+        Person storedTarget = targetIndex < 0 ? target : tuitionBook.getPersonList().get(targetIndex);
         List<Person> linkedStudents = tuitionBook.getPersonList().stream()
                 .filter(person -> person.getRole() == Role.STUDENT)
-                .filter(person -> person.getGuardianId().filter(target.getId()::equals).isPresent())
+                .filter(person -> person.getGuardianId().filter(storedTarget.getId()::equals).isPresent())
                 .toList();
         for (Person student : linkedStudents) {
             updatedTuitionBook.setPerson(student, student.clearGuardian());
@@ -109,6 +122,10 @@ public class ModelManager implements Model {
 
     @Override
     public void addPerson(Person person) {
+        requireNonNull(person);
+        List<Person> updatedPersons = new ArrayList<>(tuitionBook.getPersonList());
+        updatedPersons.add(person);
+        validateRelationships(updatedPersons);
         tuitionBook.addPerson(person);
         if (filteredPersonListPredicate.test(person)) {
             displayedPersonIds.add(person.getId());
@@ -119,6 +136,19 @@ public class ModelManager implements Model {
     @Override
     public void setPerson(Person target, Person editedPerson) {
         requireAllNonNull(target, editedPerson);
+        List<Person> updatedPersons = new ArrayList<>(tuitionBook.getPersonList());
+        int targetIndex = updatedPersons.indexOf(target);
+        if (targetIndex >= 0) {
+            Person storedTarget = updatedPersons.get(targetIndex);
+            if (!storedTarget.getId().equals(editedPerson.getId())) {
+                throw new IllegalArgumentException(MESSAGE_CONTACT_ID_CHANGED);
+            }
+            if (storedTarget.getRole() != editedPerson.getRole()) {
+                throw new IllegalArgumentException(MESSAGE_CONTACT_ROLE_CHANGED);
+            }
+            updatedPersons.set(targetIndex, editedPerson);
+            validateRelationships(updatedPersons);
+        }
 
         tuitionBook.setPerson(target, editedPerson);
         int displayedIndex = displayedPersonIds.indexOf(target.getId());
@@ -177,6 +207,25 @@ public class ModelManager implements Model {
         filteredPersons.setAll(displayedPersonIds.stream().map(personsById::get).toList());
     }
 
+    /** Rejects duplicate contact IDs and guardian links that do not resolve to a guardian contact. */
+    private static void validateRelationships(List<Person> persons) {
+        Map<UUID, Person> personsById = new HashMap<>();
+        for (Person person : persons) {
+            if (personsById.putIfAbsent(person.getId(), person) != null) {
+                throw new IllegalArgumentException(MESSAGE_DUPLICATE_CONTACT_ID);
+            }
+        }
+
+        for (Person person : persons) {
+            person.getGuardianId().ifPresent(guardianId -> {
+                Person guardian = personsById.get(guardianId);
+                if (guardian == null || guardian.getRole() != Role.GUARDIAN) {
+                    throw new IllegalArgumentException(MESSAGE_INVALID_GUARDIAN_LINK);
+                }
+            });
+        }
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -192,6 +241,11 @@ public class ModelManager implements Model {
                 && userPrefs.equals(otherModelManager.userPrefs)
                 && filteredPersons.equals(otherModelManager.filteredPersons)
                 && getPersonListViewState().equals(otherModelManager.getPersonListViewState());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tuitionBook, userPrefs, filteredPersons, getPersonListViewState());
     }
 
 }
