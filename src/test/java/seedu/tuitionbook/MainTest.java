@@ -13,6 +13,8 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -194,6 +196,42 @@ public class MainTest {
 
         assertTrue(errorOutput.contains("graphical startup error could not be displayed"));
         assertTrue(errorOutput.contains("IllegalStateException"));
+    }
+
+    @Test
+    public void showStartupError_fourArgumentOverload_displaysMessageAndDismissalButton() throws Exception {
+        JavaFxTestUtil.initialize();
+        String title = "Four-argument startup error title";
+        String message = "Four-argument startup error message";
+        CountDownLatch dialogInspected = new CountDownLatch(1);
+        CountDownLatch platformExitWasRun = new CountDownLatch(1);
+        AtomicReference<String> observedContent = new AtomicReference<>();
+        AtomicBoolean dismissalButtonWasUsable = new AtomicBoolean();
+
+        Main.showStartupError(title, message, Runnable::run, platformExitWasRun::countDown);
+        Platform.runLater(() -> Window.getWindows().stream()
+                .filter(Window::isShowing)
+                .filter(window -> window instanceof Stage && title.equals(((Stage) window).getTitle()))
+                .filter(window -> window.getScene() != null
+                        && window.getScene().getRoot() instanceof DialogPane)
+                .findFirst()
+                .ifPresent(window -> {
+                    DialogPane dialogPane = (DialogPane) window.getScene().getRoot();
+                    observedContent.set(dialogPane.getContentText());
+                    Button dismissalButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+                    dismissalButtonWasUsable.set(dismissalButton != null && !dismissalButton.isDisabled());
+                    if (dismissalButton != null) {
+                        dismissalButton.fire();
+                    } else {
+                        window.hide();
+                    }
+                    dialogInspected.countDown();
+                }));
+
+        assertTrue(dialogInspected.await(10, TimeUnit.SECONDS), "Startup dialog was not inspected in time");
+        assertEquals(message, observedContent.get());
+        assertTrue(dismissalButtonWasUsable.get());
+        assertTrue(platformExitWasRun.await(10, TimeUnit.SECONDS), "Platform exit callback was not run in time");
     }
 
     @Test
