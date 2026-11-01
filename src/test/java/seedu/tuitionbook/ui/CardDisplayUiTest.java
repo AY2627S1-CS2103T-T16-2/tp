@@ -3,6 +3,7 @@ package seedu.tuitionbook.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -509,6 +510,32 @@ public class CardDisplayUiTest {
             assertSame(filteredPersons, personListView.getItems());
             assertEquals("Students: Sam Student, Alex Student",
                     getLabel(guardianCell, "relationship").getText());
+            return null;
+        });
+    }
+
+    @Test
+    public void personListViewCell_layoutBeforeViewportAvailable_remainsSafeWhenRecycled() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            Person person = new PersonBuilder().build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(person);
+            PersonListPanel panel = new PersonListPanel(persons, persons);
+            ListView<Person> personListView = getPersonListView(panel);
+            PersonListPanel.PersonListViewCell cell = panel.new PersonListViewCell();
+            cell.updateListView(personListView);
+            cell.updateItem(person, false);
+            var card = cell.getGraphic();
+
+            assertNotNull(card);
+            assertNull(personListView.lookup(".clipped-container"));
+            cell.resize(300, 200);
+            cell.layoutChildren();
+            assertSame(card, cell.getGraphic());
+            assertTrue(Double.isFinite(card.getBoundsInParent().getWidth()));
+
+            cell.updateItem(null, true);
+            cell.layoutChildren();
+            assertNull(cell.getGraphic());
             return null;
         });
     }
