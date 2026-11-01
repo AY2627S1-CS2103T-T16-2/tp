@@ -11,7 +11,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 **Reading paths:**
 
 * New contributor: start with [Setting up](#setting-up-getting-started), then read [Architecture](#architecture) and the relevant [Implementation](#implementation) section.
-* Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
+* Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope and design decisions](#scope-and-design-decisions) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
 **Version:** This guide describes the unreleased development source for v1.5. Its command-input changes, stable working sets, strict prefix checks and quoted addresses are not in the published v1.4 JAR. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for published versions.
@@ -412,48 +412,60 @@ The MVP was delivered in v1.3. The v1.4 implementation also supports unlinking, 
 * **Descoped**: dedicated level/subject fields, dedicated inactive/archive functionality, sorting, area search, notes, contact-to-clipboard commands, import/export commands and undo are excluded from the final release. Copying the User Guide URL remains supported. These decisions do not exclude generic tags or the implemented in-app command summary.
 * **Deferred**: other unimplemented Beyond-MVP stories remain backlog ideas without a promised release or delivery date. Their priority and presence in the table do not imply implementation.
 
-| Priority | Scope | As a … | I want to … | So that I can… |
-|----------|-------|--------|-------------|----------------|
-| `***` | MVP | private tutor | add a contact as either a student or guardian | record the person's details and distinguish their role clearly |
-| `***` | MVP | private tutor | list all the contacts I manage | obtain an overview of my students and their guardians |
-| `***` | MVP | private tutor | have my contacts, roles, and guardian links stored locally and saved automatically | continue using the same information after restarting TuitionBook |
-| `***` | MVP | private tutor | link a student to at most one guardian | record who is responsible for that student |
-| `***` | MVP | private tutor | view a student's details together with the linked guardian's details | contact the appropriate guardian without manually searching through separate records |
-| `**` | MVP | private tutor | view a guardian together with the students linked to that guardian | identify all students under that guardian |
-| `***` | MVP | private tutor | delete a contact and remove any affected guardian links without deleting other contacts | remove obsolete contact information while keeping the remaining contact records and relationships valid |
-| `**` | MVP | private tutor | edit a contact's information | keep the contact's details accurate and up to date |
-| `**` | MVP | private tutor | find contacts by name | retrieve a contact without scanning the entire contact list |
-| `**` | MVP | private tutor | clear all stored contact data | start over when the existing dataset is no longer needed |
-| `**` | MVP | private tutor | access help for TuitionBook | recall how to use the application and its commands |
-| `**` | MVP | private tutor | exit TuitionBook using a command | close the application without switching to a mouse-driven action |
-| `**` | Beyond MVP | private tutor | filter contacts by student or guardian role | focus on the relevant type of contact |
-| `**` | Beyond MVP | private tutor | record a student's academic level and subject or subjects | keep track of what I teach each student |
-| `**` | Beyond MVP | private tutor | filter students by academic level and/or subject | find students studying a particular subject at a given level |
-| `**` | MVP | private tutor | assign tags to contacts | organise contacts using flexible labels |
-| `**` | Beyond MVP | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
-| `*` | Beyond MVP | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
-| `*` | Beyond MVP | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
-| `*` | Beyond MVP | private tutor | delete a contact by name | remove a contact without first locating its displayed index |
-| `*` | Beyond MVP | private tutor | search contacts using partial names or other contact information | find contacts when I remember only part of their information |
-| `*` | Beyond MVP | private tutor | filter contacts by tag | retrieve a labelled group of contacts quickly |
-| `*` | Beyond MVP | private tutor | combine role filtering with name or tag filtering | narrow a large contact list using multiple criteria |
-| `*` | Beyond MVP | private tutor | filter students by address or area | find students near a location and plan home visits |
-| `*` | Beyond MVP | private tutor | sort contacts using a chosen criterion | locate relevant contacts more efficiently |
-| `*` | Beyond MVP | private tutor | receive confirmation before deleting contacts or clearing data | avoid losing contact data by mistake |
-| `*` | Beyond MVP | private tutor | undo a deletion or clear operation | recover contact data after an accidental action |
-| `*` | Beyond MVP | private tutor | edit a contact's role safely | correct an incorrectly assigned role without creating invalid guardian links |
-| `*` | Beyond MVP | private tutor | link a guardian to a student using the guardian's name | create the relationship without first finding the guardian's list index |
-| `*` | Beyond MVP | private tutor | view a command's syntax and examples offline | use the command when I cannot access the online User Guide |
-| `*` | Beyond MVP | private tutor | copy a contact's phone number conveniently | use the number without manually retyping it |
-| `*` | Beyond MVP | private tutor | mark a student as inactive without deleting the contact | keep former students out of my active list while retaining their records |
-| `*` | Beyond MVP | private tutor | restore an inactive student | resume managing the student if tuition restarts |
-| `*` | Beyond MVP | private tutor | record a short note for a contact | remember relevant context that does not fit the standard contact fields |
-| `*` | Beyond MVP | private tutor | export contact data | keep a portable copy of my contact records |
-| `*` | Beyond MVP | private tutor | import contact data | restore or migrate contacts without re-entering them individually |
-| `*` | Beyond MVP | private tutor | have TuitionBook preserve an unreadable data file | avoid losing the original data while resolving a loading problem |
-| `*` | Beyond MVP | private tutor | receive a precise explanation when contact data cannot be loaded | understand what must be corrected |
+| Priority | Scope | Delivery status | As a … | I want to … | So that I can … |
+|----------|-------|-----------------|--------|-------------|-----------------|
+| `***` | MVP | Implemented | private tutor | add a contact as either a student or guardian | record the person's details and distinguish their role clearly |
+| `***` | MVP | Implemented | private tutor | list all the contacts I manage | obtain an overview of my students and their guardians |
+| `***` | MVP | Implemented | private tutor | have my contacts, roles, and guardian links stored locally and saved automatically | continue using the same information after restarting TuitionBook |
+| `***` | MVP | Implemented | private tutor | link a student to at most one guardian | record who is responsible for that student |
+| `***` | MVP | Implemented | private tutor | view a student's details together with the linked guardian's details | contact the appropriate guardian without manually searching through separate records |
+| `**` | MVP | Implemented | private tutor | view a guardian together with the students linked to that guardian | identify all students under that guardian |
+| `***` | MVP | Implemented | private tutor | delete a contact and remove any affected guardian links without deleting other contacts | remove obsolete contact information while keeping the remaining contact records and relationships valid |
+| `**` | MVP | Implemented | private tutor | edit a contact's information | keep the contact's details accurate and up to date |
+| `**` | MVP | Implemented | private tutor | find contacts by name | retrieve a contact without scanning the entire contact list |
+| `**` | MVP | Implemented | private tutor | clear all stored contact data | start over when the existing dataset is no longer needed |
+| `**` | MVP | Implemented | private tutor | access help for TuitionBook | recall how to use the application and its commands |
+| `**` | MVP | Implemented | private tutor | exit TuitionBook using a command | close the application without switching to a mouse-driven action |
+| `**` | Beyond MVP | Implemented | private tutor | filter contacts by student or guardian role | focus on the relevant type of contact |
+| `**` | Beyond MVP | Implemented | private tutor | record academic levels and subjects as user-chosen tags | organise students by the levels and subjects I teach without dedicated fields |
+| `**` | Beyond MVP | Implemented | private tutor | filter students using my chosen academic-level and subject tags | find students carrying the relevant labels |
+| `**` | MVP | Implemented | private tutor | assign tags to contacts | organise contacts using flexible labels |
+| `**` | Beyond MVP | Implemented | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
+| `*` | Beyond MVP | Not implemented | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
+| `*` | Beyond MVP | Not implemented | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
+| `*` | Beyond MVP | Not implemented | private tutor | delete a contact by name | remove a contact without first locating its displayed index |
+| `**` | Beyond MVP | Implemented | private tutor | search contacts using partial names | find a contact when I remember only part of the name |
+| `*` | Beyond MVP | Not implemented | private tutor | search contacts using phone, email, address, role, or tags | find a contact using information other than the name |
+| `**` | Beyond MVP | Implemented | private tutor | filter contacts by tag | retrieve a labelled group of contacts quickly |
+| `**` | Beyond MVP | Implemented | private tutor | combine role and tag filters | narrow a labelled contact group to students or guardians |
+| `*` | Beyond MVP | Not implemented | private tutor | combine role and name filters | narrow name-search results to students or guardians |
+| `*` | Beyond MVP | Not implemented | private tutor | filter students by address or area | find students near a location and plan home visits |
+| `*` | Beyond MVP | Not implemented | private tutor | sort contacts using a chosen criterion | locate relevant contacts more efficiently |
+| `*` | Beyond MVP | Implemented | private tutor | confirm a request to clear all contact data using `clear confirm` | avoid clearing contact data by mistake |
+| `*` | Beyond MVP | Not implemented | private tutor | receive confirmation before `delete INDEX` removes a contact | avoid deleting a contact by mistake |
+| `*` | Beyond MVP | Not implemented | private tutor | undo a deletion or clear operation | recover contact data after an accidental action |
+| `*` | Beyond MVP | Not implemented | private tutor | edit a contact's role safely | correct an incorrectly assigned role without creating invalid guardian links |
+| `*` | Beyond MVP | Not implemented | private tutor | link a guardian to a student using the guardian's name | create the relationship without first finding the guardian's list index |
+| `*` | Beyond MVP | Implemented | private tutor | view command syntax offline | recall command formats without accessing the online User Guide |
+| `*` | Beyond MVP | Not implemented | private tutor | view examples for every command offline | learn each command without accessing the online User Guide |
+| `*` | Beyond MVP | Implemented | private tutor | select and copy a phone number from `view INDEX` details | use the number without manually retyping it |
+| `*` | Beyond MVP | Not implemented | private tutor | copy a phone number directly from a contact card | use the number without first opening the contact details |
+| `*` | Beyond MVP | Implemented | private tutor | add an ordinary status tag to a student and explicitly filter the list by that tag | identify the students I currently regard as inactive without an archive state or automatic hiding |
+| `*` | Beyond MVP | Implemented | private tutor | remove or replace an ordinary status tag and explicitly filter the list | include a returning student in the labelled group I choose to view without a restore command |
+| `*` | Beyond MVP | Not implemented | private tutor | record a short note for a contact | remember relevant context that does not fit the standard contact fields |
+| `*` | Beyond MVP | Not implemented | private tutor | export contact data | keep a portable copy of my contact records |
+| `*` | Beyond MVP | Not implemented | private tutor | import contact data | restore or migrate contacts without re-entering them individually |
+| `***` | Beyond MVP | Implemented | private tutor | have TuitionBook attempt to back up an unreadable data file and block saves if no backup can be made | avoid overwriting the original data while resolving a loading problem |
+| `*` | Beyond MVP | Not implemented | private tutor | receive a guaranteed precise diagnosis whenever contact data cannot be loaded | know the exact cause that must be corrected |
+| `**` | Beyond MVP | Implemented | private tutor | reload contacts from the local data file using `reload` | apply a valid manual file edit without restarting TuitionBook |
+| `**` | Beyond MVP | Implemented | private tutor | add or remove selected tags using `tag` and `untag` | update labels without re-entering unrelated tags |
+| `**` | Beyond MVP | Implemented | private tutor | keep displayed indexes stable across edit, tag, untag, link, and unlink changes | continue using the displayed indexes after those changes |
 
-### Scope decisions for v1.4
+Displayed indexes can still change after `delete`, `list`, `find`, `reload`, `clear confirm`, or a restart.
+
+<a id="scope-decisions-for-v1-4"></a>
+
+### Scope and design decisions
 
 This record reconciles [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/134) with the implemented commands. The US identifiers refer to the original backlog, not row numbers in the table above. These are product decisions and documented limitations, not guarantees about how a future bug report will be evaluated.
 
