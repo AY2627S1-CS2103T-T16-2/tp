@@ -26,18 +26,23 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Bounds;
+import javafx.geometry.Orientation;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.FlowPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -86,6 +91,46 @@ public class MainWindowTest {
             new MainWindow(stage, new FakeLogic(), Path.of("synthetic.json"));
             assertEquals("TuitionBook", stage.getTitle());
         });
+    }
+
+    @Test
+    public void mainWindow_longTag_resizeCyclesStayInsideListViewport() throws Exception {
+        LongTagResizeFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
+            String longTag = "x".repeat(1000);
+            Person person = new PersonBuilder().withName("Long Tag Student")
+                    .withTags(longTag, "Additional Mathematics", "Chemistry Practical Prep",
+                            "English Language Study", "Physics Practical Prep", "Secondary Four Level")
+                    .build();
+            FakeLogic logic = new FakeLogic();
+            logic.people.add(person);
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, logic, Path.of("synthetic.json"));
+            mainWindow.fillInnerParts();
+            mainWindow.show();
+            stage.setHeight(SCROLL_TEST_WINDOW_HEIGHT);
+            stage.setWidth(450);
+            return new LongTagResizeFixture(stage, getPersonListView(mainWindow), person, longTag);
+        });
+
+        try {
+            assertTrue(waitForStableLongTagLayout(fixture));
+            double narrowHeight = JavaFxTestUtil.callOnFxThread(() -> assertLongTagLayout(fixture));
+            for (int cycle = 0; cycle < 2; cycle++) {
+                JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(700));
+                assertTrue(waitForStableLongTagLayout(fixture));
+                double wideHeight = JavaFxTestUtil.callOnFxThread(() -> assertLongTagLayout(fixture));
+                assertTrue(narrowHeight > wideHeight, "Ordinary tags did not use fewer rows at 700px");
+
+                JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(450));
+                assertTrue(waitForStableLongTagLayout(fixture));
+                double resizedNarrowHeight = JavaFxTestUtil.callOnFxThread(() -> assertLongTagLayout(fixture));
+                assertTrue(resizedNarrowHeight > wideHeight,
+                        "Ordinary tags did not wrap onto more rows after returning to 450px");
+                narrowHeight = resizedNarrowHeight;
+            }
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::close);
+        }
     }
 
     @Test
@@ -810,6 +855,76 @@ public class MainWindowTest {
                 || (isTallerThanViewport && viewportBounds.intersects(cellBounds)));
     }
 
+    private static boolean waitForStableLongTagLayout(LongTagResizeFixture fixture) {
+        AtomicInteger stablePulses = new AtomicInteger();
+        return JavaFxTestUtil.waitForFxCondition(() -> {
+            if (longTagLayoutFits(fixture)) {
+                return stablePulses.incrementAndGet() >= REQUIRED_STABLE_VISIBLE_PULSE_COUNT;
+            }
+            stablePulses.set(0);
+            return false;
+        });
+    }
+
+    private static boolean longTagLayoutFits(LongTagResizeFixture fixture) {
+        ListCell<?> cell = fixture.personListView().lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(ListCell.class::cast)
+                .filter(candidate -> fixture.person().equals(candidate.getItem()))
+                .findFirst()
+                .orElse(null);
+        VirtualFlow<?> virtualFlow = (VirtualFlow<?>) fixture.personListView().lookup(".virtual-flow");
+        if (cell == null || cell.getGraphic() == null || virtualFlow == null) {
+            return false;
+        }
+        Bounds viewportBounds = virtualFlow.localToScene(virtualFlow.getBoundsInLocal());
+        Bounds cardBounds = cell.getGraphic().localToScene(cell.getGraphic().getBoundsInLocal());
+        double verticalBarWidth = virtualFlow.lookupAll(".scroll-bar").stream()
+                .filter(ScrollBar.class::isInstance)
+                .map(ScrollBar.class::cast)
+                .filter(bar -> bar.isVisible() && bar.getOrientation() == Orientation.VERTICAL)
+                .mapToDouble(ScrollBar::getWidth)
+                .sum();
+        return horizontalScrollBar(fixture.personListView()).isVisible() == false
+                && cardBounds.getMaxX() <= viewportBounds.getMaxX() - verticalBarWidth + VIEWPORT_TOLERANCE;
+    }
+
+    private static double assertLongTagLayout(LongTagResizeFixture fixture) {
+        assertTrue(longTagLayoutFits(fixture));
+        ListCell<?> cell = fixture.personListView().lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(ListCell.class::cast)
+                .filter(candidate -> fixture.person().equals(candidate.getItem()))
+                .findFirst()
+                .orElseThrow();
+        FlowPane tags = (FlowPane) cell.getGraphic().lookup("#tags");
+        Label longTag = tags.getChildren().stream()
+                .map(Label.class::cast)
+                .filter(label -> fixture.longTag().equals(label.getText()))
+                .findFirst()
+                .orElseThrow();
+        Label role = (Label) cell.getGraphic().lookup("#role");
+        Bounds cardBounds = cell.getGraphic().localToScene(cell.getGraphic().getBoundsInLocal());
+        Bounds tagsBounds = tags.localToScene(tags.getBoundsInLocal());
+        Bounds roleBounds = role.localToScene(role.getBoundsInLocal());
+
+        assertTrue(longTag.getWidth() < longTag.prefWidth(-1));
+        assertEquals(fixture.longTag(), longTag.getTooltip().getText());
+        assertTrue(tagsBounds.getMaxX() <= cardBounds.getMaxX() + VIEWPORT_TOLERANCE);
+        assertTrue(roleBounds.getMaxX() <= cardBounds.getMaxX() + VIEWPORT_TOLERANCE);
+        assertTrue(tags.getHeight() > longTag.getHeight(), "Ordinary tags did not wrap below the long tag");
+        return cell.getGraphic().getBoundsInLocal().getHeight();
+    }
+
+    private static ScrollBar horizontalScrollBar(ListView<Person> listView) {
+        return listView.lookupAll(".scroll-bar").stream()
+                .filter(ScrollBar.class::isInstance)
+                .map(ScrollBar.class::cast)
+                .filter(bar -> bar.getOrientation() == Orientation.HORIZONTAL)
+                .findFirst()
+                .orElseThrow();
+    }
+
     @SuppressWarnings("unchecked")
     private static ListView<Person> getPersonListView(MainWindow mainWindow) {
         return (ListView<Person>) mainWindow.getRoot().getScene().lookup("#personListView");
@@ -840,6 +955,10 @@ public class MainWindowTest {
 
     private record ManualScrollFixture(Stage stage, MainWindow mainWindow, ListView<Person> personListView,
                                        Person addedPerson) {
+    }
+
+    private record LongTagResizeFixture(Stage stage, ListView<Person> personListView, Person person,
+                                        String longTag) {
     }
 
     private static final class FakeLogic implements Logic {

@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.animation.AnimationTimer;
-import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -289,15 +288,14 @@ public class PersonListPanel extends UiPart<Region> {
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */
     class PersonListViewCell extends ListCell<Person> {
-        PersonListViewCell() {
-            setPrefWidth(0);
-        }
+        private Region card;
 
         @Override
         protected void updateItem(Person person, boolean empty) {
             super.updateItem(person, empty);
 
             if (empty || person == null) {
+                card = null;
                 setGraphic(null);
                 setText(null);
             } else {
@@ -307,12 +305,21 @@ public class PersonListPanel extends UiPart<Region> {
                 PersonListViewState state = viewState.get();
                 String notice = state.predicate().test(person) ? ""
                         : "No longer matches the query. Refresh with: " + state.refreshCommand();
-                Region card = new PersonCard(person, getIndex() + 1, relationshipSummary, notice).getRoot();
-                card.maxWidthProperty().bind(Bindings.createDoubleBinding(() ->
-                        Math.max(0, getWidth() - snappedLeftInset() - snappedRightInset()),
-                        widthProperty(), insetsProperty()));
+                card = new PersonCard(person, getIndex() + 1, relationshipSummary, notice).getRoot();
                 setGraphic(card);
             }
+        }
+
+        @Override
+        protected void layoutChildren() {
+            if (card != null && personListView.lookup(".clipped-container") instanceof Region viewport) {
+                double availableWidth = Math.max(0, viewport.getWidth()
+                        - snappedLeftInset() - snappedRightInset());
+                setPrefWidth(availableWidth);
+                card.setPrefWidth(availableWidth);
+                card.setMaxWidth(availableWidth);
+            }
+            super.layoutChildren();
         }
     }
 
