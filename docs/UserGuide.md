@@ -666,7 +666,9 @@ If you are fixing the file after a problem and want to keep TuitionBook open, us
 * Each contact also has these fields, which TuitionBook manages for you:
   * `id`: a code that identifies the contact, in the format TuitionBook creates (known as a UUID), for example `123e4567-e89b-12d3-a456-426614174000`. Every contact needs one, except in files from older versions (see below). **Don't change it** or make up your own, such as `student-1`, and don't give two contacts the same `id`. Any of these makes the whole file unreadable.
   * `role`: `STUDENT` or `GUARDIAN`.
-  * `guardianId`: for a student, the `id` of their guardian, written in double quotes. It can be left out or set to `null` if the student has no guardian. A list, such as `[]`, makes the file unreadable. A number or `true`/`false` is treated as an [invalid guardian link](#invalid-guardian-links) and removed.
+  * `guardianId`: for a student, the `id` of their one guardian, written in double quotes. Leave it out or set it to `null` if the student has no guardian.
+    * A list in square brackets, even one holding a single `id` such as `["123e4567-e89b-12d3-a456-426614174000"]`, makes the file unreadable. So does a value in curly brackets (`{}`).
+    * Any other value that is not a guardian's `id`, such as a number, `true`/`false` or text in the wrong format, is treated as an [invalid guardian link](#invalid-guardian-links) and removed.
 * Two contacts with the same role, name and phone number count as duplicates, even if their `id`s differ, and make the file unreadable. A student and a guardian can share a name and phone number.
 * Use only the root field `persons` and the contact fields `id`, `role`, `guardianId`, `name`, `phone`, `email`, `address` and `tags`. Field names use the exact letter case shown here. An unrecognised field such as `Email` makes the file unreadable, so a typing mistake cannot silently discard a value.
 * The file must contain one set of contacts only. Extra text after the final `}`, or the same field name used twice in one contact, makes the file unreadable.
