@@ -16,7 +16,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 
 **Version:** This guide describes the current source during development of v1.6. The published v1.5 JAR includes the command-input changes, stable working sets, strict prefix checks and quoted addresses described here; the older v1.4 JAR does not. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for other published versions.
 
-TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). Text input is encoded as UTF-8. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
+TuitionBook is scoped to English-language users and any `en-*` locale (for example, `en-SG`, `en-GB`, or `en-US`). TuitionBook reads and writes its JSON files as UTF-8. Contact fields accept Unicode text subject to their field rules. Field-specific validation rules apply to names, addresses, phone numbers, email addresses, and tags.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -133,7 +133,7 @@ How the `Logic` component works:
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. Before executing a command that can mutate contacts, `LogicManager` copies the contact data and snapshots working-set UUIDs, order, predicate and query for rollback. It calls `execute(model, storage)`; for `DeleteCommand`, the inherited method delegates to `execute(model)`. The inherited delegation is omitted from the second diagram.
 1. `DeleteCommand` resolves the displayed index against the working set, identifies affected students from the complete contact list, and passes the resolved `Person` to `Model.deletePerson`. Deleting a guardian clears the affected students' guardian links. The second diagram omits the complete-list lookup and model-internal link updates, which do not change the main command flow.
-1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. The second diagram shows the successful save path. If saving throws an `IOException` or `AccessDeniedException`, `LogicManager` restores the contacts and exact working set that existed before the command, then throws a `CommandException`; those rollback calls are deliberately omitted from the diagram.
+1. Each `Command` declares whether it requires contact data to be saved. After a command executes successfully, `LogicManager` saves the `Model`'s contact data only when the command requires it. The second diagram shows the successful save path. `LogicManager` catches `AccessDeniedException` and `SaveBlockedException` first, then other `IOException`s. Each save-failure path restores the contacts and exact working set that existed before the command, then reports the failure by throwing a `CommandException`; those rollback calls are deliberately omitted from the diagram.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 The following partial class diagram focuses on parser dispatch and command creation. Argument-parsing utilities are shown separately below; command inheritance is omitted.
@@ -169,7 +169,7 @@ Only the extracted command word is lowercased with `Locale.ROOT`. Prefixes, argu
 
 `ParserUtil.checkForUnsupportedSpaces` diagnoses every non-ASCII code point for which `Character.isSpaceChar` is true (including NBSP `U+00A0`, narrow NBSP `U+202F`, figure space `U+2007` and ideographic space `U+3000`), plus the zero-width spaces `U+180E`, `U+200B`, `U+2060` and `U+FEFF`, only in command words, no-argument command tails and positional-index text. Under Java 25, this also covers every non-ASCII `Character.isWhitespace` code point. It does not scan field values. Indexed command parsers perform this check before wrapping ordinary invalid-index errors in command-specific usage, and `link` checks before splitting its two indexes. `parseIndex` also checks direct callers. Field validation remains the responsibility of each value object.
 
-Lookalike characters are rejected at syntax boundaries instead of being folded to ASCII. The command word must be ASCII before it is lowercased, because Unicode case mapping turns the Kelvin sign `U+212A` into `k` (so `lin\u212A` would otherwise run `link`). `Role` accepts only ASCII input for the same reason: uppercasing `ſtudent`, `ﬆudent` or `guardıan` produces a valid role name. `StringUtil.isNonZeroUnsignedInteger` accepts only ASCII digits before calling `Integer.parseInt`, which otherwise accepts full-width, Arabic-Indic and other Unicode decimal digits; this prevents `delete １` from deleting contact 1. Prefixes are already restricted to ASCII letters by the tokenizer, and phone, email and tag validation are ASCII-only, so lookalikes there are rejected as ordinary field errors. Names deliberately accept letters from any script, so `Аmy` (Cyrillic `А`) and `Amy` are distinct names and are not treated as duplicates; duplicate identity uses NFC case folding, not visual similarity or compatibility (NFKC) folding.
+Lookalike characters are rejected at syntax boundaries instead of being folded to ASCII. The command word must be ASCII before it is lowercased, because Unicode case mapping turns the Kelvin sign `U+212A` into `k` (so `lin\u212A` would otherwise run `link`). `Role` accepts only ASCII input for the same reason: uppercasing `ſtudent`, `ﬆudent` or `guardıan` produces a valid role name. `StringUtil.isNonZeroUnsignedInteger` accepts only ASCII digits before calling `Integer.parseInt`, which otherwise accepts full-width, Arabic-Indic and other Unicode decimal digits; this prevents `delete １` from deleting contact 1. Prefixes are already restricted to ASCII letters by the tokenizer, and phone, email and tag validation are ASCII-only, so lookalikes there are rejected as ordinary field errors. Names deliberately accept letters from any script, so `Аmy` (Cyrillic `А`) and `Amy` are distinct names and are not treated as duplicates; duplicate identity uses NFC normalization and locale-independent case mapping, not visual similarity or compatibility (NFKC) normalization. This does not claim complete Unicode case folding.
 
 These failures occur during parsing, before command execution, model mutation or contact saving. `help`, `exit` and `reload` with extra arguments never produce an executable command. See [Command input and diagnostics](#command-input-and-diagnostics) for manual scenarios.
 
@@ -186,7 +186,7 @@ The `Model` component,
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
-The component diagram above separates the working-set and preference relationships from the contact-domain relationships below so that their associations do not converge on `Person` in one crowded figure.
+The class diagram above separates the working-set and preference relationships from the contact-domain relationships below so that their associations do not converge on `Person` in one crowded figure.
 
 <puml src="diagrams/PersonClassDiagram.puml" width="650" />
 
@@ -209,10 +209,10 @@ The component diagram above separates the working-set and preference relationshi
 
 The `Storage` component,
 * can save both TuitionBook data and user preference data in JSON format, and read them back into corresponding objects.
-* is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
+* is implemented by `StorageManager`, which delegates the configured contact JSON file to `JsonTuitionBookStorage` and the user-preferences JSON file to `JsonUserPrefsStorage`.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
-`JsonTuitionBookStorage` saves through a temporary file and atomically replaces the configured contact data file. When a load fails, it tries to move the configured file to an unused sibling `.backup[.n]` path; if that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the component diagram.
+`JsonTuitionBookStorage` saves through a temporary file and atomically replaces the configured contact data file. When a load fails, it tries to move the configured file to an unused sibling `.backup[.n]` path; if that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the class diagram.
 
 The following diagram focuses separately on conversion between contact JSON and model data. `PersonLoadResult` carries a repaired contact and its optional `GuardianLinkRepair`; `JsonSerializableTuitionBook` collects all such diagnostics into `TuitionBookLoadResult` in JSON order.
 
@@ -228,7 +228,7 @@ At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it atte
 
 ### Common classes
 
-Classes used by multiple components are in the `seedu.tuitionbook.commons` package.
+Classes used by multiple components are in the `seedu.tuitionbook.commons` package. `Index` represents a one-based position while converting safely to zero-based list access. `LogsCenter` configures application logging, and `ApplicationPaths` resolves application-managed file locations. Shared utility classes provide string, collection, file and JSON operations, while shared exception classes represent invalid values and data-loading failures.
 
 --------------------------------------------------------------------------------------------------------------------
 
