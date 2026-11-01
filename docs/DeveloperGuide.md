@@ -488,8 +488,8 @@ The MVP was delivered in v1.3. The published v1.5 release also supports unlinkin
 | `*` | Beyond MVP | Not implemented | private tutor | view examples for every command offline | learn each command without accessing the online User Guide |
 | `*` | Beyond MVP | Implemented | private tutor | select and copy a phone number from `view INDEX` details | use the number without manually retyping it |
 | `*` | Beyond MVP | Not implemented | private tutor | copy a phone number directly from a contact card | use the number without first opening the contact details |
-| `*` | Beyond MVP | Implemented | private tutor | add an ordinary status tag to a student and explicitly filter the list by that tag | identify the students I currently regard as inactive without an archive state or automatic hiding |
-| `*` | Beyond MVP | Implemented | private tutor | remove or replace an ordinary status tag and explicitly filter the list | include a returning student in the labelled group I choose to view without a restore command |
+| `*` | Beyond MVP | Implemented | private tutor | manually remove my ordinary, user-chosen `Active` tag, add my ordinary, user-chosen `Inactive` tag, and explicitly list students tagged `Active`, without using an archive state or automatically exclusive labels | keep former students out of that active list while retaining their records |
+| `*` | Beyond MVP | Implemented | private tutor | manually remove my ordinary, user-chosen `Inactive` tag, add my ordinary, user-chosen `Active` tag, and explicitly list students tagged `Active`, without using an archive state or automatically exclusive labels | make a returning student appear in that active list again |
 | `*` | Beyond MVP | Not implemented | private tutor | record a short note for a contact | remember relevant context that does not fit the standard contact fields |
 | `*` | Beyond MVP | Not implemented | private tutor | export contact data | keep a portable copy of my contact records |
 | `*` | Beyond MVP | Not implemented | private tutor | import contact data | restore or migrate contacts without re-entering them individually |
