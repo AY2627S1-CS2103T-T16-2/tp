@@ -3,6 +3,7 @@ package seedu.tuitionbook;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +13,8 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -19,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -194,15 +199,64 @@ public class MainTest {
     }
 
     @Test
-    public void showStartupError_validDialog_displaysConfiguredAlertAndExits() throws Exception {
+    public void showStartupError_fourArgumentOverload_displaysMessageAndDismissalButton() throws Exception {
+        JavaFxTestUtil.initialize();
+        String title = "Four-argument startup error title";
+        String message = "Four-argument startup error message";
+        CountDownLatch dialogInspected = new CountDownLatch(1);
+        CountDownLatch platformExitWasRun = new CountDownLatch(1);
+        AtomicReference<String> observedContent = new AtomicReference<>();
+        AtomicBoolean dismissalButtonWasUsable = new AtomicBoolean();
+
+        Main.showStartupError(title, message, Runnable::run, platformExitWasRun::countDown);
+        Platform.runLater(() -> Window.getWindows().stream()
+                .filter(Window::isShowing)
+                .filter(window -> window instanceof Stage && title.equals(((Stage) window).getTitle()))
+                .filter(window -> window.getScene() != null
+                        && window.getScene().getRoot() instanceof DialogPane)
+                .findFirst()
+                .ifPresent(window -> {
+                    DialogPane dialogPane = (DialogPane) window.getScene().getRoot();
+                    observedContent.set(dialogPane.getContentText());
+                    Button dismissalButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+                    dismissalButtonWasUsable.set(dismissalButton != null && !dismissalButton.isDisabled());
+                    if (dismissalButton != null) {
+                        dismissalButton.fire();
+                    } else {
+                        window.hide();
+                    }
+                    dialogInspected.countDown();
+                }));
+
+        assertTrue(dialogInspected.await(10, TimeUnit.SECONDS), "Startup dialog was not inspected in time");
+        assertEquals(message, observedContent.get());
+        assertTrue(dismissalButtonWasUsable.get());
+        assertTrue(platformExitWasRun.await(10, TimeUnit.SECONDS), "Platform exit callback was not run in time");
+    }
+
+    @Test
+    public void showStartupError_validDialog_defersAlertWithMessageAndDismissalButton() throws Exception {
         String title = "Unique startup error title";
         String message = "Unique startup error message";
         AtomicBoolean dialogWasShown = new AtomicBoolean();
         AtomicBoolean platformExitWasRun = new AtomicBoolean();
+        AtomicBoolean startupCallbackFinished = new AtomicBoolean();
+        AtomicReference<Runnable> scheduledAlert = new AtomicReference<>();
         AtomicReference<String> observedTitle = new AtomicReference<>();
         AtomicReference<String> observedHeader = new AtomicReference<>();
         AtomicReference<String> observedContent = new AtomicReference<>();
         AtomicBoolean observedResizable = new AtomicBoolean();
+        AtomicBoolean dismissalButtonWasUsable = new AtomicBoolean();
+
+        Main.showStartupError(title, message, startupCallback -> {
+            startupCallback.run();
+            startupCallbackFinished.set(true);
+        }, scheduledAlert::set, () -> platformExitWasRun.set(true));
+
+        assertTrue(startupCallbackFinished.get());
+        assertNotNull(scheduledAlert.get());
+        assertFalse(dialogWasShown.get());
+        assertFalse(platformExitWasRun.get());
 
         JavaFxTestUtil.runOnFxThread(() -> {
             Platform.runLater(() -> Window.getWindows().stream()
@@ -218,9 +272,11 @@ public class MainTest {
                         observedHeader.set(dialogPane.getHeaderText());
                         observedContent.set(dialogPane.getContentText());
                         observedResizable.set(((Stage) window).isResizable());
-                        window.hide();
+                        Button dismissalButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+                        dismissalButtonWasUsable.set(dismissalButton != null && !dismissalButton.isDisabled());
+                        dismissalButton.fire();
                     }));
-            Main.showStartupError(title, message, Runnable::run, () -> platformExitWasRun.set(true));
+            scheduledAlert.get().run();
         });
 
         assertTrue(dialogWasShown.get());
@@ -228,6 +284,7 @@ public class MainTest {
         assertEquals(title, observedHeader.get());
         assertEquals(message, observedContent.get());
         assertTrue(observedResizable.get());
+        assertTrue(dismissalButtonWasUsable.get());
         assertTrue(platformExitWasRun.get());
     }
 

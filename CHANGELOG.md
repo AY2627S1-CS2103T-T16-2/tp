@@ -22,6 +22,10 @@ Planned release; not yet released.
 - Remove the single-question FAQ from the User Guide because its answer is covered by Transferring contacts to another computer.
 - Correct User Guide details on contact cards, how the data file treats `guardianId` values and spaces around names and addresses, and the troubleshooting advice for `link` indexes in the wrong order.
 
+### Fixed
+
+- Show the duplicate-launch explanation and dismissal button on macOS without a secondary JavaFX startup error (#330).
+
 ## [v1.5] - 2026-10-28
 
 ### Added
