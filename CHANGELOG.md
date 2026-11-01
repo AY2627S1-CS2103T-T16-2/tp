@@ -19,6 +19,8 @@ Planned release; not yet released.
 - Record the proposed bulk contact deletion contract for future evaluation (#287), covering original displayed indexes, duplicate and invalid selections, guardian links and save-failure rollback; bulk deletion remains unimplemented.
 - Document the `view INDEX` workaround for copying contact details and record direct copying from contact-list cards as a future enhancement (#306).
 - Document 1,000 contacts as the supported contact-list size in the target user profile, performance requirement and User Guide known limitations, noting that commands that change contacts can slow down with much larger lists.
+- Remove the single-question FAQ from the User Guide because its answer is covered by Transferring contacts to another computer.
+- Correct User Guide details on contact cards, how the data file treats `guardianId` values and spaces around names and addresses, and the troubleshooting advice for `link` indexes in the wrong order.
 
 ## [v1.5] - 2026-10-28
 
