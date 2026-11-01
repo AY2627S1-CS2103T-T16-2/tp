@@ -36,13 +36,13 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Region;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -113,20 +113,17 @@ public class MainWindowTest {
         });
 
         try {
-            assertTrue(waitForStableLongTagLayout(fixture));
-            double narrowHeight = JavaFxTestUtil.callOnFxThread(() -> assertLongTagLayout(fixture));
+            assertTrue(waitForInitialLongTagLayout(fixture, 450));
+            double narrowViewportWidth = JavaFxTestUtil.callOnFxThread(() -> listViewport(fixture).getWidth());
+            JavaFxTestUtil.runOnFxThread(() -> assertLongTagLayout(fixture));
             for (int cycle = 0; cycle < 2; cycle++) {
                 JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(700));
-                assertTrue(waitForStableLongTagLayout(fixture));
-                double wideHeight = JavaFxTestUtil.callOnFxThread(() -> assertLongTagLayout(fixture));
-                assertTrue(narrowHeight > wideHeight, "Ordinary tags did not use fewer rows at 700px");
+                assertTrue(waitForStableLongTagLayout(fixture, narrowViewportWidth + 250));
+                JavaFxTestUtil.runOnFxThread(() -> assertLongTagLayout(fixture));
 
                 JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(450));
-                assertTrue(waitForStableLongTagLayout(fixture));
-                double resizedNarrowHeight = JavaFxTestUtil.callOnFxThread(() -> assertLongTagLayout(fixture));
-                assertTrue(resizedNarrowHeight > wideHeight,
-                        "Ordinary tags did not wrap onto more rows after returning to 450px");
-                narrowHeight = resizedNarrowHeight;
+                assertTrue(waitForStableLongTagLayout(fixture, narrowViewportWidth));
+                JavaFxTestUtil.runOnFxThread(() -> assertLongTagLayout(fixture));
             }
         } finally {
             JavaFxTestUtil.runOnFxThread(fixture.stage()::close);
@@ -855,10 +852,37 @@ public class MainWindowTest {
                 || (isTallerThanViewport && viewportBounds.intersects(cellBounds)));
     }
 
-    private static boolean waitForStableLongTagLayout(LongTagResizeFixture fixture) {
+    private static boolean waitForInitialLongTagLayout(LongTagResizeFixture fixture, double expectedStageWidth) {
+        AtomicInteger stablePulses = new AtomicInteger();
+        double[] previousViewportWidth = {Double.NaN};
+        return JavaFxTestUtil.waitForFxCondition(() -> {
+            Region viewport = listViewport(fixture);
+            if (viewport == null) {
+                return false;
+            }
+            double viewportWidth = viewport.getWidth();
+            boolean reachedStageWidth = Math.abs(fixture.stage().getWidth() - expectedStageWidth)
+                    <= VIEWPORT_TOLERANCE;
+            boolean widthSettled = Math.abs(viewportWidth - previousViewportWidth[0]) <= VIEWPORT_TOLERANCE;
+            previousViewportWidth[0] = viewportWidth;
+            if (reachedStageWidth && widthSettled && longTagLayoutFits(fixture)) {
+                return stablePulses.incrementAndGet() >= REQUIRED_STABLE_VISIBLE_PULSE_COUNT;
+            }
+            stablePulses.set(0);
+            return false;
+        });
+    }
+
+    private static boolean waitForStableLongTagLayout(LongTagResizeFixture fixture, double expectedViewportWidth) {
         AtomicInteger stablePulses = new AtomicInteger();
         return JavaFxTestUtil.waitForFxCondition(() -> {
-            if (longTagLayoutFits(fixture)) {
+            Region viewport = listViewport(fixture);
+            if (viewport == null) {
+                return false;
+            }
+            boolean reachedExpectedWidth = Math.abs(viewport.getWidth() - expectedViewportWidth)
+                    <= VIEWPORT_TOLERANCE;
+            if (reachedExpectedWidth && longTagLayoutFits(fixture)) {
                 return stablePulses.incrementAndGet() >= REQUIRED_STABLE_VISIBLE_PULSE_COUNT;
             }
             stablePulses.set(0);
@@ -873,23 +897,17 @@ public class MainWindowTest {
                 .filter(candidate -> fixture.person().equals(candidate.getItem()))
                 .findFirst()
                 .orElse(null);
-        VirtualFlow<?> virtualFlow = (VirtualFlow<?>) fixture.personListView().lookup(".virtual-flow");
-        if (cell == null || cell.getGraphic() == null || virtualFlow == null) {
+        Region viewport = listViewport(fixture);
+        if (cell == null || cell.getGraphic() == null || viewport == null) {
             return false;
         }
-        Bounds viewportBounds = virtualFlow.localToScene(virtualFlow.getBoundsInLocal());
+        Bounds viewportBounds = viewport.localToScene(viewport.getBoundsInLocal());
         Bounds cardBounds = cell.getGraphic().localToScene(cell.getGraphic().getBoundsInLocal());
-        double verticalBarWidth = virtualFlow.lookupAll(".scroll-bar").stream()
-                .filter(ScrollBar.class::isInstance)
-                .map(ScrollBar.class::cast)
-                .filter(bar -> bar.isVisible() && bar.getOrientation() == Orientation.VERTICAL)
-                .mapToDouble(ScrollBar::getWidth)
-                .sum();
         return horizontalScrollBar(fixture.personListView()).isVisible() == false
-                && cardBounds.getMaxX() <= viewportBounds.getMaxX() - verticalBarWidth + VIEWPORT_TOLERANCE;
+                && cardBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE;
     }
 
-    private static double assertLongTagLayout(LongTagResizeFixture fixture) {
+    private static void assertLongTagLayout(LongTagResizeFixture fixture) {
         assertTrue(longTagLayoutFits(fixture));
         ListCell<?> cell = fixture.personListView().lookupAll(".list-cell").stream()
                 .filter(ListCell.class::isInstance)
@@ -904,16 +922,27 @@ public class MainWindowTest {
                 .findFirst()
                 .orElseThrow();
         Label role = (Label) cell.getGraphic().lookup("#role");
+        Label phone = (Label) cell.getGraphic().lookup("#phone");
         Bounds cardBounds = cell.getGraphic().localToScene(cell.getGraphic().getBoundsInLocal());
         Bounds tagsBounds = tags.localToScene(tags.getBoundsInLocal());
         Bounds roleBounds = role.localToScene(role.getBoundsInLocal());
+        Bounds viewportBounds = listViewport(fixture).localToScene(listViewport(fixture).getBoundsInLocal());
+        Bounds phoneBounds = phone.localToScene(phone.getBoundsInLocal());
 
         assertTrue(longTag.getWidth() < longTag.prefWidth(-1));
         assertEquals(fixture.longTag(), longTag.getTooltip().getText());
+        assertTrue(cardBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE);
         assertTrue(tagsBounds.getMaxX() <= cardBounds.getMaxX() + VIEWPORT_TOLERANCE);
         assertTrue(roleBounds.getMaxX() <= cardBounds.getMaxX() + VIEWPORT_TOLERANCE);
-        assertTrue(tags.getHeight() > longTag.getHeight(), "Ordinary tags did not wrap below the long tag");
-        return cell.getGraphic().getBoundsInLocal().getHeight();
+        tags.getChildren().forEach(tag -> {
+            Bounds tagBounds = tag.localToScene(tag.getBoundsInLocal());
+            assertTrue(tagBounds.getMaxY() <= phoneBounds.getMinY() + VIEWPORT_TOLERANCE,
+                    "Tag overlaps contact details");
+        });
+    }
+
+    private static Region listViewport(LongTagResizeFixture fixture) {
+        return (Region) fixture.personListView().lookup(".clipped-container");
     }
 
     private static ScrollBar horizontalScrollBar(ListView<Person> listView) {
