@@ -39,7 +39,7 @@ such as AddCommand or FindCommand.
 end note
 ' Keep the note connector dashed, using the same layout technique as UiClassDiagram.
 ' Source: https://forum.plantuml.net/20309/comments-notation-plantuml-according-standard-specification
-XYZCommand -[hidden]left- RepresentativeCommandNote
+XYZCommand -[hidden]down- RepresentativeCommandNote
 XYZCommand .. RepresentativeCommandNote
 
 Logic ..> CommandResult
