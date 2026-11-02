@@ -23,6 +23,7 @@ Planned release; not yet released.
 - Correct User Guide details on contact cards, how the data file treats `guardianId` values and spaces around names and addresses, and the troubleshooting advice for `link` indexes in the wrong order.
 - Document the atomic-replacement requirement for contact and preference saves, add recovery guidance for persistent save failures, and record unspecified ordering in general contact and duplicate-field feedback as deferred polish. List both limitations in the User Guide's known issues (#303).
 - Correct Developer Guide manual-test expectations for `clear` input variants and the initial-launch information dialog (#330).
+- Finalise the User Guide's v1.6 version notice and retain links to earlier release guides (#303).
 
 ## [v1.5] - 2026-10-28
 

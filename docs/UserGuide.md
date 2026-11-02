@@ -12,7 +12,7 @@ This guide helps English-speaking tutors set up TuitionBook, record contacts and
 
 **Using this guide:** New to TuitionBook? Start with the [Quick start](#quick-start) to set up and launch the app, then use the [Command reference](#command-reference) for each command's rules and examples. The [Task walkthroughs](#task-walkthroughs) combine commands for common jobs, while [Data and backups](#data-and-backups) covers saving, transfer and recovery. The [Command summary](#command-summary) below is a cheat sheet for users who already know the commands. If something goes wrong, use [Troubleshooting](#troubleshooting). The [Glossary](#glossary) explains terms such as *role*, *guardian link*, *index* and *JSON*.
 
-**Version:** v1.5 has been released. This guide is being updated for v1.6, which is still in development. If you are using the v1.5 JAR, refer to the [v1.5 User Guide](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.5/docs/UserGuide.md) saved with that release. Guides for earlier versions are also available: [v1.4](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) and [v1.3](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These release-specific guides open on GitHub, so they look plainer than this page.
+**Version:** This guide covers TuitionBook v1.6. If you are using an earlier release, refer to its guide: [v1.5](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.5/docs/UserGuide.md), [v1.4](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.4/docs/UserGuide.md) or [v1.3](https://github.com/AY2627S1-CS2103T-T16-2/tp/blob/v1.3/docs/UserGuide.md). These release-specific guides open on GitHub, so they look plainer than this page.
 
 <!-- * Table of Contents -->
 <page-nav-print />
