@@ -32,6 +32,9 @@ Planned release; not yet released.
 
 - Correct the Developer Guide's independent-application-homes test to distinguish first launch from contact-file creation after a successful save.
 - Show the duplicate-launch explanation and dismissal button on macOS without a secondary JavaFX startup error (#330).
+- Correct the Developer Guide UI diagram's Logic interface connections, separate their multiplicities, label both interfaces explicitly and use a dashed note connector.
+- Correct return dependencies and remove the layout-only dependency in the Developer Guide Logic class diagram, and place its note below the representative command with a dashed connector.
+- Remove layout-only incoming arrows from the Developer Guide Model, Storage and component-manager class diagrams.
 
 ## [v1.5] - 2026-10-28
 
