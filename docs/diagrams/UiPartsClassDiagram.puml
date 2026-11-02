@@ -24,6 +24,7 @@ package "UI parts" {
 }
 
 class CommandTextField
+class TextField
 class Person #9D0012
 
 MainWindow *-down-> "1" HelpWindow
@@ -32,7 +33,18 @@ MainWindow *-down-> "0..1" DetailDisplay
 MainWindow *-down-> "0..1" ResultDisplay
 MainWindow -right-> "0..1" CommandBox : commandBox
 MainWindow ..> StatusBarFooter : <<create>>
-CommandBox --> "1" CommandTextField
+CommandBox -down-> "1" TextField : commandTextField
+CommandTextField -up-|> TextField
+
+note as FieldInjectionNote
+FXML instantiates CommandTextField and
+injects it into CommandBox's field
+declared as TextField.
+end note
+' Keep the note connector dashed, using the same layout technique as UiClassDiagram.
+' Source: https://forum.plantuml.net/20309/comments-notation-plantuml-according-standard-specification
+CommandTextField -[hidden]down- FieldInjectionNote
+CommandTextField .. FieldInjectionNote
 
 note right of UiPart
 All in the "UI parts" box

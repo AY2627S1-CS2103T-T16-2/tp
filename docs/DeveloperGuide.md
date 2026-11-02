@@ -94,7 +94,7 @@ The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDi
 
 <puml src="diagrams/UiPartsClassDiagram.puml" alt="Detailed UI parts and their relationships"/>
 
-The FXML loader instantiates the `CommandTextField` declared in `CommandBox.fxml` and injects it into `CommandBox`'s retained `commandTextField` field, whose declared Java type is `TextField`. The diagram shows the concrete field object as `CommandTextField`. This subclass converts pasted tabs and line separators to spaces before JavaFX filters them, preserving word boundaries while keeping each command on one line. Pasted text is inserted into the field but is not executed until the user presses <kbd>Enter</kbd>.
+The FXML loader instantiates the `CommandTextField` declared in `CommandBox.fxml` and injects it into `CommandBox`'s retained `commandTextField` field, whose declared Java type is `TextField`. The diagram shows the association to that declared type and the inheritance of `CommandTextField` from `TextField`. This subclass converts pasted tabs and line separators to spaces before JavaFX filters them, preserving word boundaries while keeping each command on one line. Pasted text is inserted into the field but is not executed until the user presses <kbd>Enter</kbd>.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/ui/MainWindow.java).
 
