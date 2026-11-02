@@ -8,13 +8,11 @@ The format is based on Keep a Changelog.
 
 ## [v1.6] - 2026-11-03
 
-Planned release; not yet released.
-
 ### Changed
 
 - Constrain contact cards and tags to the visible contact-list viewport during window resizing, preserving long-tag ellipsis, full-value tooltips and ordinary tag wrapping, with repeated resize-cycle regression coverage (#330).
 - Move command-format guidance before the User Guide summary table, clarify quoting, keyword matching, optional linked-contact details and equivalent tag filters, and simplify reload outcomes and recovery steps (#261).
-- Update the guide version notices for v1.6 development and link to the User Guide preserved with the published v1.5 release.
+- Update the guide version notices for v1.6 and link to the User Guide preserved with the published v1.5 release.
 - Complete the remaining User Guide review follow-ups (#261): add an [annotated app screenshot](https://raw.githubusercontent.com/AY2627S1-CS2103T-T16-2/tp/v1.6/docs/images/ug-main-window.png), explain supported English language settings, clarify linked-contact view examples, separate examples from surrounding prose and enable copy buttons on command blocks using the existing documentation framework.
 - Rephrase semicolon-heavy User Guide prose into shorter sentences and smoother explanations.
 - Record the proposed bulk contact deletion contract for future evaluation (#287), covering original displayed indexes, duplicate and invalid selections, guardian links and save-failure rollback; bulk deletion remains unimplemented.
@@ -26,7 +24,7 @@ Planned release; not yet released.
 - Tighten the Developer Guide non-functional requirements around compatibility, keyboard access, offline use, recovery, display support and distribution (#328).
 - Document the atomic-replacement requirement for contact and preference saves, add recovery guidance for persistent save failures, and record unspecified ordering in general contact and duplicate-field feedback as deferred polish. List both limitations in the User Guide's known issues (#303).
 - Correct Developer Guide manual-test expectations for `clear` input variants and the initial-launch information dialog (#330).
-- Finalise the User Guide's v1.6 version notice and retain links to earlier release guides (#303).
+- Finalise the User Guide and Developer Guide version notices for v1.6 and retain links to earlier release guides (#303).
 
 ### Fixed
 
