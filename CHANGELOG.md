@@ -30,6 +30,7 @@ Planned release; not yet released.
 
 ### Fixed
 
+- Correct the Developer Guide's independent-application-homes test to distinguish first launch from contact-file creation after a successful save.
 - Show the duplicate-launch explanation and dismissal button on macOS without a secondary JavaFX startup error (#330).
 
 ## [v1.5] - 2026-10-28
