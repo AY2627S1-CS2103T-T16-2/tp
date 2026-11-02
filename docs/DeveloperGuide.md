@@ -1191,7 +1191,13 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
 1. Independent application homes
 
    1. Create two empty folders, copy the JAR into each one, and launch both copies while keeping both windows open.<br>
-      Expected: Both instances open normally. Adding a synthetic contact in one does not add it to the other; each folder has its own `.tuitionbook.lock`, `preferences.json`, and `data/tuitionbook.json`.
+      Expected: Both instances open normally with empty contact lists. Each folder has its own `.tuitionbook.lock` and `preferences.json`. Neither folder has `data/tuitionbook.json` yet because no contacts have been saved.
+
+   1. In the first instance, enter `add r/student n/First Home p/90000001`. In the second instance, enter `list`.<br>
+      Expected: Only the first instance contains First Home and has created `data/tuitionbook.json` in its folder. The second instance still has no contacts or contact data file.
+
+   1. In the second instance, enter `add r/student n/Second Home p/90000002`. Exit both instances normally and relaunch each JAR.<br>
+      Expected: Each folder now has its own `data/tuitionbook.json`. The first instance contains only First Home, and the second contains only Second Home.
 
 1. Initial launch
 
