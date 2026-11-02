@@ -218,7 +218,7 @@ The following diagram focuses separately on conversion between contact JSON and 
 
 <puml src="diagrams/StorageDataConversionDiagram.puml" width="850" />
 
-`JsonUtil` removes an optional UTF-8 BOM and decodes file bytes with a strict UTF-8 decoder before passing the text to Jackson, while retaining the same string-based parsing for in-memory callers. Invalid UTF-8 and other encoded files are therefore rejected instead of being accepted with replacement characters or silently converted on the next save. The shared mapper also requires the input to end after one JSON value and rejects duplicate property names at any object depth. Contact-file reads additionally reject unknown properties at every object depth, while preference-file reads retain their existing unknown-property tolerance. These checks prevent malformed, trailing, conflicting or misspelled contact fields from being accepted and then discarded by a later save. For the configured contact file, parsing failure enters the existing malformed-file recovery path, which moves the original bytes unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
+`JsonUtil` removes an optional UTF-8 BOM and decodes file bytes with a strict UTF-8 decoder before passing the text to Jackson, while retaining the same string-based parsing for in-memory callers. Invalid UTF-8 and other encoded files are therefore rejected instead of being accepted with replacement characters or silently converted on the next save. The shared mapper also requires the input to end after one JSON value and rejects duplicate property names at any object depth. Contact-file reads additionally reject unknown properties at every object depth, while preference-file reads retain their existing unknown-property tolerance. These checks prevent malformed, trailing, conflicting or misspelled contact fields from being accepted and then discarded by a later save. For the configured contact file, parsing failure enters the existing [data-load failure recovery path](#data-load-failure-recovery-policy), which moves the original bytes unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
 
 `DataLoadingException` walks its cause chain to produce bounded user guidance for permission denial, invalid contact values, invalid UTF-8 or JSON, and other file-system failures. It does not expose exception types, paths from the cause, or stack traces. `MainApp` carries this guidance through `StartupNotice`; `UiManager` combines it with the actual backup outcome. `ReloadCommand` uses the same guidance while retaining the current contacts and filter after a failed read.
 
@@ -576,14 +576,15 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 | [UC01 Add a contact](#use-case-uc01-add-a-contact) | [UC02 Link a guardian](#use-case-uc02-link-a-guardian-to-a-student) | [UC03 Unlink a guardian](#use-case-uc03-unlink-a-guardian-from-a-student) |
 | [UC04 Edit a contact](#use-case-uc04-edit-a-contact) | [UC05 Find contacts](#use-case-uc05-find-contacts-by-name) | [UC06 View contact details](#use-case-uc06-view-contact-details) |
 | [UC07 Delete a contact](#use-case-uc07-delete-a-contact) | [UC08 Filter contacts](#use-case-uc08-filter-contacts) | [UC09 Reload contact data](#use-case-uc09-reload-contact-data) |
-| [UC10 Clear all contacts](#use-case-uc10-clear-all-contacts) | [UC11 Modify tags](#use-case-uc11-modify-contact-tags) | |
+| [UC10 Clear all contacts](#use-case-uc10-clear-all-contacts) | [UC11 Modify tags](#use-case-uc11-modify-contact-tags) | [UC12 Start TuitionBook](#use-case-uc12-start-tuitionbook-and-restore-contacts) |
 
 #### Use case: UC01 Add a contact
 
 **Main Success Scenario (MSS)**
 
 1.  User requests to add a contact, providing the contact's role, name, and phone number, and optionally its email address, home address, and tags.
-2.  System adds the contact and displays confirmation, including its role.
+2.  System adds the contact.
+3.  System saves the changed contact data and displays confirmation, including the contact's role.
 
     Use case ends.
 
@@ -601,9 +602,9 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-* 2a. System cannot save the added contact.
+* 3a. System cannot save the added contact.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -670,7 +671,8 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  User requests to unlink a displayed student.
-2.  System removes the guardian link and displays confirmation naming the student and former guardian.
+2.  System removes the guardian link.
+3.  System saves the changed contact data and displays confirmation naming the student and former guardian.
 
     Use case ends.
 
@@ -694,9 +696,9 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-* 2a. System cannot save the removed guardian link.
+* 3a. System cannot save the removed guardian link.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -709,7 +711,8 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  User requests to edit a contact in the current contact list, providing one or more replacement contact details.
-2.  System updates the supplied details, retains all unspecified details, and displays confirmation.
+2.  System updates the supplied details and retains all unspecified details.
+3.  System saves the changed contact data and displays confirmation.
 
     Use case ends.
 
@@ -735,13 +738,13 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 2a. The supplied details are identical to the contact's stored details.
 
-    * 2a1. System reports the edit as successful without changing or saving contact data.
+    * 2a1. System reports that no changes were made, without changing or saving contact data.
 
       Use case ends.
 
-* 2b. System cannot save the edited contact.
+* 3a. System cannot save the edited contact.
 
-    * 2b1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -797,7 +800,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 1.  User requests to delete a displayed contact.
 2.  System deletes the contact and clears any guardian links involving it, retaining all other contacts.
-3.  System reports the deletion and, where applicable, the number and names of students whose guardian links were cleared.
+3.  System saves the changed contact data and reports the deletion and, where applicable, the number and names of students whose guardian links were cleared.
 
     Use case ends.
 
@@ -809,9 +812,9 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-* 2a. System cannot save the deletion.
+* 3a. System cannot save the deletion.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -826,9 +829,15 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 **Extensions**
 
-* 1a. The request is malformed, or a supplied role or tag is invalid.
+* 1a. User requests all contacts without specifying a role or tag.
 
-    * 1a1. System shows an error message describing the invalid request and retains the active filter.
+    * 1a1. System clears the active filter, displays all contacts in contact-list order, and reports that all contacts are listed.
+
+      Use case ends.
+
+* 1b. The request is malformed, or a supplied role or tag is invalid.
+
+    * 1b1. System shows an error message describing the invalid request and retains the active filter.
 
       Use case ends.
 
@@ -859,8 +868,8 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 2b. The file contains invalid guardian links but all contacts are otherwise valid.
 
-    * 2b1. System loads the contacts without those links.
-    * 2b2. System reports the repaired guardian links.
+    * 2b1. System loads the contacts into memory without those links and leaves the data file unchanged.
+    * 2b2. System reports each repaired guardian link.
 
       Use case resumes from step 3.
 
@@ -876,7 +885,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
+See the [data-load failure recovery policy](#data-load-failure-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
 #### Use case: UC10 Clear all contacts
 
@@ -890,22 +899,29 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 
 **MSS**
 
-1.  User requests and confirms the clearing of all contacts.
-2.  System removes every stored contact, including contacts hidden by the active filter, and reports completion.
+1.  User enters `clear confirm` to request clearing all contacts.
+2.  System removes every stored contact, including contacts hidden by the active filter.
+3.  System saves the empty contact list and reports completion.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. User does not provide the required confirmation.
+* 1a. User enters `clear` without the required `confirm` keyword.
 
     * 1a1. System informs the User that confirmation is required and retains all contacts and the active filter.
 
       Use case ends.
 
-* 2a. System cannot save the cleared contact list.
+* 1b. User enters `clear` with an argument other than the single lowercase `confirm` keyword.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 1b1. System informs the User that the confirmation is invalid and retains all contacts and the active filter.
+
+      Use case ends.
+
+* 3a. System cannot save the cleared contact list.
+
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -955,15 +971,58 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 
       Use case ends.
 
+#### Use case: UC12 Start TuitionBook and restore contacts
+
+**Preconditions**
+
+* TuitionBook is not running in the selected application folder.
+
+**MSS**
+
+1.  User launches TuitionBook.
+2.  System loads the configured data file.
+3.  System displays all stored contacts in contact-list order and enables saving.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. The configured data file is missing.
+
+    * 2a1. System starts with an empty contact list, enables saving, and shows an information dialog.
+
+      Use case ends.
+
+* 2b. The file contains invalid guardian links but all contacts are otherwise valid.
+
+    * 2b1. System loads the contacts into memory without those links and leaves the data file unchanged.
+    * 2b2. System reports each repaired guardian link.
+
+      Use case resumes from step 3.
+
+* 2c. System cannot read the file but preserves it unchanged in a backup.
+
+    * 2c1. System starts with an empty contact list, enables saving, and reports the backup path and recovery guidance.
+
+      Use case ends.
+
+* 2d. System cannot read the file or preserve it in a backup.
+
+    * 2d1. System starts with an empty contact list, leaves the original file in place, blocks saving to protect it, and reports recovery guidance.
+
+      Use case ends.
+
+See the [startup data rule](#startup-data-rule) and [data-load failure recovery policy](#data-load-failure-recovery-policy) for the detailed preservation rules.
+
 #### List-filter command rule
 
 Each `list` query replaces the working set: bare `list` displays all contacts, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria in contact-list order. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
 #### Startup data rule
 
-If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not change the separate recovery behaviour for a malformed data file.
+If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not change the separate recovery behaviour when an existing data file cannot be read.
 
-#### Malformed-file recovery policy
+#### Data-load failure recovery policy
 
 When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path and bounded cause-specific guidance to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows appropriate permission, encoding/JSON, contact-value, or file-system recovery steps in both a warning dialog and the result display. The warning keeps the specific problem and backup outcome in its main content while placing numbered restoration steps and each labelled full path once in an expandable, scrollable **Recovery details** section. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and presents the same cause-specific guidance before asking the user to reload or restart.
 
