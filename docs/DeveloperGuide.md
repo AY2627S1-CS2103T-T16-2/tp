@@ -300,6 +300,8 @@ After tokenization and duplicate-prefix checks, `AddCommandParser` collects abse
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in locale-independent, case-insensitive alphabetical order, with original spelling as the tie-breaker.
 
+`PersonListViewCell` limits each card's preferred and maximum width to the visible list viewport, so resizing cannot retain an obsolete expanded cell width.
+
 <a id="quoted-name-and-tag-parsing"></a>
 
 ### Quoted field parsing
