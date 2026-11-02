@@ -421,7 +421,7 @@ Contact storage and diagnostic logs are separate. `ClearCommand` clears all cont
 **Target user profile**:
 
 * is a private one-to-one tutor who travels to students' homes
-* manages a significant number of students and guardians, up to the 1,000 contacts covered by the [capacity requirement](#non-functional-requirements)
+* manages a significant number of student and guardian contacts
 * needs to maintain student and guardian contact information and their relationships in one place
 * needs to retrieve the relevant guardian's contact details and home-address information quickly
 * benefits from grouping contacts by academic level, subject, or area using self-chosen tags
@@ -970,19 +970,16 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 ### Non-Functional Requirements
 
 1.  **Platform compatibility:** TuitionBook shall run on Windows, Linux and macOS with Java `25` installed, without requiring an application installer or separate dependency installation.
-2.  **Contact capacity:** TuitionBook shall load, display, search, filter and modify a contact book containing 1,000 valid contacts. For this capacity guarantee, each phone number contains at most 30 characters and each contact has at most five tags of at most 50 characters each. The other fields use their documented limits. Larger contact books and longer values are outside this capacity guarantee. No fixed response-time guarantee is claimed without a reproducible benchmark.
-3.  **Keyboard access:** All documented contact-management operations, in-app Help, reload and exit shall be available through the `add`, `edit`, `delete`, `list`, `find`, `view`, `tag`, `untag`, `link`, `unlink`, `clear`, `reload`, `help` or `exit` command, without requiring a mouse.
-4.  **Single-user scope:** TuitionBook shall operate as a desktop application for one user and shall not share that user's application data during normal operation.
-5.  **Offline operation:** Contact management and in-app Help shall work without a network connection. Opening the online User Guide may require one.
-6.  **Local data:** TuitionBook shall keep its application-managed files within the application home. It shall use one local, human-editable text file as the authoritative contact store and shall not transmit contact data to an external service. It may create local sibling backups during recovery.
-7.  **Persistence and rollback:** Successful contact changes shall remain available after a normal restart. If saving reports an error, TuitionBook shall restore the contacts and working set to their state before the command.
-8.  **Startup recovery:** A missing, unreadable or invalid contact file, or an invalid guardian link, shall not by itself cause TuitionBook to terminate unexpectedly. TuitionBook shall preserve an existing file it cannot load before allowing replacement data to be saved, block saving if preservation fails, and report the recovery or repaired links. See the [startup data rule](#startup-data-rule) and [malformed-file recovery policy](#malformed-file-recovery-policy).
-9.  **Single-instance operation:** TuitionBook shall prevent two running instances from accessing the same application home while allowing copies in separate application homes to run independently.
-10. **Display support:** The GUI shall work without resolution-related inconvenience at 1920×1080 or higher at 100% and 125% scaling. All functions shall remain accessible at 1280×720 or higher at 150% scaling, although the layout may be less comfortable.
-11. **Distribution:** TuitionBook shall be distributed as one cross-platform executable JAR no larger than 100 MB.
-12. **Documentation compatibility:** The published HTML User Guide and Developer Guide shall remain readable in current desktop versions of Chrome and Firefox on Windows, Linux and macOS at the supported resolutions and scaling levels.
-
-These are release requirements, not a claim that every environment and workload has passed verification. The 1,000-contact capacity workload has not been exercised end to end. The long-tag overflow reported in [#330](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/330) has automated regression coverage at 340-pixel and 700-pixel test-scene widths, including the role badge and card containment, but the full 1280×720 at 150% manual display check remains outstanding.
+2.  **Keyboard access:** All documented contact-management operations, in-app Help, reload and exit shall be available through the `add`, `edit`, `delete`, `list`, `find`, `view`, `tag`, `untag`, `link`, `unlink`, `clear`, `reload`, `help` or `exit` command, without requiring a mouse.
+3.  **Single-user scope:** TuitionBook shall operate as a desktop application for one user and shall not share that user's application data during normal operation.
+4.  **Offline operation:** Contact management and in-app Help shall work without a network connection. Opening the online User Guide may require one.
+5.  **Local data:** TuitionBook shall keep its application-managed files within the application home. It shall use one local, human-editable text file as the authoritative contact store and shall not transmit contact data to an external service. It may create local sibling backups during recovery.
+6.  **Persistence and rollback:** Successful contact changes shall remain available after a normal restart. If saving reports an error, TuitionBook shall restore the contacts and working set to their state before the command.
+7.  **Startup recovery:** A missing, unreadable or invalid contact file, or an invalid guardian link, shall not by itself cause TuitionBook to terminate unexpectedly. TuitionBook shall preserve an existing file it cannot load before allowing replacement data to be saved, block saving if preservation fails, and report the recovery or repaired links. See the [startup data rule](#startup-data-rule) and [malformed-file recovery policy](#malformed-file-recovery-policy).
+8.  **Single-instance operation:** TuitionBook shall prevent two running instances from accessing the same application home while allowing copies in separate application homes to run independently.
+9.  **Display support:** The GUI shall work without resolution-related inconvenience at 1920×1080 or higher at 100% and 125% scaling. All functions shall remain accessible at 1280×720 or higher at 150% scaling, although the layout may be less comfortable.
+10. **Distribution:** TuitionBook shall be distributed as one cross-platform executable JAR no larger than 100 MB.
+11. **Documentation compatibility:** The published HTML User Guide and Developer Guide shall remain readable in current desktop versions of Chrome and Firefox on Windows, Linux and macOS at the supported resolutions and scaling levels.
 
 ### Glossary
 
