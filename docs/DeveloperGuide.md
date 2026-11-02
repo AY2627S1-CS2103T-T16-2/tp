@@ -228,7 +228,7 @@ At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it atte
 
 ### Common classes
 
-Classes used by multiple components are in the `seedu.tuitionbook.commons` package. `Index` represents a one-based position while converting safely to zero-based list access. `LogsCenter` configures application logging, and `ApplicationPaths` resolves application-managed file locations. Shared utility classes provide string, collection, file and JSON operations, while shared exception classes represent invalid values and data-loading failures.
+Classes used by multiple components are in the `seedu.tuitionbook.commons` package. `Index` represents a position that can be constructed and read in either zero-based or one-based form. `LogsCenter` configures application logging, and `ApplicationPaths` resolves application-managed file locations. Shared utility classes provide string, collection, file and JSON operations, while shared exception classes represent invalid values and data-loading failures.
 
 --------------------------------------------------------------------------------------------------------------------
 
