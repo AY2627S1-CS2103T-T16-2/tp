@@ -28,6 +28,10 @@ Planned release; not yet released.
 - Correct Developer Guide manual-test expectations for `clear` input variants and the initial-launch information dialog (#330).
 - Finalise the User Guide's v1.6 version notice and retain links to earlier release guides (#303).
 
+### Fixed
+
+- Show the duplicate-launch explanation and dismissal button on macOS without a secondary JavaFX startup error (#330).
+
 ## [v1.5] - 2026-10-28
 
 ### Added
