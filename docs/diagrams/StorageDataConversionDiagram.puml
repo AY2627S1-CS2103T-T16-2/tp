@@ -11,8 +11,8 @@ Class JsonSerializableTuitionBook {
     ~toModelTypeWithResult(): TuitionBookLoadResult
 }
 Class JsonAdaptedPerson {
-    -id: String
-    -role: String
+    -id: String [0..1]
+    -role: String [0..1]
     -guardianId: String [0..1]
     -name: String
     -phone: String
