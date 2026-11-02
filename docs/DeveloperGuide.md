@@ -310,10 +310,6 @@ Inside quoted values, `\"` decodes to a literal double quote and `\\` to a liter
 
 Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`, and `a/"\"Block A\""` enters an address with literal quotes around it. Existing addresses are not stripped or normalised on loading. `Tag` removes surrounding ASCII spaces from every tag, including JSON-loaded values, while preserving internal spacing and case-sensitive identity; this makes a stored `" Math "` tag addressable as `Math` without changing quoted-value parsing.
 
-### \[Historical proposal\] Undo/redo feature
-
-Undo/redo is descoped from the final release under [scope decision 4.1](#decision-4-1-undo-and-confirmation).
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Documentation, logging, testing, configuration, dev-ops**
