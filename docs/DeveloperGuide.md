@@ -294,7 +294,7 @@ Phone identity removes ASCII spaces, hyphens, slashes, and numeric-group parenth
 
 After tokenization and duplicate-prefix checks, `AddCommandParser` collects absent mandatory prefixes in the fixed order `r/ROLE`, `n/NAME`, `p/PHONE`. A structurally valid command with any absent prefixes reports all of them followed by `AddCommand.MESSAGE_USAGE`; malformed preambles and tokenizer failures retain their existing format or parsing errors. Empty supplied values remain field-validation errors, so the parser does not duplicate model validation.
 
-`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in locale-independent, case-insensitive alphabetical order, with original spelling as the tie-breaker.
+`PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries and addresses retain their beginning and use an ellipsis within the card. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags flow in locale-independent, case-insensitive alphabetical order, with original spelling as the tie-breaker, and ordinary tags wrap onto additional rows. A single unbreakable tag wider than the card is not constrained on the current branch: it can widen the contact list, produce a horizontal scrollbar and move the role badge beyond the visible viewport, although its full-value tooltip remains available.
 
 <a id="quoted-name-and-tag-parsing"></a>
 
@@ -549,7 +549,7 @@ Sec  4
 
 Stored tag identity and removal are case-sensitive; filtering compares complete tags case-insensitively. For an absent tag, `untag` suggests matching stored case variants without changing its case-sensitive removal rule. Under [#163](https://github.com/AY2627S1-CS2103T-T16-2/tp/pull/163), enclosing quotes delimit a CLI value. `ArgumentTokenizer` removes these CLI syntax quotes before `Tag` construction; `Tag` itself does not remove literal quote characters, including those loaded from JSON. Inside quoted CLI values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Recognised unquoted prefixes still start fields; v1.5 rejects unsupported space-separated letter prefixes. Quoting the complete tag protects embedded prefixes in `add`, `edit`, `list`, `tag` and `untag`; see the UG for examples.
 
-Tag length is deliberately unbounded. The validator uses a linear scan, and cards truncate long values with an ellipsis while retaining the full text in a tooltip and detail view. This is not a guarantee of unlimited resource capacity. Surrounding ASCII spaces are trimmed when tags are loaded; tags that differ only by that padding are merged into one, and the merged value is written on the next save. Any other narrowing of validation or identity still requires an explicit compatibility plan.
+Tag length is deliberately unbounded, and the validator uses a linear scan. Tag labels retain the full text in a tooltip, but a single unbreakable tag wider than its card is not constrained or visibly shortened on the current branch; it can widen the contact list instead. This is not a guarantee of unlimited resource capacity. Surrounding ASCII spaces are trimmed when tags are loaded; tags that differ only by that padding are merged into one, and the merged value is written on the next save. Any other narrowing of validation or identity still requires an explicit compatibility plan.
 
 #### Single-instance operation and manual file editing
 
@@ -1256,8 +1256,8 @@ Use a fresh, disposable folder and start the application with an empty contact l
    Expected: Six Tags' labels wrap above the phone line without obscuring any contact detail or the next card. Its card grows to fit the extra rows, while One Tag and No Tags remain compact. Tags remain alphabetically sorted.
 1. Resize the application wide, then back to its minimum width.<br>
    Expected: The Six Tags card shrinks and grows with the number of tag rows. No tags or contact details overlap at either width.
-1. Add one tag whose value is wider than the card, resize to the minimum width, and hover over the shortened tag.<br>
-   Expected: The tag ends with an ellipsis and its tooltip shows the complete value.
+1. Add one unbreakable tag whose value is wider than the card, resize to the minimum width, and hover over the tag.<br>
+   Current known limitation: The tag extends past the card instead of ending with an ellipsis. The contact list gains a horizontal scrollbar and the role badge can move beyond the visible viewport, while the tag's tooltip still shows the complete value. This is tracked in [#330 item 5](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/330).
 
 ### Pasting separators into the command box
 
