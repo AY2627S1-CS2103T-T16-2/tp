@@ -456,8 +456,8 @@ public class CardDisplayUiTest {
 
         try {
             assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() > 600));
-            JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(LONG_TAG_LIST_WIDTH));
-            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() < 500));
+            JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(TAG_OVERFLOW_SCENE_WIDTH));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() < 400));
             JavaFxTestUtil.runOnFxThread(() -> {
                 ListCell<Person> sixTagsCell = getDisplayedCell(fixture.personListView(), fixture.sixTagsPerson());
                 ListCell<Person> nextCell = getDisplayedCell(fixture.personListView(), fixture.nextPerson());

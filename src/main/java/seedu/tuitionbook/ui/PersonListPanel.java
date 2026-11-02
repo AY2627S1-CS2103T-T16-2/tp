@@ -312,6 +312,7 @@ public class PersonListPanel extends UiPart<Region> {
 
         @Override
         protected void layoutChildren() {
+            // JavaFX's VirtualFlow skin uses this class for its viewport; skip sizing before the skin creates it.
             if (card != null && personListView.lookup(".clipped-container") instanceof Region viewport) {
                 double availableWidth = Math.max(0, viewport.getWidth()
                         - snappedLeftInset() - snappedRightInset());

@@ -3,6 +3,7 @@ package seedu.tuitionbook.ui;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -891,30 +892,21 @@ public class MainWindowTest {
     }
 
     private static boolean longTagLayoutFits(LongTagResizeFixture fixture) {
-        ListCell<?> cell = fixture.personListView().lookupAll(".list-cell").stream()
-                .filter(ListCell.class::isInstance)
-                .map(ListCell.class::cast)
-                .filter(candidate -> fixture.person().equals(candidate.getItem()))
-                .findFirst()
-                .orElse(null);
+        ListCell<?> cell = displayedCell(fixture);
         Region viewport = listViewport(fixture);
         if (cell == null || cell.getGraphic() == null || viewport == null) {
             return false;
         }
         Bounds viewportBounds = viewport.localToScene(viewport.getBoundsInLocal());
         Bounds cardBounds = cell.getGraphic().localToScene(cell.getGraphic().getBoundsInLocal());
-        return horizontalScrollBar(fixture.personListView()).isVisible() == false
+        return !horizontalScrollBar(fixture.personListView()).isVisible()
                 && cardBounds.getMaxX() <= viewportBounds.getMaxX() + VIEWPORT_TOLERANCE;
     }
 
     private static void assertLongTagLayout(LongTagResizeFixture fixture) {
         assertTrue(longTagLayoutFits(fixture));
-        ListCell<?> cell = fixture.personListView().lookupAll(".list-cell").stream()
-                .filter(ListCell.class::isInstance)
-                .map(ListCell.class::cast)
-                .filter(candidate -> fixture.person().equals(candidate.getItem()))
-                .findFirst()
-                .orElseThrow();
+        ListCell<?> cell = displayedCell(fixture);
+        assertNotNull(cell);
         FlowPane tags = (FlowPane) cell.getGraphic().lookup("#tags");
         Label longTag = tags.getChildren().stream()
                 .map(Label.class::cast)
@@ -939,6 +931,15 @@ public class MainWindowTest {
             assertTrue(tagBounds.getMaxY() <= phoneBounds.getMinY() + VIEWPORT_TOLERANCE,
                     "Tag overlaps contact details");
         });
+    }
+
+    private static ListCell<?> displayedCell(LongTagResizeFixture fixture) {
+        return fixture.personListView().lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(node -> (ListCell<?>) node)
+                .filter(candidate -> fixture.person().equals(candidate.getItem()))
+                .findFirst()
+                .orElse(null);
     }
 
     private static Region listViewport(LongTagResizeFixture fixture) {
