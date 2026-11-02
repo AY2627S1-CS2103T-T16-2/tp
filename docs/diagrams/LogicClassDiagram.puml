@@ -19,12 +19,9 @@ Class LogicManager
 Class "<<interface>>\nModel" as Model MODEL_COLOR
 Class "<<interface>>\nStorage" as Storage STORAGE_COLOR
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> Logic
-
-LogicManager .right.|> Logic
-LogicManager --> "1" TuitionBookParser
-TuitionBookParser ..> XYZCommand : <<create>>
+LogicManager .up.|> Logic
+LogicManager -left-> "1" TuitionBookParser
+TuitionBookParser ..> Command : returns
 
 XYZCommand -up-|> Command
 LogicManager .left.> Command : <<call>>
@@ -33,10 +30,17 @@ LogicManager --> Model
 LogicManager --> Storage
 Command .right.> Model
 Command .right.> Storage
-note left of XYZCommand: XYZCommand represents a concrete command,\nsuch as AddCommand or FindCommand.
+note as RepresentativeCommandNote
+XYZCommand represents a concrete command,
+such as AddCommand or FindCommand.
+end note
+' Keep the note connector dashed, using the same layout technique as UiClassDiagram.
+' Source: https://forum.plantuml.net/20309/comments-notation-plantuml-according-standard-specification
+XYZCommand -[hidden]down- RepresentativeCommandNote
+XYZCommand .. RepresentativeCommandNote
 
 Logic ..> CommandResult
-Command .up.> CommandResult : <<create>>
+Command .up.> CommandResult : returns
 
 TuitionBookParser -[hidden]right- LogicManager
 LogicManager -[hidden]right- Command

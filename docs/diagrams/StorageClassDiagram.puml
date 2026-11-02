@@ -16,9 +16,6 @@ Class JsonTuitionBookStorage
 
 }
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> Storage
-
 StorageManager .up.|> Storage
 StorageManager -down-> "1" JsonUserPrefsStorage : userPrefsStorage
 StorageManager -down-> "1" JsonTuitionBookStorage : tuitionBookStorage

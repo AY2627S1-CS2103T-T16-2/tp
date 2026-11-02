@@ -115,6 +115,8 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="700"/>
 
+`TuitionBookParser` returns a `Command`, and command execution returns a `CommandResult`. The representative `XYZCommand` stands for a concrete command. Command creation is detailed in the parser diagram below, including delegation to command-specific parsers.
+
 The following sequence diagrams show the same `execute("delete 1")` call in two focused parts so that their labels remain readable at normal browser zoom. The first diagram expands command parsing and uses a reference frame for the remaining execution.
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="LogicManager parsing delete 1 and receiving a newly created DeleteCommand" />
