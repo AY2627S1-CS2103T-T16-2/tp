@@ -30,6 +30,7 @@ Planned release; not yet released.
 
 ### Fixed
 
+- Correct the Developer Guide UI-parts diagram's retained command-input associations and explain FXML injection while keeping inheritance arrows omitted for readability.
 - Show the duplicate-launch explanation and dismissal button on macOS without a secondary JavaFX startup error (#330).
 
 ## [v1.5] - 2026-10-28

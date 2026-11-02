@@ -30,13 +30,14 @@ MainWindow *-down-> "1" HelpWindow
 MainWindow *-down-> "0..1" PersonListPanel
 MainWindow *-down-> "0..1" DetailDisplay
 MainWindow *-down-> "0..1" ResultDisplay
-MainWindow ..> CommandBox : <<create>>
+MainWindow -right-> "0..1" CommandBox : commandBox
 MainWindow ..> StatusBarFooter : <<create>>
-CommandBox ..> CommandTextField : FXML injects
+CommandBox --> "1" CommandTextField
 
 note right of UiPart
 All in the "UI parts" box
 (except UiPart) inherit from UiPart
+Generalization arrows are omitted.
 end note
 
 

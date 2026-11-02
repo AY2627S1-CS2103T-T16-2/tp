@@ -90,11 +90,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. `UiManager` coordinates the UI with `Logic` and displays the startup notice when one is available.
 
-`MainWindow`'s UI parts are expanded in the following diagram. It shows the concrete UI parts, their common abstract `UiPart` base class, the relationships managed by `MainWindow`, and the UI parts that display `Person` data or open the User Guide.
+`MainWindow`'s UI parts are expanded in the following diagram. It shows the concrete UI parts, their common abstract `UiPart` base class and the relationships managed by `MainWindow`. A note records their inheritance from `UiPart`, with generalization arrows omitted to keep the diagram readable. `MainWindow` retains at most one `CommandBox`, which is initialized by `fillInnerParts()`.
 
 <puml src="diagrams/UiPartsClassDiagram.puml" alt="Detailed UI parts and their relationships"/>
 
-`CommandBox` uses `CommandTextField`, a `TextField` subclass that converts pasted tabs and line separators to spaces before JavaFX filters them. This preserves word boundaries while keeping each command on one line. Pasted text is inserted into the field but is not executed until the user presses <kbd>Enter</kbd>.
+The FXML loader instantiates the `CommandTextField` declared in `CommandBox.fxml` and injects it into `CommandBox`'s retained `commandTextField` field, whose declared Java type is `TextField`. The diagram shows the concrete field object as `CommandTextField`. This subclass converts pasted tabs and line separators to spaces before JavaFX filters them, preserving word boundaries while keeping each command on one line. Pasted text is inserted into the field but is not executed until the user presses <kbd>Enter</kbd>.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-T16-2/tp/tree/master/src/main/java/seedu/tuitionbook/ui/MainWindow.java).
 
