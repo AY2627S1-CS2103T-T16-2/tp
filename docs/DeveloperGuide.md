@@ -214,7 +214,7 @@ The `Storage` component,
 
 `JsonTuitionBookStorage` and `JsonUserPrefsStorage` save through temporary files in the destination directory and require atomic replacement of their respective JSON files. There is no non-atomic fallback. If the file system does not support that replacement, saving fails and the existing destination file remains unchanged. For contact saves, `LogicManager` reports the failure and restores the contacts and exact working set. Preference-save failures are logged, leaving the previously saved settings unchanged. This compatibility limitation is retained for v1.6 under [#303](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/303). See the UG's [Saving the data](UserGuide.md#saving-the-data) for recovery guidance.
 
-When a contact-data load fails, `JsonTuitionBookStorage` tries to move the configured file to an unused sibling `.backup[.n]` path. If that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the component diagram.
+When a contact-data load fails, `JsonTuitionBookStorage` tries to move the configured file to an unused sibling `.backup[.n]` path. If that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the class diagram.
 
 The following diagram focuses separately on conversion between contact JSON and model data. `PersonLoadResult` carries a repaired contact and its optional `GuardianLinkRepair`; `JsonSerializableTuitionBook` collects all such diagnostics into `TuitionBookLoadResult` in JSON order.
 
