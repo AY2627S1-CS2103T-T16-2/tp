@@ -21,6 +21,7 @@ Planned release; not yet released.
 - Document 1,000 contacts as the supported contact-list size in the target user profile, performance requirement and User Guide known limitations, noting that commands that change contacts can slow down with much larger lists.
 - Remove the single-question FAQ from the User Guide because its answer is covered by Transferring contacts to another computer.
 - Correct User Guide details on contact cards, how the data file treats `guardianId` values and spaces around names and addresses, and the troubleshooting advice for `link` indexes in the wrong order.
+- Document the atomic-replacement requirement for contact and preference saves, add recovery guidance for persistent save failures, and record unspecified ordering in general contact and duplicate-field feedback as deferred polish. List both limitations in the User Guide's known issues (#303).
 - Correct Developer Guide manual-test expectations for `clear` input variants and the initial-launch information dialog (#330).
 
 ## [v1.5] - 2026-10-28
@@ -54,7 +55,7 @@ Planned release; not yet released.
 - Report all missing mandatory `add` fields and explain unsupported role or guardian-link edits.
 - Give distinct guidance for invalid `clear` confirmations and reject extra arguments to `help` and `exit`.
 - Trim surrounding spaces from stored tags and suggest exact tag spellings for case-mismatched `untag` requests.
-- Consistently sort displayed tags and escape backslashes and brackets in tag displays and command confirmations.
+- Sort tags in contact cards and `view` details, and escape backslashes and brackets in tag displays and command confirmations.
 - Reject unknown or duplicate JSON fields, trailing content and invalid encodings through the existing file-recovery workflow; accept UTF-8 files with a byte-order mark.
 - Identify affected contacts in load errors and provide cause-specific startup and reload recovery guidance, including backup status and all repaired guardian links.
 - Continue using the legacy data file when migration is blocked by permissions.

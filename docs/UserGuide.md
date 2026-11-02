@@ -632,6 +632,11 @@ After a closing quote, end the command or type a space followed by the next fiel
 TuitionBook saves automatically after every command that changes your contacts or guardian links. There is no Save command.
 
 * If saving fails, the command is undone and an error explains what to check. Fix the problem, then enter the command again.
+* If saving still fails after checking that the folder is writable and the disk has free space, try another local drive. Some drives cannot support the way TuitionBook saves files.
+  1. Close TuitionBook.
+  1. Copy the **entire application folder**, including the JAR, `data` folder and settings, to a writable folder on another local drive.
+  1. Open the JAR from the copied folder and check that your contacts are present.
+  1. Retry the failed command. Keep the original folder until you have confirmed that saving works in the new location.
 * If TuitionBook can't read your data file when it starts, it shows a warning. It usually moves the unreadable file to a backup and starts with an empty list, and you can keep working. If it can't make the backup, it won't save anything until you fix or move the file and then run `reload` or restart. See [Editing the data file](#editing-the-data-file).
 
 Only one TuitionBook window can use a folder at a time. If you start it again from the same folder, the second copy shows an error and closes without touching your contacts. To run a separate copy, put the JAR in a different folder. Each folder has its own contacts and settings.
@@ -742,7 +747,7 @@ Find the symptom below and try the suggested action. Error messages appear in th
 | No contacts appear after `find` or `list` | No contacts match | Enter `list` to show everyone. `find` searches names only, and tag filters must match the whole tag, including spaces. |
 | `Unknown field` | The command contains a prefix it doesn't recognise, such as `ee/` | Fix the typo. If the text is meant to be part of a name, address or tag (for example `s/o`), put the whole value in double quotes: `n/"Muhammad s/o Ali"`. Nothing was changed. |
 | A name, address or tag is cut off at text such as `a/` or `t/` | TuitionBook read that text as the start of another field | Put the whole value in double quotes, for example `n/"Rina a/p Kaur"`, `a/"20 Road c/o Rina"` or `t/"study t/weekly"`. See [Quoted values and escaping](#quoted-values-and-escaping). |
-| `Could not save your changes, so the command was undone.` | TuitionBook can't save to its data folder | Check that you can save files in the JAR's folder and that the disk isn't full, then enter the command again. If the message says saving is disabled, see [Editing the data file](#editing-the-data-file). |
+| `Could not save your changes, so the command was undone.` | TuitionBook can't save to its data folder | Check that you can save files in the JAR's folder and that the disk isn't full, then enter the command again. If those checks do not help, follow the steps under [Saving the data](#saving-the-data) to try another local drive. If the message says saving is disabled, see [Editing the data file](#editing-the-data-file). |
 | A warning says your contact data could not be loaded | The data file has a mistake or can't be opened | Follow the advice in the warning and the steps in [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file). |
 | The Help window opens but the online guide does not | A browser could not open, or the page cannot be reached | Use the offline summary in Help. Try `Copy URL` in a browser when an internet connection is available. |
 
@@ -765,3 +770,5 @@ Check [Limitations and known issues](#limitations-and-known-issues) first. If yo
 7. **If the data file has a mistake, TuitionBook starts with an empty contact list and a warning.** When it can, TuitionBook moves the original file unchanged to a backup. If it cannot create that backup, saving stays blocked. See [If TuitionBook can't read the data file](#if-tuitionbook-can-t-read-the-data-file) for both recovery paths.
 8. **Contact-list card text cannot be selected for copying.** Use the [details pane opened by `view INDEX`](#viewing-a-contact-view) to select and copy contact details instead.
 9. **TuitionBook is designed for up to 1,000 contacts.** With many more contacts, commands that change contacts, such as `add`, `edit` and `delete`, can take several seconds to finish.
+10. **Some drives cannot support the way TuitionBook saves files.** On these drives, contact changes that need saving are undone, and settings cannot be saved. Follow [Saving the data](#saving-the-data) to copy the entire application folder to another writable local drive and retry.
+11. **Some command messages show tags or repeated fields in no particular order.** Tags may appear in a different order from contact cards and `view`. Errors about fields entered more than once may list those fields in a different order from your command.
