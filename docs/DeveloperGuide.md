@@ -424,15 +424,15 @@ Contact storage and diagnostic logs are separate. `ClearCommand` clears all cont
 * manages a significant number of students and guardians, up to the 1,000 contacts covered by the [performance requirement](#non-functional-requirements)
 * needs to maintain student and guardian contact information and their relationships in one place
 * needs to retrieve the relevant guardian's contact details and home-address information quickly
-* benefits from grouping contacts by academic level, subject, tags, or area
+* benefits from grouping contacts by academic level, subject, or area using self-chosen tags
 * prefers a single-user desktop application
 * can type quickly, prefers typing over other input methods, and is comfortable with a command-based interface
 * prefers contact information to be stored locally and restored automatically between application sessions
 * uses English and an `en-*` operating-system locale
 
-**Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage student and guardian contacts, organise contacts with roles and tags, and retrieve the correct contact details quickly, instead of using a generic contact list or manually cross-referencing separate records. Guardian links and home addresses are optional. Tutors can label academic levels and subjects using generic tags, for example `t/Sec4 t/AMath` when adding or editing a contact. Dedicated level/subject fields and filtering by those fields are descoped from the final release; they remain possible future enhancements, not promised features. Level and subject grouping is supported through `list r/student t/Sec4 t/AMath`, which requires both tags. See the [tag workflow](UserGuide.md#organising-levels-subjects-and-status-with-tags).
+**Value proposition**: TuitionBook is designed to help private one-to-one home tutors manage student and guardian contacts, organise contacts with roles and tags, and retrieve the correct contact details quickly, instead of using a generic contact list or manually cross-referencing separate records. Guardian links and home addresses are optional. Tutors can label academic levels, subjects and areas using generic tags, for example `t/Sec4 t/AMath` when adding or editing a contact. Dedicated level/subject fields and filtering by those fields are descoped from the final release; they remain possible future enhancements, not promised features. Level and subject grouping is supported through `list r/student t/Sec4 t/AMath`, which requires both tags. Area tags can also be filtered with `list`, but TuitionBook has no dedicated area-search command. See the [tag workflow](UserGuide.md#organising-levels-subjects-and-status-with-tags).
 
-TuitionBook is intended for English-language users and supports `en-*` operating-system locales. Its interface, documentation, and messages are in English; this does not require contact information to contain only English text. Contact fields accept UTF-8 text subject to their documented validation rules. In particular, names accept Unicode letters, numbers, and combining marks plus ordinary ASCII spaces (U+0020), with the accepted capitalization, punctuation, and Unicode representation preserved after surrounding command-input whitespace is trimmed. Duplicate-contact checks require matching roles and apply the documented locale-independent Unicode comparison form after identity-specific ASCII-space normalization; this covers canonically equivalent accents and the demonstrated sharp-S cases without claiming complete Unicode case folding. See the [User Guide](UserGuide.md#adding-a-contact-add).
+TuitionBook's interface and supported operating-system locales are English, while contact names can contain supported non-English characters. See [Contact field validation](#contact-field-validation) and the User Guide's [detailed contact field rules](UserGuide.md#detailed-contact-field-rules) for exact validation and comparison rules.
 
 TuitionBook focuses on contact and relationship management; lesson scheduling, attendance, fees, academic-progress tracking, and messaging are outside its scope.
 
@@ -1211,11 +1211,17 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `add r/guardian n/Grace Guardian p/90000001`, then enter `add r/student n/Sam Student p/90000002`.
 1. Enter `list r/student`.<br>
    Expected: Only Sam Student is visible; Grace Guardian remains stored but hidden by the active filter.
-1. Enter `clear`, `clear   `, `clear CONFIRM`, `clear Confirm`, `clear confirm confirm`, `clear confirm extra`, `clear yes`, `clearconfirm`, `clear confirmation`, and `clear\tno` one at a time.<br>
-   Expected: Bare or whitespace-only `clear` reports `Confirmation required: enter "clear confirm" to clear all contacts.` Each other nonblank argument reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Neither contact is deleted, and the student filter remains active.
-2. Enter `clear confirm`.<br>
+1. Enter `clear` and `clear   ` one at a time.<br>
+   Expected: Each command reports `Confirmation required: enter "clear confirm" to clear all contacts.` Both contacts are retained, and the student filter remains active.
+1. Enter `clear CONFIRM`, `clear Confirm`, `clear confirm confirm`, `clear confirm extra`, `clear yes`, and `clear confirmation` one at a time.<br>
+   Expected: Each command reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Both contacts are retained, and the student filter remains active.
+1. Enter `clearconfirm`, then enter `clear\tno` with a literal backslash followed by `t`.<br>
+   Expected: Each command reports `Unknown command.` Both contacts are retained, and the student filter remains active.
+1. Paste a command containing an actual tab between `clear` and `no`, rather than the two characters `\` and `t`.<br>
+   Expected: The command box converts the tab to a space, yielding `clear no`. The command reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Both contacts are retained, and the student filter remains active.
+1. Enter `clear confirm`.<br>
    Expected: All contacts are deleted, including Grace Guardian, who was hidden by the filter. The result states that contacts hidden by the current filter were also cleared.
-3. Exit and restart TuitionBook.<br>
+1. Exit and restart TuitionBook.<br>
    Expected: The contact list remains empty.
 
 ### Launch and shutdown
@@ -1227,7 +1233,7 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
    1. Put the JAR in an empty folder, launch it with `java -jar "tuitionbook.jar"`, dismiss the empty-data notice, and add `add r/student n/Alex Lock Test p/91234567`.
 
    1. Keep the first window open. From a second terminal, run the same launch command against the same JAR.<br>
-      Expected: The second launch promptly prints that TuitionBook is already running and shows an error telling you to use or close the existing window. It does not open a normal TuitionBook window. The first window remains usable, and its contact and window preferences are unchanged.
+      Expected: The second launch promptly prints that TuitionBook is already running and shows a **TuitionBook is already running** dialog with a readable explanation telling you to use or close the existing window. Its **OK** button is usable. After the dialog is dismissed, the second process exits without a secondary JavaFX exception or a normal TuitionBook window. The first instance remains usable, and its contact and window preferences are unchanged.
 
 1. Relaunch after normal exit
 
@@ -1251,7 +1257,7 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
    1. Download the JAR file and copy it into an empty folder.
 
    1. Open a terminal and run `java -jar` followed by the quoted path to the JAR, as described in the UG's [Quick start](UserGuide.md#quick-start).<br>
-      Expected: The GUI opens with an empty contact list and a compact information dialog explaining that no contact data file was found and that adding a contact will create one. Its wrapped body text uses normal weight and does not repeat the absolute data path shown in the status bar. The window size may not be optimal.
+      Expected: The GUI opens with an empty contact list and a compact information dialog headed **No contact data file was found**. Its body reads `TuitionBook started with an empty contact list. Add a contact to get started.` The wrapped body text uses normal weight and does not repeat the absolute data path shown in the status bar. The window size may not be optimal.
 
    1. Dismiss the dialog and immediately type `list` without clicking the main window.<br>
       Expected: Typing appears in the command box and Enter runs the command.
@@ -1311,12 +1317,12 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 1. Enter `add r/student n/Six Tags p/90000001 t/"Active Tuition Student" t/"Secondary Four Level" t/"Additional Mathematics" t/"English Language Study" t/"Physics Practical Prep" t/"Chemistry Practical Prep"`.
 1. Enter `add r/student n/One Tag p/90000002 t/Active`, then `add r/student n/No Tags p/90000003`.
-1. Resize the application to its minimum width.<br>
-   Expected: Six Tags' labels wrap above the phone line without obscuring any contact detail or the next card. Its card grows to fit the extra rows, while One Tag and No Tags remain compact. Tags remain alphabetically sorted.
+1. Enter `tag 1 t/ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ`.<br>
+   Expected: The long tag is added to Six Tags, and its existing tags are retained.
+1. Resize the application to its minimum width and hover over the shortened long tag.<br>
+   Expected: The long tag ends with an ellipsis, and its tooltip shows the complete value. The role badge remains visible, ordinary tags wrap without overlap, and the contact list has no horizontal scrollbar.
 1. Resize the application wide, then back to its minimum width.<br>
-   Expected: The Six Tags card shrinks and grows with the number of tag rows. No tags or contact details overlap at either width.
-1. Add one tag whose value is wider than the card, resize to the minimum width, and hover over the shortened tag.<br>
-   Expected: The tag ends with an ellipsis and its tooltip shows the complete value.
+   Expected: The contact list has no horizontal scrollbar at either width. After narrowing again, the role badge remains visible, the long tag retains its ellipsis and full-value tooltip, and ordinary tags wrap without overlap.
 
 ### Pasting separators into the command box
 

@@ -36,7 +36,6 @@
   * [Data and Backups]({{ baseUrl }}/UserGuide.html#data-and-backups)
   * [Glossary]({{ baseUrl }}/UserGuide.html#glossary)
   * [Troubleshooting]({{ baseUrl }}/UserGuide.html#troubleshooting)
-  * [FAQ]({{ baseUrl }}/UserGuide.html#faq)
   * [Limitations and Known Issues]({{ baseUrl }}/UserGuide.html#limitations-and-known-issues)
 * [Developer Guide]({{ baseUrl }}/DeveloperGuide.html) :expanded:
   * [Acknowledgements]({{ baseUrl }}/DeveloperGuide.html#acknowledgements)
