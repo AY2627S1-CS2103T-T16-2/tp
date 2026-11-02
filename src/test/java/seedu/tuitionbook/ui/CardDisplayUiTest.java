@@ -3,6 +3,7 @@ package seedu.tuitionbook.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,11 +19,13 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Bounds;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.OverrunStyle;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -40,6 +43,7 @@ import seedu.tuitionbook.testutil.PersonBuilder;
 public class CardDisplayUiTest {
 
     private static final int OVERSIZED_TAG_LENGTH = 1000;
+    private static final double LONG_TAG_LIST_WIDTH = 450;
     private static final double TAG_OVERFLOW_SCENE_WIDTH = 340;
     private static final double TAG_OVERFLOW_SCENE_HEIGHT = 500;
     private static final double TAG_RESIZED_WINDOW_WIDTH = 700;
@@ -338,6 +342,40 @@ public class CardDisplayUiTest {
     }
 
     @Test
+    public void personListPanel_unbreakableTag_doesNotWidenList() throws Exception {
+        LongTagLayoutFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
+            String longTag = "x".repeat(OVERSIZED_TAG_LENGTH);
+            Person person = new PersonBuilder().withTags(longTag).build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(person);
+            PersonListPanel panel = new PersonListPanel(persons, persons);
+            ListView<Person> personListView = getPersonListView(panel);
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), LONG_TAG_LIST_WIDTH, TAG_OVERFLOW_SCENE_HEIGHT));
+            stage.show();
+            return new LongTagLayoutFixture(stage, panel, personListView, person, longTag);
+        });
+
+        try {
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() < 500));
+            JavaFxTestUtil.runOnFxThread(() -> assertLongTagLayout(
+                    fixture.personListView(), fixture.person(), fixture.longTag()));
+            for (int cycle = 0; cycle < 2; cycle++) {
+                JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(TAG_RESIZED_WINDOW_WIDTH));
+                assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() > 600));
+                JavaFxTestUtil.runOnFxThread(() -> assertLongTagLayout(
+                        fixture.personListView(), fixture.person(), fixture.longTag()));
+
+                JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(LONG_TAG_LIST_WIDTH));
+                assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() < 500));
+                JavaFxTestUtil.runOnFxThread(() -> assertLongTagLayout(
+                        fixture.personListView(), fixture.person(), fixture.longTag()));
+            }
+        } finally {
+            JavaFxTestUtil.runOnFxThread(fixture.stage()::close);
+        }
+    }
+
+    @Test
     public void personCard_wrappedTags_growsWithoutOverlappingDetailsAndRelayoutsAfterResize() throws Exception {
         CardLayoutFixture fixture = JavaFxTestUtil.callOnFxThread(() -> {
             Person sixTagsPerson = new PersonBuilder()
@@ -418,8 +456,8 @@ public class CardDisplayUiTest {
 
         try {
             assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() > 600));
-            JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(TAG_OVERFLOW_SCENE_WIDTH));
-            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() < 400));
+            JavaFxTestUtil.runOnFxThread(() -> fixture.stage().setWidth(LONG_TAG_LIST_WIDTH));
+            assertTrue(JavaFxTestUtil.waitForFxCondition(() -> fixture.panel().getRoot().getWidth() < 500));
             JavaFxTestUtil.runOnFxThread(() -> {
                 ListCell<Person> sixTagsCell = getDisplayedCell(fixture.personListView(), fixture.sixTagsPerson());
                 ListCell<Person> nextCell = getDisplayedCell(fixture.personListView(), fixture.nextPerson());
@@ -472,6 +510,32 @@ public class CardDisplayUiTest {
             assertSame(filteredPersons, personListView.getItems());
             assertEquals("Students: Sam Student, Alex Student",
                     getLabel(guardianCell, "relationship").getText());
+            return null;
+        });
+    }
+
+    @Test
+    public void personListViewCell_layoutBeforeViewportAvailable_remainsSafeWhenRecycled() throws Exception {
+        JavaFxTestUtil.callOnFxThread(() -> {
+            Person person = new PersonBuilder().build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(person);
+            PersonListPanel panel = new PersonListPanel(persons, persons);
+            ListView<Person> personListView = getPersonListView(panel);
+            PersonListPanel.PersonListViewCell cell = panel.new PersonListViewCell();
+            cell.updateListView(personListView);
+            cell.updateItem(person, false);
+            var card = cell.getGraphic();
+
+            assertNotNull(card);
+            assertNull(personListView.lookup(".clipped-container"));
+            cell.resize(300, 200);
+            cell.layoutChildren();
+            assertSame(card, cell.getGraphic());
+            assertTrue(Double.isFinite(card.getBoundsInParent().getWidth()));
+
+            cell.updateItem(null, true);
+            cell.layoutChildren();
+            assertNull(cell.getGraphic());
             return null;
         });
     }
@@ -595,6 +659,29 @@ public class CardDisplayUiTest {
         }
     }
 
+    private static void assertLongTagLayout(ListView<Person> personListView, Person person, String fullTag) {
+        ListCell<Person> cell = getDisplayedCell(personListView, person);
+        Label tag = (Label) cell.getGraphic().lookup("#tags").lookup(".label");
+        ScrollBar horizontalBar = personListView.lookupAll(".scroll-bar").stream()
+                .filter(ScrollBar.class::isInstance)
+                .map(ScrollBar.class::cast)
+                .filter(bar -> bar.getOrientation() == Orientation.HORIZONTAL)
+                .findFirst()
+                .orElseThrow();
+        Bounds listBounds = personListView.localToScene(personListView.getBoundsInLocal());
+        Bounds cardBounds = cell.getGraphic().localToScene(cell.getGraphic().getBoundsInLocal());
+        Bounds tagPaneBounds = cell.getGraphic().lookup("#tags").localToScene(
+                cell.getGraphic().lookup("#tags").getBoundsInLocal());
+        Bounds roleBounds = getLabel(cell, "role").localToScene(getLabel(cell, "role").getBoundsInLocal());
+
+        assertFalse(horizontalBar.isVisible());
+        assertTrue(tag.getWidth() < tag.prefWidth(-1), "Long tag was not ellipsized");
+        assertEquals(fullTag, tag.getTooltip().getText());
+        assertTrue(cardBounds.getMaxX() <= listBounds.getMaxX() + LAYOUT_BOUNDS_TOLERANCE);
+        assertTrue(tagPaneBounds.getMaxX() <= cardBounds.getMaxX() + LAYOUT_BOUNDS_TOLERANCE);
+        assertTrue(roleBounds.getMaxX() <= listBounds.getMaxX() + LAYOUT_BOUNDS_TOLERANCE);
+    }
+
     private static void assertTagsDoNotOverlapPhone(PersonCard card) {
         FlowPane tags = (FlowPane) card.getRoot().lookup("#tags");
         Label phone = getLabel(card, "phone");
@@ -670,5 +757,9 @@ public class CardDisplayUiTest {
 
     private record PanelLayoutFixture(Stage stage, PersonListPanel panel, ListView<Person> personListView,
                                       Person sixTagsPerson, Person nextPerson) {
+    }
+
+    private record LongTagLayoutFixture(Stage stage, PersonListPanel panel, ListView<Person> personListView,
+                                        Person person, String longTag) {
     }
 }

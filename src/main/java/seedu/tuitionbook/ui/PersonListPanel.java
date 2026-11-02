@@ -288,11 +288,14 @@ public class PersonListPanel extends UiPart<Region> {
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */
     class PersonListViewCell extends ListCell<Person> {
+        private Region card;
+
         @Override
         protected void updateItem(Person person, boolean empty) {
             super.updateItem(person, empty);
 
             if (empty || person == null) {
+                card = null;
                 setGraphic(null);
                 setText(null);
             } else {
@@ -302,8 +305,21 @@ public class PersonListPanel extends UiPart<Region> {
                 PersonListViewState state = viewState.get();
                 String notice = state.predicate().test(person) ? ""
                         : "No longer matches the query. Refresh with: " + state.refreshCommand();
-                setGraphic(new PersonCard(person, getIndex() + 1, relationshipSummary, notice).getRoot());
+                card = new PersonCard(person, getIndex() + 1, relationshipSummary, notice).getRoot();
+                setGraphic(card);
             }
+        }
+
+        @Override
+        protected void layoutChildren() {
+            if (card != null && personListView.lookup(".clipped-container") instanceof Region viewport) {
+                double availableWidth = Math.max(0, viewport.getWidth()
+                        - snappedLeftInset() - snappedRightInset());
+                setPrefWidth(availableWidth);
+                card.setPrefWidth(availableWidth);
+                card.setMaxWidth(availableWidth);
+            }
+            super.layoutChildren();
         }
     }
 
