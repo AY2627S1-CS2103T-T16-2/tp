@@ -328,9 +328,9 @@ Literal quotes already present in JSON are retained: CLI escaping is decoded bef
 * [Configuration guide](Configuration.md)
 * [DevOps guide](DevOps.md)
 
-### Diagnostic logging and contact clearing
+### Diagnostic logging
 
-Contact storage and diagnostic logs are separate. `ClearCommand` clears all contacts, including contacts hidden by the current filter, but does not remove logs. See the [Logging guide](Logging.md) for log location, rotation and handling details.
+Contact storage and diagnostic logs are separate. Changing or removing contacts, including with `delete` or `clear confirm`, does not remove information already written to diagnostic logs. See the [Logging guide](Logging.md) for log location, rotation and handling details.
 
 --------------------------------------------------------------------------------------------------------------------
 
