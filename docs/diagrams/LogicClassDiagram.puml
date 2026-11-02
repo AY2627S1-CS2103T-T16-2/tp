@@ -19,12 +19,9 @@ Class LogicManager
 Class "<<interface>>\nModel" as Model MODEL_COLOR
 Class "<<interface>>\nStorage" as Storage STORAGE_COLOR
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> Logic
-
-LogicManager .right.|> Logic
-LogicManager --> "1" TuitionBookParser
-TuitionBookParser ..> XYZCommand : <<create>>
+LogicManager .up.|> Logic
+LogicManager -left-> "1" TuitionBookParser
+TuitionBookParser ..> Command : returns
 
 XYZCommand -up-|> Command
 LogicManager .left.> Command : <<call>>
@@ -43,7 +40,7 @@ XYZCommand -[hidden]down- RepresentativeCommandNote
 XYZCommand .. RepresentativeCommandNote
 
 Logic ..> CommandResult
-Command .up.> CommandResult : <<create>>
+Command .up.> CommandResult : returns
 
 TuitionBookParser -[hidden]right- LogicManager
 LogicManager -[hidden]right- Command

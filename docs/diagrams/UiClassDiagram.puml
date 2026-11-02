@@ -14,7 +14,7 @@ scale max 800 width
 allowmixing
 
 package UI {
-    interface Ui
+    interface Ui <<interface>>
     class UiManager
     class MainWindow
     class StartupNotice

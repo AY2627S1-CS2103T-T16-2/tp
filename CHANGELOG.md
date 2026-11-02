@@ -24,8 +24,8 @@ Planned release; not yet released.
 
 ### Fixed
 
-- Correct the Developer Guide UI diagram's Logic interface connections, separate their multiplicities and use a dashed note connector.
-- Use a dashed note connector in the Developer Guide Logic class diagram.
+- Correct the Developer Guide UI diagram's Logic interface connections, separate their multiplicities, label both interfaces explicitly and use a dashed note connector.
+- Correct return dependencies and remove the layout-only dependency in the Developer Guide Logic class diagram, and place its note below the representative command with a dashed connector.
 
 ## [v1.5] - 2026-10-28
 
