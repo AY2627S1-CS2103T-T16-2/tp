@@ -21,6 +21,7 @@ Planned release; not yet released.
 - Document that contact-changing commands can slow as the contact book grows, without claiming an unverified maximum contact count or response time.
 - Remove the single-question FAQ from the User Guide because its answer is covered by Transferring contacts to another computer.
 - Correct User Guide details on contact cards, how the data file treats `guardianId` values and spaces around names and addresses, and the troubleshooting advice for `link` indexes in the wrong order.
+- Tighten the Developer Guide use cases for saving, unchanged edits, listing all contacts, reload repairs, clear confirmation and startup data recovery (#327).
 - Tighten the Developer Guide non-functional requirements around compatibility, keyboard access, offline use, recovery, display support and distribution (#328).
 - Correct Developer Guide manual-test expectations for `clear` input variants and the initial-launch information dialog (#330).
 
