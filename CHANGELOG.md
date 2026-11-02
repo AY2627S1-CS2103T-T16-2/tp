@@ -30,6 +30,7 @@ Planned release; not yet released.
 
 ### Fixed
 
+- Correct the Developer Guide UI-parts diagram's command-box ownership and retained text-field association, show the declared field type and FXML-created subclass, and document omitted UiPart inheritance arrows with a dashed note connector.
 - Correct the Developer Guide's independent-application-homes test to distinguish first launch from contact-file creation after a successful save.
 - Show the duplicate-launch explanation and dismissal button on macOS without a secondary JavaFX startup error (#330).
 - Correct the Developer Guide UI diagram's Logic interface connections, separate their multiplicities, label both interfaces explicitly and use a dashed note connector.
