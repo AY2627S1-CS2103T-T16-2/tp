@@ -11,7 +11,7 @@ This guide is for developers maintaining TuitionBook and testers checking its be
 **Reading paths:**
 
 * New contributor: start with [Setting up](#setting-up-getting-started), then read [Architecture](#architecture) and the relevant [Implementation](#implementation) section.
-* Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope decisions](#scope-decisions-for-v1-4) before tracing parser, command, model and storage behaviour.
+* Feature or bug investigation: check [Product scope](#product-scope), the relevant command in the UG, and [Scope and design decisions](#scope-and-design-decisions) before tracing parser, command, model and storage behaviour.
 * Tester: use [Testing](Testing.md) for automated checks and [Manual testing](#appendix-instructions-for-manual-testing) for copyable scenarios and expected results.
 
 **Version:** This guide describes the current source during development of v1.6. The published v1.5 JAR includes the command-input changes, stable working sets, strict prefix checks and quoted addresses described here; the older v1.4 JAR does not. Requirements state intended guarantees, not measured test results. Historical proposals and deferred work are labelled separately from implemented behaviour. Consult the [release history](https://github.com/AY2627S1-CS2103T-T16-2/tp/releases) for other published versions.
@@ -212,17 +212,19 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the configured contact JSON file to `JsonTuitionBookStorage` and the user-preferences JSON file to `JsonUserPrefsStorage`.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
-`JsonTuitionBookStorage` saves through a temporary file and atomically replaces the configured contact data file. When a load fails, it tries to move the configured file to an unused sibling `.backup[.n]` path; if that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the class diagram.
+`JsonTuitionBookStorage` and `JsonUserPrefsStorage` save through temporary files in the destination directory and require atomic replacement of their respective JSON files. There is no non-atomic fallback. If the file system does not support that replacement, saving fails and the existing destination file remains unchanged. For contact saves, `LogicManager` reports the failure and restores the contacts and exact working set. Preference-save failures are logged, leaving the previously saved settings unchanged. This compatibility limitation is retained for v1.6 under [#303](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/303). See the UG's [Saving the data](UserGuide.md#saving-the-data) for recovery guidance.
+
+When a contact-data load fails, `JsonTuitionBookStorage` tries to move the configured file to an unused sibling `.backup[.n]` path. If that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the component diagram.
 
 The following diagram focuses separately on conversion between contact JSON and model data. `PersonLoadResult` carries a repaired contact and its optional `GuardianLinkRepair`; `JsonSerializableTuitionBook` collects all such diagnostics into `TuitionBookLoadResult` in JSON order.
 
 <puml src="diagrams/StorageDataConversionDiagram.puml" width="850" />
 
-`JsonUtil` removes an optional UTF-8 BOM and decodes file bytes with a strict UTF-8 decoder before passing the text to Jackson, while retaining the same string-based parsing for in-memory callers. Invalid UTF-8 and other encoded files are therefore rejected instead of being accepted with replacement characters or silently converted on the next save. The shared mapper also requires the input to end after one JSON value and rejects duplicate property names at any object depth. Contact-file reads additionally reject unknown properties at every object depth, while preference-file reads retain their existing unknown-property tolerance. These checks prevent malformed, trailing, conflicting or misspelled contact fields from being accepted and then discarded by a later save. For the configured contact file, parsing failure enters the existing malformed-file recovery path, which moves the original bytes unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
+`JsonUtil` removes an optional UTF-8 BOM and decodes file bytes with a strict UTF-8 decoder before passing the text to Jackson, while retaining the same string-based parsing for in-memory callers. Invalid UTF-8 and other encoded files are therefore rejected instead of being accepted with replacement characters or silently converted on the next save. The shared mapper also requires the input to end after one JSON value and rejects duplicate property names at any object depth. Contact-file reads additionally reject unknown properties at every object depth, while preference-file reads retain their existing unknown-property tolerance. These checks prevent malformed, trailing, conflicting or misspelled contact fields from being accepted and then discarded by a later save. For the configured contact file, parsing failure enters the existing [data-load failure recovery path](#data-load-failure-recovery-policy), which moves the original bytes unchanged to an unused sibling backup or blocks saving when that backup cannot be created.
 
 `DataLoadingException` walks its cause chain to produce bounded user guidance for permission denial, invalid contact values, invalid UTF-8 or JSON, and other file-system failures. It does not expose exception types, paths from the cause, or stack traces. `MainApp` carries this guidance through `StartupNotice`; `UiManager` combines it with the actual backup outcome. `ReloadCommand` uses the same guidance while retaining the current contacts and filter after a failed read.
 
-`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, log rotation files, and the instance lock file therefore share the same application home.
+`ApplicationPaths` resolves application-managed files before file logging starts. Packaged execution uses the directory containing the executable JAR as the application home, independent of the process working directory. Development runs from compiled class directories use the process working directory as an explicit fallback. Contact data, legacy data migration, preferences, logs, log rotation files, and the instance lock file therefore share the same application home. Its containment check rejects absolute paths and parent traversal after lexical normalization, but does not resolve symbolic links. An application-relative path that traverses an existing symbolic link can therefore reach outside the application home, so this implementation gap remains separate from the local-data requirement.
 
 At startup, `MainApp` uses `tuitionbook.json` when it exists. Otherwise, it attempts to move the legacy `addressbook.json` to that current path. A failed move is logged without aborting initialization: the unchanged legacy path is passed to storage for that run, and migration is retried on a later launch. This preserves readable contacts when directory permissions prevent renaming. If the same permissions also prevent saving, the normal command save-failure rollback restores contacts and the exact working set (membership, order and originating query).
 
@@ -247,6 +249,8 @@ This section describes some noteworthy details on how certain features are imple
 `TagCommand` compares requested tags with the original contact's tag set to report only newly added tags in its success message. `UntagCommand` uses the same comparison to report every absent tag, both when other tags are removed and when nothing changes. Shared feedback formatting sorts names and encloses them in double quotes, escaping literal quotes and backslashes for unambiguous display. This formatting does not change tag matching or command parsing. The difference is recomputed on each execution rather than retained as command state.
 
 For each absent tag, `UntagCommand` also compares its spelling case-insensitively with tags remaining on the selected contact. It suggests every matching stored spelling in sorted order, excluding exact tags removed by this execution. Suggestions use the same quoting and escaping as missing-tag feedback and are recomputed on reuse. Tag identity, removal and persistence remain case-sensitive; suggestions do not request a save when nothing changed.
+
+**Feedback ordering:** Contact cards and `view` details sort tags using `Tag.DISPLAY_COMPARATOR`. General contact feedback from `Messages.format` and duplicate-field feedback from `Messages.getErrorMessageForDuplicatePrefixes` iterate unsorted sets, so their order is unspecified. Consistent ordering in those messages is deferred beyond v1.6 under [#303](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/303).
 
 ### Viewing contact relationships
 
@@ -296,6 +300,8 @@ After tokenization and duplicate-prefix checks, `AddCommandParser` collects abse
 
 `PersonListCard.fxml` gives the role badge its preferred minimum width while allowing the name label to shrink. Each student card has one relationship row for its guardian's name and contact number, and each guardian card uses the same row for linked student names in contact-list order. Long names, phone numbers, email addresses, relationship summaries, addresses, and tags retain their beginning and use an ellipsis within the card instead of widening it or pushing the badge out. `PersonCard` attaches a wrapped tooltip containing each full value; `view INDEX v/` also provides the full relationship details through the keyboard-driven workflow. Multiple tags continue to flow in locale-independent, case-insensitive alphabetical order, with original spelling as the tie-breaker.
 
+`PersonListViewCell` limits each card's preferred and maximum width to the visible list viewport, so resizing cannot retain an obsolete expanded cell width.
+
 <a id="quoted-name-and-tag-parsing"></a>
 
 ### Quoted field parsing
@@ -309,94 +315,6 @@ This deliberately changes some unquoted commands: `n/Muhammad s/o Ali` and `t/Ad
 Inside quoted values, `\"` decodes to a literal double quote and `\\` to a literal backslash. Other backslash sequences and all unquoted values are preserved. The closing-quote scan and decoding use the same escape predicate, so an escaped quote cannot end a value or expose embedded prefixes. An escaped final quote without a subsequent closing quote is rejected. Surrounding whitespace is trimmed as before, and decoded values pass through the existing domain validators; escaping does not widen name validation.
 
 Literal quotes already present in JSON are retained: CLI escaping is decoded before storage and does not change the JSON format or reinterpret stored strings. For example, a stored tag `"Sec 4"` can be filtered using `list t/"\"Sec 4\""`, and `a/"\"Block A\""` enters an address with literal quotes around it. Existing addresses are not stripped or normalised on loading. `Tag` removes surrounding ASCII spaces from every tag, including JSON-loaded values, while preserving internal spacing and case-sensitive identity; this makes a stored `" Math "` tag addressable as `Math` without changing quoted-value parsing.
-
-### \[Historical proposal\] Undo/redo feature
-
-Undo/redo is descoped from the final release under [scope decision 4.1](#decision-4-1-undo-and-confirmation). The following inherited design is retained only as a hypothetical implementation discussion: its classes, commands and model methods are not implemented, and it is not a release commitment.
-
-<panel header="Historical design details (not implemented)">
-
-#### Proposed Implementation
-
-The proposed undo/redo mechanism is facilitated by `VersionedTuitionBook`. It extends `TuitionBook` with an undo/redo history, stored internally as a list named `tuitionBookStateList` and a `currentStatePointer`. Additionally, it implements the following operations:
-
-* `VersionedTuitionBook#commit()` -- Saves the current TuitionBook state in its history.
-* `VersionedTuitionBook#undo()` -- Restores the previous TuitionBook state from its history.
-* `VersionedTuitionBook#redo()` -- Restores a previously undone TuitionBook state from its history.
-
-These operations are exposed in the `Model` interface as `Model#commitTuitionBook()`, `Model#undoTuitionBook()` and `Model#redoTuitionBook()` respectively.
-
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
-
-Step 1. The user launches the application for the first time. The `VersionedTuitionBook` will be initialized with the initial TuitionBook state, and the `currentStatePointer` pointing to that single TuitionBook state.
-
-<puml src="diagrams/UndoRedoState0.puml" alt="UndoRedoState0" />
-
-Step 2. The user executes `delete 5` command to delete the 5th person in TuitionBook. The `delete` command calls `Model#commitTuitionBook()`, causing the modified state of TuitionBook after the `delete 5` command executes to be saved in the `tuitionBookStateList`, and the `currentStatePointer` is shifted to the newly inserted TuitionBook state.
-
-<puml src="diagrams/UndoRedoState1.puml" alt="UndoRedoState1" />
-
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitTuitionBook()`, causing another modified TuitionBook state to be saved into the `tuitionBookStateList`.
-
-<puml src="diagrams/UndoRedoState2.puml" alt="UndoRedoState2" />
-
-<box type="info" seamless>
-
-**Note:** If a command fails its execution, it will not call `Model#commitTuitionBook()`, so TuitionBook state will not be saved into the `tuitionBookStateList`.
-</box>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoTuitionBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous TuitionBook state, and restores TuitionBook to that state.
-
-<puml src="diagrams/UndoRedoState3.puml" alt="UndoRedoState3" />
-
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial TuitionBook state, then there are no previous TuitionBook states to restore. The `undo` command uses `Model#canUndoTuitionBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the undo.
-</box>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-<puml src="diagrams/UndoSequenceDiagram-Logic.puml" alt="UndoSequenceDiagram-Logic" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</box>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-<puml src="diagrams/UndoSequenceDiagram-Model.puml" alt="UndoSequenceDiagram-Model" />
-
-The `redo` command does the opposite — it calls `Model#redoTuitionBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores TuitionBook to that state.
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index `tuitionBookStateList.size() - 1`, pointing to the latest TuitionBook state, then there are no undone TuitionBook states to restore. The `redo` command uses `Model#canRedoTuitionBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-</box>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify TuitionBook, such as `list`, will usually not call `Model#commitTuitionBook()`, `Model#undoTuitionBook()` or `Model#redoTuitionBook()`. Thus, the `tuitionBookStateList` remains unchanged.
-
-<puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<puml src="diagrams/CommitActivityDiagram.puml" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (choice in the historical proposal):** Saves the entire TuitionBook.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-
-</panel>
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -421,7 +339,7 @@ Contact storage and diagnostic logs are separate. `ClearCommand` clears all cont
 **Target user profile**:
 
 * is a private one-to-one tutor who travels to students' homes
-* manages a significant number of students and guardians, up to the 1,000 contacts covered by the [performance requirement](#non-functional-requirements)
+* manages a significant number of student and guardian contacts
 * needs to maintain student and guardian contact information and their relationships in one place
 * needs to retrieve the relevant guardian's contact details and home-address information quickly
 * benefits from grouping contacts by academic level, subject, or area using self-chosen tags
@@ -450,48 +368,64 @@ The MVP was delivered in v1.3. The published v1.5 release also supports unlinkin
 * **Descoped**: dedicated level/subject fields, dedicated inactive/archive functionality, sorting, area search, notes, contact-to-clipboard commands, import/export commands and undo are excluded from the final release. Copying the User Guide URL remains supported. These decisions do not exclude generic tags or the implemented in-app command summary.
 * **Deferred**: other unimplemented Beyond-MVP stories remain backlog ideas without a promised release or delivery date. Their priority and presence in the table do not imply implementation.
 
-| Priority | Scope | As a … | I want to … | So that I can… |
-|----------|-------|--------|-------------|----------------|
-| `***` | MVP | private tutor | add a contact as either a student or guardian | record the person's details and distinguish their role clearly |
-| `***` | MVP | private tutor | list all the contacts I manage | obtain an overview of my students and their guardians |
-| `***` | MVP | private tutor | have my contacts, roles, and guardian links stored locally and saved automatically | continue using the same information after restarting TuitionBook |
-| `***` | MVP | private tutor | link a student to at most one guardian | record who is responsible for that student |
-| `***` | MVP | private tutor | view a student's details together with the linked guardian's details | contact the appropriate guardian without manually searching through separate records |
-| `***` | MVP | private tutor | delete a contact and remove any affected guardian links without deleting other contacts | remove obsolete contact information while keeping the remaining contact records and relationships valid |
-| `**` | MVP | private tutor | view a guardian together with the students linked to that guardian | identify all students under that guardian |
-| `**` | MVP | private tutor | edit a contact's information | keep the contact's details accurate and up to date |
-| `**` | MVP | private tutor | find contacts by name | retrieve a contact without scanning the entire contact list |
-| `**` | MVP | private tutor | clear all stored contact data | start over when the existing dataset is no longer needed |
-| `**` | MVP | private tutor | access help for TuitionBook | recall how to use the application and its commands |
-| `**` | MVP | private tutor | exit TuitionBook using a command | close the application without switching to a mouse-driven action |
-| `**` | MVP | private tutor | assign tags to contacts | organise contacts using flexible labels |
-| `**` | Beyond MVP | private tutor | filter contacts by student or guardian role | focus on the relevant type of contact |
-| `**` | Beyond MVP | private tutor | record a student's academic level and subject or subjects | keep track of what I teach each student |
-| `**` | Beyond MVP | private tutor | filter students by academic level and/or subject | find students studying a particular subject at a given level |
-| `**` | Beyond MVP | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
-| `*` | Beyond MVP | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
-| `*` | Beyond MVP | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
-| `*` | Beyond MVP | private tutor | delete a contact by name | remove a contact without first locating its displayed index |
-| `*` | Beyond MVP | private tutor | search contacts using partial names or other contact information | find contacts when I remember only part of their information |
-| `*` | Beyond MVP | private tutor | filter contacts by tag | retrieve a labelled group of contacts quickly |
-| `*` | Beyond MVP | private tutor | combine role filtering with name or tag filtering | narrow a large contact list using multiple criteria |
-| `*` | Beyond MVP | private tutor | filter students by address or area | find students near a location and plan home visits |
-| `*` | Beyond MVP | private tutor | sort contacts using a chosen criterion | locate relevant contacts more efficiently |
-| `*` | Beyond MVP | private tutor | receive confirmation before deleting contacts or clearing data | avoid losing contact data by mistake |
-| `*` | Beyond MVP | private tutor | undo a deletion or clear operation | recover contact data after an accidental action |
-| `*` | Beyond MVP | private tutor | edit a contact's role safely | correct an incorrectly assigned role without creating invalid guardian links |
-| `*` | Beyond MVP | private tutor | link a guardian to a student using the guardian's name | create the relationship without first finding the guardian's list index |
-| `*` | Beyond MVP | private tutor | view a command's syntax and examples offline | use the command when I cannot access the online User Guide |
-| `*` | Beyond MVP | private tutor | copy a contact's phone number conveniently | use the number without manually retyping it |
-| `*` | Beyond MVP | private tutor | mark a student as inactive without deleting the contact | keep former students out of my active list while retaining their records |
-| `*` | Beyond MVP | private tutor | restore an inactive student | resume managing the student if tuition restarts |
-| `*` | Beyond MVP | private tutor | record a short note for a contact | remember relevant context that does not fit the standard contact fields |
-| `*` | Beyond MVP | private tutor | export contact data | keep a portable copy of my contact records |
-| `*` | Beyond MVP | private tutor | import contact data | restore or migrate contacts without re-entering them individually |
-| `*` | Beyond MVP | private tutor | have TuitionBook preserve an unreadable data file | avoid losing the original data while resolving a loading problem |
-| `*` | Beyond MVP | private tutor | receive a precise explanation when contact data cannot be loaded | understand what must be corrected |
+Stories are ordered by scope, then delivery status, then descending priority; related stories remain together within each tier.
 
-### Scope decisions for v1.4
+| Priority | Scope | Delivery status | As a … | I want to … | So that I can … |
+|----------|-------|-----------------|--------|-------------|-----------------|
+| `***` | MVP | Implemented | private tutor | add a contact as either a student or guardian | record the person's details and distinguish their role clearly |
+| `***` | MVP | Implemented | private tutor | list all the contacts I manage | obtain an overview of my students and their guardians |
+| `***` | MVP | Implemented | private tutor | have my contacts, roles, and guardian links stored locally and saved automatically | continue using the same information after restarting TuitionBook |
+| `***` | MVP | Implemented | private tutor | link a student to at most one guardian | record who is responsible for that student |
+| `***` | MVP | Implemented | private tutor | view a student's details together with the linked guardian's details | contact the appropriate guardian without manually searching through separate records |
+| `***` | MVP | Implemented | private tutor | delete a contact and remove any affected guardian links without deleting other contacts | remove obsolete contact information while keeping the remaining contact records and relationships valid |
+| `**` | MVP | Implemented | private tutor | view a guardian together with the students linked to that guardian | identify all students under that guardian |
+| `**` | MVP | Implemented | private tutor | edit a contact's information | keep the contact's details accurate and up to date |
+| `**` | MVP | Implemented | private tutor | find contacts by name | retrieve a contact without scanning the entire contact list |
+| `**` | MVP | Implemented | private tutor | clear all stored contact data | start over when the existing dataset is no longer needed |
+| `**` | MVP | Implemented | private tutor | access help for TuitionBook | recall how to use the application and its commands |
+| `**` | MVP | Implemented | private tutor | exit TuitionBook using a command | close the application without switching to a mouse-driven action |
+| `**` | MVP | Implemented | private tutor | assign tags to contacts | organise contacts using flexible labels |
+| `***` | Beyond MVP | Implemented | private tutor | have TuitionBook attempt to back up an unreadable data file and block saves if no backup can be made | avoid overwriting the original data while resolving a loading problem |
+| `**` | Beyond MVP | Implemented | private tutor | filter contacts by student or guardian role | focus on the relevant type of contact |
+| `**` | Beyond MVP | Implemented | private tutor | record academic levels and subjects as user-chosen tags | organise students by the levels and subjects I teach without dedicated fields |
+| `**` | Beyond MVP | Implemented | private tutor | filter students using my chosen academic-level and subject tags | find students carrying the relevant labels |
+| `**` | Beyond MVP | Implemented | private tutor | unlink a guardian from a student without deleting either contact | correct or remove an outdated relationship while retaining both contacts |
+| `**` | Beyond MVP | Implemented | private tutor | search contacts using partial names | find a contact when I remember only part of the name |
+| `**` | Beyond MVP | Implemented | private tutor | filter contacts by tag | retrieve a labelled group of contacts quickly |
+| `**` | Beyond MVP | Implemented | private tutor | combine role and tag filters | narrow a labelled contact group to students or guardians |
+| `**` | Beyond MVP | Implemented | private tutor | reload contacts from the local data file using `reload` | apply a valid manual file edit without restarting TuitionBook |
+| `**` | Beyond MVP | Implemented | private tutor | add or remove selected tags using `tag` and `untag` | update labels without re-entering unrelated tags |
+| `**` | Beyond MVP | Implemented | private tutor | keep displayed indexes stable across edit, tag, untag, link, and unlink changes | continue using the displayed indexes after those changes |
+| `*` | Beyond MVP | Implemented | private tutor | confirm a request to clear all contact data using `clear confirm` | avoid clearing contact data by mistake |
+| `*` | Beyond MVP | Implemented | private tutor | view command syntax offline | recall command formats without accessing the online User Guide |
+| `*` | Beyond MVP | Implemented | private tutor | select and copy a phone number from `view INDEX` details | use the number without manually retyping it |
+| `*` | Beyond MVP | Implemented | private tutor | manually remove `Active`, add `Inactive`, and explicitly filter for students tagged `Active` | keep former students out of that active list while retaining their records |
+| `*` | Beyond MVP | Implemented | private tutor | manually remove `Inactive`, add `Active`, and explicitly filter for students tagged `Active` | make a returning student appear in that active list again |
+| `*` | Beyond MVP | Not implemented | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
+| `*` | Beyond MVP | Not implemented | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
+| `*` | Beyond MVP | Not implemented | private tutor | delete a contact by name | remove a contact without first locating its displayed index |
+| `*` | Beyond MVP | Not implemented | private tutor | search contacts using phone, email, or address | find a contact using information other than its name, role, or tags |
+| `*` | Beyond MVP | Not implemented | private tutor | combine role and name filters | narrow name-search results to students or guardians |
+| `*` | Beyond MVP | Not implemented | private tutor | filter students by address or area | find students near a location and plan home visits |
+| `*` | Beyond MVP | Not implemented | private tutor | sort contacts using a chosen criterion | locate relevant contacts more efficiently |
+| `*` | Beyond MVP | Not implemented | private tutor | receive confirmation before `delete INDEX` removes a contact | avoid deleting a contact by mistake |
+| `*` | Beyond MVP | Not implemented | private tutor | undo a deletion or clear operation | recover contact data after an accidental action |
+| `*` | Beyond MVP | Not implemented | private tutor | edit a contact's role safely | correct an incorrectly assigned role without creating invalid guardian links |
+| `*` | Beyond MVP | Not implemented | private tutor | link a guardian to a student using the guardian's name | create the relationship without first finding the guardian's list index |
+| `*` | Beyond MVP | Not implemented | private tutor | view examples for every command offline | learn each command without accessing the online User Guide |
+| `*` | Beyond MVP | Not implemented | private tutor | copy a phone number directly from a contact card | use the number without first opening the contact details |
+| `*` | Beyond MVP | Not implemented | private tutor | record a short note for a contact | remember relevant context that does not fit the standard contact fields |
+| `*` | Beyond MVP | Not implemented | private tutor | export contact data | keep a portable copy of my contact records |
+| `*` | Beyond MVP | Not implemented | private tutor | import contact data | restore or migrate contacts without re-entering them individually |
+| `*` | Beyond MVP | Not implemented | private tutor | receive a guaranteed precise diagnosis whenever contact data cannot be loaded | know the exact cause that must be corrected |
+
+`Active` and `Inactive` are ordinary user-chosen tags, not an archive state or automatically exclusive labels.
+
+Displayed indexes can still change after `delete`, `list`, `find`, `reload`, `clear confirm`, or a restart.
+
+<a id="scope-decisions-for-v1-4"></a>
+
+### Scope and design decisions
 
 This record reconciles [#134](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/134) with the implemented commands. The US identifiers refer to the original backlog, not row numbers in the table above. These are product decisions and documented limitations, not guarantees about how a future bug report will be evaluated.
 
@@ -576,14 +510,15 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 | [UC01 Add a contact](#use-case-uc01-add-a-contact) | [UC02 Link a guardian](#use-case-uc02-link-a-guardian-to-a-student) | [UC03 Unlink a guardian](#use-case-uc03-unlink-a-guardian-from-a-student) |
 | [UC04 Edit a contact](#use-case-uc04-edit-a-contact) | [UC05 Find contacts](#use-case-uc05-find-contacts-by-name) | [UC06 View contact details](#use-case-uc06-view-contact-details) |
 | [UC07 Delete a contact](#use-case-uc07-delete-a-contact) | [UC08 Filter contacts](#use-case-uc08-filter-contacts) | [UC09 Reload contact data](#use-case-uc09-reload-contact-data) |
-| [UC10 Clear all contacts](#use-case-uc10-clear-all-contacts) | [UC11 Modify tags](#use-case-uc11-modify-contact-tags) | |
+| [UC10 Clear all contacts](#use-case-uc10-clear-all-contacts) | [UC11 Modify tags](#use-case-uc11-modify-contact-tags) | [UC12 Start TuitionBook](#use-case-uc12-start-tuitionbook-and-restore-contacts) |
 
 #### Use case: UC01 Add a contact
 
 **Main Success Scenario (MSS)**
 
 1.  User requests to add a contact, providing the contact's role, name, and phone number, and optionally its email address, home address, and tags.
-2.  System adds the contact and displays confirmation, including its role.
+2.  System adds the contact.
+3.  System saves the changed contact data and displays confirmation, including the contact's role.
 
     Use case ends.
 
@@ -601,9 +536,9 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-* 2a. System cannot save the added contact.
+* 3a. System cannot save the added contact.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -670,7 +605,8 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  User requests to unlink a displayed student.
-2.  System removes the guardian link and displays confirmation naming the student and former guardian.
+2.  System removes the guardian link.
+3.  System saves the changed contact data and displays confirmation naming the student and former guardian.
 
     Use case ends.
 
@@ -694,9 +630,9 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-* 2a. System cannot save the removed guardian link.
+* 3a. System cannot save the removed guardian link.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -709,7 +645,8 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 **MSS**
 
 1.  User requests to edit a contact in the current contact list, providing one or more replacement contact details.
-2.  System updates the supplied details, retains all unspecified details, and displays confirmation.
+2.  System updates the supplied details and retains all unspecified details.
+3.  System saves the changed contact data and displays confirmation.
 
     Use case ends.
 
@@ -735,13 +672,13 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 2a. The supplied details are identical to the contact's stored details.
 
-    * 2a1. System reports the edit as successful without changing or saving contact data.
+    * 2a1. System reports that no changes were made, without changing or saving contact data.
 
       Use case ends.
 
-* 2b. System cannot save the edited contact.
+* 3a. System cannot save the edited contact.
 
-    * 2b1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -797,7 +734,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 1.  User requests to delete a displayed contact.
 2.  System deletes the contact and clears any guardian links involving it, retaining all other contacts.
-3.  System reports the deletion and, where applicable, the number and names of students whose guardian links were cleared.
+3.  System saves the changed contact data and reports the deletion and, where applicable, the number and names of students whose guardian links were cleared.
 
     Use case ends.
 
@@ -809,9 +746,9 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-* 2a. System cannot save the deletion.
+* 3a. System cannot save the deletion.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -826,9 +763,15 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 **Extensions**
 
-* 1a. The request is malformed, or a supplied role or tag is invalid.
+* 1a. User requests all contacts without specifying a role or tag.
 
-    * 1a1. System shows an error message describing the invalid request and retains the active filter.
+    * 1a1. System clears the active filter, displays all contacts in contact-list order, and reports that all contacts are listed.
+
+      Use case ends.
+
+* 1b. The request is malformed, or a supplied role or tag is invalid.
+
+    * 1b1. System shows an error message describing the invalid request and retains the active filter.
 
       Use case ends.
 
@@ -859,8 +802,8 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
 * 2b. The file contains invalid guardian links but all contacts are otherwise valid.
 
-    * 2b1. System loads the contacts without those links.
-    * 2b2. System reports the repaired guardian links.
+    * 2b1. System loads the contacts into memory without those links and leaves the data file unchanged.
+    * 2b2. System reports each repaired guardian link.
 
       Use case resumes from step 3.
 
@@ -876,7 +819,7 @@ Saving is skipped for repeated links, unchanged edits and clearing an empty cont
 
       Use case ends.
 
-See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
+See the [data-load failure recovery policy](#data-load-failure-recovery-policy) and [saving-data manual test scenarios](#saving-data) for the preservation rules and copyable recovery procedures.
 
 #### Use case: UC10 Clear all contacts
 
@@ -890,22 +833,29 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 
 **MSS**
 
-1.  User requests and confirms the clearing of all contacts.
-2.  System removes every stored contact, including contacts hidden by the active filter, and reports completion.
+1.  User enters `clear confirm` to request clearing all contacts.
+2.  System removes every stored contact, including contacts hidden by the active filter.
+3.  System saves the empty contact list and reports completion.
 
     Use case ends.
 
 **Extensions**
 
-* 1a. User does not provide the required confirmation.
+* 1a. User enters `clear` without the required `confirm` keyword.
 
     * 1a1. System informs the User that confirmation is required and retains all contacts and the active filter.
 
       Use case ends.
 
-* 2a. System cannot save the cleared contact list.
+* 1b. User enters `clear` with an argument other than the single lowercase `confirm` keyword.
 
-    * 2a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
+    * 1b1. System informs the User that the confirmation is invalid and retains all contacts and the active filter.
+
+      Use case ends.
+
+* 3a. System cannot save the cleared contact list.
+
+    * 3a1. System shows a storage error and restores the contact data and current contact list to their state before the request.
 
       Use case ends.
 
@@ -955,28 +905,74 @@ See the [malformed-file recovery policy](#malformed-file-recovery-policy) and [s
 
       Use case ends.
 
+#### Use case: UC12 Start TuitionBook and restore contacts
+
+**Preconditions**
+
+* TuitionBook is not running in the selected application folder.
+
+**MSS**
+
+1.  User launches TuitionBook.
+2.  System loads the configured data file.
+3.  System displays all stored contacts in contact-list order and enables saving.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. The configured data file is missing.
+
+    * 2a1. System starts with an empty contact list, enables saving, and shows an information dialog.
+
+      Use case ends.
+
+* 2b. The file contains invalid guardian links but all contacts are otherwise valid.
+
+    * 2b1. System loads the contacts into memory without those links and leaves the data file unchanged.
+    * 2b2. System reports each repaired guardian link.
+
+      Use case resumes from step 3.
+
+* 2c. System cannot read the file but preserves it unchanged in a backup.
+
+    * 2c1. System starts with an empty contact list, enables saving, and reports the backup path and recovery guidance.
+
+      Use case ends.
+
+* 2d. System cannot read the file or preserve it in a backup.
+
+    * 2d1. System starts with an empty contact list, leaves the original file in place, blocks saving to protect it, and reports recovery guidance.
+
+      Use case ends.
+
+See the [startup data rule](#startup-data-rule) and [data-load failure recovery policy](#data-load-failure-recovery-policy) for the detailed preservation rules.
+
 #### List-filter command rule
 
 Each `list` query replaces the working set: bare `list` displays all contacts, while `list r/ROLE` and `list t/TAG...` display contacts matching the supplied criteria in contact-list order. Role matching and tag matching is exact and case-insensitive, and all supplied tags must be present. Other trailing text is rejected.
 
 #### Startup data rule
 
-If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not change the separate recovery behaviour for a malformed data file.
+If the configured data file is missing, TuitionBook starts with an empty contact list instead of creating sample contacts. An existing valid data file containing no contacts also remains empty after restart. This rule does not change the separate recovery behaviour when an existing data file cannot be read.
 
-#### Malformed-file recovery policy
+#### Data-load failure recovery policy
 
 When the configured data file cannot be read, TuitionBook tries to move it unchanged to a sibling backup named `<data-file>.backup`. If that name is occupied, it tries `<data-file>.backup.1`, then increasing numeric suffixes. After a successful move, the load failure carries the exact backup path and bounded cause-specific guidance to the UI. TuitionBook starts with an empty contact list, can save new data at the configured path, and shows appropriate permission, encoding/JSON, contact-value, or file-system recovery steps in both a warning dialog and the result display. The warning keeps the specific problem and backup outcome in its main content while placing numbered restoration steps and each labelled full path once in an expandable, scrollable **Recovery details** section. If no backup can be created, it leaves the original file in place, blocks saving so that it cannot be overwritten, and presents the same cause-specific guidance before asking the user to reload or restart.
 
 ### Non-Functional Requirements
 
-1.  TuitionBook shall run without an application installer on each environment in the supported-OS test matrix, with Java `25` installed.
-2.  TuitionBook shall support at least 1,000 contacts. On a reference workstation with a dual-core 1.6 GHz processor, 8 GB RAM, and Java `25`, each listing, finding, filtering, viewing, adding, editing, deleting, tagging, untagging, linking, or unlinking command shall complete within two seconds for a 1,000-contact performance workload whose names, phone numbers, emails, and addresses are within their documented length limits, with at most five tags of at most 50 printable ASCII characters per contact. Measure from command submission to the result being displayed. This defines the workload to benchmark; it does not claim that a benchmark has already passed. Books larger than 1,000 contacts are outside the supported scope. Commands that can change contacts first create a rollback snapshot whose duplicate check grows quadratically with the number of contacts (see [Saving data](#saving-data)), so they may take several seconds on books of several thousand contacts.
-3.  All documented add, edit, delete, list, find, filter, view, tag, untag, link, and unlink operations shall be executable through keyboard-entered commands, without requiring a mouse.
-4.  TuitionBook shall operate as a single-user desktop application and shall not require a network connection for its normal contact-management functions.
-5.  TuitionBook shall use one local, human-editable text file as the authoritative contact store and shall not transmit contact data to an external service. It may create local sibling text-file backups to preserve unreadable contact data during recovery.
-6.  Changes made by successful mutating operations shall be available after a normal application restart. If saving a mutating operation reports a storage error, TuitionBook shall restore the contacts and exact working set (membership, order and originating query) to their state before that operation.
-7.  At startup, TuitionBook shall recover without terminating unexpectedly when its local data file cannot be loaded cleanly: if the file is missing, it shall start with an empty contact list and show an information dialog; if it is malformed and a backup succeeds, it shall retain a backup of the malformed file, start with an empty data set, show the exact backup path and recovery steps in a warning and result display, and allow saving; if that backup fails, it shall retain the original file, start with an empty data set, show that saving is blocked and how to remedy it, and block saving; if it contains an invalid guardian link, it shall load the valid contacts, omit the invalid link, and show a warning listing every affected contact and repair reason.
-8.  TuitionBook shall allow at most one guarded application instance per application home directory while allowing application copies in separate home directories to run independently.
+1.  **Platform compatibility:** TuitionBook shall run on Windows, Linux and macOS with Java `25` installed, without requiring an application installer or separate dependency installation.
+2.  **Keyboard access:** All documented contact-management operations, in-app Help, reload and exit shall be available through the `add`, `edit`, `delete`, `list`, `find`, `view`, `tag`, `untag`, `link`, `unlink`, `clear`, `reload`, `help` or `exit` command, without requiring a mouse.
+3.  **Single-user scope:** TuitionBook shall operate as a desktop application for one user and shall not share that user's application data during normal operation.
+4.  **Offline operation:** Contact management and in-app Help shall work without a network connection. Opening the online User Guide may require one.
+5.  **Local data:** TuitionBook shall keep its application-managed files within the application home. It shall use one local, human-editable text file as the authoritative contact store and shall not transmit contact data to an external service. It may create local sibling backups during recovery.
+6.  **Persistence and rollback:** Successful contact changes shall remain available after a normal restart. If saving reports an error, TuitionBook shall restore the contacts and working set to their state before the command.
+7.  **Startup recovery:** A missing, unreadable or invalid contact file, or an invalid guardian link, shall not by itself cause TuitionBook to terminate unexpectedly. TuitionBook shall preserve an existing file it cannot load before allowing replacement data to be saved, block saving if preservation fails, and report the recovery or repaired links. See the [startup data rule](#startup-data-rule) and [data-load failure recovery policy](#data-load-failure-recovery-policy).
+8.  **Single-instance operation:** TuitionBook shall prevent two running instances from accessing the same application home while allowing copies in separate application homes to run independently.
+9.  **Display support:** The GUI shall work without resolution-related inconvenience at 1920×1080 or higher at 100% and 125% scaling. All functions shall remain accessible at 1280×720 or higher at 150% scaling, although the layout may be less comfortable.
+10. **Distribution:** TuitionBook shall be distributed as one cross-platform executable JAR no larger than 100 MB.
+11. **Documentation compatibility:** The published HTML User Guide and Developer Guide shall remain readable in current desktop versions of Chrome and Firefox on Windows, Linux and macOS at the supported resolutions and scaling levels.
 
 ### Glossary
 
@@ -989,7 +985,7 @@ When the configured data file cannot be read, TuitionBook tries to move it uncha
 * **Guardian link**: A recorded association from a student to a guardian contact. A student has at most one guardian link, while a guardian can be linked to multiple students.
 * **Home address**: A stored lesson or contact address, usually associated with a student; it can include details such as a unit number, gate code, or lift instructions.
 * **Index**: A positive one-based position in the current working set, used by index-based commands. Indexes can change after deletion compacts the working set, an explicit query, a successful reload, clear or restart.
-* **Supported-OS test matrix**: Windows 11, macOS 15, and Ubuntu 24.04 LTS, each with Java `25`. These are reference environments for verifying the cross-platform requirement, not a claim that the current release has been executed on every environment; report actual platform checks separately.
+* **Reference test environments**: Windows 11, macOS 15, and Ubuntu 24.04 LTS, each with Java `25`. These environments can be used to check the cross-platform requirement; they do not limit compatibility to those versions or prove that every environment has been tested.
 * **Normalised name**: A UTF-8 name converted to its duplicate-identity form: leading and trailing ASCII spaces are removed, each internal run of ASCII spaces is collapsed to one, and the shared Unicode comparison form is applied while the original display value remains unchanged. Search uses only the Unicode comparison form, without this space normalization.
 * **Normalised phone number**: A phone number converted to its comparison form before duplicate checking: ASCII spaces, hyphens, slashes, and numeric-group parentheses are removed; the optional annotation is ignored; a leading `+` is retained; and `x`, `ext`, and `ext.` become `x` while retaining the extension digits. Country-code equivalence is not applied in the MVP.
 * **Private tutor**: A tutor who provides one-to-one tuition and travels to students' homes.
@@ -1152,11 +1148,17 @@ Use a fresh, disposable folder with an empty contact list.
 1. Enter `add r/guardian n/Grace Guardian p/90000001`, then enter `add r/student n/Sam Student p/90000002`.
 1. Enter `list r/student`.<br>
    Expected: Only Sam Student is visible; Grace Guardian remains stored but hidden by the active filter.
-1. Enter `clear`, `clear   `, `clear CONFIRM`, `clear Confirm`, `clear confirm confirm`, `clear confirm extra`, `clear yes`, `clearconfirm`, `clear confirmation`, and `clear\tno` one at a time.<br>
-   Expected: Bare or whitespace-only `clear` reports `Confirmation required: enter "clear confirm" to clear all contacts.` Each other nonblank argument reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Neither contact is deleted, and the student filter remains active.
-2. Enter `clear confirm`.<br>
+1. Enter `clear` and `clear   ` one at a time.<br>
+   Expected: Each command reports `Confirmation required: enter "clear confirm" to clear all contacts.` Both contacts are retained, and the student filter remains active.
+1. Enter `clear CONFIRM`, `clear Confirm`, `clear confirm confirm`, `clear confirm extra`, `clear yes`, and `clear confirmation` one at a time.<br>
+   Expected: Each command reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Both contacts are retained, and the student filter remains active.
+1. Enter `clearconfirm`, then enter `clear\tno` with a literal backslash followed by `t`.<br>
+   Expected: Each command reports `Unknown command.` Both contacts are retained, and the student filter remains active.
+1. Paste a command containing an actual tab between `clear` and `no`, rather than the two characters `\` and `t`.<br>
+   Expected: The command box converts the tab to a space, yielding `clear no`. The command reports `Invalid confirmation: enter "clear confirm" to clear all contacts.` Both contacts are retained, and the student filter remains active.
+1. Enter `clear confirm`.<br>
    Expected: All contacts are deleted, including Grace Guardian, who was hidden by the filter. The result states that contacts hidden by the current filter were also cleared.
-3. Exit and restart TuitionBook.<br>
+1. Exit and restart TuitionBook.<br>
    Expected: The contact list remains empty.
 
 ### Launch and shutdown
@@ -1168,7 +1170,7 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
    1. Put the JAR in an empty folder, launch it with `java -jar "tuitionbook.jar"`, dismiss the empty-data notice, and add `add r/student n/Alex Lock Test p/91234567`.
 
    1. Keep the first window open. From a second terminal, run the same launch command against the same JAR.<br>
-      Expected: The second launch promptly prints that TuitionBook is already running and shows an error telling you to use or close the existing window. It does not open a normal TuitionBook window. The first window remains usable, and its contact and window preferences are unchanged.
+      Expected: The second launch promptly prints that TuitionBook is already running and shows a **TuitionBook is already running** dialog with a readable explanation telling you to use or close the existing window. Its **OK** button is usable. After the dialog is dismissed, the second process exits without a secondary JavaFX exception or a normal TuitionBook window. The first instance remains usable, and its contact and window preferences are unchanged.
 
 1. Relaunch after normal exit
 
@@ -1192,7 +1194,7 @@ Use the packaged JAR in disposable folders for every scenario in this section. K
    1. Download the JAR file and copy it into an empty folder.
 
    1. Open a terminal and run `java -jar` followed by the quoted path to the JAR, as described in the UG's [Quick start](UserGuide.md#quick-start).<br>
-      Expected: The GUI opens with an empty contact list and a compact information dialog explaining that no contact data file was found and that adding a contact will create one. Its wrapped body text uses normal weight and does not repeat the absolute data path shown in the status bar. The window size may not be optimal.
+      Expected: The GUI opens with an empty contact list and a compact information dialog headed **No contact data file was found**. Its body reads `TuitionBook started with an empty contact list. Add a contact to get started.` The wrapped body text uses normal weight and does not repeat the absolute data path shown in the status bar. The window size may not be optimal.
 
    1. Dismiss the dialog and immediately type `list` without clicking the main window.<br>
       Expected: Typing appears in the command box and Enter runs the command.
@@ -1252,12 +1254,12 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 1. Enter `add r/student n/Six Tags p/90000001 t/"Active Tuition Student" t/"Secondary Four Level" t/"Additional Mathematics" t/"English Language Study" t/"Physics Practical Prep" t/"Chemistry Practical Prep"`.
 1. Enter `add r/student n/One Tag p/90000002 t/Active`, then `add r/student n/No Tags p/90000003`.
-1. Resize the application to its minimum width.<br>
-   Expected: Six Tags' labels wrap above the phone line without obscuring any contact detail or the next card. Its card grows to fit the extra rows, while One Tag and No Tags remain compact. Tags remain alphabetically sorted.
+1. Enter `tag 1 t/ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ`.<br>
+   Expected: The long tag is added to Six Tags, and its existing tags are retained.
+1. Resize the application to its minimum width and hover over the shortened long tag.<br>
+   Expected: The long tag ends with an ellipsis, and its tooltip shows the complete value. The role badge remains visible, ordinary tags wrap without overlap, and the contact list has no horizontal scrollbar.
 1. Resize the application wide, then back to its minimum width.<br>
-   Expected: The Six Tags card shrinks and grows with the number of tag rows. No tags or contact details overlap at either width.
-1. Add one tag whose value is wider than the card, resize to the minimum width, and hover over the shortened tag.<br>
-   Expected: The tag ends with an ellipsis and its tooltip shows the complete value.
+   Expected: The contact list has no horizontal scrollbar at either width. After narrowing again, the role badge remains visible, the long tag retains its ellipsis and full-value tooltip, and ordinary tags wrap without overlap.
 
 ### Pasting separators into the command box
 
@@ -1582,7 +1584,7 @@ Use a fresh, disposable folder and start the application with an empty contact l
 
 `link` requests saving only after creating or replacing a relationship; `unlink` only after removing one. `edit` compares the selected contact's stored values with its proposed replacement and requests saving only when they differ; the replacement preserves the persistent ID. An unchanged edit reports `No changes made: the specified values already match NAME` and preserves the working set, as do other unchanged mutations. The comparison uses stored values, so spelling, capitalization and phone-format changes still count as edits; tag order does not. `clear` checks whether the complete book contains any contacts, including hidden contacts. Successful additions and deletions always request saving. Filter changes alone do not trigger saving. Actual changes retain the existing save-failure rollback.
 
-**Performance:** The save decision no longer scans all contacts: it uses the command's mutation outcome, an emptiness check for `clear`, or a comparison of the selected contact for `edit`. Comparing that contact's fields and tags still depends on their sizes. Before executing a command for which `canMutate()` is true, `LogicManager` creates a rollback snapshot through `new TuitionBook(existingBook)` → `resetData` → `setPersons(List)` → `personsAreUnique`. For a valid book of n distinct contacts, this validation performs `n(n - 1) / 2` pairwise identity comparisons: 499,500 for 1,000 contacts. Each comparison first compares roles, then normalizes and compares names when the roles match, and also normalizes and compares phone numbers when the normalized names match. Snapshot creation therefore takes O(n²) time for fixed contact-field sizes, in addition to its O(n) reference copying; the comparison costs also depend on field lengths. The snapshot is created even when the command ultimately makes no change and skips saving. Avoiding unnecessary saves does not remove this cost or make overall command execution constant-time. No benchmark has established a user-visible speedup, and this complexity analysis alone does not establish whether the two-second performance NFR is met.
+**Performance:** The save decision no longer scans all contacts: it uses the command's mutation outcome, an emptiness check for `clear`, or a comparison of the selected contact for `edit`. Comparing that contact's fields and tags still depends on their sizes. Before executing a command for which `canMutate()` is true, `LogicManager` creates a rollback snapshot through `new TuitionBook(existingBook)` → `resetData` → `setPersons(List)` → `personsAreUnique`. For a valid book of n distinct contacts, this validation performs `n(n - 1) / 2` pairwise identity comparisons: 499,500 for 1,000 contacts. Each comparison first compares roles, then normalizes and compares names when the roles match, and also normalizes and compares phone numbers when the normalized names match. Snapshot creation therefore takes O(n²) time for fixed contact-field sizes, in addition to its O(n) reference copying; the comparison costs also depend on field lengths. The snapshot is created even when the command ultimately makes no change and skips saving. Avoiding unnecessary saves does not remove this cost or make overall command execution constant-time. No benchmark has established a user-visible speedup, and no fixed response-time guarantee is claimed.
 
 Run each scenario below independently in a fresh, disposable folder. An ordinary save failure rolls back the attempted change but does not set the storage write block: restore write access and repeat the failed command. A failed load whose backup also fails does set the write block: correct or move the file and use `reload` (or restart) before retrying contact-changing commands. If backing up an unreadable file succeeds, saving is already enabled and no reload is required. Reload reads the file; it does not save or replay a failed command.
 
