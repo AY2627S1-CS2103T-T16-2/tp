@@ -31,7 +31,7 @@ MainWindow *-down-> "1" HelpWindow
 MainWindow *-down-> "0..1" PersonListPanel
 MainWindow *-down-> "0..1" DetailDisplay
 MainWindow *-down-> "0..1" ResultDisplay
-MainWindow -right-> "0..1" CommandBox : commandBox
+MainWindow *-right-> "0..1" CommandBox : commandBox
 MainWindow ..> StatusBarFooter : <<create>>
 CommandBox -down-> "1" TextField : commandTextField
 CommandTextField -up-|> TextField
@@ -46,11 +46,13 @@ end note
 CommandTextField -[hidden]down- FieldInjectionNote
 CommandTextField .. FieldInjectionNote
 
-note right of UiPart
+note as UiPartInheritanceNote
 All in the "UI parts" box
-(except UiPart) inherit from UiPart
+(except UiPart) inherit from UiPart.
 Generalization arrows are omitted.
 end note
+UiPart -[hidden]right- UiPartInheritanceNote
+UiPart .. UiPartInheritanceNote
 
 
 PersonListPanel ..> PersonCard : <<create>>
