@@ -481,8 +481,8 @@ Stories are ordered by scope, then delivery status, then descending priority; re
 | `*` | Beyond MVP | Implemented | private tutor | confirm a request to clear all contact data using `clear confirm` | avoid clearing contact data by mistake |
 | `*` | Beyond MVP | Implemented | private tutor | view command syntax offline | recall command formats without accessing the online User Guide |
 | `*` | Beyond MVP | Implemented | private tutor | select and copy a phone number from `view INDEX` details | use the number without manually retyping it |
-| `*` | Beyond MVP | Implemented | private tutor | manually remove my ordinary, user-chosen `Active` tag, add my ordinary, user-chosen `Inactive` tag, and explicitly list students tagged `Active`, without using an archive state or automatically exclusive labels | keep former students out of that active list while retaining their records |
-| `*` | Beyond MVP | Implemented | private tutor | manually remove my ordinary, user-chosen `Inactive` tag, add my ordinary, user-chosen `Active` tag, and explicitly list students tagged `Active`, without using an archive state or automatically exclusive labels | make a returning student appear in that active list again |
+| `*` | Beyond MVP | Implemented | private tutor | manually remove `Active`, add `Inactive`, and explicitly filter for students tagged `Active` | keep former students out of that active list while retaining their records |
+| `*` | Beyond MVP | Implemented | private tutor | manually remove `Inactive`, add `Active`, and explicitly filter for students tagged `Active` | make a returning student appear in that active list again |
 | `*` | Beyond MVP | Not implemented | private tutor | link multiple guardians to one student | represent students who have more than one responsible guardian |
 | `*` | Beyond MVP | Not implemented | private tutor | delete multiple contacts in one operation | remove several obsolete contacts efficiently |
 | `*` | Beyond MVP | Not implemented | private tutor | delete a contact by name | remove a contact without first locating its displayed index |
@@ -500,6 +500,8 @@ Stories are ordered by scope, then delivery status, then descending priority; re
 | `*` | Beyond MVP | Not implemented | private tutor | export contact data | keep a portable copy of my contact records |
 | `*` | Beyond MVP | Not implemented | private tutor | import contact data | restore or migrate contacts without re-entering them individually |
 | `*` | Beyond MVP | Not implemented | private tutor | receive a guaranteed precise diagnosis whenever contact data cannot be loaded | know the exact cause that must be corrected |
+
+`Active` and `Inactive` are ordinary user-chosen tags, not an archive state or automatically exclusive labels.
 
 Displayed indexes can still change after `delete`, `list`, `find`, `reload`, `clear confirm`, or a restart.
 
