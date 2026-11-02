@@ -212,7 +212,9 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonTuitionBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
-`JsonTuitionBookStorage` saves through a temporary file and atomically replaces the configured contact data file. When a load fails, it tries to move the configured file to an unused sibling `.backup[.n]` path; if that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the component diagram.
+`JsonTuitionBookStorage` and `JsonUserPrefsStorage` save through temporary files in the destination directory and require atomic replacement of their respective JSON files. There is no non-atomic fallback. If the file system does not support that replacement, saving fails and the existing destination file remains unchanged. For contact saves, `LogicManager` reports the failure and restores the contacts and exact working set. Preference-save failures are logged, leaving the previously saved settings unchanged. This compatibility limitation is retained for v1.6 under [#303](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/303). See the UG's [Saving the data](UserGuide.md#saving-the-data) for recovery guidance.
+
+When a contact-data load fails, `JsonTuitionBookStorage` tries to move the configured file to an unused sibling `.backup[.n]` path. If that move fails, it blocks writes to protect the original. These recovery details are kept in prose instead of the component diagram.
 
 The following diagram focuses separately on conversion between contact JSON and model data. `PersonLoadResult` carries a repaired contact and its optional `GuardianLinkRepair`; `JsonSerializableTuitionBook` collects all such diagnostics into `TuitionBookLoadResult` in JSON order.
 
@@ -247,6 +249,8 @@ This section describes some noteworthy details on how certain features are imple
 `TagCommand` compares requested tags with the original contact's tag set to report only newly added tags in its success message. `UntagCommand` uses the same comparison to report every absent tag, both when other tags are removed and when nothing changes. Shared feedback formatting sorts names and encloses them in double quotes, escaping literal quotes and backslashes for unambiguous display. This formatting does not change tag matching or command parsing. The difference is recomputed on each execution rather than retained as command state.
 
 For each absent tag, `UntagCommand` also compares its spelling case-insensitively with tags remaining on the selected contact. It suggests every matching stored spelling in sorted order, excluding exact tags removed by this execution. Suggestions use the same quoting and escaping as missing-tag feedback and are recomputed on reuse. Tag identity, removal and persistence remain case-sensitive; suggestions do not request a save when nothing changed.
+
+**Feedback ordering:** Contact cards and `view` details sort tags using `Tag.DISPLAY_COMPARATOR`. General contact feedback from `Messages.format` and duplicate-field feedback from `Messages.getErrorMessageForDuplicatePrefixes` iterate unsorted sets, so their order is unspecified. Consistent ordering in those messages is deferred beyond v1.6 under [#303](https://github.com/AY2627S1-CS2103T-T16-2/tp/issues/303).
 
 ### Viewing contact relationships
 
