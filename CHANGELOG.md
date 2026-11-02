@@ -21,6 +21,7 @@ Planned release; not yet released.
 - Document 1,000 contacts as the supported contact-list size in the target user profile, performance requirement and User Guide known limitations, noting that commands that change contacts can slow down with much larger lists.
 - Remove the single-question FAQ from the User Guide because its answer is covered by Transferring contacts to another computer.
 - Correct User Guide details on contact cards, how the data file treats `guardianId` values and spaces around names and addresses, and the troubleshooting advice for `link` indexes in the wrong order.
+- Correct Developer Guide manual-test expectations for `clear` input variants and the initial-launch information dialog (#330).
 
 ## [v1.5] - 2026-10-28
 
