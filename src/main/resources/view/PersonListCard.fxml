@@ -32,7 +32,7 @@
     </Label>
   </HBox>
   <Label fx:id="queryNotice" styleClass="cell_small_label" wrapText="true" maxWidth="Infinity" />
-  <FlowPane fx:id="tags" minWidth="0.0">
+  <FlowPane fx:id="tags" minWidth="0.0" prefWrapLength="1.0">
     <maxWidth>
       <Double fx:constant="MAX_VALUE" />
     </maxWidth>
