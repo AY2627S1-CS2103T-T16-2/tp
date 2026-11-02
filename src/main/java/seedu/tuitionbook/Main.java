@@ -102,21 +102,19 @@ public class Main {
     }
 
     static void showStartupError(String title, String message, PlatformStarter platformStarter,
-            Runnable platformExit) {
-        showStartupError(title, message, platformStarter, Platform::runLater, platformExit);
-    }
-
-    static void showStartupError(String title, String message, PlatformStarter platformStarter,
             PlatformStarter platformScheduler, Runnable platformExit) {
         try {
             platformStarter.start(() -> platformScheduler.start(() -> {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle(title);
-                alert.setHeaderText(title);
-                alert.setContentText(message);
-                alert.setResizable(true);
-                alert.showAndWait();
-                platformExit.run();
+                try {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle(title);
+                    alert.setHeaderText(title);
+                    alert.setContentText(message);
+                    alert.setResizable(true);
+                    alert.showAndWait();
+                } finally {
+                    platformExit.run();
+                }
             }));
         } catch (RuntimeException e) {
             System.err.println("The graphical startup error could not be displayed: " + e);
