@@ -14,9 +14,6 @@ Class ModelManager
 Class UserPrefs
 }
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> Model
-
 TuitionBook .up.|> ReadOnlyTuitionBook
 
 ModelManager .up.|> Model

@@ -18,9 +18,6 @@ Class "<<interface>>\nStorage" as Storage STORAGE_COLOR
 Class StorageManager STORAGE_COLOR
 }
 
-Class HiddenOutside #FFFFFF
-HiddenOutside ..> Logic
-
 LogicManager .up.|> Logic
 ModelManager .up.|> Model
 StorageManager .up.|> Storage
