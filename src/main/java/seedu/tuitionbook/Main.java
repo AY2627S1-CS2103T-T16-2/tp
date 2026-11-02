@@ -94,25 +94,28 @@ public class Main {
 
     /** Shows a startup failure without constructing {@link MainApp} or its storage. */
     static void showStartupError(String title, String message) {
-        showStartupError(title, message, Platform::startup, Platform::exit);
+        showStartupError(title, message, Platform::startup, Platform::runLater, Platform::exit);
     }
 
     static void showStartupError(String title, String message, PlatformStarter platformStarter) {
-        showStartupError(title, message, platformStarter, Platform::exit);
+        showStartupError(title, message, platformStarter, Platform::runLater, Platform::exit);
     }
 
     static void showStartupError(String title, String message, PlatformStarter platformStarter,
-            Runnable platformExit) {
+            PlatformStarter platformScheduler, Runnable platformExit) {
         try {
-            platformStarter.start(() -> {
-                Alert alert = new Alert(AlertType.ERROR);
-                alert.setTitle(title);
-                alert.setHeaderText(title);
-                alert.setContentText(message);
-                alert.setResizable(true);
-                alert.showAndWait();
-                platformExit.run();
-            });
+            platformStarter.start(() -> platformScheduler.start(() -> {
+                try {
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle(title);
+                    alert.setHeaderText(title);
+                    alert.setContentText(message);
+                    alert.setResizable(true);
+                    alert.showAndWait();
+                } finally {
+                    platformExit.run();
+                }
+            }));
         } catch (RuntimeException e) {
             System.err.println("The graphical startup error could not be displayed: " + e);
         }
